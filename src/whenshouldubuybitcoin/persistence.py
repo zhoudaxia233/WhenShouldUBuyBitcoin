@@ -1,9 +1,11 @@
 """
 Data persistence module for storing and loading Bitcoin metrics.
 
-This module handles saving/loading historical metrics to/from CSV files.
+This module handles saving/loading historical metrics to/from CSV files
+and metadata to/from JSON files.
 """
 
+import json
 from pathlib import Path
 from typing import Optional
 
@@ -26,13 +28,13 @@ def get_data_dir() -> Path:
 
 def load_existing_metrics(filename: str = "btc_metrics.csv") -> Optional[pd.DataFrame]:
     """
-    Load existing metrics from CSV file.
+    Load existing metrics from CSV file and restore metadata.
     
     Args:
         filename: Name of the CSV file (default: "btc_metrics.csv")
         
     Returns:
-        DataFrame with historical metrics, or None if file doesn't exist
+        DataFrame with historical metrics and metadata restored, or None if file doesn't exist
     """
     data_dir = get_data_dir()
     filepath = data_dir / filename
@@ -47,6 +49,12 @@ def load_existing_metrics(filename: str = "btc_metrics.csv") -> Optional[pd.Data
         # Convert date column to datetime
         df["date"] = pd.to_datetime(df["date"])
         
+        # Load and restore metadata
+        metadata = load_metadata()
+        if metadata:
+            df.attrs["trend_a"] = metadata.get("trend_a")
+            df.attrs["trend_b"] = metadata.get("trend_b")
+        
         print(f"✓ Loaded {len(df)} rows from {filepath}")
         print(f"  Date range: {df['date'].min().date()} to {df['date'].max().date()}")
         
@@ -57,9 +65,68 @@ def load_existing_metrics(filename: str = "btc_metrics.csv") -> Optional[pd.Data
         return None
 
 
+def save_metadata(df: pd.DataFrame, filename: str = "btc_metadata.json") -> bool:
+    """
+    Save DataFrame metadata (attrs) to JSON file.
+    
+    This stores trend parameters and other metadata that can't be saved in CSV.
+    
+    Args:
+        df: DataFrame with metadata in attrs
+        filename: Name of the JSON file (default: "btc_metadata.json")
+        
+    Returns:
+        True if successful, False otherwise
+    """
+    data_dir = get_data_dir()
+    filepath = data_dir / filename
+    
+    try:
+        metadata = {
+            "trend_a": df.attrs.get("trend_a"),
+            "trend_b": df.attrs.get("trend_b"),
+            "last_updated": pd.Timestamp.now().isoformat()
+        }
+        
+        with open(filepath, "w") as f:
+            json.dump(metadata, f, indent=2)
+        
+        return True
+        
+    except Exception as e:
+        print(f"✗ Error saving metadata to {filepath}: {e}")
+        return False
+
+
+def load_metadata(filename: str = "btc_metadata.json") -> Optional[dict]:
+    """
+    Load metadata from JSON file.
+    
+    Args:
+        filename: Name of the JSON file (default: "btc_metadata.json")
+        
+    Returns:
+        Dictionary with metadata, or None if file doesn't exist
+    """
+    data_dir = get_data_dir()
+    filepath = data_dir / filename
+    
+    if not filepath.exists():
+        return None
+    
+    try:
+        with open(filepath, "r") as f:
+            metadata = json.load(f)
+        return metadata
+        
+    except Exception as e:
+        print(f"✗ Error loading metadata from {filepath}: {e}")
+        return None
+
+
 def save_metrics(df: pd.DataFrame, filename: str = "btc_metrics.csv") -> bool:
     """
-    Save metrics DataFrame to CSV file.
+    Save metrics DataFrame to CSV file and metadata to JSON file.
     
     Args:
         df: DataFrame with metrics to save
@@ -94,6 +161,9 @@ def save_metrics(df: pd.DataFrame, filename: str = "btc_metrics.csv") -> bool:
         df_to_save.to_csv(filepath, index=False)
         
         print(f"✓ Saved {len(df_to_save)} rows to {filepath}")
+        
+        # Save metadata (trend parameters)
+        save_metadata(df)
         
         return True
         

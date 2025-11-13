@@ -38,6 +38,7 @@ poetry.lock
 
 # Data files
 data/*.csv
+data/*.json
 data/*.db
 *.sqlite
 !data/.gitkeep

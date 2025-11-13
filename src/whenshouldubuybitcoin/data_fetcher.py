@@ -102,6 +102,43 @@ def get_latest_btc_price() -> tuple[datetime, float]:
         raise
 
 
+def get_realtime_btc_price() -> tuple[datetime, float]:
+    """
+    Get the current real-time BTC price.
+
+    This fetches the most recent price available, which may be intraday
+    (before market close) and updates more frequently than daily close prices.
+
+    Returns:
+        Tuple of (datetime, price) for the current price
+
+    Raises:
+        Exception: If data fetching fails
+    """
+    try:
+        btc = yf.Ticker("BTC-USD")
+
+        # Get very recent data (1 day with 1-minute interval for latest)
+        df = btc.history(period="1d", interval="1m")
+
+        if df.empty:
+            # Fallback to regular latest price
+            print("⚠ No intraday data, using latest daily close")
+            return get_latest_btc_price()
+
+        # Get the most recent price point
+        latest = df.iloc[-1]
+        date = latest.name.to_pydatetime().replace(tzinfo=None)
+        price = float(latest["Close"])
+
+        return date, price
+
+    except Exception as e:
+        print(f"⚠ Error fetching realtime price, using fallback: {e}")
+        # Fallback to regular latest price
+        return get_latest_btc_price()
+
+
 if __name__ == "__main__":
     # Quick test
     df = fetch_btc_history(days=30)
