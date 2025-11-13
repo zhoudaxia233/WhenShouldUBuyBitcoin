@@ -288,13 +288,20 @@
             .then(r => r.json())
             .then(data => {
                 const date = new Date(data.last_updated);
-                document.getElementById('lastUpdate').textContent = date.toLocaleString('en-US', {
+                const timeString = date.toLocaleString('en-US', {
                     year: 'numeric',
                     month: 'short',
                     day: 'numeric',
                     hour: '2-digit',
                     minute: '2-digit'
                 });
+                
+                // Get timezone abbreviation
+                const timezone = new Intl.DateTimeFormat('en-US', {
+                    timeZoneName: 'short'
+                }).formatToParts(date).find(part => part.type === 'timeZoneName').value;
+                
+                document.getElementById('lastUpdate').textContent = `${timeString} (${timezone})`;
             })
             .catch(() => {
                 document.getElementById('lastUpdate').textContent = 'Unknown';
