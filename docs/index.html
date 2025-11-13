@@ -12,177 +12,255 @@
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            padding: 20px;
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, sans-serif;
+            background: #f5f5f7;
+            color: #1d1d1f;
+            line-height: 1.6;
         }
 
         .container {
-            max-width: 900px;
+            max-width: 1200px;
             margin: 0 auto;
+            padding: 40px 20px;
         }
 
         .header {
             text-align: center;
-            color: white;
-            margin-bottom: 40px;
+            margin-bottom: 60px;
         }
 
         .header h1 {
-            font-size: 2.5em;
-            margin-bottom: 10px;
+            font-size: 3em;
+            font-weight: 600;
+            letter-spacing: -0.02em;
+            margin-bottom: 12px;
         }
 
         .header p {
-            font-size: 1.1em;
-            opacity: 0.9;
+            font-size: 1.2em;
+            color: #86868b;
+            font-weight: 400;
         }
 
-        .card {
+        /* Chart Container */
+        .chart-container {
             background: white;
-            border-radius: 12px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            border-radius: 18px;
             padding: 30px;
-            margin-bottom: 20px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+        }
+
+        .chart-container iframe {
+            width: 100%;
+            height: 600px;
+            border: none;
+            border-radius: 12px;
+        }
+
+        /* Check Button */
+        .check-section {
+            background: white;
+            border-radius: 18px;
+            padding: 40px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+            text-align: center;
         }
 
         .check-button {
-            width: 100%;
-            padding: 15px;
-            font-size: 18px;
-            font-weight: bold;
+            padding: 16px 48px;
+            font-size: 17px;
+            font-weight: 500;
             color: white;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: #0071e3;
             border: none;
-            border-radius: 8px;
+            border-radius: 980px;
             cursor: pointer;
-            transition: transform 0.2s, box-shadow 0.2s;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         .check-button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            background: #0077ed;
+            transform: scale(1.02);
         }
 
         .check-button:active {
-            transform: translateY(0);
+            transform: scale(0.98);
         }
 
         .check-button:disabled {
-            opacity: 0.6;
+            opacity: 0.5;
             cursor: not-allowed;
         }
 
         .loading {
-            text-align: center;
-            padding: 20px;
-            color: #666;
+            margin-top: 20px;
+            color: #86868b;
+            font-size: 15px;
         }
 
+        /* Results */
         .result-section {
             display: none;
-            margin-top: 20px;
+            margin-top: 30px;
         }
 
         .result-section.show {
             display: block;
+            animation: fadeIn 0.4s ease-in-out;
         }
 
-        .status-badge {
-            display: inline-block;
-            padding: 8px 16px;
-            border-radius: 20px;
-            font-weight: bold;
-            margin: 10px 0;
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
-        .status-badge.buy {
-            background: #d4edda;
-            color: #155724;
+        .status-header {
+            text-align: center;
+            padding: 30px;
+            border-radius: 12px;
+            margin-bottom: 20px;
         }
 
-        .status-badge.no-buy {
-            background: #f8d7da;
-            color: #721c24;
+        .status-header.buy {
+            background: linear-gradient(135deg, #34c759 0%, #30d158 100%);
+            color: white;
         }
 
-        .metric {
+        .status-header.no-buy {
+            background: linear-gradient(135deg, #ff9500 0%, #ff9f0a 100%);
+            color: white;
+        }
+
+        .status-header h2 {
+            font-size: 1.8em;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .status-header p {
+            font-size: 1em;
+            opacity: 0.9;
+        }
+
+        /* Metrics Grid */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 16px;
             margin: 20px 0;
-            padding: 15px;
-            background: #f8f9fa;
-            border-radius: 8px;
-            border-left: 4px solid #667eea;
         }
 
-        .metric h3 {
-            margin-bottom: 10px;
-            color: #333;
+        .metric-card {
+            background: #f5f5f7;
+            border-radius: 12px;
+            padding: 24px;
+        }
+
+        .metric-card h3 {
+            font-size: 13px;
+            font-weight: 600;
+            text-transform: uppercase;
+            color: #86868b;
+            letter-spacing: 0.5px;
+            margin-bottom: 12px;
         }
 
         .metric-value {
-            font-size: 1.2em;
-            font-weight: bold;
-            color: #667eea;
-            margin: 5px 0;
+            font-size: 2em;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .metric-detail {
+            font-size: 15px;
+            color: #1d1d1f;
+            margin: 6px 0;
+        }
+
+        .metric-status {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 500;
+            margin-top: 8px;
+        }
+
+        .metric-status.in-zone {
+            background: #e5f5e9;
+            color: #28a745;
+        }
+
+        .metric-status.out-zone {
+            background: #fff3e0;
+            color: #ff9500;
         }
 
         .timestamp {
-            font-size: 0.9em;
-            color: #666;
-            margin-top: 10px;
+            text-align: center;
+            font-size: 13px;
+            color: #86868b;
+            margin: 20px 0;
         }
 
-        .distance {
-            padding: 10px;
-            background: #fff3cd;
-            border-radius: 5px;
-            margin-top: 10px;
+        .distance-info {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 16px;
+            border: 1px solid #d2d2d7;
+        }
+
+        .distance-info h4 {
+            font-size: 15px;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        .distance-info p {
+            font-size: 14px;
+            color: #1d1d1f;
+            margin: 6px 0;
         }
 
         .error {
-            color: #721c24;
-            background: #f8d7da;
-            padding: 15px;
-            border-radius: 8px;
-            margin: 10px 0;
-        }
-
-        .charts-link {
-            text-align: center;
-            margin-top: 20px;
-        }
-
-        .charts-link a {
+            background: #ff3b30;
             color: white;
-            text-decoration: none;
-            font-size: 1.1em;
-            padding: 10px 20px;
-            background: rgba(255, 255, 255, 0.2);
-            border-radius: 8px;
-            display: inline-block;
-            transition: background 0.3s;
+            padding: 20px;
+            border-radius: 12px;
+            margin: 20px 0;
         }
 
-        .charts-link a:hover {
-            background: rgba(255, 255, 255, 0.3);
+        .footer {
+            text-align: center;
+            margin-top: 60px;
+            color: #86868b;
+            font-size: 13px;
         }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <h1>🪙 When Should U Buy Bitcoin</h1>
+            <h1>When Should U Buy Bitcoin</h1>
             <p>Real-time Double Undervaluation Analysis</p>
         </div>
 
-        <div class="card">
+        <!-- Embedded Chart -->
+        <div class="chart-container">
+            <iframe src="../charts/valuation_ratios.html"></iframe>
+        </div>
+
+        <!-- Real-time Check Section -->
+        <div class="check-section">
             <button id="checkButton" class="check-button">
-                ⚡ Check Real-Time Buy Zone Status
+                Check Real-Time Status
             </button>
 
             <div id="loading" class="loading" style="display: none;">
-                Loading data and fetching real-time price...
+                Loading...
             </div>
 
             <div id="results" class="result-section">
@@ -190,12 +268,30 @@
             </div>
         </div>
 
-        <div class="charts-link">
-            <a href="../charts/valuation_ratios.html" target="_blank">📊 View Historical Charts</a>
+        <div class="footer">
+            Last data update: <span id="lastUpdate">Loading...</span>
         </div>
     </div>
 
     <script src="realtime.js"></script>
+    <script>
+        // Load last update time from metadata
+        fetch('../data/btc_metadata.json')
+            .then(r => r.json())
+            .then(data => {
+                const date = new Date(data.last_updated);
+                document.getElementById('lastUpdate').textContent = date.toLocaleString('en-US', {
+                    year: 'numeric',
+                    month: 'short',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+            })
+            .catch(() => {
+                document.getElementById('lastUpdate').textContent = 'Unknown';
+            });
+    </script>
 </body>
 </html>
 

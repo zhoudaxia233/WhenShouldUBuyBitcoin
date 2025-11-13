@@ -380,97 +380,91 @@ async function checkRealtimeStatus() {
 function displayResults(data) {
     const resultsEl = document.getElementById("results");
 
-    // Determine overall status
-    const statusBadge = data.isDoubleUndervalued
-        ? '<span class="status-badge buy">🟢 DOUBLE UNDERVALUED - BUY ZONE ACTIVE!</span>'
-        : '<span class="status-badge no-buy">🔴 NOT in Double Undervaluation Zone</span>';
-
-    // Build HTML
+    // Build compact HTML with Apple-style design
     const html = `
+        <div class="status-header ${
+            data.isDoubleUndervalued ? "buy" : "no-buy"
+        }">
+            <h2>${
+                data.isDoubleUndervalued
+                    ? "✓ Buy Zone Active"
+                    : "Not in Buy Zone"
+            }</h2>
+            <p>${
+                data.isDoubleUndervalued
+                    ? "Double undervaluation conditions met"
+                    : "Waiting for better entry point"
+            }</p>
+        </div>
+
         <div class="timestamp">
-            <strong>Real-time Price:</strong> $${data.price.toLocaleString(
-                "en-US",
-                { minimumFractionDigits: 2, maximumFractionDigits: 2 }
-            )}<br>
-            <strong>UTC:</strong> ${data.timestamps.utc}<br>
-            <strong>Berlin:</strong> ${data.timestamps.berlin} ${
+            Real-time: $${data.price.toLocaleString("en-US", {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+            })} 
+            • UTC: ${data.timestamps.utc} • Berlin: ${data.timestamps.berlin} ${
         data.timestamps.berlinTZ
     }
         </div>
-        
-        <div class="metric">
-            <h3>🔵 200-Day DCA Cost</h3>
-            <div class="metric-value">$${data.dcaCost.toLocaleString("en-US", {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2,
-            })}</div>
-            <div>Price/DCA Ratio: <strong>${data.ratioDCA.toFixed(
-                3
-            )}</strong></div>
-            <div class="distance">
-                ${
-                    data.dcaDistance.inZone
-                        ? `✅ <strong>IN BUY ZONE</strong> (below by ${data.dcaDistance.percentage.toFixed(
-                              2
-                          )}%)`
-                        : `❌ Above threshold - Need ${data.dcaDistance.percentage.toFixed(
-                              2
-                          )}% drop to enter zone`
-                }
+
+        <div class="metrics-grid">
+            <div class="metric-card">
+                <h3>200-Day DCA Cost</h3>
+                <div class="metric-value">$${data.dcaCost.toLocaleString(
+                    "en-US",
+                    { minimumFractionDigits: 2, maximumFractionDigits: 2 }
+                )}</div>
+                <div class="metric-detail">Ratio: ${data.ratioDCA.toFixed(
+                    3
+                )}</div>
+                <div class="metric-status ${
+                    data.dcaDistance.inZone ? "in-zone" : "out-zone"
+                }">
+                    ${
+                        data.dcaDistance.inZone
+                            ? `✓ In zone (−${data.dcaDistance.percentage.toFixed(
+                                  1
+                              )}%)`
+                            : `Need −${data.dcaDistance.percentage.toFixed(1)}%`
+                    }
+                </div>
+            </div>
+
+            <div class="metric-card">
+                <h3>Exponential Trend</h3>
+                <div class="metric-value">$${data.trendValue.toLocaleString(
+                    "en-US",
+                    { minimumFractionDigits: 2, maximumFractionDigits: 2 }
+                )}</div>
+                <div class="metric-detail">Ratio: ${data.ratioTrend.toFixed(
+                    3
+                )}</div>
+                <div class="metric-status ${
+                    data.trendDistance.inZone ? "in-zone" : "out-zone"
+                }">
+                    ${
+                        data.trendDistance.inZone
+                            ? `✓ In zone (−${data.trendDistance.percentage.toFixed(
+                                  1
+                              )}%)`
+                            : `Need −${data.trendDistance.percentage.toFixed(
+                                  1
+                              )}%`
+                    }
+                </div>
             </div>
         </div>
-        
-        <div class="metric">
-            <h3>🟢 Exponential Trend</h3>
-            <div class="metric-value">$${data.trendValue.toLocaleString(
-                "en-US",
-                { minimumFractionDigits: 2, maximumFractionDigits: 2 }
-            )}</div>
-            <div>Price/Trend Ratio: <strong>${data.ratioTrend.toFixed(
-                3
-            )}</strong></div>
-            <div class="distance">
-                ${
-                    data.trendDistance.inZone
-                        ? `✅ <strong>IN BUY ZONE</strong> (below by ${data.trendDistance.percentage.toFixed(
-                              2
-                          )}%)`
-                        : `❌ Above threshold - Need ${data.trendDistance.percentage.toFixed(
-                              2
-                          )}% drop to enter zone`
-                }
-            </div>
-        </div>
-        
-        <div style="text-align: center; margin: 30px 0;">
-            ${statusBadge}
-        </div>
-        
+
         ${
             !data.isDoubleUndervalued
                 ? `
-            <div class="metric">
-                <h3>📉 Distance to Buy Zone</h3>
+            <div class="distance-info">
+                <h4>To Enter Buy Zone</h4>
                 ${getBuyZoneAnalysis(data)}
             </div>
         `
-                : `
-            <div class="metric">
-                <h3>⚠️ Important Note</h3>
-                <p>This is a <strong>real-time estimate</strong> based on current intraday price. 
-                Wait for daily close to confirm the signal.</p>
-                <p style="margin-top: 10px;">Both conditions are met:</p>
-                <ul style="margin-left: 20px; margin-top: 5px;">
-                    <li>✓ Price is below 200-day DCA cost</li>
-                    <li>✓ Price is below exponential trend</li>
-                </ul>
-            </div>
-        `
+                : ""
         }
-        
-        <div style="font-size: 0.9em; color: #666; margin-top: 20px; text-align: center;">
-            Historical data last updated: ${data.lastDataDate}
-        </div>
     `;
 
     resultsEl.innerHTML = html;
@@ -492,27 +486,24 @@ function getBuyZoneAnalysis(data) {
             data.dcaDistance.percentage,
             data.trendDistance.percentage
         );
-        return `
-            <p>To enter buy zone, BTC needs to drop approximately <strong>${maxDrop.toFixed(
-                2
-            )}%</strong></p>
-            <p style="font-size: 0.9em; margin-top: 5px;">(This assumes both conditions need to be met)</p>
-        `;
+        return `<p>Price needs to drop <strong>${maxDrop.toFixed(
+            1
+        )}%</strong> to enter zone</p>`;
     } else if (dcaInZone && !trendInZone) {
         // Only trend needs to drop
         return `
-            <p>✓ DCA condition already met</p>
-            <p>📉 Need <strong>${data.trendDistance.percentage.toFixed(
-                2
-            )}%</strong> more drop for trend condition</p>
+            <p>✓ DCA condition met</p>
+            <p>Need <strong>${data.trendDistance.percentage.toFixed(
+                1
+            )}%</strong> more drop for trend</p>
         `;
     } else if (!dcaInZone && trendInZone) {
         // Only DCA needs to drop
         return `
-            <p>✓ Trend condition already met</p>
-            <p>📉 Need <strong>${data.dcaDistance.percentage.toFixed(
-                2
-            )}%</strong> more drop for DCA condition</p>
+            <p>✓ Trend condition met</p>
+            <p>Need <strong>${data.dcaDistance.percentage.toFixed(
+                1
+            )}%</strong> more drop for DCA</p>
         `;
     }
 
