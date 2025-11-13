@@ -4,12 +4,13 @@ A Python application for Bitcoin valuation analysis using DCA cost and exponenti
 
 ## Project Status
 
-**Current: Step 5 MVP Complete ✓**
+**Current: Step 5+ MVP Complete ✓**
 - ✓ Basic data fetching from Yahoo Finance
 - ✓ 200-day DCA cost calculation
 - ✓ Exponential trend fitting
 - ✓ Combined valuation metrics & "double undervaluation" detection
 - ✓ Data persistence (CSV storage for efficient updates)
+- ✓ Interactive visualizations (Plotly charts)
 - ⏳ Daily updates & notifications (Step 6)
 - ⏳ Email notifications (Step 7)
 - ⏳ Backtesting (Step 8)
@@ -59,6 +60,10 @@ python main.py
 - **Double Undervaluation buy zones** (Price < DCA AND Price < Trend)
 - Historical statistics and buy zone periods
 - Current valuation status
+- **3 interactive charts** (automatically generated and opened in browser):
+  - Valuation ratios over time with buy zones highlighted
+  - Price comparison (actual vs DCA vs Trend)
+  - Historical statistics by year
 
 ## Project Structure
 
@@ -69,9 +74,14 @@ python main.py
 │       ├── __init__.py
 │       ├── data_fetcher.py      # Yahoo Finance integration
 │       ├── metrics.py           # DCA cost & valuation metrics
-│       └── persistence.py       # CSV storage & loading
+│       ├── persistence.py       # CSV storage & loading
+│       └── visualization.py     # Interactive Plotly charts
 ├── data/
 │   └── btc_metrics.csv          # Stored historical metrics (auto-generated)
+├── charts/                       # Interactive HTML charts (auto-generated)
+│   ├── valuation_ratios.html
+│   ├── price_comparison.html
+│   └── double_uv_stats.html
 ├── main.py                       # CLI entry point
 ├── pyproject.toml               # Poetry dependencies
 └── README.md
@@ -116,6 +126,20 @@ poetry run pytest
 - **200-day DCA Cost**: Short-term valuation (harmonic mean of last 200 days)
 - **Exponential Trend**: Long-term growth model fitted to all historical data
 - **Double Undervaluation**: Buy zone when BOTH metrics show undervaluation
+
+### Interactive Visualizations
+- **Valuation Ratios Chart**: Shows Price/DCA and Price/Trend ratios over time
+  - Red shaded areas highlight double undervaluation buy zones
+  - Horizontal line at ratio = 1.0 (fair value)
+  - Zoom, pan, hover for details
+- **Price Comparison Chart**: Actual BTC price vs DCA cost vs Exponential trend
+  - Log scale to show exponential growth clearly
+  - Red dots mark buy zone days
+- **Statistics Chart**: Historical analysis by year
+  - Number of buy zone days per year
+  - Percentage of time in buy zone
+- All charts are interactive HTML files (Plotly)
+- Auto-open in browser on first generation
 
 ## Next Steps
 

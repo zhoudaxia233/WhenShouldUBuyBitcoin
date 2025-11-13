@@ -24,6 +24,7 @@ from whenshouldubuybitcoin.persistence import (
     merge_with_existing,
     get_days_to_fetch,
 )
+from whenshouldubuybitcoin.visualization import generate_all_charts
 
 
 def main():
@@ -267,15 +268,20 @@ def main():
         )
         print(sample_df.to_string(index=False))
 
+        # Generate interactive charts
+        generate_all_charts(df, auto_open=True)
+
         print("\n" + "=" * 80)
-        print("✓ Step 5 MVP Complete!")
+        print("✓ Step 5+ MVP Complete!")
         print("=" * 80)
         print("\n🎉 Data is now persisted to CSV for efficient daily updates!")
-        print(f"   Stored in: data/btc_metrics.csv")
+        print(f"   Data: data/btc_metrics.csv")
+        print(f"   Charts: charts/ (3 interactive HTML files)")
         print("\nNext run will:")
         print("  - Load existing data from CSV")
         print("  - Only fetch recent days (not full 2000 days)")
         print("  - Update metrics efficiently")
+        print("  - Regenerate charts with latest data")
         print("\nNext: Step 6 will add daily update logic & scheduling")
 
     except Exception as e:
