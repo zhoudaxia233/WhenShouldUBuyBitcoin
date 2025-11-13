@@ -250,7 +250,7 @@
 
         <!-- Embedded Chart -->
         <div class="chart-container">
-            <iframe src="../charts/valuation_ratios.html"></iframe>
+            <iframe src="charts/valuation_ratios.html"></iframe>
         </div>
 
         <!-- Real-time Check Section -->
@@ -276,7 +276,7 @@
     <script src="realtime.js"></script>
     <script>
         // Load last update time from metadata
-        fetch('../data/btc_metadata.json')
+        fetch('data/btc_metadata.json')
             .then(r => r.json())
             .then(data => {
                 const date = new Date(data.last_updated);

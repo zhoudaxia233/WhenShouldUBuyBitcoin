@@ -20,8 +20,8 @@ const CONFIG = {
     CORS_PROXY: "https://corsproxy.io/?",
 
     // Data paths (relative to the docs folder)
-    DATA_CSV: "../data/btc_metrics.csv",
-    DATA_METADATA: "../data/btc_metadata.json",
+    DATA_CSV: "data/btc_metrics.csv",
+    DATA_METADATA: "data/btc_metadata.json",
 
     // DCA window
     DCA_WINDOW: 200,
