@@ -67,7 +67,7 @@ python main.py
   - Price comparison (actual vs DCA vs Trend)
   - Historical statistics by year
 
-### Real-Time Buy Zone Check ⚡ NEW!
+### Real-Time Buy Zone Check (CLI) ⚡
 
 Quickly check if Bitcoin is currently in a buy zone without running the full analysis:
 
@@ -118,21 +118,62 @@ python main.py --realtime
   📉 Need 6.74% more drop for DCA condition
 ```
 
+### Real-Time Buy Zone Check (Web) 🌐 NEW!
+
+**Browser-based real-time checker** - No Python installation needed!
+
+#### Live Demo (after deploying to GitHub Pages):
+```
+https://<your-username>.github.io/<repo-name>/
+```
+
+#### Local Testing:
+```bash
+cd docs
+python -m http.server 8000
+# Open http://localhost:8000
+```
+
+**Features:**
+- ✅ Pure JavaScript implementation (runs entirely in browser)
+- ✅ Fetches real-time BTC price from Yahoo Finance
+- ✅ Calculates buy zone status instantly
+- ✅ Shows distance to buy zone
+- ✅ Displays time in UTC and Berlin (CET/CEST)
+- ✅ Responsive design, works on mobile
+- ✅ **Reuses the same data files** (btc_metrics.csv & btc_metadata.json)
+
+**How it works:**
+1. Python script (via GitHub Actions) updates data daily
+2. Web interface loads historical data from CSV/JSON
+3. User clicks button → fetches real-time price → calculates instantly
+4. No backend server needed!
+
+See `docs/README.md` for detailed setup and deployment instructions.
+
 ## Project Structure
 
 ```
 .
+├── .github/
+│   └── workflows/
+│       └── update-data.yml      # GitHub Actions for daily updates
 ├── src/
 │   └── whenshouldubuybitcoin/
 │       ├── __init__.py
 │       ├── data_fetcher.py      # Yahoo Finance integration
 │       ├── metrics.py           # DCA cost & valuation metrics
-│       ├── persistence.py       # CSV storage & loading
+│       ├── persistence.py       # CSV & JSON storage/loading
 │       ├── visualization.py     # Interactive Plotly charts
-│       └── realtime_check.py    # Real-time buy zone checking
+│       └── realtime_check.py    # Real-time CLI checking
+├── docs/                         # Web interface (GitHub Pages)
+│   ├── index.html               # Main webpage
+│   ├── realtime.js              # Pure JavaScript implementation
+│   └── README.md                # Web interface documentation
 ├── data/
-│   └── btc_metrics.csv          # Stored historical metrics (auto-generated)
-├── charts/                       # Interactive HTML charts (auto-generated)
+│   ├── btc_metrics.csv          # Historical metrics (auto-generated)
+│   └── btc_metadata.json        # Trend parameters (auto-generated)
+├── charts/                       # Interactive charts (auto-generated)
 │   ├── valuation_ratios.html
 │   ├── price_comparison.html
 │   └── double_uv_stats.html
@@ -206,9 +247,37 @@ poetry run pytest
   - Intraday monitoring during high volatility
 - Fast execution (no full data refresh needed)
 
+## Deployment to GitHub Pages
+
+### Quick Setup
+
+1. **Enable GitHub Pages:**
+   - Go to repository Settings → Pages
+   - Source: Branch `main`, Folder `/docs`
+   - Save
+
+2. **Enable GitHub Actions:**
+   - Go to repository Settings → Actions → General
+   - Allow all actions and reusable workflows
+
+3. **First Run:**
+   - Manually run the workflow: Actions → "Update BTC Data Daily" → Run workflow
+   - Or wait for the daily schedule (00:30 UTC)
+
+4. **Access Your Site:**
+   - Visit: `https://<username>.github.io/<repo-name>/`
+   - Click the button to check real-time buy zone status!
+
+### Automatic Updates
+
+- GitHub Actions runs daily at 00:30 UTC
+- Updates data and charts automatically
+- Commits changes back to repository
+- GitHub Pages redeploys automatically
+
 ## Next Steps
 
-After Step 5, we'll implement:
+After the web interface, we can implement:
 - **Step 6**: Daily update mechanism + check if in buy zone
 - **Step 7**: Email notifications when BTC enters double undervaluation buy zone
 - **Step 8**: Backtesting to compare strategies:
