@@ -17,12 +17,12 @@ def get_data_dir() -> Path:
     Get the data directory path, creating it if it doesn't exist.
     
     Returns:
-        Path object for the data directory
+        Path object for the data directory (inside docs/ for GitHub Pages)
     """
     # Get project root (3 levels up from this file)
     project_root = Path(__file__).parent.parent.parent
-    data_dir = project_root / "data"
-    data_dir.mkdir(exist_ok=True)
+    data_dir = project_root / "docs" / "data"
+    data_dir.mkdir(parents=True, exist_ok=True)
     return data_dir
 
 

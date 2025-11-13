@@ -20,11 +20,11 @@ def get_output_dir() -> Path:
     Get the output directory for saving charts.
     
     Returns:
-        Path object for the charts directory
+        Path object for the charts directory (inside docs/ for GitHub Pages)
     """
     project_root = Path(__file__).parent.parent.parent
-    charts_dir = project_root / "charts"
-    charts_dir.mkdir(exist_ok=True)
+    charts_dir = project_root / "docs" / "charts"
+    charts_dir.mkdir(parents=True, exist_ok=True)
     return charts_dir
 
 
