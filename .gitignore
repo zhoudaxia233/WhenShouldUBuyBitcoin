@@ -42,6 +42,10 @@ data/*.db
 *.sqlite
 !data/.gitkeep
 
+# Charts
+charts/*.html
+!charts/.gitkeep
+
 # OS
 .DS_Store
 Thumbs.db
