@@ -2,7 +2,12 @@
 """
 Main CLI entry point for When Should U Buy Bitcoin.
 
-Step 5 MVP: Full analysis with data persistence (CSV storage).
+Step 5+ MVP: Full analysis with data persistence, visualization, and real-time checks.
+
+Usage:
+    python main.py                  # Full analysis and update
+    python main.py --check-now      # Quick real-time buy zone check
+    python main.py --realtime       # Same as --check-now
 """
 
 import sys
@@ -25,6 +30,7 @@ from whenshouldubuybitcoin.persistence import (
     get_days_to_fetch,
 )
 from whenshouldubuybitcoin.visualization import generate_all_charts
+from whenshouldubuybitcoin.realtime_check import check_realtime_status
 
 
 def main():
@@ -293,4 +299,35 @@ def main():
 
 
 if __name__ == "__main__":
+    # Check for command-line arguments
+    if len(sys.argv) > 1:
+        arg = sys.argv[1].lower()
+
+        if arg in ["--check-now", "--realtime", "-r"]:
+            # Real-time buy zone check
+            check_realtime_status(verbose=True)
+            sys.exit(0)
+        elif arg in ["--help", "-h"]:
+            # Show help
+            print("=" * 80)
+            print("When Should U Buy Bitcoin - Usage")
+            print("=" * 80)
+            print("\nCommands:")
+            print("  python main.py                    Run full analysis and update")
+            print("  python main.py --check-now        Quick real-time buy zone check")
+            print("  python main.py --realtime         Same as --check-now")
+            print("  python main.py --help             Show this help message")
+            print("\nDescription:")
+            print("  Full analysis: Fetches historical data, calculates metrics,")
+            print("                 saves to CSV, and generates interactive charts")
+            print("\n  Real-time check: Quickly checks current buy zone status")
+            print("                   using real-time price without full update")
+            print("=" * 80)
+            sys.exit(0)
+        else:
+            print(f"Unknown argument: {arg}")
+            print("Use --help to see available commands")
+            sys.exit(1)
+
+    # No arguments, run full analysis
     main()

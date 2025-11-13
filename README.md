@@ -35,7 +35,7 @@ poetry shell
 
 ## Usage
 
-### Step 5: Full Analysis with Data Persistence
+### Full Analysis (Default)
 
 Run the main script to perform full Bitcoin valuation analysis with CSV storage:
 
@@ -47,12 +47,14 @@ python main.py
 - Fetches ~2000 days of BTC price history from Yahoo Finance
 - Calculates all valuation metrics
 - Saves to `data/btc_metrics.csv`
+- Generates 3 interactive charts
 
 **Subsequent runs (efficient updates):**
 - Loads existing data from CSV
 - Only fetches recent days (not full 2000 days!)
 - Merges and recalculates metrics
 - Updates the CSV file
+- Regenerates charts
 
 **What it shows:**
 - 200-day DCA cost analysis
@@ -65,6 +67,45 @@ python main.py
   - Price comparison (actual vs DCA vs Trend)
   - Historical statistics by year
 
+### Real-Time Buy Zone Check ⚡ NEW!
+
+Quickly check if Bitcoin is currently in a buy zone without running the full analysis:
+
+```bash
+python main.py --check-now
+# or
+python main.py --realtime
+```
+
+**Use cases:**
+- 📰 News of a market crash - check immediately if it's a buy opportunity
+- 🚨 Black swan events - evaluate real-time without waiting for daily close
+- 📊 Intraday monitoring - see current status during high volatility
+
+**What it shows:**
+- Real-time BTC price (latest available)
+- Current Price/DCA and Price/Trend ratios
+- **Buy zone status for each metric**
+- **Distance to buy zone**: Shows exactly how much BTC needs to drop to enter buy zone
+- Overall double undervaluation status
+- Warning that this is a real-time estimate (wait for daily close to confirm)
+
+**Example output:**
+```
+Real-time BTC Price: $45,230
+
+200-Day DCA Cost: $48,500
+  Status: ❌ Above threshold
+  Distance: Need 6.74% drop to enter zone
+
+Exponential Trend: $43,200
+  Status: ✅ IN BUY ZONE (below by 4.68%)
+
+NOT in double undervaluation buy zone
+  ✓ Trend condition already met
+  📉 Need 6.74% more drop for DCA condition
+```
+
 ## Project Structure
 
 ```
@@ -75,7 +116,8 @@ python main.py
 │       ├── data_fetcher.py      # Yahoo Finance integration
 │       ├── metrics.py           # DCA cost & valuation metrics
 │       ├── persistence.py       # CSV storage & loading
-│       └── visualization.py     # Interactive Plotly charts
+│       ├── visualization.py     # Interactive Plotly charts
+│       └── realtime_check.py    # Real-time buy zone checking
 ├── data/
 │   └── btc_metrics.csv          # Stored historical metrics (auto-generated)
 ├── charts/                       # Interactive HTML charts (auto-generated)
@@ -140,6 +182,17 @@ poetry run pytest
   - Percentage of time in buy zone
 - All charts are interactive HTML files (Plotly)
 - Auto-open in browser on first generation
+
+### Real-Time Monitoring ⚡
+- **Quick buy zone check** without waiting for daily close
+- Fetches current BTC price (intraday, minute-level updates)
+- Calculates real-time DCA and Trend ratios
+- **Distance calculation**: Shows exactly how much price needs to drop to enter buy zone
+- Useful for:
+  - Black swan events / market crashes
+  - Breaking news evaluation
+  - Intraday monitoring during high volatility
+- Fast execution (no full data refresh needed)
 
 ## Next Steps
 
