@@ -253,10 +253,28 @@ function formatTimestamps(date) {
     const isDST = isDaylightSavingTime(date);
     const berlinTZ = isDST ? "CEST" : "CET";
 
+    // Local time (user's browser timezone)
+    const localTime = date.toLocaleString("en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+    });
+
+    // Get local timezone abbreviation
+    const localTZ = new Intl.DateTimeFormat("en-US", {
+        timeZoneName: "short",
+    })
+        .formatToParts(date)
+        .find((part) => part.type === "timeZoneName").value;
+
     return {
         utc: utcString,
         berlin: berlinString,
         berlinTZ: berlinTZ,
+        localTime: localTime,
+        localTZ: localTZ,
     };
 }
 
@@ -397,14 +415,17 @@ function displayResults(data) {
             }</p>
         </div>
 
-        <div class="timestamp">
-            Real-time: $${data.price.toLocaleString("en-US", {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2,
-            })} 
-            • UTC: ${data.timestamps.utc} • Berlin: ${data.timestamps.berlin} ${
-        data.timestamps.berlinTZ
-    }
+        <div class="price-display">
+            <div class="price-label">Current Bitcoin Price</div>
+            <div class="current-price">
+                $${data.price.toLocaleString("en-US", {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                })}
+            </div>
+            <div class="price-timestamp">
+                As of ${data.timestamps.localTime} (${data.timestamps.localTZ})
+            </div>
         </div>
 
         <div class="metrics-grid">
