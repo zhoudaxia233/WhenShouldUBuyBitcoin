@@ -43,9 +43,11 @@ data/*.db
 *.sqlite
 !data/.gitkeep
 
-# Charts
+# Charts (generated, but kept for local viewing)
 charts/*.html
 !charts/.gitkeep
+
+# Docs folder is NOT ignored (needed for GitHub Pages)
 
 # OS
 .DS_Store
