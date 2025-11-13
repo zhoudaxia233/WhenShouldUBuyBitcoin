@@ -36,15 +36,14 @@ poetry.lock
 *.swo
 *~
 
-# Data files
-data/*.csv
-data/*.json
+# Data files (allow CSV and JSON for GitHub Pages deployment)
+# data/*.csv and data/*.json are now tracked for automatic updates
 data/*.db
 *.sqlite
 !data/.gitkeep
 
-# Charts (generated, but kept for local viewing)
-charts/*.html
+# Charts (allow HTML files for GitHub Pages deployment)
+# charts/*.html are now tracked for automatic updates
 !charts/.gitkeep
 
 # Docs folder is NOT ignored (needed for GitHub Pages)
