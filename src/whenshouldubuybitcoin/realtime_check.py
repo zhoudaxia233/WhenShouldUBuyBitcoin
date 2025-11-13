@@ -8,6 +8,7 @@ using real-time BTC prices, without waiting for daily close.
 import numpy as np
 import pandas as pd
 from datetime import datetime
+from zoneinfo import ZoneInfo
 from typing import Optional, Dict
 
 from .data_fetcher import get_realtime_btc_price
@@ -103,8 +104,15 @@ def check_realtime_status(verbose: bool = True) -> Optional[Dict]:
     
     try:
         price_time, realtime_price = get_realtime_btc_price()
+        
         if verbose:
-            print(f"   ✓ Success at {price_time.strftime('%Y-%m-%d %H:%M:%S')}")
+            # Convert UTC time to Berlin time for display
+            utc_time = price_time.replace(tzinfo=ZoneInfo("UTC"))
+            berlin_time = utc_time.astimezone(ZoneInfo("Europe/Berlin"))
+            
+            print(f"   ✓ Success")
+            print(f"      UTC:    {utc_time.strftime('%Y-%m-%d %H:%M:%S')}")
+            print(f"      Berlin: {berlin_time.strftime('%Y-%m-%d %H:%M:%S %Z')}")
     except Exception as e:
         if verbose:
             print(f"\n❌ Error: Failed to fetch real-time price: {e}")
@@ -164,11 +172,16 @@ def check_realtime_status(verbose: bool = True) -> Optional[Dict]:
     
     # Print detailed output
     if verbose:
+        # Convert times for display
+        utc_time = price_time.replace(tzinfo=ZoneInfo("UTC"))
+        berlin_time = utc_time.astimezone(ZoneInfo("Europe/Berlin"))
+        
         print("\n" + "=" * 80)
         print("💰 CURRENT STATUS")
         print("=" * 80)
         print(f"\n  Real-time BTC Price:  ${realtime_price:,.2f}")
-        print(f"  Time:                 {price_time.strftime('%Y-%m-%d %H:%M:%S')}")
+        print(f"  Time (UTC):           {utc_time.strftime('%Y-%m-%d %H:%M:%S')}")
+        print(f"  Time (Berlin):        {berlin_time.strftime('%Y-%m-%d %H:%M:%S %Z')}")
         
         print("\n" + "=" * 80)
         print("📊 VALUATION METRICS")

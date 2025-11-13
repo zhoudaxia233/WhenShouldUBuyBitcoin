@@ -84,6 +84,7 @@ python main.py --realtime
 
 **What it shows:**
 - Real-time BTC price (latest available)
+- Timestamp in both UTC and Berlin time
 - Current Price/DCA and Price/Trend ratios
 - **Buy zone status for each metric**
 - **Distance to buy zone**: Shows exactly how much BTC needs to drop to enter buy zone
@@ -92,16 +93,27 @@ python main.py --realtime
 
 **Example output:**
 ```
-Real-time BTC Price: $45,230
+📡 Fetching real-time BTC price...
+   ✓ Success
+      UTC:    2025-11-13 19:39:00
+      Berlin: 2025-11-13 20:39:00 CET
 
-200-Day DCA Cost: $48,500
-  Status: ❌ Above threshold
-  Distance: Need 6.74% drop to enter zone
+💰 CURRENT STATUS
+  Real-time BTC Price:  $45,230
+  Time (UTC):           2025-11-13 19:39:00
+  Time (Berlin):        2025-11-13 20:39:00 CET
 
-Exponential Trend: $43,200
-  Status: ✅ IN BUY ZONE (below by 4.68%)
+📊 VALUATION METRICS
+  🔵 200-Day DCA Cost:   $48,500
+     Status:             ❌ Above threshold
+     Distance:           Need 6.74% drop to enter zone
 
-NOT in double undervaluation buy zone
+  🟢 Exponential Trend:  $43,200
+     Status:             ✅ IN BUY ZONE (below by 4.68%)
+
+🎯 DOUBLE UNDERVALUATION STATUS
+  🔴 NOT in double undervaluation buy zone
+
   ✓ Trend condition already met
   📉 Need 6.74% more drop for DCA condition
 ```
