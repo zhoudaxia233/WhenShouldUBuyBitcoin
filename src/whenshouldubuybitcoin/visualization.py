@@ -307,8 +307,8 @@ def plot_price_comparison(
         legend=dict(
             yanchor="top",
             y=0.99,
-            xanchor="left",
-            x=0.01,
+            xanchor="right",  # Position legend on the right side to avoid truncation
+            x=0.99,
             bgcolor="rgba(255, 255, 255, 0.8)"
         )
     )
