@@ -125,17 +125,18 @@ def main():
         trend_summary = get_trend_summary(df)
 
         print("\n" + "=" * 80)
-        print("EXPONENTIAL TREND ANALYSIS")
+        print("POWER LAW TREND ANALYSIS")
         print("=" * 80)
-        print(f"\nModel: price(t) = a × exp(b × t)")
-        print(f"  where t = days since {df['date'].iloc[0].date()}")
+        print(f"\nModel: price(t) = a × t^n")
+        print(f"  where t = Bitcoin age (days since genesis: 2009-01-03)")
+        print(f"  Data available from: {df['date'].iloc[0].date()}")
         print(f"\nFitted Parameters:")
         print(f"  a (coefficient):      {trend_summary['trend_coefficient_a']:,.2f}")
+        print(f"  n (power exponent):   {trend_summary['power_law_exponent']:.6f}")
         print(
-            f"  b (growth rate):      {trend_summary['trend_growth_rate_b']:.6f} per day"
+            f"  Current growth rate:  {trend_summary['daily_growth_rate_pct']:.4f}% per day"
         )
-        print(f"  Daily growth:         {trend_summary['daily_growth_rate_pct']:.4f}%")
-        print(f"  Annual growth:        {trend_summary['annual_growth_rate_pct']:.2f}%")
+        print(f"  Note: Growth rate decreases over time in power law model")
 
         print(f"\nCurrent Status:")
         print(f"  Price:             ${trend_summary['latest_price']:,.2f}")
@@ -238,11 +239,11 @@ def main():
         print("   • Short-term valuation metric")
         print("   • Ratio < 1.0 = Price below recent average cost basis")
 
-        print("\n2. Exponential Trend:")
+        print("\n2. Power Law Trend:")
         print("   • Long-term valuation metric (fitted to all historical data)")
         print("   • Ratio < 1.0 = Price below long-term growth trend")
         print(
-            f"   • BTC has grown at ~{trend_summary['annual_growth_rate_pct']:.0f}% annually (historically)"
+            f"   • Power law exponent: {trend_summary['power_law_exponent']:.2f} (models network effects)"
         )
 
         print("\n3. Double Undervaluation (Buy Zone):")

@@ -132,9 +132,9 @@ def check_realtime_status(verbose: bool = True) -> Optional[Dict]:
     ratio_dca = realtime_price / realtime_dca
     
     # Calculate real-time Trend
-    # Get trend parameters from historical fit
+    # Get power law trend parameters from historical fit
     trend_a = df.attrs.get('trend_a')
-    trend_b = df.attrs.get('trend_b')
+    trend_b = df.attrs.get('trend_b')  # This is now the power law exponent 'n'
     
     if trend_a is None or trend_b is None:
         if verbose:
@@ -142,10 +142,14 @@ def check_realtime_status(verbose: bool = True) -> Optional[Dict]:
             print("   Please run 'python main.py' to calculate trend.")
         return None
     
-    # Calculate days since start of dataset
-    first_date = df['date'].iloc[0]
-    days_since_start = (pd.Timestamp.now() - first_date).days
-    realtime_trend = trend_a * np.exp(trend_b * days_since_start)
+    # Calculate Bitcoin age (days since genesis block: 2009-01-03)
+    # This must match the fitting implementation!
+    genesis_date = pd.Timestamp('2009-01-03')
+    bitcoin_age_days = (pd.Timestamp.now() - genesis_date).days
+    
+    # Calculate power law trend: price = a * t^n
+    # where t = Bitcoin age in days (not data age!)
+    realtime_trend = trend_a * np.power(bitcoin_age_days, trend_b)
     ratio_trend = realtime_price / realtime_trend
     
     # Calculate distances to buy zone
