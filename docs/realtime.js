@@ -459,7 +459,7 @@ function displayResults(data) {
             </div>
 
             <div class="metric-card">
-                <h3>Exponential Trend</h3>
+                <h3>Power Law Trend</h3>
                 <div class="metric-value">$${data.trendValue.toLocaleString(
                     "en-US",
                     { minimumFractionDigits: 2, maximumFractionDigits: 2 }

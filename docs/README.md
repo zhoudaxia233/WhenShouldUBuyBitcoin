@@ -163,9 +163,10 @@ function calculateDCA(prices) {
 ### 2. Trend Calculation
 
 ```javascript
-// Exponential model: trend = a * exp(b * days)
-function calculateTrend(a, b, daysSinceStart) {
-    return a * Math.exp(b * daysSinceStart);
+// Power law model: trend = a * t^n
+// where t = Bitcoin age (days since genesis 2009-01-03)
+function calculateTrend(a, n, bitcoinAgeDays) {
+    return a * Math.pow(bitcoinAgeDays, n);
 }
 ```
 

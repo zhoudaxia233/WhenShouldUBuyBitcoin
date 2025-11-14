@@ -3,7 +3,7 @@ Metrics calculation module for Bitcoin valuation analysis.
 
 This module provides functions to calculate various metrics:
 - 200-day DCA cost (Dollar Cost Averaging)
-- Exponential trend fitting (long-term growth model)
+- Power law trend fitting (long-term growth model)
 """
 
 import numpy as np
@@ -292,7 +292,7 @@ def compute_valuation_metrics(df: pd.DataFrame, dca_window: int = 200) -> pd.Dat
     
     This is the main function that combines:
     - 200-day DCA cost (short-term valuation)
-    - Exponential trend (long-term valuation)
+    - Power law trend (long-term valuation)
     - Double undervaluation flag
     
     Args:
@@ -303,7 +303,7 @@ def compute_valuation_metrics(df: pd.DataFrame, dca_window: int = 200) -> pd.Dat
         DataFrame with all valuation metrics:
             - dca_cost: 200-day DCA cost
             - ratio_dca: Price / DCA ratio
-            - trend_value: Exponential trend fair value
+            - trend_value: Power law trend fair value
             - ratio_trend: Price / Trend ratio
             - is_double_undervalued: Boolean flag for buy zone
     """
@@ -318,7 +318,7 @@ def compute_valuation_metrics(df: pd.DataFrame, dca_window: int = 200) -> pd.Dat
     # Add double undervaluation flag
     # Both conditions must be met:
     # 1. Price < 200-day DCA cost (ratio_dca < 1.0)
-    # 2. Price < Exponential trend (ratio_trend < 1.0)
+    # 2. Price < Power law trend (ratio_trend < 1.0)
     df["is_double_undervalued"] = (df["ratio_dca"] < 1.0) & (df["ratio_trend"] < 1.0)
     
     return df

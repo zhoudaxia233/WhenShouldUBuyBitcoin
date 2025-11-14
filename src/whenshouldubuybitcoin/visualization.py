@@ -228,7 +228,7 @@ def plot_price_comparison(
         x=plot_df["date"],
         y=plot_df["trend_value"],
         mode="lines",
-        name="Exponential Trend",
+        name="Power Law Trend",
         line=dict(color="rgb(44, 160, 44)", width=2, dash="dot"),
         hovertemplate="<b>Date:</b> %{x|%Y-%m-%d}<br>" +
                       "<b>Trend:</b> $%{y:,.2f}<br>" +
@@ -264,7 +264,7 @@ def plot_price_comparison(
         },
         xaxis_title="Date",
         yaxis_title="Price (USD)",
-        yaxis_type="log",  # Log scale to better show the exponential growth
+        yaxis_type="log",  # Log scale to better show the power law growth
         hovermode="x unified",
         template="plotly_white",
         height=700,
