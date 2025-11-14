@@ -8,7 +8,7 @@ This module provides functions to calculate various metrics:
 
 import numpy as np
 import pandas as pd
-from typing import Tuple
+from typing import Tuple, Optional
 
 
 def calculate_dca_cost(prices: pd.Series, window: int = 200) -> pd.Series:
@@ -282,6 +282,172 @@ def get_trend_summary(df: pd.DataFrame) -> dict:
 
 
 # ============================================================================
+# AHR999 INDEX
+# ============================================================================
+
+
+def calculate_ahr999(df: pd.DataFrame) -> pd.Series:
+    """
+    Calculate the ahr999 index.
+    
+    The ahr999 index is a composite metric that combines two undervaluation signals:
+    ahr999 = (Price / DCA) × (Price / Trend)
+    
+    This is mathematically equivalent to:
+    ahr999 = ratio_dca × ratio_trend
+    
+    Classic thresholds (from Bitcoin community):
+    - ahr999 < 0.45: 🔥 Bottom Zone (exceptional buying opportunity)
+    - 0.45 ≤ ahr999 < 1.2: 💎 DCA Zone (good for accumulation)
+    - ahr999 ≥ 1.2: ⚠️ Watch Zone (potentially overheated)
+    
+    Why it works:
+    - When price is below both DCA and Trend, ahr999 < 1.0
+    - The lower the value, the more undervalued Bitcoin is
+    - Values < 0.45 historically mark major market bottoms
+    
+    Args:
+        df: DataFrame with ratio_dca and ratio_trend columns
+        
+    Returns:
+        Pandas Series with ahr999 values
+        
+    Example:
+        If ratio_dca = 0.7 and ratio_trend = 0.6, then ahr999 = 0.42
+        This is in the bottom zone (< 0.45), a rare buying opportunity
+    """
+    ahr999 = df["ratio_dca"] * df["ratio_trend"]
+    return ahr999
+
+
+def get_ahr999_zone(ahr999_value: float) -> dict:
+    """
+    Classify ahr999 value into zones and provide interpretation.
+    
+    Args:
+        ahr999_value: The ahr999 index value
+        
+    Returns:
+        Dictionary with zone classification and interpretation
+    """
+    if ahr999_value < 0.45:
+        return {
+            "zone": "bottom",
+            "emoji": "🔥",
+            "label": "Bottom Zone",
+            "description": "Exceptional buying opportunity - historical bottom territory",
+            "action": "Strong Buy",
+            "color": "#28a745"  # Green
+        }
+    elif ahr999_value < 1.2:
+        return {
+            "zone": "dca",
+            "emoji": "💎",
+            "label": "DCA Zone",
+            "description": "Good accumulation zone - suitable for dollar-cost averaging",
+            "action": "Accumulate",
+            "color": "#0071e3"  # Blue
+        }
+    else:
+        return {
+            "zone": "watch",
+            "emoji": "⚠️",
+            "label": "Watch Zone",
+            "description": "Potentially overheated - exercise caution",
+            "action": "Wait",
+            "color": "#ff9500"  # Orange
+        }
+
+
+def calculate_ahr999_percentile(df: pd.DataFrame, current_ahr999: Optional[float] = None) -> float:
+    """
+    Calculate the historical percentile of ahr999 value.
+    
+    This tells you what percentage of historical days had a higher ahr999 value.
+    
+    Lower percentile = Better buying opportunity
+    - 5th percentile: Only 5% of history was cheaper (excellent!)
+    - 50th percentile: Median price
+    - 95th percentile: Only 5% of history was more expensive
+    
+    Args:
+        df: DataFrame with ahr999 column
+        current_ahr999: Specific ahr999 value to check (default: use latest)
+        
+    Returns:
+        Percentile value (0-100)
+        
+    Example:
+        If percentile = 15, it means 85% of historical days had higher ahr999,
+        so this is a relatively rare good opportunity (only 15% of days were better)
+    """
+    valid_data = df.dropna(subset=["ahr999"])
+    
+    if valid_data.empty:
+        return None
+    
+    if current_ahr999 is None:
+        current_ahr999 = valid_data["ahr999"].iloc[-1]
+    
+    # Calculate percentile using rank
+    # Lower ahr999 = better opportunity = lower percentile
+    percentile = (valid_data["ahr999"] < current_ahr999).sum() / len(valid_data) * 100
+    
+    return percentile
+
+
+def get_ahr999_summary(df: pd.DataFrame) -> dict:
+    """
+    Get comprehensive summary statistics for ahr999 analysis.
+    
+    Args:
+        df: DataFrame with ahr999 metrics
+        
+    Returns:
+        Dictionary with ahr999 summary statistics and zone analysis
+    """
+    valid_data = df.dropna(subset=["ahr999"])
+    
+    if valid_data.empty:
+        return {"error": "Not enough data for ahr999 analysis"}
+    
+    latest = valid_data.iloc[-1]
+    latest_ahr999 = latest["ahr999"]
+    
+    # Calculate zone statistics
+    total_days = len(valid_data)
+    bottom_zone = (valid_data["ahr999"] < 0.45).sum()
+    dca_zone = ((valid_data["ahr999"] >= 0.45) & (valid_data["ahr999"] < 1.2)).sum()
+    watch_zone = (valid_data["ahr999"] >= 1.2).sum()
+    
+    # Get current zone classification
+    current_zone = get_ahr999_zone(latest_ahr999)
+    
+    # Calculate percentile
+    percentile = calculate_ahr999_percentile(valid_data, latest_ahr999)
+    
+    # Historical statistics
+    summary = {
+        "total_days_analyzed": total_days,
+        "current_ahr999": latest_ahr999,
+        "current_zone": current_zone,
+        "historical_percentile": percentile,
+        "days_in_bottom_zone": bottom_zone,
+        "days_in_dca_zone": dca_zone,
+        "days_in_watch_zone": watch_zone,
+        "pct_in_bottom_zone": (bottom_zone / total_days) * 100,
+        "pct_in_dca_zone": (dca_zone / total_days) * 100,
+        "pct_in_watch_zone": (watch_zone / total_days) * 100,
+        "min_ahr999": valid_data["ahr999"].min(),
+        "max_ahr999": valid_data["ahr999"].max(),
+        "mean_ahr999": valid_data["ahr999"].mean(),
+        "median_ahr999": valid_data["ahr999"].median(),
+    }
+    
+    return summary
+
+
+# ============================================================================
 # COMBINED VALUATION METRICS & DOUBLE UNDERVALUATION
 # ============================================================================
 
@@ -294,6 +460,7 @@ def compute_valuation_metrics(df: pd.DataFrame, dca_window: int = 200) -> pd.Dat
     - 200-day DCA cost (short-term valuation)
     - Power law trend (long-term valuation)
     - Double undervaluation flag
+    - ahr999 index (composite metric)
     
     Args:
         df: DataFrame with 'date' and 'close_price' columns
@@ -306,6 +473,7 @@ def compute_valuation_metrics(df: pd.DataFrame, dca_window: int = 200) -> pd.Dat
             - trend_value: Power law trend fair value
             - ratio_trend: Price / Trend ratio
             - is_double_undervalued: Boolean flag for buy zone
+            - ahr999: The ahr999 composite index
     """
     df = df.copy()
     
@@ -320,6 +488,9 @@ def compute_valuation_metrics(df: pd.DataFrame, dca_window: int = 200) -> pd.Dat
     # 1. Price < 200-day DCA cost (ratio_dca < 1.0)
     # 2. Price < Power law trend (ratio_trend < 1.0)
     df["is_double_undervalued"] = (df["ratio_dca"] < 1.0) & (df["ratio_trend"] < 1.0)
+    
+    # Calculate ahr999 index
+    df["ahr999"] = calculate_ahr999(df)
     
     return df
 

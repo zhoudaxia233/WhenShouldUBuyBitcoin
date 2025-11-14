@@ -59,6 +59,43 @@
             box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
         }
 
+        /* Chart Tabs */
+        .chart-tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #d2d2d7;
+        }
+
+        .chart-tab {
+            padding: 12px 24px;
+            font-size: 15px;
+            font-weight: 500;
+            color: #86868b;
+            background: none;
+            border: none;
+            border-bottom: 2px solid transparent;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .chart-tab:hover {
+            color: #1d1d1f;
+        }
+
+        .chart-tab.active {
+            color: #0071e3;
+            border-bottom-color: #0071e3;
+        }
+
+        .chart-content {
+            display: none;
+        }
+
+        .chart-content.active {
+            display: block;
+        }
+
         .chart-container iframe {
             width: 100%;
             height: 600px;
@@ -291,9 +328,24 @@
             <p>Real-time Double Undervaluation Analysis</p>
         </div>
 
-        <!-- Embedded Chart -->
+        <!-- Embedded Charts with Tabs -->
         <div class="chart-container">
-            <iframe src="charts/valuation_ratios.html"></iframe>
+            <div class="chart-tabs">
+                <button class="chart-tab active" onclick="switchChart('ratios')">
+                    Valuation Ratios
+                </button>
+                <button class="chart-tab" onclick="switchChart('prices')">
+                    Price Comparison
+                </button>
+            </div>
+            
+            <div id="ratios-chart" class="chart-content active">
+                <iframe src="charts/valuation_ratios.html"></iframe>
+            </div>
+            
+            <div id="prices-chart" class="chart-content">
+                <iframe src="charts/price_comparison.html"></iframe>
+            </div>
         </div>
 
         <!-- Real-time Check Section -->
@@ -318,6 +370,19 @@
 
     <script src="realtime.js"></script>
     <script>
+        // Chart switching function
+        function switchChart(chartType) {
+            // Update tabs
+            const tabs = document.querySelectorAll('.chart-tab');
+            tabs.forEach(tab => tab.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            // Update chart content
+            const contents = document.querySelectorAll('.chart-content');
+            contents.forEach(content => content.classList.remove('active'));
+            document.getElementById(`${chartType}-chart`).classList.add('active');
+        }
+        
         // Load last update time from metadata
         fetch('data/btc_metadata.json')
             .then(r => r.json())
