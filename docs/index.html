@@ -313,6 +313,152 @@
             margin: 20px 0;
         }
 
+        /* Forecast Calculator */
+        .forecast-section {
+            background: white;
+            border-radius: 18px;
+            padding: 40px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+        }
+
+        .forecast-section h2 {
+            font-size: 1.5em;
+            font-weight: 600;
+            margin-bottom: 8px;
+            text-align: center;
+        }
+
+        .forecast-section p {
+            text-align: center;
+            color: #86868b;
+            font-size: 15px;
+            margin-bottom: 30px;
+        }
+
+        .forecast-input-group {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        .forecast-input-group label {
+            font-size: 15px;
+            font-weight: 500;
+            color: #1d1d1f;
+        }
+
+        .forecast-input-group input[type="date"] {
+            padding: 12px 20px;
+            font-size: 15px;
+            border: 1px solid #d2d2d7;
+            border-radius: 8px;
+            background: #f5f5f7;
+            color: #1d1d1f;
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, sans-serif;
+            transition: all 0.2s ease;
+        }
+
+        .forecast-input-group input[type="date"]:focus {
+            outline: none;
+            border-color: #0071e3;
+            background: white;
+        }
+
+        .forecast-button {
+            padding: 12px 32px;
+            font-size: 15px;
+            font-weight: 500;
+            color: white;
+            background: #0071e3;
+            border: none;
+            border-radius: 980px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .forecast-button:hover {
+            background: #0077ed;
+            transform: scale(1.02);
+        }
+
+        .forecast-button:active {
+            transform: scale(0.98);
+        }
+
+        .forecast-result {
+            display: none;
+            text-align: center;
+            padding: 30px;
+            background: linear-gradient(135deg, #f5f5f7 0%, #e8e8ed 100%);
+            border-radius: 12px;
+            animation: fadeIn 0.4s ease-in-out;
+        }
+
+        .forecast-result.show {
+            display: block;
+        }
+
+        .forecast-price {
+            font-size: 3em;
+            font-weight: 700;
+            color: #1d1d1f;
+            margin-bottom: 12px;
+            background: linear-gradient(135deg, #f7931a 0%, #ffa726 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .forecast-date {
+            font-size: 1.2em;
+            color: #1d1d1f;
+            margin-bottom: 20px;
+            font-weight: 500;
+        }
+
+        .forecast-details {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-top: 20px;
+        }
+
+        .forecast-detail-item {
+            background: white;
+            padding: 16px;
+            border-radius: 8px;
+        }
+
+        .forecast-detail-item h4 {
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #86868b;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .forecast-detail-item p {
+            font-size: 1.1em;
+            color: #1d1d1f;
+            font-weight: 600;
+            margin: 0;
+        }
+
+        .forecast-disclaimer {
+            margin-top: 20px;
+            padding: 16px;
+            background: #fff3cd;
+            border-radius: 8px;
+            font-size: 13px;
+            color: #856404;
+            text-align: left;
+        }
+
         .footer {
             text-align: center;
             margin-top: 60px;
@@ -363,6 +509,24 @@
             </div>
         </div>
 
+        <!-- Future Price Forecast Calculator -->
+        <div class="forecast-section">
+            <h2>🔮 Future Price Forecast</h2>
+            <p>Calculate Bitcoin's predicted price on any future date based on the Power Law model</p>
+            
+            <div class="forecast-input-group">
+                <label for="forecastDate">Select Date:</label>
+                <input type="date" id="forecastDate" />
+                <button class="forecast-button" onclick="calculateForecast()">
+                    Calculate Forecast
+                </button>
+            </div>
+
+            <div id="forecastResult" class="forecast-result">
+                <!-- Forecast results will be inserted here -->
+            </div>
+        </div>
+
         <div class="footer">
             Last data update: <span id="lastUpdate">Loading...</span>
         </div>
@@ -382,6 +546,119 @@
             contents.forEach(content => content.classList.remove('active'));
             document.getElementById(`${chartType}-chart`).classList.add('active');
         }
+        
+        // Future price forecast calculator
+        async function calculateForecast() {
+            const dateInput = document.getElementById('forecastDate');
+            const resultDiv = document.getElementById('forecastResult');
+            
+            if (!dateInput.value) {
+                alert('Please select a date');
+                return;
+            }
+            
+            const selectedDate = new Date(dateInput.value);
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            
+            // Validate date is in the future
+            if (selectedDate <= today) {
+                alert('Please select a future date');
+                return;
+            }
+            
+            // Validate date is not too far (max 5 years)
+            const maxDate = new Date();
+            maxDate.setFullYear(maxDate.getFullYear() + 5);
+            if (selectedDate > maxDate) {
+                alert('Please select a date within the next 5 years');
+                return;
+            }
+            
+            try {
+                // Load metadata to get power law parameters
+                const response = await fetch('data/btc_metadata.json');
+                const metadata = await response.json();
+                
+                // Calculate Bitcoin age for selected date (days since genesis: 2009-01-03)
+                const genesisDate = new Date('2009-01-03');
+                const bitcoinAgeDays = Math.floor((selectedDate - genesisDate) / (1000 * 60 * 60 * 24));
+                
+                // Calculate power law trend: price = a * t^n
+                const forecastPrice = metadata.trend_a * Math.pow(bitcoinAgeDays, metadata.trend_b);
+                
+                // Calculate days from now
+                const daysFromNow = Math.floor((selectedDate - today) / (1000 * 60 * 60 * 24));
+                const monthsFromNow = (daysFromNow / 30.44).toFixed(1);
+                const yearsFromNow = (daysFromNow / 365.25).toFixed(1);
+                
+                // Format display
+                let timeDisplay;
+                if (daysFromNow < 60) {
+                    timeDisplay = `${daysFromNow} days from now`;
+                } else if (daysFromNow < 365) {
+                    timeDisplay = `${monthsFromNow} months from now`;
+                } else {
+                    timeDisplay = `${yearsFromNow} years from now`;
+                }
+                
+                // Display result
+                resultDiv.innerHTML = `
+                    <div class="forecast-price">
+                        $${forecastPrice.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </div>
+                    <div class="forecast-date">
+                        ${selectedDate.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                    </div>
+                    
+                    <div class="forecast-details">
+                        <div class="forecast-detail-item">
+                            <h4>Time From Now</h4>
+                            <p>${timeDisplay}</p>
+                        </div>
+                        <div class="forecast-detail-item">
+                            <h4>Bitcoin Age</h4>
+                            <p>${bitcoinAgeDays.toLocaleString()} days</p>
+                        </div>
+                        <div class="forecast-detail-item">
+                            <h4>Model Exponent</h4>
+                            <p>${metadata.trend_b.toFixed(2)}</p>
+                        </div>
+                    </div>
+                    
+                    <div class="forecast-disclaimer">
+                        <strong>⚠️ Disclaimer:</strong> This forecast is based on a mathematical power law model fitted to historical data. 
+                        It is <strong>not financial advice</strong> and actual prices may differ significantly due to market conditions, 
+                        regulatory changes, technological developments, and other unpredictable factors. 
+                        Past performance does not guarantee future results.
+                    </div>
+                `;
+                
+                resultDiv.classList.add('show');
+                
+            } catch (error) {
+                alert('Error calculating forecast: ' + error.message);
+                console.error(error);
+            }
+        }
+        
+        // Set minimum date to tomorrow and default to 1 year from now
+        document.addEventListener('DOMContentLoaded', () => {
+            const dateInput = document.getElementById('forecastDate');
+            const tomorrow = new Date();
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            dateInput.min = tomorrow.toISOString().split('T')[0];
+            
+            // Set default to 1 year from now
+            const oneYearFromNow = new Date();
+            oneYearFromNow.setFullYear(oneYearFromNow.getFullYear() + 1);
+            dateInput.value = oneYearFromNow.toISOString().split('T')[0];
+            
+            // Set max date to 5 years from now
+            const fiveYearsFromNow = new Date();
+            fiveYearsFromNow.setFullYear(fiveYearsFromNow.getFullYear() + 5);
+            dateInput.max = fiveYearsFromNow.toISOString().split('T')[0];
+        });
         
         // Load last update time from metadata
         fetch('data/btc_metadata.json')

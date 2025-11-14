@@ -285,6 +285,39 @@ function calculateAhr999Percentile(csvData, currentAhr999) {
     return percentile;
 }
 
+/**
+ * Calculate ahr999 percentile among days where ahr999 < 1.0
+ * This shows how good the current opportunity is compared to other buy zone days
+ * @param {Array} csvData - Historical data with ahr999 values
+ * @param {number} currentAhr999 - Current ahr999 value
+ * @returns {number|null} Percentile (0-100) if currentAhr999 < 1.0, else null
+ */
+function calculateAhr999PercentileBelowOne(csvData, currentAhr999) {
+    // Only calculate if current value is below 1.0 (in buy zone territory)
+    if (currentAhr999 >= 1.0) {
+        return null;
+    }
+
+    // Calculate ahr999 for all historical data and filter to < 1.0 only
+    const historicalAhr999BelowOne = csvData
+        .map((row) => parseFloat(row.ratio_dca) * parseFloat(row.ratio_trend))
+        .filter((val) => !isNaN(val) && val < 1.0);
+
+    if (historicalAhr999BelowOne.length === 0) {
+        return null;
+    }
+
+    // Count how many buy zone days are below current value
+    const belowCount = historicalAhr999BelowOne.filter(
+        (val) => val < currentAhr999
+    ).length;
+
+    // Percentile among buy zone days = (count below / total buy zone days) * 100
+    const percentile = (belowCount / historicalAhr999BelowOne.length) * 100;
+
+    return percentile;
+}
+
 // ============================================================================
 // TIMEZONE CONVERSION
 // ============================================================================
@@ -424,6 +457,7 @@ async function checkRealtimeStatus() {
         const ahr999 = ratioDCA * ratioTrend;
         const ahr999Zone = getAhr999Zone(ahr999);
         const ahr999Percentile = calculateAhr999Percentile(csvData, ahr999);
+        const ahr999PercentileBelowOne = calculateAhr999PercentileBelowOne(csvData, ahr999);
 
         // 7. Format timestamps
         const timestamps = formatTimestamps(timestamp);
@@ -442,6 +476,7 @@ async function checkRealtimeStatus() {
             ahr999,
             ahr999Zone,
             ahr999Percentile,
+            ahr999PercentileBelowOne,
             lastDataDate: csvData[csvData.length - 1].date,
         });
     } catch (error) {
@@ -570,13 +605,29 @@ function displayResults(data) {
                     data.ahr999Percentile !== null
                         ? `
                     <div class="metric-detail" style="margin-top: 12px;">
-                        <strong>Historical Position:</strong> ${data.ahr999Percentile.toFixed(
+                        <strong>Overall Percentile:</strong> ${data.ahr999Percentile.toFixed(
                             1
-                        )}th percentile
+                        )}th percentile (all history)
                         ${getPercentileInterpretation(data.ahr999Percentile)}
                     </div>
                 `
                         : ""
+                }
+                ${
+                    data.ahr999PercentileBelowOne !== null
+                        ? `
+                    <div class="metric-detail" style="margin-top: 12px;">
+                        <strong>Buy Zone Percentile:</strong> ${data.ahr999PercentileBelowOne.toFixed(
+                            1
+                        )}th percentile (among ahr999 < 1.0 days)
+                        ${getBuyZonePercentileInterpretation(data.ahr999PercentileBelowOne)}
+                    </div>
+                `
+                        : `
+                    <div class="metric-detail" style="margin-top: 12px;">
+                        <strong>Buy Zone Percentile:</strong> N/A (ahr999 ≥ 1.0)
+                    </div>
+                `
                 }
                 <div class="metric-detail" style="margin-top: 12px; font-size: 12px; color: #86868b;">
                     < 0.45 = Bottom | < 1.2 = DCA | ≥ 1.2 = Watch
@@ -626,6 +677,23 @@ function getPercentileInterpretation(percentile) {
         return `<br><span style="color: #ff3b30;">🔴 EXPENSIVE - More expensive than ${percentile.toFixed(
             0
         )}% of history</span>`;
+    }
+}
+
+/**
+ * Get interpretation for buy zone percentile (among ahr999 < 1.0 days)
+ * @param {number} percentile
+ * @returns {string} HTML string with interpretation
+ */
+function getBuyZonePercentileInterpretation(percentile) {
+    if (percentile < 10) {
+        return `<br><span style="color: #28a745;">🔥 Top 10% opportunity among buy zone days!</span>`;
+    } else if (percentile < 25) {
+        return `<br><span style="color: #28a745;">💎 Top 25% opportunity among buy zone days</span>`;
+    } else if (percentile < 50) {
+        return `<br><span style="color: #0071e3;">✅ Better than average among buy zone days</span>`;
+    } else {
+        return `<br><span style="color: #ff9500;">⚠️ Below average among buy zone days</span>`;
     }
 }
 

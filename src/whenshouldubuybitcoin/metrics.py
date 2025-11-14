@@ -396,6 +396,53 @@ def calculate_ahr999_percentile(df: pd.DataFrame, current_ahr999: Optional[float
     return percentile
 
 
+def calculate_ahr999_percentile_below_one(df: pd.DataFrame, current_ahr999: Optional[float] = None) -> Optional[float]:
+    """
+    Calculate the percentile of ahr999 value among days where ahr999 < 1.0.
+    
+    This shows how good the current opportunity is compared to other buy zone days.
+    Only applicable when current ahr999 is below 1.0.
+    
+    Use case:
+    - If current ahr999 = 0.7 and percentile = 30%, it means among all days 
+      where ahr999 < 1, only 30% were better opportunities than now.
+    - If current ahr999 >= 1.0, returns None (not in buy zone)
+    
+    Args:
+        df: DataFrame with ahr999 column
+        current_ahr999: Specific ahr999 value to check (default: use latest)
+        
+    Returns:
+        Percentile value (0-100) if current_ahr999 < 1.0, else None
+        
+    Example:
+        Current ahr999 = 0.45 (bottom zone threshold)
+        Percentile = 10% means only 10% of buy zone days were better
+    """
+    valid_data = df.dropna(subset=["ahr999"])
+    
+    if valid_data.empty:
+        return None
+    
+    if current_ahr999 is None:
+        current_ahr999 = valid_data["ahr999"].iloc[-1]
+    
+    # Only calculate if current value is below 1.0 (in buy zone territory)
+    if current_ahr999 >= 1.0:
+        return None
+    
+    # Filter to only days where ahr999 < 1.0
+    below_one_data = valid_data[valid_data["ahr999"] < 1.0]
+    
+    if below_one_data.empty:
+        return None
+    
+    # Calculate percentile among buy zone days
+    percentile = (below_one_data["ahr999"] < current_ahr999).sum() / len(below_one_data) * 100
+    
+    return percentile
+
+
 def get_ahr999_summary(df: pd.DataFrame) -> dict:
     """
     Get comprehensive summary statistics for ahr999 analysis.

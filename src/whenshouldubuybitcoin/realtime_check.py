@@ -13,7 +13,7 @@ from typing import Optional, Dict
 
 from .data_fetcher import get_realtime_btc_price
 from .persistence import load_existing_metrics
-from .metrics import get_ahr999_zone, calculate_ahr999_percentile
+from .metrics import get_ahr999_zone, calculate_ahr999_percentile, calculate_ahr999_percentile_below_one
 
 
 def calculate_distance_to_buy_zone(ratio: float) -> Dict[str, float]:
@@ -164,8 +164,11 @@ def check_realtime_status(verbose: bool = True) -> Optional[Dict]:
     realtime_ahr999 = ratio_dca * ratio_trend
     ahr999_zone = get_ahr999_zone(realtime_ahr999)
     
-    # Calculate historical percentile for ahr999
+    # Calculate historical percentile for ahr999 (overall)
     ahr999_percentile = calculate_ahr999_percentile(df, realtime_ahr999)
+    
+    # Calculate percentile among days with ahr999 < 1.0 (buy zone days only)
+    ahr999_percentile_below_one = calculate_ahr999_percentile_below_one(df, realtime_ahr999)
     
     # Build result
     result = {
@@ -181,6 +184,7 @@ def check_realtime_status(verbose: bool = True) -> Optional[Dict]:
         "ahr999": realtime_ahr999,
         "ahr999_zone": ahr999_zone,
         "ahr999_percentile": ahr999_percentile,
+        "ahr999_percentile_below_one": ahr999_percentile_below_one,
         "last_data_date": last_data_date,
         "days_old": days_old
     }
@@ -264,9 +268,9 @@ def check_realtime_status(verbose: bool = True) -> Optional[Dict]:
         
         if ahr999_percentile is not None:
             print(f"\n  📈 Historical Position:")
-            print(f"     Percentile:         {ahr999_percentile:.1f}th percentile")
+            print(f"     Overall Percentile:         {ahr999_percentile:.1f}th percentile (among all history)")
             
-            # Interpret the percentile
+            # Interpret the overall percentile
             if ahr999_percentile < 10:
                 interpretation = "🔥 EXCEPTIONAL - Only {:.1f}% of history was cheaper!".format(ahr999_percentile)
             elif ahr999_percentile < 25:
@@ -278,7 +282,25 @@ def check_realtime_status(verbose: bool = True) -> Optional[Dict]:
             else:
                 interpretation = "🔴 EXPENSIVE - More expensive than {:.0f}% of history".format(ahr999_percentile)
             
-            print(f"     Interpretation:     {interpretation}")
+            print(f"     Interpretation:             {interpretation}")
+            
+            # Show buy zone percentile if applicable
+            if ahr999_percentile_below_one is not None:
+                print(f"\n     Buy Zone Percentile:        {ahr999_percentile_below_one:.1f}th percentile (among days with ahr999 < 1.0)")
+                
+                # Interpret buy zone percentile
+                if ahr999_percentile_below_one < 10:
+                    bz_interpretation = "🔥 Top 10% buying opportunity among buy zone days!"
+                elif ahr999_percentile_below_one < 25:
+                    bz_interpretation = "💎 Top 25% opportunity among buy zone days"
+                elif ahr999_percentile_below_one < 50:
+                    bz_interpretation = "✅ Better than average among buy zone days"
+                else:
+                    bz_interpretation = "⚠️  Below average among buy zone days"
+                
+                print(f"     Buy Zone Quality:           {bz_interpretation}")
+            else:
+                print(f"\n     Buy Zone Percentile:        N/A (ahr999 >= 1.0, not in buy zone)")
         
         print(f"\n  📚 Zone Thresholds:")
         print(f"     < 0.45  = 🔥 Bottom Zone (exceptional opportunity)")
