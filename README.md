@@ -13,8 +13,8 @@ The harmonic mean of Bitcoin's price over the past 200 days. This represents the
 
 **When price drops below this level:** The current price is cheaper than the average cost of consistent buyers over the past 6-7 months.
 
-### 2. Price < Exponential Trend
-A long-term exponential growth model fitted to all historical price data. This represents Bitcoin's fundamental fair value based on its growth trajectory.
+### 2. Price < Power Law Trend
+A long-term power law growth model fitted to all historical price data. This represents Bitcoin's fundamental fair value based on network growth effects (Metcalfe's Law).
 
 **When price drops below this level:** The current price is below Bitcoin's long-term trend, suggesting undervaluation relative to historical growth patterns.
 
@@ -25,7 +25,7 @@ A long-term exponential growth model fitted to all historical price data. This r
 Using **two independent metrics** reduces false signals:
 
 - **DCA Cost** reflects recent market sentiment (200-day window)
-- **Exponential Trend** reflects long-term fundamental value (all history)
+- **Power Law Trend** reflects long-term fundamental value (all history)
 
 When both signal undervaluation simultaneously, it suggests a stronger buying opportunity.
 
@@ -62,11 +62,18 @@ DCA Cost = 200 / Σ(1/price_i)
 ```
 Harmonic mean of the last 200 daily closing prices.
 
-### Exponential Trend Model
+### Power Law Trend Model
 ```
-Trend = a × e^(b × days)
+Trend = a × days^n
 ```
-Fitted via linear regression on log-transformed prices across all historical data.
+Where `n` is the power law exponent (typically 5-6 for Bitcoin).
+
+Fitted via linear regression on log-log transformed data (log(price) vs log(days)).
+
+This model is superior to exponential growth because:
+- **Models network effects** (Metcalfe's Law states network value ∝ users²)
+- **Decreasing growth rate** over time (more realistic as Bitcoin matures)
+- **Academically validated** in multiple Bitcoin research papers
 
 ---
 

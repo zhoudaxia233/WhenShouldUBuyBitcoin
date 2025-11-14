@@ -133,80 +133,91 @@ def fit_exponential_trend(
     price_col: str = "close_price"
 ) -> Tuple[pd.Series, float, float]:
     """
-    Fit an exponential growth model to Bitcoin price history.
+    Fit a power law growth model to Bitcoin price history.
     
-    Model: price(t) = a * exp(b * t)
+    Model: price(t) = a * t^n
     
     Where:
     - t is time in days since the first date
-    - a is the initial price coefficient
-    - b is the exponential growth rate (per day)
+    - a is the scaling coefficient
+    - n is the power law exponent (growth rate)
     
     Implementation:
     1. Convert dates to numeric time (days since first date)
-    2. Take log of prices: log(price) = log(a) + b*t
-    3. Fit linear regression: log_price = α + β*t
-    4. Extract parameters: a = exp(α), b = β
+    2. Take log of both: log(price) = log(a) + n*log(t)
+    3. Fit linear regression: log(price) = α + n*log(t)
+    4. Extract parameters: a = exp(α), n = slope
+    
+    This is more appropriate for Bitcoin than exponential growth because:
+    - Power law models network effects (Metcalfe's Law)
+    - Growth rate decreases over time (more realistic for mature assets)
+    - Widely used in academic research on Bitcoin valuation
     
     Args:
         df: DataFrame with 'date' and price column
         price_col: Name of the price column (default: 'close_price')
         
     Returns:
-        Tuple of (trend_series, a, b) where:
+        Tuple of (trend_series, a, n) where:
         - trend_series: Pandas Series with fitted trend values
-        - a: Initial price coefficient
-        - b: Exponential growth rate (per day)
+        - a: Scaling coefficient
+        - n: Power law exponent (typically between 5-6 for Bitcoin)
         
     Example:
-        If b = 0.003, then daily growth rate is ~0.3%
-        Annual growth rate ≈ (1 + 0.003)^365 - 1 ≈ 195%
+        If n = 5.84 (like academic research), price grows as t^5.84
+        This means growth rate decreases as Bitcoin matures
     """
-    # Convert dates to numeric: days since first date
-    first_date = df["date"].iloc[0]
+    # Convert dates to Bitcoin age (days since genesis block)
+    # Bitcoin genesis block: 2009-01-03
+    # This is critical for power law model accuracy!
+    genesis_date = pd.Timestamp("2009-01-03")
     df_copy = df.copy()
-    df_copy["days_since_start"] = (df_copy["date"] - first_date).dt.days
+    df_copy["bitcoin_age_days"] = (df_copy["date"] - genesis_date).dt.days
     
-    # Get time (t) and log of price
-    t = df_copy["days_since_start"].values
+    # Get time (t) = Bitcoin age in days
+    # Note: This will be a large number (e.g., 2000+ days even for 2014 data)
+    # This is correct! Academic research uses Bitcoin age, not data age
+    t = df_copy["bitcoin_age_days"].values
     prices = df_copy[price_col].values
+    
+    # Take log of both time and price for power law fitting
+    log_t = np.log(t)
     log_prices = np.log(prices)
     
-    # Fit linear regression: log(price) = α + β*t
-    # polyfit returns [β, α] (highest degree first)
-    coeffs = np.polyfit(t, log_prices, deg=1)
-    beta = coeffs[0]  # Slope (growth rate)
+    # Fit linear regression: log(price) = α + n*log(t)
+    # polyfit returns [n, α] (highest degree first)
+    coeffs = np.polyfit(log_t, log_prices, deg=1)
+    n = coeffs[0]      # Slope (power law exponent)
     alpha = coeffs[1]  # Intercept
     
-    # Extract exponential parameters
-    a = np.exp(alpha)  # Initial value coefficient
-    b = beta           # Growth rate per day
+    # Extract power law parameters
+    a = np.exp(alpha)  # Scaling coefficient
     
-    # Calculate fitted trend values
-    trend_values = a * np.exp(b * t)
+    # Calculate fitted trend values using power law
+    trend_values = a * np.power(t, n)
     trend_series = pd.Series(trend_values, index=df.index, name="trend_value")
     
-    return trend_series, a, b
+    return trend_series, a, n
 
 
 def add_trend_metrics(df: pd.DataFrame) -> pd.DataFrame:
     """
-    Add exponential trend and related metrics to a DataFrame.
+    Add power law trend and related metrics to a DataFrame.
     
     Args:
         df: DataFrame with 'date' and 'close_price' columns
         
     Returns:
         DataFrame with added columns:
-            - trend_value: The exponential trend (fair value)
+            - trend_value: The power law trend (fair value)
             - ratio_trend: Price / Trend ratio
-            - trend_a: Initial coefficient (as attribute)
-            - trend_b: Growth rate (as attribute)
+            - trend_a: Scaling coefficient (as attribute)
+            - trend_b: Power law exponent n (as attribute, name kept for compatibility)
     """
     df = df.copy()
     
-    # Fit trend and get parameters
-    trend_series, a, b = fit_exponential_trend(df, price_col="close_price")
+    # Fit power law trend and get parameters
+    trend_series, a, n = fit_exponential_trend(df, price_col="close_price")
     
     df["trend_value"] = trend_series
     
@@ -216,15 +227,16 @@ def add_trend_metrics(df: pd.DataFrame) -> pd.DataFrame:
     df["ratio_trend"] = df["close_price"] / df["trend_value"]
     
     # Store parameters as attributes for later reference
+    # Note: 'trend_b' now represents the power law exponent 'n' (not growth rate)
     df.attrs["trend_a"] = a
-    df.attrs["trend_b"] = b
+    df.attrs["trend_b"] = n  # This is now the power law exponent
     
     return df
 
 
 def get_trend_summary(df: pd.DataFrame) -> dict:
     """
-    Get summary statistics for exponential trend analysis.
+    Get summary statistics for power law trend analysis.
     
     Args:
         df: DataFrame with trend metrics
@@ -238,14 +250,16 @@ def get_trend_summary(df: pd.DataFrame) -> dict:
     below_trend = (df["ratio_trend"] < 1.0).sum()
     total_days = len(df)
     
-    # Get trend parameters
+    # Get power law parameters
     a = df.attrs.get("trend_a", None)
-    b = df.attrs.get("trend_b", None)
+    n = df.attrs.get("trend_b", None)  # This is now the power law exponent
     
-    # Calculate annualized growth rate from daily rate
-    annual_growth_rate = None
-    if b is not None:
-        annual_growth_rate = (np.exp(b * 365) - 1) * 100  # Percentage
+    # Calculate current growth rate (derivative of power law at current time)
+    # For price = a * t^n, growth rate = (n * price) / t
+    current_growth_rate_pct = None
+    if n is not None and total_days > 0:
+        # Growth rate decreases over time in power law model
+        current_growth_rate_pct = (n / total_days) * 100
     
     summary = {
         "total_days": total_days,
@@ -259,9 +273,9 @@ def get_trend_summary(df: pd.DataFrame) -> dict:
         "max_ratio": df["ratio_trend"].max(),
         "mean_ratio": df["ratio_trend"].mean(),
         "trend_coefficient_a": a,
-        "trend_growth_rate_b": b,
-        "daily_growth_rate_pct": b * 100 if b else None,
-        "annual_growth_rate_pct": annual_growth_rate,
+        "trend_growth_rate_b": n,  # This is now power law exponent (not growth rate)
+        "daily_growth_rate_pct": current_growth_rate_pct,  # Current instantaneous growth rate
+        "power_law_exponent": n,  # Explicit field for clarity
     }
     
     return summary

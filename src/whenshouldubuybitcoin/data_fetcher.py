@@ -11,12 +11,15 @@ import pandas as pd
 import yfinance as yf
 
 
-def fetch_btc_history(days: int = 2000) -> pd.DataFrame:
+def fetch_btc_history(
+    days: Optional[int] = None, start_date: Optional[str] = None
+) -> pd.DataFrame:
     """
     Fetch historical BTC price data from Yahoo Finance.
 
     Args:
-        days: Number of days of historical data to fetch (default: 2000)
+        days: Number of days of historical data to fetch (default: None = all available)
+        start_date: Specific start date in 'YYYY-MM-DD' format (overrides days)
 
     Returns:
         DataFrame with columns:
@@ -26,21 +29,41 @@ def fetch_btc_history(days: int = 2000) -> pd.DataFrame:
     Raises:
         Exception: If data fetching fails
         ValueError: If invalid data is returned
+
+    Note:
+        Yahoo Finance has BTC-USD data from 2014-09-17 onwards (~4000+ days).
+        For power law model accuracy, using all available data is recommended.
     """
-    print(f"Fetching {days} days of BTC price history from Yahoo Finance...")
+    btc = yf.Ticker("BTC-USD")
+    end_date = datetime.now()
 
     try:
-        # Calculate start date
-        end_date = datetime.now()
-        start_date = end_date - timedelta(days=days)
-
-        # Download BTC-USD data from Yahoo Finance
-        btc = yf.Ticker("BTC-USD")
-        df = btc.history(
-            start=start_date.strftime("%Y-%m-%d"),
-            end=end_date.strftime("%Y-%m-%d"),
-            interval="1d",
-        )
+        if start_date:
+            # Use specific start date
+            print(f"Fetching BTC price history from {start_date}...")
+            df = btc.history(
+                start=start_date,
+                end=end_date.strftime("%Y-%m-%d"),
+                interval="1d",
+            )
+        elif days:
+            # Use number of days
+            print(f"Fetching {days} days of BTC price history from Yahoo Finance...")
+            calc_start = end_date - timedelta(days=days)
+            df = btc.history(
+                start=calc_start.strftime("%Y-%m-%d"),
+                end=end_date.strftime("%Y-%m-%d"),
+                interval="1d",
+            )
+        else:
+            # Fetch all available data (from earliest Yahoo Finance has)
+            print(f"Fetching ALL available BTC price history from Yahoo Finance...")
+            # Yahoo Finance has data from 2014-09-17
+            df = btc.history(
+                start="2014-09-17",
+                end=end_date.strftime("%Y-%m-%d"),
+                interval="1d",
+            )
 
         if df.empty:
             raise ValueError("No price data returned from Yahoo Finance")

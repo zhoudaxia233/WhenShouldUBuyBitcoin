@@ -214,23 +214,29 @@ def merge_with_existing(
     return combined
 
 
-def get_days_to_fetch(existing_df: Optional[pd.DataFrame], buffer_days: int = 30) -> int:
+def get_days_to_fetch(existing_df: Optional[pd.DataFrame], buffer_days: int = 30) -> Optional[int]:
     """
     Determine how many days of data to fetch based on existing data.
     
     If we have existing data, fetch from the last date with a buffer.
-    Otherwise, fetch the full historical dataset.
+    Otherwise, return None to fetch ALL available historical data.
     
     Args:
         existing_df: Existing DataFrame or None
         buffer_days: Number of days to overlap for recalculation (default: 30)
         
     Returns:
-        Number of days to fetch
+        Number of days to fetch, or None to fetch all available data
+        
+    Note:
+        For power law model accuracy, fetching all available data (~4000+ days from 2014)
+        provides much better parameter fitting than limited history.
     """
     if existing_df is None or existing_df.empty:
-        # No existing data, fetch full history
-        return 2000
+        # No existing data, fetch ALL available history for accurate power law fitting
+        print("\nNo existing data found.")
+        print("Will fetch ALL available history from Yahoo Finance (2014-09-17 onwards)")
+        return None
     
     # Calculate days since last data point
     last_date = existing_df["date"].max()

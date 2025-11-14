@@ -158,17 +158,25 @@ function calculateDCA(prices) {
 }
 
 /**
- * Calculate exponential trend value
+ * Calculate power law trend value
  *
- * Formula: trend = a * exp(b * days)
+ * Formula: trend = a * t^n
  *
- * @param {number} a - Trend coefficient
- * @param {number} b - Growth rate (per day)
- * @param {number} daysSinceStart - Days since first date in dataset
+ * This models Bitcoin price growth using a power law, which is more appropriate
+ * than exponential growth because:
+ * - It models network effects (Metcalfe's Law)
+ * - Growth rate decreases over time (more realistic for mature assets)
+ * - Widely used in academic Bitcoin research
+ *
+ * @param {number} a - Scaling coefficient
+ * @param {number} n - Power law exponent (typically 5-6 for Bitcoin)
+ * @param {number} bitcoinAgeDays - Bitcoin age in days since genesis (2009-01-03)
  * @returns {number} Trend value
  */
-function calculateTrend(a, b, daysSinceStart) {
-    return a * Math.exp(b * daysSinceStart);
+function calculateTrend(a, n, bitcoinAgeDays) {
+    // Use Bitcoin age (days since 2009-01-03), NOT data age
+    // This is critical for matching academic research!
+    return a * Math.pow(bitcoinAgeDays, n);
 }
 
 /**
@@ -320,9 +328,6 @@ async function checkRealtimeStatus() {
             parseFloat(row.close_price)
         );
 
-        // Get first date for day calculation
-        const firstDate = new Date(csvData[0].date);
-
         // 2. Fetch real-time price
         console.log("Fetching real-time BTC price...");
         const { price: realtimePrice, timestamp } =
@@ -337,12 +342,14 @@ async function checkRealtimeStatus() {
         const dcaDistance = calculateDistance(ratioDCA);
 
         // 4. Calculate Trend
+        // IMPORTANT: Use Bitcoin age (days since genesis 2009-01-03), not data age!
+        const genesisDate = new Date("2009-01-03");
         const now = new Date();
-        const daysSinceStart = daysBetween(firstDate, now);
+        const bitcoinAgeDays = daysBetween(genesisDate, now);
         const trendValue = calculateTrend(
             metadata.trend_a,
             metadata.trend_b,
-            daysSinceStart
+            bitcoinAgeDays
         );
         const ratioTrend = realtimePrice / trendValue;
         const trendDistance = calculateDistance(ratioTrend);
