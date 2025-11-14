@@ -222,6 +222,69 @@ function daysBetween(startDate, endDate) {
     return diffDays;
 }
 
+/**
+ * Get ahr999 zone classification
+ * @param {number} ahr999Value - The ahr999 index value
+ * @returns {Object} Zone classification with emoji, label, description
+ */
+function getAhr999Zone(ahr999Value) {
+    if (ahr999Value < 0.45) {
+        return {
+            zone: "bottom",
+            emoji: "🔥",
+            label: "Bottom Zone",
+            description: "Exceptional buying opportunity - historical bottom territory",
+            action: "Strong Buy",
+            color: "#28a745",
+        };
+    } else if (ahr999Value < 1.2) {
+        return {
+            zone: "dca",
+            emoji: "💎",
+            label: "DCA Zone",
+            description: "Good accumulation zone - suitable for dollar-cost averaging",
+            action: "Accumulate",
+            color: "#0071e3",
+        };
+    } else {
+        return {
+            zone: "watch",
+            emoji: "⚠️",
+            label: "Watch Zone",
+            description: "Potentially overheated - exercise caution",
+            action: "Wait",
+            color: "#ff9500",
+        };
+    }
+}
+
+/**
+ * Calculate ahr999 historical percentile
+ * @param {Array} csvData - Historical data with ahr999 values
+ * @param {number} currentAhr999 - Current ahr999 value
+ * @returns {number} Percentile (0-100)
+ */
+function calculateAhr999Percentile(csvData, currentAhr999) {
+    // Calculate ahr999 for all historical data
+    const historicalAhr999 = csvData
+        .map((row) => parseFloat(row.ratio_dca) * parseFloat(row.ratio_trend))
+        .filter((val) => !isNaN(val));
+
+    if (historicalAhr999.length === 0) {
+        return null;
+    }
+
+    // Count how many historical values are below current value
+    const belowCount = historicalAhr999.filter(
+        (val) => val < currentAhr999
+    ).length;
+
+    // Percentile = (count below / total) * 100
+    const percentile = (belowCount / historicalAhr999.length) * 100;
+
+    return percentile;
+}
+
 // ============================================================================
 // TIMEZONE CONVERSION
 // ============================================================================
@@ -357,10 +420,15 @@ async function checkRealtimeStatus() {
         // 5. Determine buy zone status
         const isDoubleUndervalued = ratioDCA < 1.0 && ratioTrend < 1.0;
 
-        // 6. Format timestamps
+        // 6. Calculate ahr999 index
+        const ahr999 = ratioDCA * ratioTrend;
+        const ahr999Zone = getAhr999Zone(ahr999);
+        const ahr999Percentile = calculateAhr999Percentile(csvData, ahr999);
+
+        // 7. Format timestamps
         const timestamps = formatTimestamps(timestamp);
 
-        // 7. Display results
+        // 8. Display results
         displayResults({
             price: realtimePrice,
             timestamps,
@@ -371,6 +439,9 @@ async function checkRealtimeStatus() {
             ratioTrend,
             trendDistance,
             isDoubleUndervalued,
+            ahr999,
+            ahr999Zone,
+            ahr999Percentile,
             lastDataDate: csvData[csvData.length - 1].date,
         });
     } catch (error) {
@@ -481,6 +552,36 @@ function displayResults(data) {
                     }
                 </div>
             </div>
+
+            <div class="metric-card" style="grid-column: span 2;">
+                <h3>${data.ahr999Zone.emoji} ahr999 Index</h3>
+                <div class="metric-value" style="color: ${
+                    data.ahr999Zone.color
+                }">${data.ahr999.toFixed(3)}</div>
+                <div class="metric-detail">
+                    <strong>${data.ahr999Zone.label}</strong> - ${
+        data.ahr999Zone.action
+    }
+                </div>
+                <div class="metric-detail" style="margin-top: 8px;">
+                    ${data.ahr999Zone.description}
+                </div>
+                ${
+                    data.ahr999Percentile !== null
+                        ? `
+                    <div class="metric-detail" style="margin-top: 12px;">
+                        <strong>Historical Position:</strong> ${data.ahr999Percentile.toFixed(
+                            1
+                        )}th percentile
+                        ${getPercentileInterpretation(data.ahr999Percentile)}
+                    </div>
+                `
+                        : ""
+                }
+                <div class="metric-detail" style="margin-top: 12px; font-size: 12px; color: #86868b;">
+                    < 0.45 = Bottom | < 1.2 = DCA | ≥ 1.2 = Watch
+                </div>
+            </div>
         </div>
 
         ${
@@ -497,6 +598,35 @@ function displayResults(data) {
 
     resultsEl.innerHTML = html;
     resultsEl.classList.add("show");
+}
+
+/**
+ * Get interpretation for ahr999 percentile
+ * @param {number} percentile
+ * @returns {string} HTML string with interpretation
+ */
+function getPercentileInterpretation(percentile) {
+    if (percentile < 10) {
+        return `<br><span style="color: #28a745;">🔥 EXCEPTIONAL - Only ${percentile.toFixed(
+            1
+        )}% of history was cheaper!</span>`;
+    } else if (percentile < 25) {
+        return `<br><span style="color: #28a745;">💎 EXCELLENT - Only ${percentile.toFixed(
+            1
+        )}% of history was cheaper!</span>`;
+    } else if (percentile < 50) {
+        return `<br><span style="color: #0071e3;">✅ GOOD - Better than ${(
+            100 - percentile
+        ).toFixed(0)}% of historical days</span>`;
+    } else if (percentile < 75) {
+        return `<br><span style="color: #ff9500;">⚠️ FAIR - More expensive than ${percentile.toFixed(
+            0
+        )}% of history</span>`;
+    } else {
+        return `<br><span style="color: #ff3b30;">🔴 EXPENSIVE - More expensive than ${percentile.toFixed(
+            0
+        )}% of history</span>`;
+    }
 }
 
 /**

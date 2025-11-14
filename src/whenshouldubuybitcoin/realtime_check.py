@@ -13,6 +13,7 @@ from typing import Optional, Dict
 
 from .data_fetcher import get_realtime_btc_price
 from .persistence import load_existing_metrics
+from .metrics import get_ahr999_zone, calculate_ahr999_percentile
 
 
 def calculate_distance_to_buy_zone(ratio: float) -> Dict[str, float]:
@@ -159,6 +160,13 @@ def check_realtime_status(verbose: bool = True) -> Optional[Dict]:
     # Determine overall buy zone status
     is_double_undervalued = ratio_dca < 1.0 and ratio_trend < 1.0
     
+    # Calculate ahr999 index
+    realtime_ahr999 = ratio_dca * ratio_trend
+    ahr999_zone = get_ahr999_zone(realtime_ahr999)
+    
+    # Calculate historical percentile for ahr999
+    ahr999_percentile = calculate_ahr999_percentile(df, realtime_ahr999)
+    
     # Build result
     result = {
         "timestamp": price_time,
@@ -170,6 +178,9 @@ def check_realtime_status(verbose: bool = True) -> Optional[Dict]:
         "ratio_trend": ratio_trend,
         "trend_distance": trend_distance,
         "is_double_undervalued": is_double_undervalued,
+        "ahr999": realtime_ahr999,
+        "ahr999_zone": ahr999_zone,
+        "ahr999_percentile": ahr999_percentile,
         "last_data_date": last_data_date,
         "days_old": days_old
     }
@@ -240,6 +251,39 @@ def check_realtime_status(verbose: bool = True) -> Optional[Dict]:
                 # Only DCA needs to drop
                 print(f"\n  ✓ Trend condition already met")
                 print(f"  📉 Need {dca_distance['percentage']:.2f}% more drop for DCA condition")
+        
+        # ahr999 Index Analysis
+        print("\n" + "=" * 80)
+        print("📊 AHR999 INDEX ANALYSIS")
+        print("=" * 80)
+        
+        print(f"\n  {ahr999_zone['emoji']} ahr999 Index:      {realtime_ahr999:.3f}")
+        print(f"     Zone:               {ahr999_zone['label']}")
+        print(f"     Action:             {ahr999_zone['action']}")
+        print(f"     Description:        {ahr999_zone['description']}")
+        
+        if ahr999_percentile is not None:
+            print(f"\n  📈 Historical Position:")
+            print(f"     Percentile:         {ahr999_percentile:.1f}th percentile")
+            
+            # Interpret the percentile
+            if ahr999_percentile < 10:
+                interpretation = "🔥 EXCEPTIONAL - Only {:.1f}% of history was cheaper!".format(ahr999_percentile)
+            elif ahr999_percentile < 25:
+                interpretation = "💎 EXCELLENT - Only {:.1f}% of history was cheaper!".format(ahr999_percentile)
+            elif ahr999_percentile < 50:
+                interpretation = "✅ GOOD - Better than {:.0f}% of historical days".format(100 - ahr999_percentile)
+            elif ahr999_percentile < 75:
+                interpretation = "⚠️  FAIR - More expensive than {:.0f}% of history".format(ahr999_percentile)
+            else:
+                interpretation = "🔴 EXPENSIVE - More expensive than {:.0f}% of history".format(ahr999_percentile)
+            
+            print(f"     Interpretation:     {interpretation}")
+        
+        print(f"\n  📚 Zone Thresholds:")
+        print(f"     < 0.45  = 🔥 Bottom Zone (exceptional opportunity)")
+        print(f"     < 1.2   = 💎 DCA Zone (good for accumulation)")
+        print(f"     ≥ 1.2   = ⚠️  Watch Zone (potentially overheated)")
         
         print("\n" + "=" * 80)
     

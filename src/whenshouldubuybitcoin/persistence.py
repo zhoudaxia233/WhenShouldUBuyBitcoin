@@ -148,6 +148,7 @@ def save_metrics(df: pd.DataFrame, filename: str = "btc_metrics.csv") -> bool:
             "trend_value",
             "ratio_trend",
             "is_double_undervalued",
+            "ahr999",
         ]
         
         # Filter to only existing columns

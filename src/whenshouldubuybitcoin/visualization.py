@@ -39,11 +39,13 @@ def plot_valuation_ratios(
     This plot shows:
     - ratio_dca (Price/DCA) over time
     - ratio_trend (Price/Trend) over time
+    - ahr999 index over time
     - Horizontal line at y=1.0 (fair value threshold)
     - Shaded regions where both ratios < 1.0 (buy zones)
+    - ahr999 zone thresholds (0.45 bottom, 1.2 watch)
     
     Args:
-        df: DataFrame with date, ratio_dca, ratio_trend, and is_double_undervalued columns
+        df: DataFrame with date, ratio_dca, ratio_trend, ahr999, and is_double_undervalued columns
         output_filename: Name of the output HTML file (default: "valuation_ratios.html")
         auto_open: Whether to automatically open the chart in browser (default: True)
         
@@ -51,7 +53,7 @@ def plot_valuation_ratios(
         Path to the saved HTML file
     """
     # Filter to valid data (where metrics exist)
-    plot_df = df.dropna(subset=["ratio_dca", "ratio_trend"]).copy()
+    plot_df = df.dropna(subset=["ratio_dca", "ratio_trend", "ahr999"]).copy()
     
     # Create figure
     fig = go.Figure()
@@ -119,28 +121,61 @@ def plot_valuation_ratios(
                       "<extra></extra>"
     ))
     
+    # Add ahr999 index line
+    fig.add_trace(go.Scatter(
+        x=plot_df["date"],
+        y=plot_df["ahr999"],
+        mode="lines",
+        name="ahr999 Index",
+        line=dict(color="rgb(255, 127, 14)", width=3),
+        hovertemplate="<b>Date:</b> %{x|%Y-%m-%d}<br>" +
+                      "<b>ahr999:</b> %{y:.3f}<br>" +
+                      "<extra></extra>"
+    ))
+    
     # Add horizontal line at y=1.0 (fair value threshold)
     fig.add_hline(
         y=1.0,
         line_dash="dash",
-        line_color="red",
-        line_width=2,
-        annotation_text="Fair Value (ratio = 1.0)",
+        line_color="gray",
+        line_width=1.5,
+        annotation_text="Fair Value (1.0)",
         annotation_position="right"
+    )
+    
+    # Add ahr999 threshold lines
+    fig.add_hline(
+        y=0.45,
+        line_dash="dot",
+        line_color="rgb(40, 167, 69)",
+        line_width=2,
+        annotation_text="🔥 ahr999 Bottom Zone (0.45)",
+        annotation_position="left",
+        annotation_font_color="rgb(40, 167, 69)"
+    )
+    
+    fig.add_hline(
+        y=1.2,
+        line_dash="dot",
+        line_color="rgb(255, 149, 0)",
+        line_width=2,
+        annotation_text="⚠️ ahr999 Watch Zone (1.2)",
+        annotation_position="left",
+        annotation_font_color="rgb(255, 149, 0)"
     )
     
     # Update layout
     fig.update_layout(
         title={
-            "text": "Bitcoin Valuation Ratios Over Time<br><sub>Red shaded areas = Double Undervaluation Buy Zones</sub>",
+            "text": "Bitcoin Valuation Ratios & ahr999 Index<br><sub>Red shaded areas = Double Undervaluation | ahr999 < 0.45 = Bottom Zone | ahr999 < 1.2 = DCA Zone</sub>",
             "x": 0.5,
             "xanchor": "center"
         },
         xaxis_title="Date",
-        yaxis_title="Ratio (Price / Fair Value)",
+        yaxis_title="Ratio Value",
         hovermode="x unified",
         template="plotly_white",
-        height=600,
+        height=650,
         showlegend=True,
         legend=dict(
             yanchor="top",
