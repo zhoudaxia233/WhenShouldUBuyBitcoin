@@ -73,7 +73,7 @@ def main():
         print("STEP 4: Calculate Valuation Metrics")
         print("=" * 80)
         print("  - 200-day DCA cost")
-        print("  - Exponential trend model")
+        print("  - Power law trend model")
         print("  - Double undervaluation detection")
         df = compute_valuation_metrics(price_df, dca_window=200)
 
@@ -166,14 +166,14 @@ def main():
             f"  200-day DCA:        ${double_uv_summary['current_dca']:,.2f} (ratio: {double_uv_summary['current_ratio_dca']:.3f})"
         )
         print(
-            f"  Exponential Trend:  ${double_uv_summary['current_trend']:,.2f} (ratio: {double_uv_summary['current_ratio_trend']:.3f})"
+            f"  Power Law Trend:    ${double_uv_summary['current_trend']:,.2f} (ratio: {double_uv_summary['current_ratio_trend']:.3f})"
         )
 
         if double_uv_summary["is_currently_double_undervalued"]:
             print("\n  🟢 STATUS: DOUBLE UNDERVALUED - BUY ZONE ACTIVE! 🟢")
             print("  Both conditions are met:")
             print("    ✓ Price is below 200-day DCA cost")
-            print("    ✓ Price is below long-term exponential trend")
+            print("    ✓ Price is below long-term power law trend")
         else:
             print("\n  🔴 STATUS: NOT in double undervaluation zone")
             if double_uv_summary["current_ratio_dca"] >= 1.0:
@@ -187,11 +187,11 @@ def main():
 
             if double_uv_summary["current_ratio_trend"] >= 1.0:
                 print(
-                    f"    ✗ Price is ABOVE exponential trend (by {(double_uv_summary['current_ratio_trend']-1)*100:.1f}%)"
+                    f"    ✗ Price is ABOVE power law trend (by {(double_uv_summary['current_ratio_trend']-1)*100:.1f}%)"
                 )
             else:
                 print(
-                    f"    ✓ Price is below exponential trend (by {(1-double_uv_summary['current_ratio_trend'])*100:.1f}%)"
+                    f"    ✓ Price is below power law trend (by {(1-double_uv_summary['current_ratio_trend'])*100:.1f}%)"
                 )
 
         print(

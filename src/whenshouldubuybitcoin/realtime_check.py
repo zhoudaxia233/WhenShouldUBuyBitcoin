@@ -202,7 +202,7 @@ def check_realtime_status(verbose: bool = True) -> Optional[Dict]:
             print(f"     Distance:           Need {dca_distance['percentage']:.2f}% drop to enter zone")
         
         # Trend Analysis
-        print(f"\n  🟢 Exponential Trend:  ${realtime_trend:,.2f}")
+        print(f"\n  🟢 Power Law Trend:    ${realtime_trend:,.2f}")
         print(f"     Price/Trend Ratio:  {ratio_trend:.3f}")
         
         if trend_distance["in_zone"]:
@@ -220,7 +220,7 @@ def check_realtime_status(verbose: bool = True) -> Optional[Dict]:
             print("\n  🟢🟢 DOUBLE UNDERVALUATION - BUY ZONE ACTIVE! 🟢🟢")
             print("\n  Both conditions are met:")
             print("    ✓ Price is below 200-day DCA cost")
-            print("    ✓ Price is below exponential trend")
+            print("    ✓ Price is below power law trend")
             print("\n  ⚠️  IMPORTANT: This is a real-time estimate.")
             print("      Wait for daily close to confirm signal.")
         else:
