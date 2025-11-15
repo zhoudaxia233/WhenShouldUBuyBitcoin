@@ -57,11 +57,12 @@ class PortfolioState {
  * Represents a single transaction
  */
 class Transaction {
-    constructor(date, investAmount, btcAmount, price) {
+    constructor(date, investAmount, btcAmount, price, ahr999 = null) {
         this.date = date;
         this.investAmount = investAmount; // USD invested
         this.btcAmount = btcAmount; // BTC bought
         this.price = price; // BTC price at purchase
+        this.ahr999 = ahr999; // AHR999 index at time of purchase
     }
 }
 
@@ -720,13 +721,14 @@ class BacktestEngine {
                         btcBalance += btcBought;
                         totalInvested += actualInvestment;
                         
-                        // Record transaction
+                        // Record transaction with AHR999 value
                         result.transactions.push(
                             new Transaction(
                                 new Date(currentDate),
                                 actualInvestment,
                                 btcBought,
-                                price
+                                price,
+                                dayData.ahr999 || null
                             )
                         );
                         
@@ -1233,6 +1235,7 @@ class BacktestUI {
                                     <th class="text-right">Invested (USD)</th>
                                     <th class="text-right">BTC Bought</th>
                                     <th class="text-right">BTC Price</th>
+                                    <th class="text-right">AHR999</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -1242,6 +1245,7 @@ class BacktestUI {
                                         <td class="text-right">$${tx.investAmount.toFixed(2)}</td>
                                         <td class="text-right">${tx.btcAmount.toFixed(6)} BTC</td>
                                         <td class="text-right">$${tx.price.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                                        <td class="text-right">${tx.ahr999 !== null ? tx.ahr999.toFixed(2) : 'N/A'}</td>
                                     </tr>
                                 `).join('')}
                             </tbody>
