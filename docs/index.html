@@ -460,6 +460,212 @@
             text-align: left;
         }
 
+        /* Backtest Section */
+        .backtest-section {
+            background: white;
+            border-radius: 18px;
+            padding: 40px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+        }
+
+        .backtest-section h2 {
+            font-size: 1.5em;
+            font-weight: 600;
+            margin-bottom: 8px;
+            text-align: center;
+        }
+
+        .backtest-section > p {
+            text-align: center;
+            color: #86868b;
+            font-size: 15px;
+            margin-bottom: 30px;
+        }
+
+        .backtest-form {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .form-group {
+            margin-bottom: 24px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 14px;
+            font-weight: 600;
+            color: #1d1d1f;
+            margin-bottom: 8px;
+        }
+
+        .form-group input[type="date"],
+        .form-group input[type="number"] {
+            width: 100%;
+            padding: 12px 16px;
+            font-size: 15px;
+            border: 1px solid #d2d2d7;
+            border-radius: 8px;
+            background: #f5f5f7;
+            color: #1d1d1f;
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, sans-serif;
+            transition: all 0.2s ease;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #0071e3;
+            background: white;
+        }
+
+        .strategy-options {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 12px;
+            margin-top: 8px;
+        }
+
+        .strategy-option {
+            position: relative;
+        }
+
+        .strategy-option input[type="radio"] {
+            position: absolute;
+            opacity: 0;
+        }
+
+        .strategy-option label {
+            display: block;
+            padding: 16px;
+            background: #f5f5f7;
+            border: 2px solid #d2d2d7;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-align: center;
+            font-weight: 500;
+        }
+
+        .strategy-option input[type="radio"]:checked + label {
+            background: #dbeafe;
+            border-color: #0071e3;
+            color: #0071e3;
+        }
+
+        .strategy-option label:hover {
+            border-color: #0071e3;
+        }
+
+        .strategy-config {
+            margin-top: 16px;
+            padding: 16px;
+            background: #f5f5f7;
+            border-radius: 8px;
+            display: none;
+        }
+
+        .strategy-config label {
+            font-size: 13px;
+            margin-bottom: 6px;
+        }
+
+        .strategy-config input {
+            margin-top: 6px;
+        }
+
+        .backtest-button {
+            width: 100%;
+            padding: 16px;
+            font-size: 17px;
+            font-weight: 500;
+            color: white;
+            background: #0071e3;
+            border: none;
+            border-radius: 980px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            margin-top: 24px;
+        }
+
+        .backtest-button:hover {
+            background: #0077ed;
+            transform: scale(1.02);
+        }
+
+        .backtest-button:active {
+            transform: scale(0.98);
+        }
+
+        .backtest-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        #backtestResults {
+            display: none;
+            margin-top: 40px;
+            animation: fadeIn 0.4s ease-in-out;
+        }
+
+        .backtest-summary h3 {
+            font-size: 1.3em;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #1d1d1f;
+        }
+
+        .backtest-period {
+            font-size: 14px;
+            color: #86868b;
+            margin-bottom: 24px;
+        }
+
+        .simulation-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            background: #fff3cd;
+            color: #856404;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-top: 4px;
+        }
+
+        .chart-wrapper {
+            margin-top: 32px;
+            padding: 24px;
+            background: #f5f5f7;
+            border-radius: 12px;
+        }
+
+        .chart-wrapper h4 {
+            font-size: 1.1em;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: #1d1d1f;
+        }
+
+        .chart-wrapper canvas {
+            width: 100% !important;
+            height: 400px !important;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #86868b;
+            font-size: 15px;
+        }
+
+        .error {
+            background: #ff3b30;
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            margin: 20px 0;
+        }
+
         .footer {
             text-align: center;
             margin-top: 60px;
@@ -486,7 +692,8 @@
             }
 
             .check-section,
-            .forecast-section {
+            .forecast-section,
+            .backtest-section {
                 padding: 32px 24px;
             }
 
@@ -533,8 +740,17 @@
             }
 
             .check-section,
-            .forecast-section {
+            .forecast-section,
+            .backtest-section {
                 padding: 28px 20px;
+            }
+
+            .strategy-options {
+                grid-template-columns: 1fr;
+            }
+
+            .chart-wrapper canvas {
+                height: 300px !important;
             }
 
             .check-button {
@@ -668,12 +884,83 @@
             </div>
         </div>
 
+        <!-- Backtest / Strategy Simulator -->
+        <div class="backtest-section">
+            <h2>📊 Backtest / Strategy Simulator</h2>
+            <p>Test different Bitcoin investment strategies using historical data and power law projections</p>
+            
+            <div class="backtest-form">
+                <div class="form-group">
+                    <label for="backtestStartDate">Start Date</label>
+                    <input type="date" id="backtestStartDate" required />
+                </div>
+
+                <div class="form-group">
+                    <label for="backtestEndDate">End Date (optional - can be in the future)</label>
+                    <input type="date" id="backtestEndDate" required />
+                </div>
+
+                <div class="form-group">
+                    <label for="backtestBudget">Monthly Investment Budget (USD)</label>
+                    <input type="number" id="backtestBudget" value="500" min="1" step="1" required />
+                </div>
+
+                <div class="form-group">
+                    <label>Investment Strategy</label>
+                    <div class="strategy-options">
+                        <div class="strategy-option">
+                            <input type="radio" id="strategy-daily" name="backtestStrategy" value="daily-dca" checked />
+                            <label for="strategy-daily">Daily DCA</label>
+                        </div>
+                        <div class="strategy-option">
+                            <input type="radio" id="strategy-monthly" name="backtestStrategy" value="monthly-dca" />
+                            <label for="strategy-monthly">Monthly DCA</label>
+                        </div>
+                        <div class="strategy-option">
+                            <input type="radio" id="strategy-ahr999" name="backtestStrategy" value="ahr999-threshold" />
+                            <label for="strategy-ahr999">AHR999 Threshold</label>
+                        </div>
+                        <div class="strategy-option">
+                            <input type="radio" id="strategy-valuation" name="backtestStrategy" value="valuation-aware" />
+                            <label for="strategy-valuation">Valuation-Aware</label>
+                        </div>
+                    </div>
+
+                    <!-- Strategy-specific configs -->
+                    <div id="monthlyDcaConfig" class="strategy-config">
+                        <label for="monthlyDcaDay">Day of Month (1-28)</label>
+                        <input type="number" id="monthlyDcaDay" value="1" min="1" max="28" />
+                    </div>
+
+                    <div id="ahr999ThresholdConfig" class="strategy-config">
+                        <label for="ahr999Threshold">AHR999 Threshold (invest when below this value)</label>
+                        <input type="number" id="ahr999Threshold" value="0.45" min="0.1" max="2.0" step="0.05" />
+                    </div>
+                </div>
+
+                <button id="runBacktestButton" class="backtest-button">
+                    Run Backtest
+                </button>
+
+                <div id="backtestResults">
+                    <!-- Results will be inserted here -->
+                </div>
+            </div>
+        </div>
+
         <div class="footer">
             Last data update: <span id="lastUpdate">Loading...</span>
         </div>
     </div>
 
+    <!-- Chart.js for backtest charts -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    
+    <!-- Real-time checker -->
     <script src="realtime.js"></script>
+    
+    <!-- Backtest engine -->
+    <script type="module" src="backtest.js"></script>
     <script>
         // Chart switching function
         function switchChart(chartType) {
