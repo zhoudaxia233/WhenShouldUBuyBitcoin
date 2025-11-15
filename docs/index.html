@@ -711,6 +711,14 @@
             font-size: 13px;
         }
 
+        .ahr999-range {
+            display: block;
+            font-size: 11px;
+            color: #86868b;
+            font-weight: 400;
+            margin-top: 4px;
+        }
+
         .tier-multiplier {
             display: flex;
             align-items: center;
@@ -734,6 +742,7 @@
         .tier-daily {
             color: #1d1d1f;
             font-size: 14px;
+            text-align: center;
         }
 
         .backtest-button {
@@ -843,6 +852,46 @@
             overflow-y: auto;
             border-radius: 8px;
             background: white;
+            padding-right: 20px; /* Add padding to prevent scrollbar from covering last column */
+            box-sizing: border-box;
+        }
+
+        /* Custom scrollbar styling - wider for easier clicking */
+        .transactions-table-wrapper::-webkit-scrollbar {
+            width: 16px; /* Wider scrollbar for easier interaction */
+        }
+
+        .transactions-table-wrapper::-webkit-scrollbar-track {
+            background: #f5f5f7;
+            border-radius: 10px;
+            margin: 4px 0;
+        }
+
+        .transactions-table-wrapper::-webkit-scrollbar-thumb {
+            background: #c7c7cc;
+            border-radius: 10px;
+            border: 3px solid #f5f5f7; /* Thicker border for better visual separation */
+        }
+
+        .transactions-table-wrapper::-webkit-scrollbar-thumb:hover {
+            background: #a8a8ae;
+        }
+
+        /* For Firefox */
+        .transactions-table-wrapper {
+            scrollbar-width: auto;
+            scrollbar-color: #c7c7cc #f5f5f7;
+        }
+
+        /* Mobile-friendly: ensure scrollbar doesn't cause layout issues */
+        @media (max-width: 768px) {
+            .transactions-table-wrapper {
+                padding-right: 16px; /* Adjust padding for mobile scrollbar width */
+            }
+            
+            .transactions-table-wrapper::-webkit-scrollbar {
+                width: 12px; /* Slightly narrower on mobile but still usable */
+            }
         }
 
         .transactions-table table {
@@ -1193,49 +1242,67 @@
                             </div>
                             
                             <div class="tier-row">
-                                <div class="tier-label">Bottom 10% (EXTREME CHEAP)</div>
+                                <div class="tier-label">
+                                    Bottom 10% (EXTREME CHEAP)
+                                    <span class="ahr999-range" id="ahr999-range-p10">(AHR999 < 0.51)</span>
+                                </div>
                                 <div class="tier-multiplier">
-                                    <input type="number" class="tier-input" id="tier-p10" value="5" min="0" max="10" step="0.5" oninput="updatePercentileTiers()" />x
+                                    <input type="number" class="tier-input" id="tier-p10" value="5" min="0" max="10" step="0.5" oninput="updatePercentileTiers()" />
                                 </div>
                                 <div class="tier-daily" id="tier-p10-amount">$82.10/day</div>
                             </div>
                             
                             <div class="tier-row">
-                                <div class="tier-label">10-25% (Very Cheap)</div>
+                                <div class="tier-label">
+                                    10-25% (Very Cheap)
+                                    <span class="ahr999-range" id="ahr999-range-p25">(0.51 - 0.69)</span>
+                                </div>
                                 <div class="tier-multiplier">
-                                    <input type="number" class="tier-input" id="tier-p25" value="3" min="0" max="10" step="0.5" oninput="updatePercentileTiers()" />x
+                                    <input type="number" class="tier-input" id="tier-p25" value="3" min="0" max="10" step="0.5" oninput="updatePercentileTiers()" />
                                 </div>
                                 <div class="tier-daily" id="tier-p25-amount">$49.26/day</div>
                             </div>
                             
                             <div class="tier-row">
-                                <div class="tier-label">25-50% (Cheap)</div>
+                                <div class="tier-label">
+                                    25-50% (Cheap)
+                                    <span class="ahr999-range" id="ahr999-range-p50">(0.69 - 1.02)</span>
+                                </div>
                                 <div class="tier-multiplier">
-                                    <input type="number" class="tier-input" id="tier-p50" value="2" min="0" max="10" step="0.5" oninput="updatePercentileTiers()" />x
+                                    <input type="number" class="tier-input" id="tier-p50" value="2" min="0" max="10" step="0.5" oninput="updatePercentileTiers()" />
                                 </div>
                                 <div class="tier-daily" id="tier-p50-amount">$32.84/day</div>
                             </div>
                             
                             <div class="tier-row">
-                                <div class="tier-label">50-75% (Fair)</div>
+                                <div class="tier-label">
+                                    50-75% (Fair)
+                                    <span class="ahr999-range" id="ahr999-range-p75">(1.02 - 1.67)</span>
+                                </div>
                                 <div class="tier-multiplier">
-                                    <input type="number" class="tier-input" id="tier-p75" value="1" min="0" max="10" step="0.5" oninput="updatePercentileTiers()" />x
+                                    <input type="number" class="tier-input" id="tier-p75" value="1" min="0" max="10" step="0.5" oninput="updatePercentileTiers()" />
                                 </div>
                                 <div class="tier-daily" id="tier-p75-amount">$16.42/day</div>
                             </div>
                             
                             <div class="tier-row">
-                                <div class="tier-label">75-90% (Expensive)</div>
+                                <div class="tier-label">
+                                    75-90% (Expensive)
+                                    <span class="ahr999-range" id="ahr999-range-p90">(1.67 - 3.64)</span>
+                                </div>
                                 <div class="tier-multiplier">
-                                    <input type="number" class="tier-input" id="tier-p90" value="0.5" min="0" max="10" step="0.5" oninput="updatePercentileTiers()" />x
+                                    <input type="number" class="tier-input" id="tier-p90" value="0.5" min="0" max="10" step="0.5" oninput="updatePercentileTiers()" />
                                 </div>
                                 <div class="tier-daily" id="tier-p90-amount">$8.21/day</div>
                             </div>
                             
                             <div class="tier-row">
-                                <div class="tier-label">Top 10% (VERY EXPENSIVE)</div>
+                                <div class="tier-label">
+                                    Top 10% (VERY EXPENSIVE)
+                                    <span class="ahr999-range" id="ahr999-range-p100">(> 3.64)</span>
+                                </div>
                                 <div class="tier-multiplier">
-                                    <input type="number" class="tier-input" id="tier-p100" value="0" min="0" max="10" step="0.5" oninput="updatePercentileTiers()" />x
+                                    <input type="number" class="tier-input" id="tier-p100" value="0" min="0" max="10" step="0.5" oninput="updatePercentileTiers()" />
                                 </div>
                                 <div class="tier-daily" id="tier-p100-amount">$0/day</div>
                             </div>
