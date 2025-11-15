@@ -105,10 +105,23 @@ class DataLoader {
 
     /**
      * Load and parse CSV data
+     * Works in both browser and Node.js environments
      */
     async loadCSV() {
-        const response = await fetch(BACKTEST_CONFIG.DATA_CSV);
-        const text = await response.text();
+        let text;
+        
+        // Check if running in Node.js
+        if (typeof window === 'undefined') {
+            // Node.js environment - use fs
+            const fs = await import('fs/promises');
+            const path = await import('path');
+            const filePath = path.join(process.cwd(), 'docs', BACKTEST_CONFIG.DATA_CSV);
+            text = await fs.readFile(filePath, 'utf-8');
+        } else {
+            // Browser environment - use fetch
+            const response = await fetch(BACKTEST_CONFIG.DATA_CSV);
+            text = await response.text();
+        }
 
         const lines = text.trim().split("\n");
         const headers = lines[0].split(",");
@@ -128,10 +141,22 @@ class DataLoader {
 
     /**
      * Load metadata with power law parameters
+     * Works in both browser and Node.js environments
      */
     async loadMetadata() {
-        const response = await fetch(BACKTEST_CONFIG.DATA_METADATA);
-        return await response.json();
+        // Check if running in Node.js
+        if (typeof window === 'undefined') {
+            // Node.js environment - use fs
+            const fs = await import('fs/promises');
+            const path = await import('path');
+            const filePath = path.join(process.cwd(), 'docs', BACKTEST_CONFIG.DATA_METADATA);
+            const text = await fs.readFile(filePath, 'utf-8');
+            return JSON.parse(text);
+        } else {
+            // Browser environment - use fetch
+            const response = await fetch(BACKTEST_CONFIG.DATA_METADATA);
+            return await response.json();
+        }
     }
 
     /**
@@ -141,13 +166,15 @@ class DataLoader {
         this.priceCache.clear();
         this.historicalData.forEach((row) => {
             const dateStr = row.date;
+            const ahr999Val = row.ahr999 && row.ahr999.trim() !== '' ? parseFloat(row.ahr999) : null;
+            const ratioDcaVal = row.ratio_dca && row.ratio_dca.trim() !== '' ? parseFloat(row.ratio_dca) : null;
+            const ratiTrendVal = row.ratio_trend && row.ratio_trend.trim() !== '' ? parseFloat(row.ratio_trend) : null;
+            
             this.priceCache.set(dateStr, {
                 price: parseFloat(row.close_price),
-                ahr999: row.ahr999 ? parseFloat(row.ahr999) : null,
-                ratio_dca: row.ratio_dca ? parseFloat(row.ratio_dca) : null,
-                ratio_trend: row.ratio_trend
-                    ? parseFloat(row.ratio_trend)
-                    : null,
+                ahr999: ahr999Val && !isNaN(ahr999Val) ? ahr999Val : null,
+                ratio_dca: ratioDcaVal && !isNaN(ratioDcaVal) ? ratioDcaVal : null,
+                ratio_trend: ratiTrendVal && !isNaN(ratiTrendVal) ? ratiTrendVal : null,
             });
         });
     }
@@ -448,7 +475,7 @@ class DailyDCAStrategy extends Strategy {
 class MonthlyDCAStrategy extends Strategy {
     constructor(monthlyBudget, config = {}) {
         super(monthlyBudget, config);
-        this.dayOfMonth = config.dayOfMonth || 1; // Default to 1st of month
+        this.dayOfMonth = config.dayOfMonth !== undefined ? config.dayOfMonth : 1; // Default to 1st of month
     }
 
     getName() {
@@ -485,7 +512,7 @@ class MonthlyDCAStrategy extends Strategy {
 class AHR999ThresholdStrategy extends Strategy {
     constructor(monthlyBudget, config = {}) {
         super(monthlyBudget, config);
-        this.threshold = config.threshold || 0.45;
+        this.threshold = config.threshold !== undefined ? config.threshold : 0.45;
     }
 
     getName() {
@@ -505,12 +532,13 @@ class AHR999ThresholdStrategy extends Strategy {
             ahr999 = this.getCurrentAHR999(date);
         }
 
-        // If we can't calculate AHR999, don't invest
-        if (ahr999 === null) {
+        // If we can't calculate AHR999 or AHR999 is undefined/null, don't invest
+        if (ahr999 === null || ahr999 === undefined || isNaN(ahr999)) {
             return 0;
         }
 
         // Only invest if below threshold and we have cash
+        // Use strict comparison to handle edge cases
         if (ahr999 < this.threshold && this.cashBuffer > 0) {
             // Invest all available cash when condition is met
             const investAmount = this.cashBuffer;
@@ -574,8 +602,8 @@ class ValuationAwareDCAStrategy extends Strategy {
             ahr999 = this.getCurrentAHR999(date);
         }
 
-        // If we can't calculate AHR999 or no cash, don't invest
-        if (ahr999 === null || this.cashBuffer <= 0) {
+        // If we can't calculate AHR999 or no cash or invalid AHR999, don't invest
+        if (ahr999 === null || ahr999 === undefined || isNaN(ahr999) || this.cashBuffer <= 0) {
             return 0;
         }
 
@@ -1039,10 +1067,10 @@ class BacktestUI {
                     break;
 
                 case "ahr999-threshold":
-                    const threshold =
-                        parseFloat(
-                            document.getElementById("ahr999Threshold").value
-                        ) || 0.45;
+                    const thresholdInput = document.getElementById("ahr999Threshold").value;
+                    const threshold = thresholdInput !== "" && !isNaN(parseFloat(thresholdInput))
+                        ? parseFloat(thresholdInput)
+                        : 0.45;
                     strategy = new AHR999ThresholdStrategy(monthlyBudget, {
                         threshold,
                     });
@@ -1095,8 +1123,8 @@ class BacktestUI {
         ).toFixed(1)} years)
                     ${
                         usedSimulation
-                            ? '<br><span class="simulation-badge">⚡ Includes simulated future data</span>'
-                            : ""
+                            ? `<br><span class="simulation-badge">⚡ Includes simulated future data (historical data ends ${lastHistoricalDate.toLocaleDateString()})</span>`
+                            : `<br><span class="historical-badge">✓ Uses 100% historical data</span>`
                     }
                 </p>
 
@@ -1197,12 +1225,14 @@ export {
 };
 
 // ============================================================================
-// AUTO-INITIALIZATION
+// AUTO-INITIALIZATION (Browser only)
 // ============================================================================
 
-// Initialize when DOM is ready
-let backtestUI;
-document.addEventListener("DOMContentLoaded", async () => {
-    backtestUI = new BacktestUI();
-    await backtestUI.initialize();
-});
+// Initialize when DOM is ready (only in browser environment)
+if (typeof window !== 'undefined' && typeof document !== 'undefined') {
+    let backtestUI;
+    document.addEventListener("DOMContentLoaded", async () => {
+        backtestUI = new BacktestUI();
+        await backtestUI.initialize();
+    });
+}
