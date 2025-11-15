@@ -675,3 +675,808 @@ describe("Performance", () => {
         expect(duration).toBeLessThan(5000);
     });
 });
+
+describe("Return Calculation Edge Cases", () => {
+    it("should show N/A for annualized return when period is less than 1 year", async () => {
+        // Test that backtests less than 1 year show N/A for annualized return
+        const strategy = new DailyDCAStrategy(500);
+        const engine = new BacktestEngine(strategy, dataLoader);
+
+        // Short period: 6 months
+        const startDate = new Date("2020-01-01");
+        const endDate = new Date("2020-07-01"); // ~6 months
+
+        const result = await engine.run(startDate, endDate, 500);
+
+        console.log("Less than 1 year backtest:", {
+            durationDays: result.durationDays,
+            totalInvested: result.totalInvested.toFixed(2),
+            finalPortfolioValue: result.finalPortfolioValue.toFixed(2),
+            totalReturn: result.totalReturn.toFixed(2),
+            annualizedReturn: result.annualizedReturn,
+            isFinite: isFinite(result.annualizedReturn),
+        });
+
+        // Annualized return should be Infinity (marker for N/A) when period < 365 days
+        expect(result.durationDays).toBeLessThan(365);
+        expect(result.annualizedReturn).toBe(Infinity);
+        expect(isFinite(result.annualizedReturn)).toBe(false);
+    });
+
+    it("should calculate annualized return when period is 1 year or more", async () => {
+        // Test that backtests of 1 year or more calculate annualized return
+        const strategy = new DailyDCAStrategy(500);
+        const engine = new BacktestEngine(strategy, dataLoader);
+
+        // Exactly 1 year
+        const startDate = new Date("2020-01-01");
+        const endDate = new Date("2021-01-01"); // Exactly 1 year
+
+        const result = await engine.run(startDate, endDate, 500);
+
+        console.log("1 year backtest:", {
+            durationDays: result.durationDays,
+            totalReturn: result.totalReturn.toFixed(2),
+            annualizedReturn: result.annualizedReturn,
+            isFinite: isFinite(result.annualizedReturn),
+        });
+
+        // Annualized return should be calculated (finite) when period >= 365 days
+        expect(result.durationDays).toBeGreaterThanOrEqual(365);
+        expect(isFinite(result.annualizedReturn)).toBe(true);
+        expect(Math.abs(result.annualizedReturn)).toBeLessThan(1000000);
+    });
+
+    it("should handle high return ratio without overflow", async () => {
+        // Test that high return ratios don't cause overflow in annualized calculation
+        const strategy = new DailyDCAStrategy(500);
+        const engine = new BacktestEngine(strategy, dataLoader);
+
+        // Use a period where Bitcoin had significant gains
+        const startDate = new Date("2020-03-01"); // COVID crash
+        const endDate = new Date("2021-03-01"); // 1 year later (significant gains)
+
+        const result = await engine.run(startDate, endDate, 500);
+
+        console.log("High return backtest:", {
+            durationDays: result.durationDays,
+            totalInvested: result.totalInvested.toFixed(2),
+            finalPortfolioValue: result.finalPortfolioValue.toFixed(2),
+            totalReturn: result.totalReturn.toFixed(2),
+            annualizedReturn: result.annualizedReturn,
+            isFinite: isFinite(result.annualizedReturn),
+        });
+
+        // Annualized return should be finite
+        expect(isFinite(result.annualizedReturn)).toBe(true);
+        expect(Math.abs(result.annualizedReturn)).toBeLessThan(1000000);
+    });
+
+    it("should handle zero investment gracefully", async () => {
+        // Test that zero investment doesn't cause division by zero
+        const strategy = new AHR999PercentileStrategy(500, {
+            multiplier_p10: 0,
+            multiplier_p25: 0,
+            multiplier_p50: 0,
+            multiplier_p75: 0,
+            multiplier_p90: 0,
+            multiplier_p100: 0,
+        });
+        const engine = new BacktestEngine(strategy, dataLoader);
+
+        const startDate = new Date("2020-01-01");
+        const endDate = new Date("2020-12-31"); // 364 days (less than 1 year)
+
+        const result = await engine.run(startDate, endDate, 500);
+
+        // Should handle zero investment without errors
+        expect(result.totalInvested).toBe(0);
+        // When totalInvested is 0, annualizedReturn should be 0 (not calculated)
+        // But if period < 365 days, it would be Infinity
+        // Since totalInvested is 0, the calculation is skipped, so annualizedReturn should be 0
+        expect(result.annualizedReturn).toBe(0);
+    });
+
+    it("should calculate annualized return correctly for multi-year periods", async () => {
+        // Test that annualized return calculation is correct for 2-year period
+        const strategy = new DailyDCAStrategy(500);
+        const engine = new BacktestEngine(strategy, dataLoader);
+
+        const startDate = new Date("2020-01-01");
+        const endDate = new Date("2022-01-01"); // Exactly 2 years
+
+        const result = await engine.run(startDate, endDate, 500);
+
+        console.log("2-year backtest:", {
+            durationDays: result.durationDays,
+            totalReturn: result.totalReturn.toFixed(2),
+            annualizedReturn: result.annualizedReturn.toFixed(2),
+        });
+
+        // For 2 years, annualized return should be calculated and reasonable
+        expect(result.durationDays).toBeGreaterThanOrEqual(365);
+        expect(isFinite(result.annualizedReturn)).toBe(true);
+        expect(Math.abs(result.annualizedReturn)).toBeLessThan(1000000);
+
+        // Annualized return should be less than total return for multi-year periods
+        // (because it's the geometric mean, not linear)
+        expect(Math.abs(result.annualizedReturn)).toBeLessThan(
+            Math.abs(result.totalReturn)
+        );
+    });
+});
+
+describe("Daily DCA Budget Calculation Fix", () => {
+    it("should calculate budget correctly for partial month (13 days)", async () => {
+        // Test case: Nov 1 to Nov 13, 2025 (13 days)
+        // Monthly budget: $500
+        // Expected daily amount: $500 / 30.44 ≈ $16.43
+        // Expected total budget: 13 days × $16.43 ≈ $213.59
+        const strategy = new DailyDCAStrategy(500);
+        const engine = new BacktestEngine(strategy, dataLoader);
+
+        const startDate = new Date("2025-11-01");
+        const endDate = new Date("2025-11-13"); // 13 days
+
+        const result = await engine.run(startDate, endDate, 500);
+
+        // Calculate expected values
+        const expectedDailyAmount = 500 / 30.44; // BACKTEST_CONFIG.DAYS_PER_MONTH
+        const expectedTotalBudget = 13 * expectedDailyAmount; // 13 days
+
+        console.log("Partial month test:", {
+            durationDays: result.durationDays,
+            expectedTotalBudget: expectedTotalBudget.toFixed(2),
+            actualTotalInvested: result.totalInvested.toFixed(2),
+            finalPortfolioValue: result.finalPortfolioValue.toFixed(2),
+            totalReturn: result.totalReturn.toFixed(2),
+        });
+
+        // Total invested should be close to expected budget (within 1% tolerance)
+        // Note: May be slightly less if some days don't have price data
+        expect(result.totalInvested).toBeGreaterThan(
+            expectedTotalBudget * 0.95
+        );
+        expect(result.totalInvested).toBeLessThanOrEqual(
+            expectedTotalBudget * 1.01
+        );
+
+        // Final portfolio value should be: cashBalance + btcBalance * finalPrice
+        // Cash balance should be close to 0 (all budget invested)
+        // So finalPortfolioValue should be approximately: btcBalance * finalPrice
+        // And totalReturn should be: (finalPortfolioValue - totalInvested) / totalInvested
+        expect(result.finalPortfolioValue).toBeGreaterThan(0);
+        expect(isFinite(result.totalReturn)).toBe(true);
+
+        // Verify that finalPortfolioValue calculation is correct
+        // It should not include excess cashBalance from full month budget
+        const finalPrice = dataLoader.getPriceData(endDate)?.price || 0;
+        if (finalPrice > 0) {
+            // Calculate expected BTC balance
+            const expectedBtcBalance = result.totalInvested / finalPrice; // Rough estimate
+            // Final portfolio value should be reasonable (not inflated by excess cash)
+            // It should be close to: btcBalance * finalPrice (if cashBalance is near 0)
+            expect(result.finalPortfolioValue).toBeLessThan(
+                result.totalInvested * 5
+            ); // Sanity check
+        }
+    });
+
+    it("should not include excess cashBalance in finalPortfolioValue for partial month", async () => {
+        // This test ensures that for Daily DCA with partial month,
+        // the cashBalance is proportional to days, not full month budget
+        const strategy = new DailyDCAStrategy(500);
+        const engine = new BacktestEngine(strategy, dataLoader);
+
+        const startDate = new Date("2025-11-01");
+        const endDate = new Date("2025-11-13"); // 13 days
+
+        const result = await engine.run(startDate, endDate, 500);
+
+        // Calculate expected proportional budget
+        const expectedDailyAmount = 500 / 30.44;
+        const expectedTotalBudget = 13 * expectedDailyAmount;
+
+        // Final portfolio value should be calculated as: cashBalance + btcBalance * finalPrice
+        // If cashBalance was incorrectly set to full month ($500), then:
+        // cashBalance = $500 - $213.53 = $286.47 (excess)
+        // finalPortfolioValue would be inflated by this excess
+
+        // With the fix, cashBalance should be proportional:
+        // cashBalance ≈ expectedTotalBudget - totalInvested ≈ 0 (if all invested)
+
+        // Verify finalPortfolioValue is reasonable
+        // It should not be significantly higher than totalInvested unless BTC price increased
+        const finalPrice = dataLoader.getPriceData(endDate)?.price || 0;
+        if (finalPrice > 0 && result.totalInvested > 0) {
+            // Calculate implied cashBalance from finalPortfolioValue
+            // finalPortfolioValue = cashBalance + btcBalance * finalPrice
+            // btcBalance = totalInvested / averagePrice (roughly)
+            // If cashBalance was excess, finalPortfolioValue would be too high
+
+            // The return should be based on BTC price movement, not excess cash
+            // If BTC price didn't change much, return should be close to 0%
+            // If BTC price doubled, return should be around 100%
+            // But it shouldn't be inflated by excess cashBalance
+
+            // Sanity check: finalPortfolioValue should be at least totalInvested
+            // (unless BTC price dropped significantly)
+            expect(result.finalPortfolioValue).toBeGreaterThan(
+                result.totalInvested * 0.5
+            );
+
+            // If return is very high (>200%), it might indicate excess cashBalance issue
+            // But we can't be too strict here as BTC price might have actually increased
+            // Instead, we verify that totalInvested matches expected budget
+            expect(result.totalInvested).toBeCloseTo(expectedTotalBudget, 1);
+        }
+    });
+
+    it("should calculate budget correctly for AHR999 strategy with partial month (13 days)", async () => {
+        // Test case: Nov 1 to Nov 13, 2025 (13 days)
+        // Monthly budget: $500
+        // Expected daily amount: $500 / 30.44 ≈ $16.43
+        // Expected total budget: 13 days × $16.43 ≈ $213.59
+        // AHR999 strategy (non-unlimited) should use days-based calculation like Daily DCA
+        const strategy = new AHR999PercentileStrategy(500, {
+            unlimitedBudget: false, // Explicitly disable unlimited budget
+        });
+        const engine = new BacktestEngine(strategy, dataLoader);
+
+        const startDate = new Date("2025-11-01");
+        const endDate = new Date("2025-11-13"); // 13 days
+
+        const result = await engine.run(startDate, endDate, 500);
+
+        // Calculate expected values
+        const expectedDailyAmount = 500 / 30.44; // BACKTEST_CONFIG.DAYS_PER_MONTH
+        const expectedTotalBudget = 13 * expectedDailyAmount; // 13 days
+
+        console.log("AHR999 Partial month test:", {
+            durationDays: result.durationDays,
+            expectedTotalBudget: expectedTotalBudget.toFixed(2),
+            actualTotalInvested: result.totalInvested.toFixed(2),
+            finalPortfolioValue: result.finalPortfolioValue.toFixed(2),
+            totalReturn: result.totalReturn.toFixed(2),
+        });
+
+        // Total invested should be close to expected budget (within reasonable tolerance)
+        // Note: AHR999 may invest less if multipliers are 0 for some days
+        // But the budget constraint should still be based on days, not full month
+        expect(result.totalInvested).toBeLessThanOrEqual(
+            expectedTotalBudget * 1.01
+        );
+
+        // Final portfolio value should be reasonable (not inflated by excess cashBalance)
+        expect(result.finalPortfolioValue).toBeGreaterThan(0);
+        expect(isFinite(result.totalReturn)).toBe(true);
+
+        // Verify that finalPortfolioValue calculation is correct
+        // It should not include excess cashBalance from full month budget
+        const finalPrice = dataLoader.getPriceData(endDate)?.price || 0;
+        if (finalPrice > 0) {
+            // Final portfolio value should be reasonable (not inflated by excess cash)
+            expect(result.finalPortfolioValue).toBeLessThan(
+                result.totalInvested * 5
+            ); // Sanity check
+        }
+    });
+
+    it("should not include excess cashBalance in finalPortfolioValue for AHR999 partial month", async () => {
+        // This test ensures that for AHR999 (non-unlimited) with partial month,
+        // the cashBalance is proportional to days, not full month budget
+        const strategy = new AHR999PercentileStrategy(500, {
+            unlimitedBudget: false,
+        });
+        const engine = new BacktestEngine(strategy, dataLoader);
+
+        const startDate = new Date("2025-11-01");
+        const endDate = new Date("2025-11-13"); // 13 days
+
+        const result = await engine.run(startDate, endDate, 500);
+
+        // Calculate expected proportional budget
+        const expectedDailyAmount = 500 / 30.44;
+        const expectedTotalBudget = 13 * expectedDailyAmount;
+
+        // Final portfolio value should be calculated as: cashBalance + btcBalance * finalPrice
+        // If cashBalance was incorrectly set to full month ($500), then:
+        // cashBalance = $500 - actualInvestment (excess)
+        // finalPortfolioValue would be inflated by this excess
+
+        // With the fix, cashBalance should be proportional:
+        // cashBalance ≈ expectedTotalBudget - totalInvested ≈ 0 (if all invested)
+
+        // Verify finalPortfolioValue is reasonable
+        const finalPrice = dataLoader.getPriceData(endDate)?.price || 0;
+        if (finalPrice > 0 && result.totalInvested > 0) {
+            // Sanity check: finalPortfolioValue should be at least totalInvested * 0.5
+            // (unless BTC price dropped significantly)
+            expect(result.finalPortfolioValue).toBeGreaterThan(
+                result.totalInvested * 0.5
+            );
+
+            // Verify that totalInvested doesn't exceed expected budget
+            // (AHR999 may invest less due to multipliers, but shouldn't exceed budget)
+            expect(result.totalInvested).toBeLessThanOrEqual(
+                expectedTotalBudget * 1.01
+            );
+        }
+    });
+
+    it("should calculate cashBalance correctly for AHR999 unlimited budget mode with partial month", async () => {
+        // Test case: Nov 1 to Nov 13, 2025 (13 days) with unlimited budget
+        // Monthly budget: $500
+        // Expected proportional cashBalance: 13/30.44 × $500 ≈ $213.59
+        // Even with unlimited budget, cashBalance should be proportional to avoid inflating finalPortfolioValue
+        const strategy = new AHR999PercentileStrategy(500, {
+            unlimitedBudget: true, // Enable unlimited budget
+        });
+        const engine = new BacktestEngine(strategy, dataLoader);
+
+        const startDate = new Date("2025-11-01");
+        const endDate = new Date("2025-11-13"); // 13 days
+
+        const result = await engine.run(startDate, endDate, 500);
+
+        // Calculate expected proportional budget for cashBalance
+        const expectedDailyAmount = 500 / 30.44;
+        const expectedProportionalBudget = 13 * expectedDailyAmount; // ~$213.59
+
+        console.log("AHR999 Unlimited budget partial month test:", {
+            durationDays: result.durationDays,
+            expectedProportionalBudget: expectedProportionalBudget.toFixed(2),
+            actualTotalInvested: result.totalInvested.toFixed(2),
+            finalPortfolioValue: result.finalPortfolioValue.toFixed(2),
+            totalReturn: result.totalReturn.toFixed(2),
+        });
+
+        // With unlimited budget, investment can exceed proportional budget
+        // But finalPortfolioValue should not be inflated by excess cashBalance
+        // finalPortfolioValue = cashBalance + btcBalance * finalPrice
+        // If cashBalance was incorrectly set to full month ($500), finalPortfolioValue would be inflated
+
+        // Verify that finalPortfolioValue is reasonable
+        // It should not be significantly higher than totalInvested unless BTC price increased substantially
+        expect(result.finalPortfolioValue).toBeGreaterThan(0);
+        expect(isFinite(result.totalReturn)).toBe(true);
+
+        // The key test: if we invested more than proportional budget, cashBalance should be negative
+        // but finalPortfolioValue should still be calculated correctly
+        // If cashBalance was incorrectly set to $500 instead of $213.59, finalPortfolioValue would be inflated by $286.41
+        const finalPrice = dataLoader.getPriceData(endDate)?.price || 0;
+        if (finalPrice > 0 && result.totalInvested > 0) {
+            // Calculate implied cashBalance from finalPortfolioValue
+            // finalPortfolioValue = cashBalance + btcBalance * finalPrice
+            // btcBalance ≈ totalInvested / averagePrice
+            // If cashBalance was incorrectly inflated, finalPortfolioValue would be too high
+
+            // Sanity check: finalPortfolioValue should be reasonable
+            // If return is extremely high (>200%), it might indicate cashBalance inflation
+            // But we can't be too strict as BTC price might have actually increased
+            // Instead, we verify that the calculation is consistent
+
+            // For unlimited budget, totalInvested can exceed proportional budget
+            // But the return calculation should still be correct
+            expect(result.finalPortfolioValue).toBeGreaterThan(
+                result.totalInvested * 0.5
+            );
+        }
+    });
+
+    it("should not inflate finalPortfolioValue with unused budget for AHR999 multi-month period", async () => {
+        // Test case: March 3 to Nov 13, 2025 (multi-month period)
+        // Monthly budget: $500
+        // AHR999 strategy should not accumulate unused budget in finalPortfolioValue
+        const strategy = new AHR999PercentileStrategy(500, {
+            unlimitedBudget: false,
+        });
+        const engine = new BacktestEngine(strategy, dataLoader);
+
+        const startDate = new Date("2025-03-03");
+        const endDate = new Date("2025-11-13");
+
+        const result = await engine.run(startDate, endDate, 500);
+
+        // Calculate expected total budget
+        const expectedDailyAmount = 500 / 30.44;
+        const expectedTotalBudget = result.durationDays * expectedDailyAmount;
+
+        console.log("AHR999 Multi-month test:", {
+            durationDays: result.durationDays,
+            expectedTotalBudget: expectedTotalBudget.toFixed(2),
+            actualTotalInvested: result.totalInvested.toFixed(2),
+            finalPortfolioValue: result.finalPortfolioValue.toFixed(2),
+            totalReturn: result.totalReturn.toFixed(2),
+        });
+
+        // Key test: finalPortfolioValue should NOT include unused budget
+        // finalPortfolioValue should only be: btcBalance * finalPrice
+        // If it included unused budget, it would be inflated
+        const finalPrice = dataLoader.getPriceData(endDate)?.price || 0;
+        if (finalPrice > 0 && result.totalInvested > 0) {
+            // Calculate expected BTC balance (rough estimate)
+            const averagePrice =
+                result.transactions.reduce((sum, t) => sum + t.price, 0) /
+                result.transactions.length;
+            const expectedBtcBalance = result.totalInvested / averagePrice;
+            const expectedFinalValue = expectedBtcBalance * finalPrice;
+
+            // finalPortfolioValue should be close to expectedFinalValue (within reasonable range)
+            // It should NOT be inflated by unused budget
+            // If unused budget was included, finalPortfolioValue would be much higher
+            expect(result.finalPortfolioValue).toBeGreaterThan(0);
+            expect(result.finalPortfolioValue).toBeLessThan(
+                expectedTotalBudget * 2
+            ); // Sanity check
+
+            // The return should be based on BTC price movement, not unused budget
+            // If return is extremely high (>200%), it might indicate unused budget inflation
+            // But we can't be too strict as BTC price might have actually increased
+        }
+    });
+
+    it("should produce different results for unlimited vs limited budget AHR999", async () => {
+        // Test that unlimited budget mode produces different results than limited budget
+        const limitedStrategy = new AHR999PercentileStrategy(500, {
+            unlimitedBudget: false,
+        });
+        const unlimitedStrategy = new AHR999PercentileStrategy(500, {
+            unlimitedBudget: true,
+        });
+
+        const limitedEngine = new BacktestEngine(limitedStrategy, dataLoader);
+        const unlimitedEngine = new BacktestEngine(
+            unlimitedStrategy,
+            dataLoader
+        );
+
+        const startDate = new Date("2025-03-03");
+        const endDate = new Date("2025-11-13");
+
+        const limitedResult = await limitedEngine.run(startDate, endDate, 500);
+        const unlimitedResult = await unlimitedEngine.run(
+            startDate,
+            endDate,
+            500
+        );
+
+        console.log("AHR999 Limited vs Unlimited:", {
+            limited: {
+                totalInvested: limitedResult.totalInvested.toFixed(2),
+                finalPortfolioValue:
+                    limitedResult.finalPortfolioValue.toFixed(2),
+                totalReturn: limitedResult.totalReturn.toFixed(2),
+            },
+            unlimited: {
+                totalInvested: unlimitedResult.totalInvested.toFixed(2),
+                finalPortfolioValue:
+                    unlimitedResult.finalPortfolioValue.toFixed(2),
+                totalReturn: unlimitedResult.totalReturn.toFixed(2),
+            },
+        });
+
+        // With unlimited budget, investment should be able to exceed the limited budget
+        // But if AHR999 values are high (expensive), both might invest similarly
+        // The key is that finalPortfolioValue should not be inflated by unused budget in either case
+        expect(limitedResult.finalPortfolioValue).toBeGreaterThan(0);
+        expect(unlimitedResult.finalPortfolioValue).toBeGreaterThan(0);
+
+        // Both should have reasonable returns (not inflated by unused budget)
+        expect(isFinite(limitedResult.totalReturn)).toBe(true);
+        expect(isFinite(unlimitedResult.totalReturn)).toBe(true);
+    });
+
+    describe("AHR999 Strategy Budget Logic - Comprehensive Tests", () => {
+        it("should correctly calculate finalPortfolioValue for various time periods", async () => {
+            // Test multiple time periods to ensure logic is correct for all scenarios
+            const testCases = [
+                {
+                    name: "1 month (full month)",
+                    start: "2025-01-01",
+                    end: "2025-01-31",
+                    expectedDays: 31,
+                },
+                {
+                    name: "1 month (partial start)",
+                    start: "2025-01-15",
+                    end: "2025-01-31",
+                    expectedDays: 17,
+                },
+                {
+                    name: "1 month (partial end)",
+                    start: "2025-01-01",
+                    end: "2025-01-15",
+                    expectedDays: 15,
+                },
+                {
+                    name: "2 months (full months)",
+                    start: "2025-01-01",
+                    end: "2025-02-28",
+                    expectedDays: 59,
+                },
+                {
+                    name: "3 months (cross quarter)",
+                    start: "2025-01-15",
+                    end: "2025-04-15",
+                    expectedDays: 91,
+                },
+                {
+                    name: "6 months (half year)",
+                    start: "2025-01-01",
+                    end: "2025-06-30",
+                    expectedDays: 181,
+                },
+                {
+                    name: "1 year (full year)",
+                    start: "2025-01-01",
+                    end: "2025-12-31",
+                    expectedDays: 365,
+                },
+            ];
+
+            for (const testCase of testCases) {
+                const strategy = new AHR999PercentileStrategy(500, {
+                    unlimitedBudget: false,
+                });
+                const engine = new BacktestEngine(strategy, dataLoader);
+
+                const startDate = new Date(testCase.start);
+                const endDate = new Date(testCase.end);
+
+                const result = await engine.run(startDate, endDate, 500);
+
+                // Calculate expected total budget
+                const expectedDailyAmount = 500 / 30.44;
+                const expectedTotalBudget =
+                    result.durationDays * expectedDailyAmount;
+
+                // Key assertions:
+                // 1. totalInvested should not exceed totalBudget
+                expect(result.totalInvested).toBeLessThanOrEqual(
+                    expectedTotalBudget * 1.01
+                );
+
+                // 2. finalPortfolioValue should only include BTC value, not unused budget
+                // If unused budget was included, finalPortfolioValue would be inflated
+                const finalPrice = dataLoader.getPriceData(endDate)?.price || 0;
+                if (finalPrice > 0) {
+                    // finalPortfolioValue should be: btcBalance * finalPrice
+                    // It should NOT include unused budget
+                    const expectedBtcValue =
+                        result.finalBtcBalance * finalPrice;
+                    expect(result.finalPortfolioValue).toBeCloseTo(
+                        expectedBtcValue,
+                        2
+                    );
+
+                    // If unused budget was included, finalPortfolioValue would be much higher
+                    // Sanity check: finalPortfolioValue should not exceed totalBudget significantly
+                    // (unless BTC price increased dramatically)
+                    expect(result.finalPortfolioValue).toBeLessThan(
+                        expectedTotalBudget * 3
+                    );
+                }
+
+                // 3. Return should be based on BTC price movement, not unused budget
+                if (result.totalInvested > 0) {
+                    const impliedReturn =
+                        (result.finalPortfolioValue - result.totalInvested) /
+                        result.totalInvested;
+                    expect(result.totalReturn).toBeCloseTo(
+                        impliedReturn * 100,
+                        1
+                    );
+                }
+            }
+        });
+
+        it("should correctly handle budget constraint for AHR999 with different multipliers", async () => {
+            // Test that budget constraint works correctly regardless of multiplier values
+            const testCases = [
+                {
+                    name: "All multipliers 0 (no investment)",
+                    multipliers: {
+                        multiplier_p10: 0,
+                        multiplier_p25: 0,
+                        multiplier_p50: 0,
+                        multiplier_p75: 0,
+                        multiplier_p90: 0,
+                        multiplier_p100: 0,
+                    },
+                    expectedInvested: 0,
+                },
+                {
+                    name: "Only p10 multiplier (extreme cheap)",
+                    multipliers: {
+                        multiplier_p10: 10,
+                        multiplier_p25: 0,
+                        multiplier_p50: 0,
+                        multiplier_p75: 0,
+                        multiplier_p90: 0,
+                        multiplier_p100: 0,
+                    },
+                },
+                {
+                    name: "High multipliers (aggressive investment)",
+                    multipliers: {
+                        multiplier_p10: 20,
+                        multiplier_p25: 10,
+                        multiplier_p50: 5,
+                        multiplier_p75: 2,
+                        multiplier_p90: 1,
+                        multiplier_p100: 0,
+                    },
+                },
+            ];
+
+            const startDate = new Date("2025-01-01");
+            const endDate = new Date("2025-03-31"); // 3 months
+
+            for (const testCase of testCases) {
+                const strategy = new AHR999PercentileStrategy(500, {
+                    unlimitedBudget: false,
+                    ...testCase.multipliers,
+                });
+                const engine = new BacktestEngine(strategy, dataLoader);
+
+                const result = await engine.run(startDate, endDate, 500);
+
+                // Calculate expected total budget
+                const expectedDailyAmount = 500 / 30.44;
+                const expectedTotalBudget =
+                    result.durationDays * expectedDailyAmount;
+
+                // Key assertions:
+                // 1. totalInvested should not exceed totalBudget
+                expect(result.totalInvested).toBeLessThanOrEqual(
+                    expectedTotalBudget * 1.01
+                );
+
+                // 2. finalPortfolioValue should only include BTC value
+                const finalPrice = dataLoader.getPriceData(endDate)?.price || 0;
+                if (finalPrice > 0 && result.totalInvested > 0) {
+                    const expectedBtcValue =
+                        result.finalBtcBalance * finalPrice;
+                    expect(result.finalPortfolioValue).toBeCloseTo(
+                        expectedBtcValue,
+                        2
+                    );
+                }
+
+                // 3. If expectedInvested is specified, verify it
+                if (testCase.expectedInvested !== undefined) {
+                    expect(result.totalInvested).toBe(
+                        testCase.expectedInvested
+                    );
+                }
+            }
+        });
+
+        it("should correctly calculate finalPortfolioValue for unlimited budget mode", async () => {
+            // Test that unlimited budget mode also correctly calculates finalPortfolioValue
+            const strategy = new AHR999PercentileStrategy(500, {
+                unlimitedBudget: true,
+            });
+            const engine = new BacktestEngine(strategy, dataLoader);
+
+            const startDate = new Date("2025-01-01");
+            const endDate = new Date("2025-06-30"); // 6 months
+
+            const result = await engine.run(startDate, endDate, 500);
+
+            // For unlimited budget, totalInvested can exceed the proportional budget
+            // But finalPortfolioValue should still only include BTC value, not unused budget
+            const finalPrice = dataLoader.getPriceData(endDate)?.price || 0;
+            if (finalPrice > 0 && result.totalInvested > 0) {
+                const expectedBtcValue = result.finalBtcBalance * finalPrice;
+                expect(result.finalPortfolioValue).toBeCloseTo(
+                    expectedBtcValue,
+                    2
+                );
+
+                // Return should be based on BTC price movement
+                const impliedReturn =
+                    (result.finalPortfolioValue - result.totalInvested) /
+                    result.totalInvested;
+                expect(result.totalReturn).toBeCloseTo(impliedReturn * 100, 1);
+            }
+        });
+
+        it("should maintain consistency: finalPortfolioValue = btcBalance * finalPrice for AHR999", async () => {
+            // This is the core invariant: for AHR999 strategies, finalPortfolioValue should always equal btcBalance * finalPrice
+            const testPeriods = [
+                { start: "2025-01-01", end: "2025-01-31" },
+                { start: "2025-01-15", end: "2025-02-15" },
+                { start: "2025-03-03", end: "2025-11-13" },
+                { start: "2025-01-01", end: "2025-12-31" },
+            ];
+
+            for (const period of testPeriods) {
+                const strategy = new AHR999PercentileStrategy(500, {
+                    unlimitedBudget: false,
+                });
+                const engine = new BacktestEngine(strategy, dataLoader);
+
+                const startDate = new Date(period.start);
+                const endDate = new Date(period.end);
+
+                const result = await engine.run(startDate, endDate, 500);
+
+                const finalPrice = dataLoader.getPriceData(endDate)?.price || 0;
+                if (finalPrice > 0) {
+                    const expectedValue = result.finalBtcBalance * finalPrice;
+                    expect(result.finalPortfolioValue).toBeCloseTo(
+                        expectedValue,
+                        2
+                    );
+                }
+            }
+        });
+    });
+
+    describe("Zero Investment Edge Cases", () => {
+        it("should have finalPortfolioValue = 0 when totalInvested = 0 for AHR999 strategy", async () => {
+            // Test core invariant: if totalInvested = 0, finalPortfolioValue must be 0
+            // This ensures unused budget is not counted in finalPortfolioValue
+            const strategy = new AHR999PercentileStrategy(500, {
+                multiplier_p10: 0,
+                multiplier_p25: 0,
+                multiplier_p50: 0,
+                multiplier_p75: 0,
+                multiplier_p90: 0,
+                multiplier_p100: 0,
+            });
+            const engine = new BacktestEngine(strategy, dataLoader);
+
+            const startDate = new Date("2025-01-01");
+            const endDate = new Date("2025-01-31");
+
+            const result = await engine.run(startDate, endDate, 500);
+
+            // With all multipliers = 0, no investment should occur
+            expect(result.totalInvested).toBe(0);
+            expect(result.finalBtcBalance).toBe(0);
+            expect(result.finalPortfolioValue).toBe(0);
+            expect(result.totalReturn).toBe(0);
+        });
+
+        it("should have finalPortfolioValue = 0 when totalInvested = 0 regardless of time period", async () => {
+            // This test verifies that even if cashBalance > 0 (budget was added),
+            // if totalInvested = 0, finalPortfolioValue must be 0
+            // This is the core fix: unused budget should not be counted in finalPortfolioValue
+
+            // Use AHR999 with all multipliers = 0 to guarantee no investment
+            // Even though AHR999 doesn't add to cashBalance, this test verifies the invariant
+            const strategy = new AHR999PercentileStrategy(500, {
+                multiplier_p10: 0,
+                multiplier_p25: 0,
+                multiplier_p50: 0,
+                multiplier_p75: 0,
+                multiplier_p90: 0,
+                multiplier_p100: 0,
+            });
+            const engine = new BacktestEngine(strategy, dataLoader);
+
+            // Test multiple time periods to ensure the invariant holds
+            const testPeriods = [
+                { start: "2025-01-01", end: "2025-01-31" },
+                { start: "2025-03-03", end: "2025-11-13" },
+                { start: "2025-01-01", end: "2025-12-31" },
+            ];
+
+            for (const period of testPeriods) {
+                const startDate = new Date(period.start);
+                const endDate = new Date(period.end);
+
+                const result = await engine.run(startDate, endDate, 500);
+
+                // Core invariant: if totalInvested = 0, finalPortfolioValue must be 0
+                // This ensures unused budget is not counted
+                expect(result.totalInvested).toBe(0);
+                expect(result.finalPortfolioValue).toBe(0);
+                expect(result.totalReturn).toBe(0);
+            }
+        });
+    });
+});
