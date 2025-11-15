@@ -54,6 +54,18 @@ class PortfolioState {
 }
 
 /**
+ * Represents a single transaction
+ */
+class Transaction {
+    constructor(date, investAmount, btcAmount, price) {
+        this.date = date;
+        this.investAmount = investAmount; // USD invested
+        this.btcAmount = btcAmount; // BTC bought
+        this.price = price; // BTC price at purchase
+    }
+}
+
+/**
  * Backtest results summary
  */
 class BacktestResult {
@@ -64,6 +76,7 @@ class BacktestResult {
         this.totalReturn = 0;
         this.annualizedReturn = 0;
         this.portfolioHistory = []; // Array of PortfolioState
+        this.transactions = []; // Array of Transaction (all purchases)
         this.strategyName = "";
         this.startDate = null;
         this.endDate = null;
@@ -501,79 +514,48 @@ class MonthlyDCAStrategy extends Strategy {
 }
 
 // ============================================================================
-// STRATEGY C: AHR999 THRESHOLD
+// STRATEGY C: AHR999 PERCENTILE
 // ============================================================================
 
 /**
- * AHR999 Threshold Strategy
- * Only invests when AHR999 is below a specific threshold
- * Accumulates cash when above threshold
+ * AHR999 Historical Percentile Strategy
+ * Adjusts investment amount based on where current AHR999 ranks historically
+ * User can configure multipliers for each percentile tier
+ * - Bottom 10% (0-10th percentile): EXTREME CHEAP
+ * - 10-25%: Very Cheap
+ * - 25-50%: Cheap
+ * - 50-75%: Fair
+ * - 75-90%: Expensive
+ * - Top 10% (90-100th percentile): VERY EXPENSIVE
  */
-class AHR999ThresholdStrategy extends Strategy {
-    constructor(monthlyBudget, config = {}) {
-        super(monthlyBudget, config);
-        this.threshold = config.threshold !== undefined ? config.threshold : 0.45;
-    }
-
-    getName() {
-        return "AHR999 Threshold";
-    }
-
-    getDescription() {
-        return `Invest when AHR999 < ${this.threshold}, accumulate cash otherwise`;
-    }
-
-    shouldInvest(date, price, dayData) {
-        // Get AHR999 value
-        let ahr999;
-        if (dayData && dayData.ahr999 !== null) {
-            ahr999 = dayData.ahr999;
-        } else {
-            ahr999 = this.getCurrentAHR999(date);
-        }
-
-        // If we can't calculate AHR999 or AHR999 is undefined/null, don't invest
-        if (ahr999 === null || ahr999 === undefined || isNaN(ahr999)) {
-            return 0;
-        }
-
-        // Only invest if below threshold and we have cash
-        // Use strict comparison to handle edge cases
-        if (ahr999 < this.threshold && this.cashBuffer > 0) {
-            // Invest all available cash when condition is met
-            const investAmount = this.cashBuffer;
-            this.cashBuffer = 0;
-            return investAmount;
-        }
-
-        return 0;
-    }
-}
-
-// ============================================================================
-// STRATEGY D: VALUATION-AWARE DCA
-// ============================================================================
-
-/**
- * Valuation-Aware DCA Strategy
- * Dynamically adjusts investment amount based on AHR999 percentile
- * - Very low AHR999 (cheap): Invest aggressively
- * - Very high AHR999 (expensive): Invest minimally or not at all
- * Uses historical AHR999 distribution to determine boundaries
- */
-class ValuationAwareDCAStrategy extends Strategy {
+class AHR999PercentileStrategy extends Strategy {
     constructor(monthlyBudget, config = {}) {
         super(monthlyBudget, config);
         this.ahr999Percentiles = null;
         this.dailyBudget = monthlyBudget / BACKTEST_CONFIG.DAYS_PER_MONTH;
+        
+        // User-configurable multipliers for each tier (default values)
+        this.multipliers = {
+            p10: config.multiplier_p10 !== undefined ? config.multiplier_p10 : 5.0,    // Bottom 10%
+            p25: config.multiplier_p25 !== undefined ? config.multiplier_p25 : 3.0,    // 10-25%
+            p50: config.multiplier_p50 !== undefined ? config.multiplier_p50 : 2.0,    // 25-50%
+            p75: config.multiplier_p75 !== undefined ? config.multiplier_p75 : 1.0,    // 50-75%
+            p90: config.multiplier_p90 !== undefined ? config.multiplier_p90 : 0.5,    // 75-90%
+            p100: config.multiplier_p100 !== undefined ? config.multiplier_p100 : 0,   // Top 10%
+        };
     }
 
     getName() {
-        return "Valuation-Aware DCA";
+        return "AHR999 Percentile";
     }
 
     getDescription() {
-        return "Invest aggressively when cheap (low AHR999), conservatively when expensive";
+        return "Invest based on historical AHR999 percentile ranking";
+    }
+
+    // Don't accumulate monthly budget - invest daily based on multipliers
+    onMonthStart(date) {
+        // Do not add to cashBuffer - we calculate daily investment directly
     }
 
     initialize() {
@@ -583,14 +565,15 @@ class ValuationAwareDCAStrategy extends Strategy {
         const historicalAHR999 = this.dataLoader.getHistoricalAHR999Values();
 
         this.ahr999Percentiles = {
-            p10: getPercentileValue(historicalAHR999, 10), // Very cheap
-            p25: getPercentileValue(historicalAHR999, 25), // Cheap
-            p50: getPercentileValue(historicalAHR999, 50), // Fair
-            p75: getPercentileValue(historicalAHR999, 75), // Expensive
-            p90: getPercentileValue(historicalAHR999, 90), // Very expensive
+            p10: getPercentileValue(historicalAHR999, 10),  // Bottom 10%
+            p25: getPercentileValue(historicalAHR999, 25),  // 10-25%
+            p50: getPercentileValue(historicalAHR999, 50),  // 25-50%
+            p75: getPercentileValue(historicalAHR999, 75),  // 50-75%
+            p90: getPercentileValue(historicalAHR999, 90),  // 75-90%
         };
 
         console.log("AHR999 Percentiles:", this.ahr999Percentiles);
+        console.log("Multipliers:", this.multipliers);
     }
 
     shouldInvest(date, price, dayData) {
@@ -602,44 +585,37 @@ class ValuationAwareDCAStrategy extends Strategy {
             ahr999 = this.getCurrentAHR999(date);
         }
 
-        // If we can't calculate AHR999 or no cash or invalid AHR999, don't invest
-        if (ahr999 === null || ahr999 === undefined || isNaN(ahr999) || this.cashBuffer <= 0) {
+        // If we can't calculate AHR999 or invalid AHR999, don't invest
+        if (ahr999 === null || ahr999 === undefined || isNaN(ahr999)) {
             return 0;
         }
 
-        // Calculate investment multiplier based on AHR999 percentile
+        // Calculate investment multiplier based on AHR999 percentile tier
         let multiplier;
 
         if (ahr999 < this.ahr999Percentiles.p10) {
-            // Bottom 10% - EXTREMELY cheap - invest 5x daily budget
-            multiplier = 5.0;
+            // Bottom 10% - EXTREMELY cheap
+            multiplier = this.multipliers.p10;
         } else if (ahr999 < this.ahr999Percentiles.p25) {
-            // Bottom 25% - Very cheap - invest 3x daily budget
-            multiplier = 3.0;
+            // 10-25% - Very cheap
+            multiplier = this.multipliers.p25;
         } else if (ahr999 < this.ahr999Percentiles.p50) {
-            // Below median - Cheap - invest 2x daily budget
-            multiplier = 2.0;
+            // 25-50% - Cheap
+            multiplier = this.multipliers.p50;
         } else if (ahr999 < this.ahr999Percentiles.p75) {
-            // Below 75% - Fair - invest 1x daily budget
-            multiplier = 1.0;
+            // 50-75% - Fair
+            multiplier = this.multipliers.p75;
         } else if (ahr999 < this.ahr999Percentiles.p90) {
-            // Top 25% - Expensive - invest 0.5x daily budget
-            multiplier = 0.5;
+            // 75-90% - Expensive
+            multiplier = this.multipliers.p90;
         } else {
-            // Top 10% - VERY expensive - don't invest
-            multiplier = 0;
+            // Top 10% - VERY expensive
+            multiplier = this.multipliers.p100;
         }
 
-        // Calculate investment amount
-        const idealInvestment = this.dailyBudget * multiplier;
-
-        // Don't invest more than available cash
-        const investAmount = Math.min(idealInvestment, this.cashBuffer);
-
-        // Update cash buffer
-        this.cashBuffer -= investAmount;
-
-        return investAmount;
+        // Calculate and return daily investment based on multiplier
+        // BacktestEngine will enforce cash constraints
+        return this.dailyBudget * multiplier;
     }
 }
 
@@ -679,6 +655,7 @@ class BacktestEngine {
         let btcBalance = 0;
         let totalInvested = 0;
         let prevDate = null;
+        let monthsElapsed = 0;
 
         // Iterate day by day
         let currentDate = new Date(startDate);
@@ -688,6 +665,7 @@ class BacktestEngine {
             if (isFirstDayOfMonth(currentDate, prevDate)) {
                 this.strategy.onMonthStart(currentDate);
                 cashBalance += monthlyBudget; // Add monthly budget to cash
+                monthsElapsed++;
             }
 
             // Get price data for this day
@@ -708,15 +686,31 @@ class BacktestEngine {
 
                 // Execute investment if strategy decided to invest
                 if (investAmount > 0) {
-                    const actualInvestment = Math.min(
-                        investAmount,
-                        cashBalance
-                    );
+                    // Calculate total budget available so far (based on time elapsed)
+                    const maxAvailableBudget = monthsElapsed * monthlyBudget;
+                    const budgetRemaining = maxAvailableBudget - totalInvested;
+                    
+                    // Allow investment up to remaining budget
+                    // (don't limit by cashBalance for daily strategies that don't accumulate)
+                    const actualInvestment = Math.min(investAmount, budgetRemaining);
+                    
                     if (actualInvestment > 0) {
                         const btcBought = actualInvestment / price;
                         btcBalance += btcBought;
-                        cashBalance -= actualInvestment;
                         totalInvested += actualInvestment;
+                        
+                        // Record transaction
+                        result.transactions.push(
+                            new Transaction(
+                                new Date(currentDate),
+                                actualInvestment,
+                                btcBought,
+                                price
+                            )
+                        );
+                        
+                        // Update cashBalance for tracking (can go negative for daily strategies)
+                        cashBalance -= actualInvestment;
                     }
                 }
 
@@ -804,6 +798,16 @@ function renderBacktestChart(result, canvasId) {
     const investedValues = result.portfolioHistory.map(
         (state) => state.totalInvested
     );
+    
+    // Prepare buy points data (only show points where transactions occurred)
+    const buyPoints = labels.map((label, index) => {
+        const date = result.portfolioHistory[index].date;
+        // Find if there's a transaction on this date
+        const transaction = result.transactions.find(t => 
+            t.date.toLocaleDateString() === date.toLocaleDateString()
+        );
+        return transaction ? portfolioValues[index] : null;
+    });
 
     // Create chart
     canvas.chart = new Chart(ctx, {
@@ -819,6 +823,8 @@ function renderBacktestChart(result, canvasId) {
                     borderWidth: 2,
                     fill: true,
                     tension: 0.1,
+                    pointRadius: 0, // Remove circles from line
+                    pointHoverRadius: 4,
                 },
                 {
                     label: "Total Invested",
@@ -829,6 +835,17 @@ function renderBacktestChart(result, canvasId) {
                     borderDash: [5, 5],
                     fill: false,
                     tension: 0.1,
+                    pointRadius: 0, // Remove circles from line
+                    pointHoverRadius: 4,
+                },
+                {
+                    label: "Buy Points",
+                    data: buyPoints,
+                    borderColor: "transparent",
+                    backgroundColor: "#34c759",
+                    pointRadius: 4, // Show circles only for buy points
+                    pointHoverRadius: 6,
+                    showLine: false, // Don't connect buy points
                 },
             ],
         },
@@ -970,38 +987,14 @@ class BacktestUI {
      * Attach event listeners
      */
     attachEventListeners() {
-        // Strategy selection changes
-        const strategyRadios = document.querySelectorAll(
-            'input[name="backtestStrategy"]'
-        );
-        strategyRadios.forEach((radio) => {
-            radio.addEventListener("change", () => this.onStrategyChange());
-        });
-
+        // Note: Strategy config panel visibility is handled by index.html
+        // We only handle the backtest button here
+        
         // Run backtest button
         const runButton = document.getElementById("runBacktestButton");
         if (runButton) {
             runButton.addEventListener("click", () => this.runBacktest());
         }
-
-        // Initial strategy change to show/hide config options
-        this.onStrategyChange();
-    }
-
-    /**
-     * Handle strategy selection change
-     */
-    onStrategyChange() {
-        const selectedStrategy = document.querySelector(
-            'input[name="backtestStrategy"]:checked'
-        )?.value;
-
-        // Show/hide strategy-specific config
-        document.getElementById("monthlyDcaConfig").style.display =
-            selectedStrategy === "monthly-dca" ? "block" : "none";
-
-        document.getElementById("ahr999ThresholdConfig").style.display =
-            selectedStrategy === "ahr999-threshold" ? "block" : "none";
     }
 
     /**
@@ -1066,18 +1059,38 @@ class BacktestUI {
                     });
                     break;
 
-                case "ahr999-threshold":
-                    const thresholdInput = document.getElementById("ahr999Threshold").value;
-                    const threshold = thresholdInput !== "" && !isNaN(parseFloat(thresholdInput))
-                        ? parseFloat(thresholdInput)
-                        : 0.45;
-                    strategy = new AHR999ThresholdStrategy(monthlyBudget, {
-                        threshold,
+                case "ahr999-percentile":
+                    // Read multipliers from UI tier inputs (handle 0 correctly)
+                    const getMultiplier = (id, defaultValue) => {
+                        const value = document.getElementById(id).value;
+                        const parsed = parseFloat(value);
+                        return isNaN(parsed) ? defaultValue : parsed;
+                    };
+                    
+                    const multiplier_p10 = getMultiplier("tier-p10", 5.0);
+                    const multiplier_p25 = getMultiplier("tier-p25", 3.0);
+                    const multiplier_p50 = getMultiplier("tier-p50", 2.0);
+                    const multiplier_p75 = getMultiplier("tier-p75", 1.0);
+                    const multiplier_p90 = getMultiplier("tier-p90", 0.5);
+                    const multiplier_p100 = getMultiplier("tier-p100", 0);
+                    
+                    console.log("AHR999 Percentile Multipliers:", {
+                        multiplier_p10,
+                        multiplier_p25,
+                        multiplier_p50,
+                        multiplier_p75,
+                        multiplier_p90,
+                        multiplier_p100,
                     });
-                    break;
-
-                case "valuation-aware":
-                    strategy = new ValuationAwareDCAStrategy(monthlyBudget);
+                    
+                    strategy = new AHR999PercentileStrategy(monthlyBudget, {
+                        multiplier_p10,
+                        multiplier_p25,
+                        multiplier_p50,
+                        multiplier_p75,
+                        multiplier_p90,
+                        multiplier_p100,
+                    });
                     break;
 
                 default:
@@ -1179,6 +1192,37 @@ class BacktestUI {
                     <h4>Portfolio Value Over Time</h4>
                     <canvas id="backtestChart"></canvas>
                 </div>
+
+                <div class="transactions-table">
+                    <h4>Transaction History (${result.transactions.length} purchases)</h4>
+                    <div class="transactions-table-wrapper">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th class="text-right">Invested (USD)</th>
+                                    <th class="text-right">BTC Bought</th>
+                                    <th class="text-right">BTC Price</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${result.transactions.map(tx => `
+                                    <tr>
+                                        <td>${tx.date.toLocaleDateString()}</td>
+                                        <td class="text-right">$${tx.investAmount.toFixed(2)}</td>
+                                        <td class="text-right">${tx.btcAmount.toFixed(6)} BTC</td>
+                                        <td class="text-right">$${tx.price.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="transactions-table-summary">
+                        Average purchase price: $${(result.totalInvested / result.finalBtcBalance).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})} per BTC
+                        &nbsp;|&nbsp;
+                        Total transactions: ${result.transactions.length}
+                    </div>
+                </div>
             </div>
         `;
 
@@ -1215,12 +1259,12 @@ export {
     Strategy,
     DailyDCAStrategy,
     MonthlyDCAStrategy,
-    AHR999ThresholdStrategy,
-    ValuationAwareDCAStrategy,
+    AHR999PercentileStrategy,
     BacktestEngine,
     BacktestUI,
     DayData,
     PortfolioState,
+    Transaction,
     BacktestResult,
 };
 
@@ -1231,8 +1275,15 @@ export {
 // Initialize when DOM is ready (only in browser environment)
 if (typeof window !== 'undefined' && typeof document !== 'undefined') {
     let backtestUI;
-    document.addEventListener("DOMContentLoaded", async () => {
+    const initBacktestUI = async () => {
         backtestUI = new BacktestUI();
         await backtestUI.initialize();
-    });
+    };
+    
+    if (document.readyState === 'loading') {
+        document.addEventListener("DOMContentLoaded", initBacktestUI);
+    } else {
+        // DOM already loaded, initialize immediately
+        initBacktestUI();
+    }
 }

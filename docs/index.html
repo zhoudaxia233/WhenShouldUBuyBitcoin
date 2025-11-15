@@ -665,6 +665,10 @@
             display: none;
         }
 
+        .strategy-config.active {
+            display: block;
+        }
+
         .strategy-config label {
             font-size: 13px;
             margin-bottom: 6px;
@@ -672,6 +676,58 @@
 
         .strategy-config input {
             margin-top: 6px;
+        }
+
+        .percentile-tiers {
+            margin-top: 12px;
+        }
+
+        .tier-row {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1.2fr;
+            gap: 12px;
+            padding: 10px;
+            align-items: center;
+            border-bottom: 1px solid #e5e5e5;
+        }
+
+        .tier-row.tier-header {
+            font-weight: 600;
+            font-size: 12px;
+            text-transform: uppercase;
+            color: #86868b;
+            background: #f5f5f7;
+            border-radius: 6px 6px 0 0;
+        }
+
+        .tier-label {
+            font-size: 13px;
+        }
+
+        .tier-multiplier {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .tier-input {
+            width: 60px;
+            padding: 6px 8px;
+            border: 1px solid #d2d2d7;
+            border-radius: 6px;
+            font-size: 14px;
+            text-align: center;
+        }
+
+        .tier-input:focus {
+            outline: none;
+            border-color: #0071e3;
+        }
+
+        .tier-daily {
+            font-weight: 600;
+            color: #0071e3;
+            font-size: 14px;
         }
 
         .backtest-button {
@@ -760,6 +816,70 @@
         .chart-wrapper canvas {
             width: 100% !important;
             height: 400px !important;
+        }
+
+        .transactions-table {
+            margin-top: 32px;
+            padding: 24px;
+            background: #f5f5f7;
+            border-radius: 12px;
+        }
+
+        .transactions-table h4 {
+            font-size: 1.1em;
+            font-weight: 600;
+            margin-bottom: 16px;
+            color: #1d1d1f;
+        }
+
+        .transactions-table-wrapper {
+            max-height: 400px;
+            overflow-y: auto;
+            border-radius: 8px;
+            background: white;
+        }
+
+        .transactions-table table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+
+        .transactions-table thead {
+            position: sticky;
+            top: 0;
+            background: #f5f5f7;
+            z-index: 1;
+        }
+
+        .transactions-table th {
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+            color: #1d1d1f;
+            border-bottom: 2px solid #d2d2d7;
+        }
+
+        .transactions-table td {
+            padding: 10px 12px;
+            border-bottom: 1px solid #e5e5e5;
+        }
+
+        .transactions-table tr:hover {
+            background: #f9f9f9;
+        }
+
+        .transactions-table .text-right {
+            text-align: right;
+        }
+
+        .transactions-table-summary {
+            margin-top: 12px;
+            padding: 12px;
+            background: white;
+            border-radius: 8px;
+            font-size: 13px;
+            color: #86868b;
         }
 
         .loading {
@@ -1013,7 +1133,8 @@
 
                 <div class="form-group">
                     <label for="backtestBudget">Monthly Investment Budget (USD)</label>
-                    <input type="number" id="backtestBudget" value="500" min="1" step="1" required />
+                    <input type="number" id="backtestBudget" value="500" min="1" step="1" required oninput="updateDailyAmount()" />
+                    <div id="dailyAmountDisplay" style="font-size: 13px; color: #86868b; margin-top: 8px;"></div>
                 </div>
 
                 <div class="form-group">
@@ -1034,17 +1155,10 @@
                             </label>
                         </div>
                         <div class="strategy-option">
-                            <input type="radio" id="strategy-ahr999" name="backtestStrategy" value="ahr999-threshold" />
+                            <input type="radio" id="strategy-ahr999" name="backtestStrategy" value="ahr999-percentile" />
                             <label for="strategy-ahr999">
-                                AHR999 Threshold
-                                <button type="button" class="strategy-info-btn" onclick="showStrategyInfo('ahr999-threshold'); event.stopPropagation();">i</button>
-                            </label>
-                        </div>
-                        <div class="strategy-option">
-                            <input type="radio" id="strategy-valuation" name="backtestStrategy" value="valuation-aware" />
-                            <label for="strategy-valuation">
-                                Valuation-Aware
-                                <button type="button" class="strategy-info-btn" onclick="showStrategyInfo('valuation-aware'); event.stopPropagation();">i</button>
+                                AHR999 Percentile
+                                <button type="button" class="strategy-info-btn" onclick="showStrategyInfo('ahr999-percentile'); event.stopPropagation();">i</button>
                             </label>
                         </div>
                     </div>
@@ -1056,11 +1170,67 @@
                     </div>
 
                     <div id="ahr999ThresholdConfig" class="strategy-config">
-                        <label for="ahr999Threshold">AHR999 Threshold (invest when below this value)</label>
-                        <input type="number" id="ahr999Threshold" value="0.45" min="0" max="2.0" step="0.05" />
-                        <p style="font-size: 12px; color: #86868b; margin-top: 8px;">
-                            Note: Setting to 0 means never invest (AHR999 is always positive)
+                        <label style="display: block; margin-bottom: 12px;">AHR999 Historical Percentile Tiers</label>
+                        <p style="font-size: 12px; color: #86868b; margin-bottom: 12px;">
+                            Configure investment multipliers based on where current AHR999 ranks historically.
+                            Lower percentiles = cheaper Bitcoin.
                         </p>
+                        
+                        <div class="percentile-tiers">
+                            <div class="tier-row tier-header">
+                                <div class="tier-label">Percentile Range</div>
+                                <div class="tier-multiplier">Multiplier</div>
+                                <div class="tier-daily">Daily Amount</div>
+                            </div>
+                            
+                            <div class="tier-row">
+                                <div class="tier-label">Bottom 10% (EXTREME CHEAP)</div>
+                                <div class="tier-multiplier">
+                                    <input type="number" class="tier-input" id="tier-p10" value="5" min="0" max="10" step="0.5" oninput="updatePercentileTiers()" />x
+                                </div>
+                                <div class="tier-daily" id="tier-p10-amount">$82.10/day</div>
+                            </div>
+                            
+                            <div class="tier-row">
+                                <div class="tier-label">10-25% (Very Cheap)</div>
+                                <div class="tier-multiplier">
+                                    <input type="number" class="tier-input" id="tier-p25" value="3" min="0" max="10" step="0.5" oninput="updatePercentileTiers()" />x
+                                </div>
+                                <div class="tier-daily" id="tier-p25-amount">$49.26/day</div>
+                            </div>
+                            
+                            <div class="tier-row">
+                                <div class="tier-label">25-50% (Cheap)</div>
+                                <div class="tier-multiplier">
+                                    <input type="number" class="tier-input" id="tier-p50" value="2" min="0" max="10" step="0.5" oninput="updatePercentileTiers()" />x
+                                </div>
+                                <div class="tier-daily" id="tier-p50-amount">$32.84/day</div>
+                            </div>
+                            
+                            <div class="tier-row">
+                                <div class="tier-label">50-75% (Fair)</div>
+                                <div class="tier-multiplier">
+                                    <input type="number" class="tier-input" id="tier-p75" value="1" min="0" max="10" step="0.5" oninput="updatePercentileTiers()" />x
+                                </div>
+                                <div class="tier-daily" id="tier-p75-amount">$16.42/day</div>
+                            </div>
+                            
+                            <div class="tier-row">
+                                <div class="tier-label">75-90% (Expensive)</div>
+                                <div class="tier-multiplier">
+                                    <input type="number" class="tier-input" id="tier-p90" value="0.5" min="0" max="10" step="0.5" oninput="updatePercentileTiers()" />x
+                                </div>
+                                <div class="tier-daily" id="tier-p90-amount">$8.21/day</div>
+                            </div>
+                            
+                            <div class="tier-row">
+                                <div class="tier-label">Top 10% (VERY EXPENSIVE)</div>
+                                <div class="tier-multiplier">
+                                    <input type="number" class="tier-input" id="tier-p100" value="0" min="0" max="10" step="0.5" oninput="updatePercentileTiers()" />x
+                                </div>
+                                <div class="tier-daily" id="tier-p100-amount">$0/day</div>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -1252,6 +1422,51 @@
                     <h4>Best For</h4>
                     <p>Sophisticated investors, those who want to "time the market" systematically, medium-to-long time horizons (2+ years), investors willing to accept complexity for potential alpha.</p>
                 `
+            },
+            'ahr999-percentile': {
+                title: 'AHR999 Historical Percentile Strategy',
+                content: `
+                    <h4>How It Works</h4>
+                    <p>Adjusts investment amounts based on where the current AHR999 value ranks historically. When Bitcoin is in the bottom 10% of historical AHR999 values (cheapest ever), invest more aggressively.</p>
+                    
+                    <h4>Investment Tiers (Default)</h4>
+                    <ul>
+                        <li><strong>Bottom 10%</strong> (0-10th percentile): EXTREME CHEAP → 5x daily investment</li>
+                        <li><strong>10-25%</strong>: Very Cheap → 3x daily investment</li>
+                        <li><strong>25-50%</strong>: Cheap → 2x daily investment</li>
+                        <li><strong>50-75%</strong>: Fair → 1x daily investment</li>
+                        <li><strong>75-90%</strong>: Expensive → 0.5x daily investment</li>
+                        <li><strong>Top 10%</strong> (90-100th percentile): VERY EXPENSIVE → 0x (no investment)</li>
+                    </ul>
+                    
+                    <h4>Example Scenario</h4>
+                    <p>Monthly: $500 → Base daily: ~$16.42</p>
+                    <ul>
+                        <li><strong>Jan 2020</strong> (AHR999 at 3rd percentile): Invest 5x = $82.10/day</li>
+                        <li><strong>Nov 2021</strong> (AHR999 at 95th percentile): Invest 0x = $0/day</li>
+                        <li><strong>Mar 2024</strong> (AHR999 at 60th percentile): Invest 1x = $16.42/day</li>
+                    </ul>
+                    
+                    <h4>Pros</h4>
+                    <ul>
+                        <li><strong>Data-driven</strong> - uses actual historical distribution</li>
+                        <li><strong>Fully customizable</strong> - adjust multipliers for each tier</li>
+                        <li><strong>Real-time feedback</strong> - see exact daily investment amounts</li>
+                        <li><strong>Adaptive sizing</strong> - maximizes buys during historical dips</li>
+                        <li>Reduces exposure during overheated markets</li>
+                    </ul>
+                    
+                    <h4>Cons</h4>
+                    <ul>
+                        <li>Variable investment amounts</li>
+                        <li>May skip investing for extended periods</li>
+                        <li>Requires historical AHR999 data</li>
+                        <li>More complex than simple DCA</li>
+                    </ul>
+                    
+                    <h4>Best For</h4>
+                    <p>Investors who want to maximize returns by buying historical dips, those comfortable with variable investment amounts, people who prefer data-driven strategies over fixed schedules.</p>
+                `
             }
         };
 
@@ -1279,6 +1494,154 @@
                 hideStrategyInfo();
             }
         });
+
+        // Show/hide strategy-specific config panels
+        function updateStrategyConfig() {
+            const selectedStrategy = document.querySelector('input[name="backtestStrategy"]:checked')?.value;
+            
+            // Get config panels
+            const monthlyConfig = document.getElementById('monthlyDcaConfig');
+            const ahr999Config = document.getElementById('ahr999ThresholdConfig');
+            
+            // Hide all config panels (remove active class)
+            monthlyConfig.classList.remove('active');
+            ahr999Config.classList.remove('active');
+            
+            // Remove any inline display styles that might interfere
+            monthlyConfig.style.display = '';
+            ahr999Config.style.display = '';
+            
+            // Show the relevant config panel (add active class)
+            if (selectedStrategy === 'monthly-dca') {
+                monthlyConfig.classList.add('active');
+            } else if (selectedStrategy === 'ahr999-percentile') {
+                ahr999Config.classList.add('active');
+            }
+        }
+
+        // Update daily amount display
+        function updateDailyAmount() {
+            const monthlyBudget = parseFloat(document.getElementById('backtestBudget').value) || 0;
+            const selectedStrategy = document.querySelector('input[name="backtestStrategy"]:checked')?.value;
+            const dailyAmountDiv = document.getElementById('dailyAmountDisplay');
+            
+            const DAYS_PER_MONTH = 30.44;
+            const dailyAmount = monthlyBudget / DAYS_PER_MONTH;
+            
+            if (selectedStrategy === 'daily-dca') {
+                dailyAmountDiv.innerHTML = `→ Daily investment: <strong>$${dailyAmount.toFixed(2)}</strong>/day`;
+                dailyAmountDiv.style.display = 'block';
+            } else if (selectedStrategy === 'ahr999-percentile') {
+                dailyAmountDiv.innerHTML = `→ Base daily amount: <strong>$${dailyAmount.toFixed(2)}</strong>/day (varies by AHR999 percentile)`;
+                dailyAmountDiv.style.display = 'block';
+            } else {
+                dailyAmountDiv.style.display = 'none';
+            }
+        }
+
+        // Update percentile tier amounts
+        function updatePercentileTiers() {
+            const monthlyBudget = parseFloat(document.getElementById('backtestBudget').value) || 0;
+            const DAYS_PER_MONTH = 30.44;
+            const dailyAmount = monthlyBudget / DAYS_PER_MONTH;
+            
+            const tiers = ['p10', 'p25', 'p50', 'p75', 'p90', 'p100'];
+            tiers.forEach(tier => {
+                const multiplier = parseFloat(document.getElementById(`tier-${tier}`).value) || 0;
+                const amount = dailyAmount * multiplier;
+                document.getElementById(`tier-${tier}-amount`).textContent = `$${amount.toFixed(2)}/day`;
+            });
+            
+            // Also update main display
+            updateDailyAmount();
+        }
+
+        // Check if end date is in the future and disable AHR999 strategy accordingly
+        function validateFutureDateForStrategies() {
+            const endDateInput = document.getElementById('backtestEndDate');
+            const ahr999Radio = document.getElementById('strategy-ahr999');
+            const ahr999Label = ahr999Radio.parentElement;
+            
+            if (!endDateInput.value) {
+                return; // No date set, nothing to validate
+            }
+            
+            const endDate = new Date(endDateInput.value);
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            endDate.setHours(0, 0, 0, 0);
+            
+            const isFuture = endDate > today;
+            
+            if (isFuture) {
+                // Disable AHR999 Percentile for future dates
+                ahr999Radio.disabled = true;
+                ahr999Label.style.opacity = '0.5';
+                ahr999Label.title = 'Cannot use AHR999 strategy with future end dates (no historical data)';
+                
+                // If currently selected, switch to daily DCA
+                if (ahr999Radio.checked) {
+                    document.getElementById('strategy-daily').checked = true;
+                    updateDailyAmount();
+                }
+            } else {
+                // Re-enable AHR999 Percentile for past/present dates
+                ahr999Radio.disabled = false;
+                ahr999Label.style.opacity = '1';
+                ahr999Label.title = '';
+            }
+        }
+
+        // Show/hide strategy config panels
+        function updateStrategyConfigPanels() {
+            const selectedStrategy = document.querySelector('input[name="backtestStrategy"]:checked')?.value;
+            const monthlyConfig = document.getElementById('monthlyDcaConfig');
+            const ahr999Config = document.getElementById('ahr999ThresholdConfig');
+            
+            if (!monthlyConfig || !ahr999Config) return;
+            
+            // Hide all
+            monthlyConfig.classList.remove('active');
+            ahr999Config.classList.remove('active');
+            monthlyConfig.style.display = '';
+            ahr999Config.style.display = '';
+            
+            // Show selected
+            if (selectedStrategy === 'monthly-dca') {
+                monthlyConfig.classList.add('active');
+            } else if (selectedStrategy === 'ahr999-percentile') {
+                ahr999Config.classList.add('active');
+            }
+        }
+
+        // Initialize function
+        function initializeBacktestUI() {
+            // Update strategy config panels
+            updateStrategyConfigPanels();
+            updateDailyAmount();
+            updatePercentileTiers();
+            validateFutureDateForStrategies();
+            
+            // Update when strategy changes
+            document.querySelectorAll('input[name="backtestStrategy"]').forEach(radio => {
+                radio.addEventListener('change', () => {
+                    updateStrategyConfigPanels();
+                    updateDailyAmount();
+                    updatePercentileTiers();
+                });
+            });
+            
+            // Validate when end date changes
+            document.getElementById('backtestEndDate').addEventListener('change', validateFutureDateForStrategies);
+        }
+
+        // Initialize on page load (handle both cases: already loaded or still loading)
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initializeBacktestUI);
+        } else {
+            // DOM already loaded, initialize immediately
+            initializeBacktestUI();
+        }
         
         // Future price forecast calculator
         async function calculateForecast() {

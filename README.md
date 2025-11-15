@@ -57,12 +57,23 @@ Test different Bitcoin investment strategies without risking real money. Choose 
 ### Available Strategies
 
 1. **Daily DCA**: Invest the same amount every day
+   - Simple and consistent approach
+   - Shows exact daily investment amount
+   
 2. **Monthly DCA**: Invest your full monthly budget on a specific day each month
-3. **AHR999 Threshold**: Only invest when AHR999 drops below a threshold (e.g., 0.45), accumulate cash otherwise
-4. **Valuation-Aware DCA**: Dynamically adjust investment based on AHR999 percentiles
-   - Invest aggressively when Bitcoin is extremely cheap (low AHR999)
-   - Invest conservatively or not at all when expensive (high AHR999)
-   - Uses historical distribution to determine "cheap" vs "expensive"
+   - More realistic for most investors
+   - Choose your preferred day of the month (1-28)
+   
+3. **AHR999 Historical Percentile**: Dynamically adjust investment based on where current AHR999 ranks historically
+   - **Bottom 10% (0-10th percentile)**: EXTREME CHEAP - Default 5x daily investment
+   - **10-25%**: Very Cheap - Default 3x daily investment
+   - **25-50%**: Cheap - Default 2x daily investment
+   - **50-75%**: Fair - Default 1x daily investment
+   - **75-90%**: Expensive - Default 0.5x daily investment
+   - **Top 10% (90-100th percentile)**: VERY EXPENSIVE - Default 0x (no investment)
+   - **Fully customizable**: Adjust multipliers for each percentile tier
+   - **Real-time feedback**: See exact daily investment amounts for each tier
+   - **Note**: Only available for historical backtests (requires AHR999 data)
 
 ### How It Works
 
