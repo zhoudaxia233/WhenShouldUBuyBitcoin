@@ -349,6 +349,27 @@ function isDayOfMonth(date, targetDay) {
     return date.getDate() === targetDay;
 }
 
+/**
+ * Calculate the number of complete months between two dates
+ * A complete month is defined as a month that has at least one day in the range
+ */
+function getCompleteMonthsCount(startDate, endDate) {
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    
+    // Count months from start to end (inclusive)
+    let months = 0;
+    let current = new Date(start.getFullYear(), start.getMonth(), 1);
+    const endMonth = new Date(end.getFullYear(), end.getMonth(), 1);
+    
+    while (current <= endMonth) {
+        months++;
+        current.setMonth(current.getMonth() + 1);
+    }
+    
+    return months;
+}
+
 // ============================================================================
 // STRATEGY BASE CLASS
 // ============================================================================
@@ -644,9 +665,9 @@ class BacktestEngine {
         );
 
         // Calculate total budget for entire backtest period
-        const totalDays = result.durationDays + 1; // +1 to include both start and end dates
-        const totalMonths = totalDays / BACKTEST_CONFIG.DAYS_PER_MONTH;
-        const totalBudget = totalMonths * monthlyBudget;
+        // Use complete months count to ensure Monthly DCA can invest full amount each month
+        const completeMonths = getCompleteMonthsCount(startDate, endDate);
+        const totalBudget = completeMonths * monthlyBudget;
 
         // Initialize strategy
         this.strategy.initialize();
@@ -685,6 +706,9 @@ class BacktestEngine {
                     dayData
                 );
 
+                // Track if a transaction occurred (for portfolio history recording)
+                let hasTransaction = false;
+                
                 // Execute investment if strategy decided to invest
                 if (investAmount > 0) {
                     // Limit investment to remaining total budget
@@ -708,20 +732,24 @@ class BacktestEngine {
                         
                         // Update cashBalance
                         cashBalance -= actualInvestment;
+                        hasTransaction = true;
                     }
                 }
 
                 // Calculate portfolio value
                 const portfolioValue = cashBalance + btcBalance * price;
 
-                // Record portfolio state (sample every 7 days to reduce data size)
+                // Record portfolio state
+                // - Sample every 7 days to reduce data size
+                // - Always record on days with transactions (for buy points visibility)
+                // - Always record on end date
                 const daysSinceStart = Math.floor(
                     (currentDate - startDate) / (1000 * 60 * 60 * 24)
                 );
-                if (
-                    daysSinceStart % 7 === 0 ||
-                    currentDate.getTime() === endDate.getTime()
-                ) {
+                const isSamplingDay = daysSinceStart % 7 === 0;
+                const isEndDate = currentDate.getTime() === endDate.getTime();
+                
+                if (isSamplingDay || hasTransaction || isEndDate) {
                     result.portfolioHistory.push(
                         new PortfolioState(
                             new Date(currentDate),
@@ -796,14 +824,19 @@ function renderBacktestChart(result, canvasId) {
         (state) => state.totalInvested
     );
     
-    // Prepare buy points data (only show points where transactions occurred)
+    // Prepare buy points data - mark points where transactions occurred
+    // Since we now record all transaction days in portfolioHistory, we can directly match dates
     const buyPoints = labels.map((label, index) => {
-        const date = result.portfolioHistory[index].date;
-        // Find if there's a transaction on this date
-        const transaction = result.transactions.find(t => 
-            t.date.toLocaleDateString() === date.toLocaleDateString()
-        );
-        return transaction ? portfolioValues[index] : null;
+        const portfolioDate = result.portfolioHistory[index].date;
+        // Check if any transaction matches this exact date
+        const hasTransaction = result.transactions.some(t => {
+            const tDate = new Date(t.date);
+            const pHistDate = new Date(portfolioDate);
+            return tDate.getFullYear() === pHistDate.getFullYear() &&
+                   tDate.getMonth() === pHistDate.getMonth() &&
+                   tDate.getDate() === pHistDate.getDate();
+        });
+        return hasTransaction ? portfolioValues[index] : null;
     });
 
     // Create chart
