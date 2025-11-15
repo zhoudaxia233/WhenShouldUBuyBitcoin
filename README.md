@@ -8,93 +8,73 @@ A quantitative approach to identify Bitcoin buying opportunities using two indep
 
 Bitcoin enters a **Double Undervaluation Buy Zone** when **BOTH** conditions are met:
 
-### 1. Price < 200-Day DCA Cost
-The harmonic mean of Bitcoin's price over the past 200 days. This represents the average cost if you had been dollar-cost-averaging with a fixed USD amount daily.
+1. **Price < 200-Day DCA Cost** - Current price is cheaper than the average cost of consistent buyers over the past 6-7 months
+2. **Price < Power Law Trend** - Current price is below Bitcoin's long-term fundamental value based on network growth effects
 
-**When price drops below this level:** The current price is cheaper than the average cost of consistent buyers over the past 6-7 months.
-
-### 2. Price < Power Law Trend
-A long-term power law growth model fitted to all historical price data. This represents Bitcoin's fundamental fair value based on network growth effects (Metcalfe's Law).
-
-**When price drops below this level:** The current price is below Bitcoin's long-term trend, suggesting undervaluation relative to historical growth patterns.
+Using two independent metrics reduces false signals and identifies stronger buying opportunities.
 
 ---
 
-## 💡 Why Both Conditions Matter
+## 📊 Website
 
-Using **two independent metrics** reduces false signals:
+**[When Should U Buy Bitcoin](https://zhoudaxia233.github.io/WhenShouldUBuyBitcoin/)**
 
-- **DCA Cost** reflects recent market sentiment (200-day window)
-- **Power Law Trend** reflects long-term fundamental value (all history)
+### Features
 
-When both signal undervaluation simultaneously, it suggests a stronger buying opportunity.
-
----
-
-## 📊 How to Use
-
-**Website:** [When Should U Buy Bitcoin](https://zhoudaxia233.github.io/WhenShouldUBuyBitcoin/)
-
-### What You'll See
-
-1. **Historical Charts**: Visualize when Bitcoin has been in the buy zone historically
-2. **Real-Time Check**: Click the button to get current valuation status
-3. **Future Price Forecast**: Calculate predicted Bitcoin price on any future date
-4. **Backtest / Strategy Simulator**: Test different investment strategies with historical data
-5. **Distance to Buy Zone**: See how much Bitcoin would need to drop (or if you're already in the zone)
+- **Historical Charts** - Visualize when Bitcoin has been in the buy zone
+- **Real-Time Check** - Get current valuation status
+- **Future Price Forecast** - Calculate predicted Bitcoin price on any future date
+- **Strategy Backtesting** - Test different investment strategies with historical data
+- **Distance to Buy Zone** - See how much Bitcoin needs to drop to enter the zone
 
 ### Data Updates
 
-- Historical data updates **daily at 00:30 UTC** via automated script
-- Real-time check fetches **live price** directly from Yahoo Finance
+- Historical data updates **daily at 00:30 UTC**
+- Real-time check fetches **live price** from Yahoo Finance
 
 ---
 
-## 🎮 Strategy Backtesting (NEW!)
+## 🎮 Strategy Backtesting
 
-Test different Bitcoin investment strategies without risking real money. Choose from:
+Test different Bitcoin investment strategies without risking real money. All calculations run entirely in your browser.
 
 ### Available Strategies
 
-1. **Daily DCA**: Invest the same amount every day
-   - Simple and consistent approach
-   - Shows exact daily investment amount
-   
-2. **Monthly DCA**: Invest your full monthly budget on a specific day each month
-   - More realistic for most investors
-   - Choose your preferred day of the month (1-28)
-   
-3. **AHR999 Historical Percentile**: Dynamically adjust investment based on where current AHR999 ranks historically
-   - **Bottom 10% (0-10th percentile)**: EXTREME CHEAP - Default 5x daily investment
-   - **10-25%**: Very Cheap - Default 3x daily investment
-   - **25-50%**: Cheap - Default 2x daily investment
-   - **50-75%**: Fair - Default 1x daily investment
-   - **75-90%**: Expensive - Default 0.5x daily investment
-   - **Top 10% (90-100th percentile)**: VERY EXPENSIVE - Default 0x (no investment)
-   - **Fully customizable**: Adjust multipliers for each percentile tier
-   - **Real-time feedback**: See exact daily investment amounts for each tier
-   - **Note**: Only available for historical backtests (requires AHR999 data)
+#### 1. Daily DCA
+Invest the same amount every day. Simple and consistent.
 
-### How It Works
+#### 2. Monthly DCA
+Invest your full monthly budget on a specific day each month (1-28). More realistic for most investors.
 
-- **Historical Period**: Uses actual Bitcoin prices from the CSV data
-- **Future Simulation**: Uses power law model for dates beyond historical data
-- **Results Include**: Total invested, final BTC balance, portfolio value, returns (total & annualized)
-- **Visualization**: Interactive chart showing portfolio growth over time
+#### 3. AHR999 Historical Percentile
+Dynamically adjust investment based on where current AHR999 ranks historically. Buy more when Bitcoin is cheaper.
 
-All calculations run **entirely in your browser** - no backend, no API calls, pure JavaScript!
+**Default Multipliers:**
+- **Bottom 10%** (EXTREME CHEAP): 5x daily investment
+- **10-25%** (Very Cheap): 2x daily investment
+- **25-50%** (Cheap): 1x daily investment
+- **50-75%** (Fair): 0x (no investment)
+- **75-90%** (Expensive): 0x (no investment)
+- **Top 10%** (VERY EXPENSIVE): 0x (no investment)
 
----
+**Features:**
+- Fully customizable multipliers for each percentile tier
+- Real-time display of daily investment amounts
+- Unlimited budget mode option (ignore total budget constraints)
+- Only available for historical backtests (requires AHR999 data)
 
-## ⚠️ Important Disclaimer
+### Results
 
-Do your own research!
+- Total invested, final BTC balance, portfolio value
+- Total return (%) and annualized return (%)
+- Interactive chart showing portfolio growth over time
+- Detailed transaction history with AHR999 values
 
 ---
 
 ## 🔬 Methodology
 
-### 200-Day DCA Cost Calculation
+### 200-Day DCA Cost
 ```
 DCA Cost = 200 / Σ(1/price_i)
 ```
@@ -104,15 +84,10 @@ Harmonic mean of the last 200 daily closing prices.
 ```
 Trend = a × days^n
 ```
-Where `n` is the power law exponent (typically 5-6 for Bitcoin).
-
-Fitted via linear regression on log-log transformed data (log(price) vs log(days)).
-
-This model is superior to exponential growth because:
-- **Models network effects** (Metcalfe's Law states network value ∝ users²)
-- **Decreasing growth rate** over time (more realistic as Bitcoin matures)
-- **Academically validated** in multiple Bitcoin research papers
+Fitted via linear regression on log-log transformed data. Models network effects (Metcalfe's Law) with decreasing growth rate over time.
 
 ---
 
-**Built with:** Python, Plotly, JavaScript • **Data Source:** Yahoo Finance
+## ⚠️ Disclaimer
+
+This tool is for educational purposes only. Do your own research before making investment decisions.
