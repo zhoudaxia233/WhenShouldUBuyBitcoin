@@ -715,14 +715,33 @@ class BacktestEngine {
         result.strategyName = this.strategy.getName();
         result.startDate = startDate;
         result.endDate = endDate;
-        result.durationDays = Math.floor(
-            (endDate - startDate) / (1000 * 60 * 60 * 24)
-        );
+        // Calculate duration in days (inclusive of both start and end dates)
+        result.durationDays =
+            Math.floor((endDate - startDate) / (1000 * 60 * 60 * 24)) + 1; // +1 to include both start and end dates
 
         // Calculate total budget for entire backtest period
-        // Use complete months count to ensure Monthly DCA can invest full amount each month
-        const completeMonths = getCompleteMonthsCount(startDate, endDate);
-        const totalBudget = completeMonths * monthlyBudget;
+        // Strategy-specific budget calculation:
+        // - Daily DCA: Use days-based calculation (daily amount × days)
+        // - AHR999 (non-unlimited): Use days-based calculation (daily amount × days)
+        // - Monthly DCA: Use complete months count (to ensure full monthly investment)
+        // - AHR999 (unlimited): No budget limit (but still track for display)
+        let totalBudget;
+        if (this.strategy instanceof DailyDCAStrategy) {
+            // For Daily DCA, calculate based on actual days
+            const dailyBudget = monthlyBudget / BACKTEST_CONFIG.DAYS_PER_MONTH;
+            totalBudget = result.durationDays * dailyBudget; // durationDays already includes both start and end dates
+        } else if (
+            this.strategy instanceof AHR999PercentileStrategy &&
+            !this.strategy.unlimitedBudget
+        ) {
+            // For AHR999 (non-unlimited), calculate based on actual days (same as Daily DCA)
+            const dailyBudget = monthlyBudget / BACKTEST_CONFIG.DAYS_PER_MONTH;
+            totalBudget = result.durationDays * dailyBudget;
+        } else {
+            // For Monthly DCA and AHR999 (unlimited), use complete months count
+            const completeMonths = getCompleteMonthsCount(startDate, endDate);
+            totalBudget = completeMonths * monthlyBudget;
+        }
 
         // Initialize strategy
         this.strategy.initialize();
@@ -741,7 +760,43 @@ class BacktestEngine {
             // Check if new month started
             if (isFirstDayOfMonth(currentDate, prevDate)) {
                 this.strategy.onMonthStart(currentDate);
-                cashBalance += monthlyBudget; // Add monthly budget to cash
+                // For Daily DCA, add budget proportionally based on days in the period
+                // For AHR999 (non-unlimited), do NOT add to cashBalance - investment is limited by totalBudget only
+                // For AHR999 (unlimited), do NOT add to cashBalance - investment has no limit
+                // For Monthly DCA, add full monthly budget
+                // Note: AHR999 strategies should not accumulate cashBalance because unused budget would inflate finalPortfolioValue
+                if (this.strategy instanceof DailyDCAStrategy) {
+                    // Calculate how many days of this month are in the backtest period
+                    const monthStart = new Date(
+                        currentDate.getFullYear(),
+                        currentDate.getMonth(),
+                        1
+                    );
+                    const monthEnd = new Date(
+                        currentDate.getFullYear(),
+                        currentDate.getMonth() + 1,
+                        0
+                    );
+                    const periodStart =
+                        currentDate > startDate ? currentDate : startDate;
+                    const periodEnd = endDate < monthEnd ? endDate : monthEnd;
+                    const daysInPeriod =
+                        Math.floor(
+                            (periodEnd - periodStart) / (1000 * 60 * 60 * 24)
+                        ) + 1;
+                    // Use BACKTEST_CONFIG.DAYS_PER_MONTH for consistency with daily amount calculation
+                    const proportionalBudget =
+                        (daysInPeriod / BACKTEST_CONFIG.DAYS_PER_MONTH) *
+                        monthlyBudget;
+                    cashBalance += proportionalBudget;
+                } else if (this.strategy instanceof AHR999PercentileStrategy) {
+                    // For AHR999 strategies, do NOT add to cashBalance
+                    // Investment is limited by totalBudget (for non-unlimited) or unlimited (for unlimited)
+                    // cashBalance should remain 0 to avoid inflating finalPortfolioValue with unused budget
+                    // Do nothing - cashBalance stays at 0
+                } else {
+                    cashBalance += monthlyBudget; // Add monthly budget to cash (Monthly DCA)
+                }
                 monthsElapsed++;
             }
 
@@ -800,13 +855,24 @@ class BacktestEngine {
                         );
 
                         // Update cashBalance
-                        cashBalance -= actualInvestment;
+                        // For AHR999 strategies, don't update cashBalance (finalPortfolioValue doesn't include it)
+                        // For other strategies, update cashBalance to track uninvested cash
+                        if (
+                            !(this.strategy instanceof AHR999PercentileStrategy)
+                        ) {
+                            cashBalance -= actualInvestment;
+                        }
                         hasTransaction = true;
                     }
                 }
 
                 // Calculate portfolio value
-                const portfolioValue = cashBalance + btcBalance * price;
+                // For AHR999 strategies, only include BTC value (not unused budget)
+                // For other strategies, include cashBalance (uninvested cash)
+                const portfolioValue =
+                    this.strategy instanceof AHR999PercentileStrategy
+                        ? btcBalance * price
+                        : cashBalance + btcBalance * price;
 
                 // Record portfolio state
                 // - Sample every 7 days to reduce data size
@@ -840,7 +906,19 @@ class BacktestEngine {
         const finalPrice = this.dataLoader.getPriceData(endDate)?.price || 0;
         result.totalInvested = totalInvested;
         result.finalBtcBalance = btcBalance;
-        result.finalPortfolioValue = cashBalance + btcBalance * finalPrice;
+        // If no investment was made, finalPortfolioValue should be 0 (no unused budget should be counted)
+        if (totalInvested === 0) {
+            result.finalPortfolioValue = 0;
+        } else {
+            // For AHR999 strategies, finalPortfolioValue should only include BTC value, not unused budget
+            // For other strategies, include cashBalance (uninvested cash)
+            if (this.strategy instanceof AHR999PercentileStrategy) {
+                result.finalPortfolioValue = btcBalance * finalPrice;
+            } else {
+                result.finalPortfolioValue =
+                    cashBalance + btcBalance * finalPrice;
+            }
+        }
 
         // Calculate returns
         if (totalInvested > 0) {
@@ -849,11 +927,37 @@ class BacktestEngine {
                 100;
 
             // Annualized return: ((final/initial)^(365/days) - 1) * 100
-            if (result.durationDays > 0) {
+            // Only calculate if duration is at least 1 year (365 days) for meaningful annualization
+            if (result.durationDays >= 365) {
                 const returnRatio = result.finalPortfolioValue / totalInvested;
                 const yearsElapsed = result.durationDays / 365.25;
-                result.annualizedReturn =
-                    (Math.pow(returnRatio, 1 / yearsElapsed) - 1) * 100;
+
+                // Additional safety checks
+                if (
+                    returnRatio > 0 &&
+                    yearsElapsed > 0 &&
+                    isFinite(returnRatio) &&
+                    isFinite(yearsElapsed)
+                ) {
+                    const annualized =
+                        (Math.pow(returnRatio, 1 / yearsElapsed) - 1) * 100;
+
+                    // Cap annualized return at reasonable maximum (e.g., 1,000,000%) to avoid display issues
+                    if (isFinite(annualized) && annualized < 1000000) {
+                        result.annualizedReturn = annualized;
+                    } else {
+                        // If calculation produces unreasonable result, use simple linear approximation
+                        result.annualizedReturn =
+                            result.totalReturn / yearsElapsed;
+                    }
+                } else {
+                    // Fallback to simple linear approximation if calculation fails
+                    result.annualizedReturn = result.totalReturn / yearsElapsed;
+                }
+            } else {
+                // For periods less than 1 year, annualized return is not meaningful
+                // Set to Infinity as a marker for "N/A" in display
+                result.annualizedReturn = Infinity;
             }
         }
 
@@ -1307,9 +1411,30 @@ class BacktestUI {
                             }${result.totalReturn.toFixed(2)}%
                         </div>
                         <div class="metric-detail">
-                            Annualized: ${
-                                result.annualizedReturn >= 0 ? "+" : ""
-                            }${result.annualizedReturn.toFixed(2)}%
+                            Annualized: ${(() => {
+                                const annualized = result.annualizedReturn;
+                                // Show N/A for periods less than 1 year or unreasonable values
+                                if (
+                                    !isFinite(annualized) ||
+                                    result.durationDays < 365 ||
+                                    Math.abs(annualized) > 10000
+                                ) {
+                                    return "N/A (period less than 1 year)";
+                                }
+                                const sign = annualized >= 0 ? "+" : "";
+                                // Format large numbers without scientific notation
+                                if (Math.abs(annualized) >= 1000) {
+                                    return (
+                                        sign +
+                                        annualized.toLocaleString("en-US", {
+                                            maximumFractionDigits: 2,
+                                            minimumFractionDigits: 2,
+                                        }) +
+                                        "%"
+                                    );
+                                }
+                                return sign + annualized.toFixed(2) + "%";
+                            })()}
                         </div>
                     </div>
                 </div>
