@@ -23,7 +23,6 @@ beforeAll(async () => {
     );
 });
 
-
 describe("Bug Fix: Historical Date Range Detection", () => {
     it("should correctly identify historical vs simulated data", async () => {
         const strategy = new DailyDCAStrategy(500);
@@ -113,9 +112,9 @@ describe("Strategy: Monthly DCA", () => {
         const expectedInvestments = 12 * monthlyBudget;
         const tolerance = 50; // ±$50
 
-        expect(Math.abs(result.totalInvested - expectedInvestments)).toBeLessThan(
-            tolerance
-        );
+        expect(
+            Math.abs(result.totalInvested - expectedInvestments)
+        ).toBeLessThan(tolerance);
     });
 
     it("should work with different days of month", async () => {
@@ -127,8 +126,43 @@ describe("Strategy: Monthly DCA", () => {
 
         const result = await engine.run(startDate, endDate, 500);
 
-        expect(result.totalInvested).toBeGreaterThan(0);
-        expect(result.finalBtcBalance).toBeGreaterThan(0);
+        // Should invest exactly 12 times (one per month)
+        expect(result.transactions.length).toBe(12);
+    });
+
+    it("should invest full monthly amount even in last month with partial days", async () => {
+        // Test that Monthly DCA can invest full $500 even if the last month has fewer days
+        // This verifies the fix for budget calculation using complete months
+        const monthlyBudget = 500;
+        const strategy = new MonthlyDCAStrategy(monthlyBudget, {
+            dayOfMonth: 1,
+        });
+        const engine = new BacktestEngine(strategy, dataLoader);
+
+        // Start on Jan 1, end on Dec 10 (last month only has 10 days)
+        const startDate = new Date("2020-01-01");
+        const endDate = new Date("2020-12-10");
+
+        const result = await engine.run(startDate, endDate, monthlyBudget);
+
+        console.log("Partial last month test:", {
+            transactions: result.transactions.length,
+            transactionAmounts: result.transactions.map((t) =>
+                t.investAmount.toFixed(2)
+            ),
+            totalInvested: result.totalInvested.toFixed(2),
+        });
+
+        // Should have 12 transactions (one per month, including December)
+        expect(result.transactions.length).toBe(12);
+
+        // Each transaction should be exactly $500 (including the last one)
+        result.transactions.forEach((transaction) => {
+            expect(transaction.investAmount).toBe(500);
+        });
+
+        // Total should be 12 * $500 = $6000
+        expect(result.totalInvested).toBe(6000);
     });
 });
 
@@ -166,7 +200,7 @@ describe("Strategy: AHR999 Percentile", () => {
 
         // Should have invested only during bottom 10% periods
         expect(result.totalInvested).toBeGreaterThan(0);
-        
+
         // Verify multipliers were set correctly
         expect(strategy.multipliers.p10).toBe(10);
         expect(strategy.multipliers.p100).toBe(0);
@@ -175,7 +209,7 @@ describe("Strategy: AHR999 Percentile", () => {
     it("should produce different investment timing with different multipliers", async () => {
         // Test: Different multipliers should result in different investment patterns
         // (not necessarily different total amounts, as both are limited by total budget)
-        
+
         // Strategy 1: Only invest in bottom 10% (very selective)
         const selectiveStrategy = new AHR999PercentileStrategy(500, {
             multiplier_p10: 5,
@@ -185,8 +219,11 @@ describe("Strategy: AHR999 Percentile", () => {
             multiplier_p90: 0,
             multiplier_p100: 0,
         });
-        const selectiveEngine = new BacktestEngine(selectiveStrategy, dataLoader);
-        
+        const selectiveEngine = new BacktestEngine(
+            selectiveStrategy,
+            dataLoader
+        );
+
         // Strategy 2: Invest uniformly across all percentiles
         const uniformStrategy = new AHR999PercentileStrategy(500, {
             multiplier_p10: 1,
@@ -201,24 +238,38 @@ describe("Strategy: AHR999 Percentile", () => {
         const startDate = new Date("2020-01-01");
         const endDate = new Date("2024-12-31");
 
-        const selectiveResult = await selectiveEngine.run(startDate, endDate, 500);
+        const selectiveResult = await selectiveEngine.run(
+            startDate,
+            endDate,
+            500
+        );
         const uniformResult = await uniformEngine.run(startDate, endDate, 500);
 
-        console.log("Selective (bottom 10% only) invested:", selectiveResult.totalInvested);
-        console.log("Uniform (all percentiles) invested:", uniformResult.totalInvested);
+        console.log(
+            "Selective (bottom 10% only) invested:",
+            selectiveResult.totalInvested
+        );
+        console.log(
+            "Uniform (all percentiles) invested:",
+            uniformResult.totalInvested
+        );
         console.log("Selective BTC balance:", selectiveResult.finalBtcBalance);
         console.log("Uniform BTC balance:", uniformResult.finalBtcBalance);
 
         // Both should invest some amount
         expect(selectiveResult.totalInvested).toBeGreaterThan(0);
         expect(uniformResult.totalInvested).toBeGreaterThan(0);
-        
+
         // Selective should invest less total (only invests in bottom 10% periods)
-        expect(selectiveResult.totalInvested).toBeLessThan(uniformResult.totalInvested);
-        
+        expect(selectiveResult.totalInvested).toBeLessThan(
+            uniformResult.totalInvested
+        );
+
         // But selective might have more BTC (bought during cheaper periods)
         // This is not guaranteed, just checking the strategy executed differently
-        expect(selectiveResult.finalBtcBalance).not.toBe(uniformResult.finalBtcBalance);
+        expect(selectiveResult.finalBtcBalance).not.toBe(
+            uniformResult.finalBtcBalance
+        );
     });
 
     it("should handle null AHR999 values", () => {
@@ -275,13 +326,16 @@ describe("Strategy: AHR999 Percentile", () => {
 
         const result = await engine.run(startDate, endDate, 500);
 
-        console.log("Single multiplier (p75=10) invested:", result.totalInvested);
+        console.log(
+            "Single multiplier (p75=10) invested:",
+            result.totalInvested
+        );
         console.log("Transactions:", result.transactions.length);
 
         // Should only invest during 50-75% percentile periods
         expect(result.totalInvested).toBeGreaterThan(0);
         expect(result.transactions.length).toBeGreaterThan(0);
-        
+
         // Verify multipliers were set correctly
         expect(strategy.multipliers.p75).toBe(10);
         expect(strategy.multipliers.p10).toBe(0);
@@ -337,24 +391,41 @@ describe("Strategy: AHR999 Percentile", () => {
 
         const result = await engine.run(startDate, endDate, monthlyBudget);
 
-        // Calculate expected total budget (5 years ≈ 60 months)
-        const durationDays = Math.floor((endDate - startDate) / (1000 * 60 * 60 * 24)) + 1;
-        const expectedMonths = durationDays / 30.44;
-        const expectedBudget = expectedMonths * monthlyBudget;
+        // Calculate expected total budget using complete months count
+        // (same logic as BacktestEngine)
+        const getCompleteMonthsCount = (start, end) => {
+            const startMonth = new Date(
+                start.getFullYear(),
+                start.getMonth(),
+                1
+            );
+            const endMonth = new Date(end.getFullYear(), end.getMonth(), 1);
+            let months = 0;
+            let current = new Date(startMonth);
+            while (current <= endMonth) {
+                months++;
+                current.setMonth(current.getMonth() + 1);
+            }
+            return months;
+        };
+
+        const completeMonths = getCompleteMonthsCount(startDate, endDate);
+        const expectedBudget = completeMonths * monthlyBudget;
 
         console.log("5-year extreme multiplier test:", {
-            durationDays,
-            expectedMonths: expectedMonths.toFixed(2),
+            completeMonths,
             expectedBudget: expectedBudget.toFixed(2),
             totalInvested: result.totalInvested.toFixed(2),
-            utilizationRate: (result.totalInvested / expectedBudget * 100).toFixed(1) + "%",
-            transactions: result.transactions.length
+            utilizationRate:
+                ((result.totalInvested / expectedBudget) * 100).toFixed(1) +
+                "%",
+            transactions: result.transactions.length,
         });
 
         // Should invest close to full budget (within 5% tolerance)
         expect(result.totalInvested).toBeGreaterThan(expectedBudget * 0.95);
         expect(result.totalInvested).toBeLessThanOrEqual(expectedBudget * 1.01);
-        
+
         // Should have many transactions (investing frequently due to extreme cheap periods)
         expect(result.transactions.length).toBeGreaterThan(10);
     });
@@ -364,7 +435,7 @@ describe("Strategy: AHR999 Percentile", () => {
         // This confirms strategies can "borrow" from future months
         const monthlyBudget = 500;
         const dailyBudget = monthlyBudget / 30.44; // ~$16.43/day
-        
+
         const strategy = new AHR999PercentileStrategy(monthlyBudget, {
             multiplier_p10: 90, // 90x = $1478.95/day
             multiplier_p25: 0,
@@ -382,21 +453,23 @@ describe("Strategy: AHR999 Percentile", () => {
         const result = await engine.run(startDate, endDate, monthlyBudget);
 
         // Find the largest single transaction
-        const maxTransaction = Math.max(...result.transactions.map(t => t.investAmount));
+        const maxTransaction = Math.max(
+            ...result.transactions.map((t) => t.investAmount)
+        );
         const expectedDailyInvestment = dailyBudget * 90; // ~$1478.32
-        
+
         console.log("High multiplier transaction test:", {
             dailyBudget: dailyBudget.toFixed(2),
             expectedDailyInvestment: expectedDailyInvestment.toFixed(2),
             maxTransaction: maxTransaction.toFixed(2),
             totalInvested: result.totalInvested.toFixed(2),
-            transactions: result.transactions.length
+            transactions: result.transactions.length,
         });
 
         // Some transactions should be much larger than monthly budget
         // (because we're borrowing from future months)
         expect(maxTransaction).toBeGreaterThan(monthlyBudget);
-        
+
         // The max transaction should be close to the expected daily investment
         // (allowing for budget constraints on some days)
         expect(maxTransaction).toBeGreaterThan(expectedDailyInvestment * 0.3); // At least 30% of expected
@@ -516,4 +589,3 @@ describe("Performance", () => {
         expect(duration).toBeLessThan(5000);
     });
 });
-
