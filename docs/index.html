@@ -557,6 +557,106 @@
             border-color: #0071e3;
         }
 
+        .strategy-info-btn {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #0071e3;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-size: 12px;
+            line-height: 20px;
+            text-align: center;
+            font-weight: bold;
+            transition: all 0.2s ease;
+        }
+
+        .strategy-info-btn:hover {
+            background: #0077ed;
+            transform: scale(1.1);
+        }
+
+        .strategy-info-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .strategy-info-modal.show {
+            display: flex;
+        }
+
+        .strategy-info-content {
+            background: white;
+            border-radius: 18px;
+            padding: 30px;
+            max-width: 600px;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            position: relative;
+        }
+
+        .strategy-info-close {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background: #f5f5f7;
+            border: none;
+            cursor: pointer;
+            font-size: 18px;
+            line-height: 30px;
+            text-align: center;
+            transition: all 0.2s ease;
+        }
+
+        .strategy-info-close:hover {
+            background: #e5e5e7;
+        }
+
+        .strategy-info-content h3 {
+            font-size: 1.5em;
+            margin-bottom: 16px;
+            color: #1d1d1f;
+        }
+
+        .strategy-info-content h4 {
+            font-size: 1.1em;
+            margin-top: 20px;
+            margin-bottom: 10px;
+            color: #1d1d1f;
+        }
+
+        .strategy-info-content p {
+            margin: 10px 0;
+            color: #1d1d1f;
+            line-height: 1.6;
+        }
+
+        .strategy-info-content ul {
+            margin: 10px 0 10px 20px;
+            color: #1d1d1f;
+        }
+
+        .strategy-info-content li {
+            margin: 6px 0;
+        }
+
         .strategy-config {
             margin-top: 16px;
             padding: 16px;
@@ -626,6 +726,17 @@
             padding: 4px 10px;
             background: #fff3cd;
             color: #856404;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-top: 4px;
+        }
+
+        .historical-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            background: #e5f5e9;
+            color: #28a745;
             border-radius: 6px;
             font-size: 12px;
             font-weight: 600;
@@ -910,19 +1021,31 @@
                     <div class="strategy-options">
                         <div class="strategy-option">
                             <input type="radio" id="strategy-daily" name="backtestStrategy" value="daily-dca" checked />
-                            <label for="strategy-daily">Daily DCA</label>
+                            <label for="strategy-daily">
+                                Daily DCA
+                                <button type="button" class="strategy-info-btn" onclick="showStrategyInfo('daily-dca'); event.stopPropagation();">i</button>
+                            </label>
                         </div>
                         <div class="strategy-option">
                             <input type="radio" id="strategy-monthly" name="backtestStrategy" value="monthly-dca" />
-                            <label for="strategy-monthly">Monthly DCA</label>
+                            <label for="strategy-monthly">
+                                Monthly DCA
+                                <button type="button" class="strategy-info-btn" onclick="showStrategyInfo('monthly-dca'); event.stopPropagation();">i</button>
+                            </label>
                         </div>
                         <div class="strategy-option">
                             <input type="radio" id="strategy-ahr999" name="backtestStrategy" value="ahr999-threshold" />
-                            <label for="strategy-ahr999">AHR999 Threshold</label>
+                            <label for="strategy-ahr999">
+                                AHR999 Threshold
+                                <button type="button" class="strategy-info-btn" onclick="showStrategyInfo('ahr999-threshold'); event.stopPropagation();">i</button>
+                            </label>
                         </div>
                         <div class="strategy-option">
                             <input type="radio" id="strategy-valuation" name="backtestStrategy" value="valuation-aware" />
-                            <label for="strategy-valuation">Valuation-Aware</label>
+                            <label for="strategy-valuation">
+                                Valuation-Aware
+                                <button type="button" class="strategy-info-btn" onclick="showStrategyInfo('valuation-aware'); event.stopPropagation();">i</button>
+                            </label>
                         </div>
                     </div>
 
@@ -934,7 +1057,10 @@
 
                     <div id="ahr999ThresholdConfig" class="strategy-config">
                         <label for="ahr999Threshold">AHR999 Threshold (invest when below this value)</label>
-                        <input type="number" id="ahr999Threshold" value="0.45" min="0.1" max="2.0" step="0.05" />
+                        <input type="number" id="ahr999Threshold" value="0.45" min="0" max="2.0" step="0.05" />
+                        <p style="font-size: 12px; color: #86868b; margin-top: 8px;">
+                            Note: Setting to 0 means never invest (AHR999 is always positive)
+                        </p>
                     </div>
                 </div>
 
@@ -950,6 +1076,14 @@
 
         <div class="footer">
             Last data update: <span id="lastUpdate">Loading...</span>
+        </div>
+    </div>
+
+    <!-- Strategy Info Modal -->
+    <div id="strategyInfoModal" class="strategy-info-modal" onclick="if(event.target === this) hideStrategyInfo();">
+        <div class="strategy-info-content">
+            <button class="strategy-info-close" onclick="hideStrategyInfo();">×</button>
+            <div id="strategyInfoContent"></div>
         </div>
     </div>
 
@@ -974,6 +1108,177 @@
             contents.forEach(content => content.classList.remove('active'));
             document.getElementById(`${chartType}-chart`).classList.add('active');
         }
+
+        // Strategy info modal functions
+        const strategyInfo = {
+            'daily-dca': {
+                title: 'Daily DCA (Dollar-Cost Averaging)',
+                content: `
+                    <h4>How It Works</h4>
+                    <p>Invests a fixed USD amount <strong>every single day</strong>, calculated as your monthly budget divided by ~30.44 days.</p>
+                    
+                    <h4>Example</h4>
+                    <p>Monthly budget: $500 → Daily investment: ~$16.42</p>
+                    
+                    <h4>Pros</h4>
+                    <ul>
+                        <li><strong>Simplest strategy</strong> - set it and forget it</li>
+                        <li><strong>Maximum consistency</strong> - smooths out daily volatility</li>
+                        <li><strong>Proven track record</strong> - widely used by HODLers</li>
+                        <li>No emotional decisions required</li>
+                    </ul>
+                    
+                    <h4>Cons</h4>
+                    <ul>
+                        <li>Doesn't take advantage of major dips</li>
+                        <li>Invests equally in expensive and cheap periods</li>
+                        <li>May underperform during sustained bear markets</li>
+                    </ul>
+                    
+                    <h4>Best For</h4>
+                    <p>Beginners, passive investors, long-term holders (4+ years), those who want to remove emotion from investing.</p>
+                `
+            },
+            'monthly-dca': {
+                title: 'Monthly DCA',
+                content: `
+                    <h4>How It Works</h4>
+                    <p>Invests your <strong>entire monthly budget</strong> on one specific day each month (e.g., 1st, 15th). Cash accumulates monthly, then gets deployed all at once.</p>
+                    
+                    <h4>Example</h4>
+                    <p>Monthly budget: $500, Day: 1st → Invest $500 on Jan 1st, Feb 1st, Mar 1st, etc.</p>
+                    
+                    <h4>Pros</h4>
+                    <ul>
+                        <li><strong>Convenient</strong> - aligns with monthly paycheck</li>
+                        <li><strong>Fewer transactions</strong> - lower potential fees</li>
+                        <li><strong>Simple tracking</strong> - only 12 buys per year</li>
+                        <li>Feels like paying a monthly bill</li>
+                    </ul>
+                    
+                    <h4>Cons</h4>
+                    <ul>
+                        <li>Higher price risk on that single day (could catch a spike)</li>
+                        <li>Misses averaging across the entire month</li>
+                        <li>Timing matters (1st vs 15th vs end of month)</li>
+                    </ul>
+                    
+                    <h4>Best For</h4>
+                    <p>People who get paid monthly, those who want minimal transaction overhead, investors who prefer monthly budgeting habits.</p>
+                `
+            },
+            'ahr999-threshold': {
+                title: 'AHR999 Threshold Strategy',
+                content: `
+                    <h4>How It Works</h4>
+                    <p>Accumulates cash monthly but <strong>only invests when AHR999 drops below your threshold</strong> (default: 0.45). When triggered, invests all accumulated cash at once.</p>
+                    
+                    <h4>Example</h4>
+                    <p>Threshold: 0.45, Monthly: $500</p>
+                    <ul>
+                        <li>Month 1-3: AHR999 = 0.8 → Accumulate ($1,500 cash)</li>
+                        <li>Month 4: AHR999 drops to 0.4 → <strong>Deploy all $1,500</strong></li>
+                        <li>Month 5-8: AHR999 = 1.2 → Accumulate again</li>
+                    </ul>
+                    
+                    <h4>AHR999 Zones</h4>
+                    <ul>
+                        <li><strong>&lt; 0.45</strong>: Bottom zone - extreme undervaluation</li>
+                        <li><strong>0.45 - 1.2</strong>: DCA zone - fair to slightly cheap</li>
+                        <li><strong>&gt; 1.2</strong>: Overheated - expensive</li>
+                    </ul>
+                    
+                    <h4>Pros</h4>
+                    <ul>
+                        <li><strong>Focuses capital</strong> on best opportunities</li>
+                        <li><strong>Large cash reserves</strong> during bull runs</li>
+                        <li><strong>Aggressive buys</strong> during crashes</li>
+                        <li>Can significantly outperform in cycles</li>
+                    </ul>
+                    
+                    <h4>Cons</h4>
+                    <ul>
+                        <li>May accumulate cash for months or years</li>
+                        <li>Requires discipline to hold cash (FOMO risk)</li>
+                        <li>Can miss slow grinds up</li>
+                        <li>Psychologically harder</li>
+                    </ul>
+                    
+                    <h4>Best For</h4>
+                    <p>Patient investors comfortable holding cash, those who believe in market cycles, people who want to systematically "buy the dip".</p>
+                `
+            },
+            'valuation-aware': {
+                title: 'Valuation-Aware DCA (Advanced)',
+                content: `
+                    <h4>How It Works</h4>
+                    <p>Combines daily investing with <strong>dynamic position sizing</strong>. Uses historical AHR999 percentiles to adjust investment amounts. Invests more when cheap, less when expensive.</p>
+                    
+                    <h4>Investment Multipliers</h4>
+                    <ul>
+                        <li><strong>Bottom 10%</strong> (EXTREME CHEAP): 5x daily budget</li>
+                        <li><strong>Bottom 25%</strong> (Very Cheap): 3x daily budget</li>
+                        <li><strong>Below Median</strong> (Cheap): 2x daily budget</li>
+                        <li><strong>Below 75%</strong> (Fair): 1x daily budget</li>
+                        <li><strong>Top 25%</strong> (Expensive): 0.5x daily budget</li>
+                        <li><strong>Top 10%</strong> (VERY EXPENSIVE): 0x (HODL)</li>
+                    </ul>
+                    
+                    <h4>Example Scenario</h4>
+                    <p>Monthly: $500 → Daily: ~$16.42</p>
+                    <ul>
+                        <li><strong>Jan</strong> (AHR999 bottom 5%): Invest 5x = $82/day</li>
+                        <li><strong>Feb</strong> (AHR999 top 15%): Invest 0x = $0/day (accumulate)</li>
+                        <li><strong>Mar</strong> (AHR999 55th percentile): Invest 1x = $16.42/day</li>
+                    </ul>
+                    
+                    <h4>Pros</h4>
+                    <ul>
+                        <li><strong>Best of both worlds</strong> - daily participation + smart sizing</li>
+                        <li><strong>Accumulates ammo</strong> during bull runs</li>
+                        <li><strong>Statistical edge</strong> over simple DCA</li>
+                        <li><strong>Adaptive</strong> - responds to market automatically</li>
+                        <li>No emotional decisions</li>
+                    </ul>
+                    
+                    <h4>Cons</h4>
+                    <ul>
+                        <li>Most complex strategy</li>
+                        <li>Results depend on accurate calibration</li>
+                        <li>May underperform simple DCA in steady uptrends</li>
+                        <li>Requires sufficient historical data</li>
+                    </ul>
+                    
+                    <h4>Best For</h4>
+                    <p>Sophisticated investors, those who want to "time the market" systematically, medium-to-long time horizons (2+ years), investors willing to accept complexity for potential alpha.</p>
+                `
+            }
+        };
+
+        function showStrategyInfo(strategyType) {
+            const modal = document.getElementById('strategyInfoModal');
+            const content = document.getElementById('strategyInfoContent');
+            const info = strategyInfo[strategyType];
+            
+            if (info) {
+                content.innerHTML = `<h3>${info.title}</h3>${info.content}`;
+                modal.classList.add('show');
+                document.body.style.overflow = 'hidden'; // Prevent background scrolling
+            }
+        }
+
+        function hideStrategyInfo() {
+            const modal = document.getElementById('strategyInfoModal');
+            modal.classList.remove('show');
+            document.body.style.overflow = ''; // Restore scrolling
+        }
+
+        // Close modal on Escape key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                hideStrategyInfo();
+            }
+        });
         
         // Future price forecast calculator
         async function calculateForecast() {

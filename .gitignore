@@ -1,33 +1,10 @@
-# Python
-__pycache__/
-*.py[cod]
-*$py.class
-*.so
-.Python
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
+# Dependencies
+node_modules/
+package-lock.json
 
-# Virtual environments
-venv/
-env/
-ENV/
-.venv
-
-# Poetry
-poetry.lock
+# Test coverage
+coverage/
+.nyc_output/
 
 # IDE
 .vscode/
@@ -36,20 +13,21 @@ poetry.lock
 *.swo
 *~
 
-# Database files
-*.db
-*.sqlite
-
-# Docs folder is tracked for GitHub Pages deployment
-# This includes:
-#   - docs/data/*.csv and docs/data/*.json (historical data)
-#   - docs/charts/*.html (interactive visualizations)
-#   - docs/*.html and docs/*.js (web interface)
-
 # OS
 .DS_Store
 Thumbs.db
 
 # Logs
 *.log
+npm-debug.log*
 
+# Temporary files
+*.tmp
+.cache/
+
+# Build outputs
+dist/
+build/
+
+__pycache__
+*.pyc

@@ -37,14 +37,41 @@ When both signal undervaluation simultaneously, it suggests a stronger buying op
 
 ### What You'll See
 
-1. **Historical Chart**: Visualize when Bitcoin has been in the buy zone historically
+1. **Historical Charts**: Visualize when Bitcoin has been in the buy zone historically
 2. **Real-Time Check**: Click the button to get current valuation status
-3. **Distance to Buy Zone**: See how much Bitcoin would need to drop (or if you're already in the zone)
+3. **Future Price Forecast**: Calculate predicted Bitcoin price on any future date
+4. **Backtest / Strategy Simulator**: Test different investment strategies with historical data
+5. **Distance to Buy Zone**: See how much Bitcoin would need to drop (or if you're already in the zone)
 
 ### Data Updates
 
 - Historical data updates **daily at 00:30 UTC** via automated script
 - Real-time check fetches **live price** directly from Yahoo Finance
+
+---
+
+## 🎮 Strategy Backtesting (NEW!)
+
+Test different Bitcoin investment strategies without risking real money. Choose from:
+
+### Available Strategies
+
+1. **Daily DCA**: Invest the same amount every day
+2. **Monthly DCA**: Invest your full monthly budget on a specific day each month
+3. **AHR999 Threshold**: Only invest when AHR999 drops below a threshold (e.g., 0.45), accumulate cash otherwise
+4. **Valuation-Aware DCA**: Dynamically adjust investment based on AHR999 percentiles
+   - Invest aggressively when Bitcoin is extremely cheap (low AHR999)
+   - Invest conservatively or not at all when expensive (high AHR999)
+   - Uses historical distribution to determine "cheap" vs "expensive"
+
+### How It Works
+
+- **Historical Period**: Uses actual Bitcoin prices from the CSV data
+- **Future Simulation**: Uses power law model for dates beyond historical data
+- **Results Include**: Total invested, final BTC balance, portfolio value, returns (total & annualized)
+- **Visualization**: Interactive chart showing portfolio growth over time
+
+All calculations run **entirely in your browser** - no backend, no API calls, pure JavaScript!
 
 ---
 

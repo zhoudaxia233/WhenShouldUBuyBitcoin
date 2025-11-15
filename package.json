@@ -1,0 +1,27 @@
+{
+  "name": "when-should-u-buy-bitcoin",
+  "version": "1.0.0",
+  "description": "Bitcoin investment strategy backtesting tool",
+  "type": "module",
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:ui": "vitest --ui",
+    "test:coverage": "vitest run --coverage"
+  },
+  "devDependencies": {
+    "@vitest/ui": "^1.0.0",
+    "vitest": "^1.0.0",
+    "happy-dom": "^12.10.0"
+  },
+  "keywords": [
+    "bitcoin",
+    "dca",
+    "backtest",
+    "investment",
+    "strategy"
+  ],
+  "author": "",
+  "license": "MIT"
+}
+
