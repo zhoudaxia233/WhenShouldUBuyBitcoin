@@ -372,6 +372,92 @@ describe("Strategy: AHR999 Percentile", () => {
         expect(getMultiplier("  0  ", 5.0)).toBe(0); // Whitespace trimmed
     });
 
+    it("should use default multipliers when undefined is passed", async () => {
+        // Test that strategy uses centralized AHR999_DEFAULT_MULTIPLIERS when config is empty
+        const strategy = new AHR999PercentileStrategy(500, {
+            // Pass undefined for all multipliers - should use defaults
+        });
+
+        // Verify defaults are applied (from AHR999_DEFAULT_MULTIPLIERS)
+        expect(strategy.multipliers.p10).toBe(5.0);
+        expect(strategy.multipliers.p25).toBe(2.0);
+        expect(strategy.multipliers.p50).toBe(1.0);
+        expect(strategy.multipliers.p75).toBe(0);
+        expect(strategy.multipliers.p90).toBe(0);
+        expect(strategy.multipliers.p100).toBe(0);
+    });
+
+    it("should work with unlimited budget mode", async () => {
+        // Test that unlimited budget mode allows investing beyond total budget constraint
+        const monthlyBudget = 500;
+        const strategy = new AHR999PercentileStrategy(monthlyBudget, {
+            multiplier_p10: 100, // Extremely high multiplier
+            multiplier_p25: 0,
+            multiplier_p50: 0,
+            multiplier_p75: 0,
+            multiplier_p90: 0,
+            multiplier_p100: 0,
+            unlimitedBudget: true, // Enable unlimited budget mode
+        });
+        const engine = new BacktestEngine(strategy, dataLoader);
+
+        const startDate = new Date("2020-03-01");
+        const endDate = new Date("2020-03-31"); // Only 1 month
+
+        const result = await engine.run(startDate, endDate, monthlyBudget);
+
+        console.log("Unlimited budget test:", {
+            monthlyBudget,
+            expectedLimitedBudget: monthlyBudget, // Should be limited to $500 if not unlimited
+            totalInvested: result.totalInvested.toFixed(2),
+            transactions: result.transactions.length,
+        });
+
+        // With unlimited budget, should be able to invest more than $500 in a single month
+        expect(result.totalInvested).toBeGreaterThan(monthlyBudget);
+
+        // Verify unlimited budget flag is set
+        expect(strategy.unlimitedBudget).toBe(true);
+    });
+
+    it("should respect budget constraint when unlimited mode is disabled", async () => {
+        // Test that budget constraint is enforced when unlimited budget is false
+        const monthlyBudget = 500;
+        const strategy = new AHR999PercentileStrategy(monthlyBudget, {
+            multiplier_p10: 100, // Extremely high multiplier
+            multiplier_p25: 0,
+            multiplier_p50: 0,
+            multiplier_p75: 0,
+            multiplier_p90: 0,
+            multiplier_p100: 0,
+            unlimitedBudget: false, // Disable unlimited budget mode (default)
+        });
+        const engine = new BacktestEngine(strategy, dataLoader);
+
+        const startDate = new Date("2020-03-01");
+        const endDate = new Date("2020-03-31"); // Only 1 month
+
+        const result = await engine.run(startDate, endDate, monthlyBudget);
+
+        console.log("Limited budget test:", {
+            monthlyBudget,
+            totalInvested: result.totalInvested.toFixed(2),
+            transactions: result.transactions.length,
+        });
+
+        // Calculate expected max budget (1+ months worth)
+        const daysInPeriod =
+            Math.floor((endDate - startDate) / (1000 * 60 * 60 * 24)) + 1;
+        const monthsInPeriod = daysInPeriod / 30.44;
+        const maxBudget = monthsInPeriod * monthlyBudget;
+
+        // Should not exceed the calculated total budget
+        expect(result.totalInvested).toBeLessThanOrEqual(maxBudget * 1.01); // Allow 1% tolerance
+
+        // Verify unlimited budget flag is false
+        expect(strategy.unlimitedBudget).toBe(false);
+    });
+
     it("should allow investing full budget over 5 years with extreme multiplier", async () => {
         // Test that AHR999 with 90x multiplier can invest up to full budget
         // This verifies the fix for budget calculation (total budget vs. elapsed months)

@@ -123,14 +123,18 @@ class DataLoader {
      */
     async loadCSV() {
         let text;
-        
+
         // Check if running in Node.js
-        if (typeof window === 'undefined') {
+        if (typeof window === "undefined") {
             // Node.js environment - use fs
-            const fs = await import('fs/promises');
-            const path = await import('path');
-            const filePath = path.join(process.cwd(), 'docs', BACKTEST_CONFIG.DATA_CSV);
-            text = await fs.readFile(filePath, 'utf-8');
+            const fs = await import("fs/promises");
+            const path = await import("path");
+            const filePath = path.join(
+                process.cwd(),
+                "docs",
+                BACKTEST_CONFIG.DATA_CSV
+            );
+            text = await fs.readFile(filePath, "utf-8");
         } else {
             // Browser environment - use fetch
             const response = await fetch(BACKTEST_CONFIG.DATA_CSV);
@@ -159,12 +163,16 @@ class DataLoader {
      */
     async loadMetadata() {
         // Check if running in Node.js
-        if (typeof window === 'undefined') {
+        if (typeof window === "undefined") {
             // Node.js environment - use fs
-            const fs = await import('fs/promises');
-            const path = await import('path');
-            const filePath = path.join(process.cwd(), 'docs', BACKTEST_CONFIG.DATA_METADATA);
-            const text = await fs.readFile(filePath, 'utf-8');
+            const fs = await import("fs/promises");
+            const path = await import("path");
+            const filePath = path.join(
+                process.cwd(),
+                "docs",
+                BACKTEST_CONFIG.DATA_METADATA
+            );
+            const text = await fs.readFile(filePath, "utf-8");
             return JSON.parse(text);
         } else {
             // Browser environment - use fetch
@@ -180,15 +188,26 @@ class DataLoader {
         this.priceCache.clear();
         this.historicalData.forEach((row) => {
             const dateStr = row.date;
-            const ahr999Val = row.ahr999 && row.ahr999.trim() !== '' ? parseFloat(row.ahr999) : null;
-            const ratioDcaVal = row.ratio_dca && row.ratio_dca.trim() !== '' ? parseFloat(row.ratio_dca) : null;
-            const ratiTrendVal = row.ratio_trend && row.ratio_trend.trim() !== '' ? parseFloat(row.ratio_trend) : null;
-            
+            const ahr999Val =
+                row.ahr999 && row.ahr999.trim() !== ""
+                    ? parseFloat(row.ahr999)
+                    : null;
+            const ratioDcaVal =
+                row.ratio_dca && row.ratio_dca.trim() !== ""
+                    ? parseFloat(row.ratio_dca)
+                    : null;
+            const ratiTrendVal =
+                row.ratio_trend && row.ratio_trend.trim() !== ""
+                    ? parseFloat(row.ratio_trend)
+                    : null;
+
             this.priceCache.set(dateStr, {
                 price: parseFloat(row.close_price),
                 ahr999: ahr999Val && !isNaN(ahr999Val) ? ahr999Val : null,
-                ratio_dca: ratioDcaVal && !isNaN(ratioDcaVal) ? ratioDcaVal : null,
-                ratio_trend: ratiTrendVal && !isNaN(ratiTrendVal) ? ratiTrendVal : null,
+                ratio_dca:
+                    ratioDcaVal && !isNaN(ratioDcaVal) ? ratioDcaVal : null,
+                ratio_trend:
+                    ratiTrendVal && !isNaN(ratiTrendVal) ? ratiTrendVal : null,
             });
         });
     }
@@ -357,19 +376,32 @@ function isDayOfMonth(date, targetDay) {
 function getCompleteMonthsCount(startDate, endDate) {
     const start = new Date(startDate);
     const end = new Date(endDate);
-    
+
     // Count months from start to end (inclusive)
     let months = 0;
     let current = new Date(start.getFullYear(), start.getMonth(), 1);
     const endMonth = new Date(end.getFullYear(), end.getMonth(), 1);
-    
+
     while (current <= endMonth) {
         months++;
         current.setMonth(current.getMonth() + 1);
     }
-    
+
     return months;
 }
+
+// ============================================================================
+// CONFIGURATION: Default Multipliers for AHR999 Percentile Strategy
+// ============================================================================
+
+const AHR999_DEFAULT_MULTIPLIERS = {
+    p10: 5.0, // Bottom 10% (EXTREME CHEAP)
+    p25: 2.0, // 10-25% (Very Cheap)
+    p50: 1.0, // 25-50% (Cheap)
+    p75: 0, // 50-75% (Fair)
+    p90: 0, // 75-90% (Expensive)
+    p100: 0, // Top 10% (VERY EXPENSIVE)
+};
 
 // ============================================================================
 // STRATEGY BASE CLASS
@@ -510,7 +542,8 @@ class DailyDCAStrategy extends Strategy {
 class MonthlyDCAStrategy extends Strategy {
     constructor(monthlyBudget, config = {}) {
         super(monthlyBudget, config);
-        this.dayOfMonth = config.dayOfMonth !== undefined ? config.dayOfMonth : 1; // Default to 1st of month
+        this.dayOfMonth =
+            config.dayOfMonth !== undefined ? config.dayOfMonth : 1; // Default to 1st of month
     }
 
     getName() {
@@ -551,15 +584,36 @@ class AHR999PercentileStrategy extends Strategy {
         super(monthlyBudget, config);
         this.ahr999Percentiles = null;
         this.dailyBudget = monthlyBudget / BACKTEST_CONFIG.DAYS_PER_MONTH;
-        
-        // User-configurable multipliers for each tier (default values)
+
+        // Budget control mode
+        this.unlimitedBudget = config.unlimitedBudget || false;
+
+        // User-configurable multipliers for each tier (use centralized defaults)
         this.multipliers = {
-            p10: config.multiplier_p10 !== undefined ? config.multiplier_p10 : 5.0,    // Bottom 10%
-            p25: config.multiplier_p25 !== undefined ? config.multiplier_p25 : 3.0,    // 10-25%
-            p50: config.multiplier_p50 !== undefined ? config.multiplier_p50 : 2.0,    // 25-50%
-            p75: config.multiplier_p75 !== undefined ? config.multiplier_p75 : 1.0,    // 50-75%
-            p90: config.multiplier_p90 !== undefined ? config.multiplier_p90 : 0.5,    // 75-90%
-            p100: config.multiplier_p100 !== undefined ? config.multiplier_p100 : 0,   // Top 10%
+            p10:
+                config.multiplier_p10 !== undefined
+                    ? config.multiplier_p10
+                    : AHR999_DEFAULT_MULTIPLIERS.p10,
+            p25:
+                config.multiplier_p25 !== undefined
+                    ? config.multiplier_p25
+                    : AHR999_DEFAULT_MULTIPLIERS.p25,
+            p50:
+                config.multiplier_p50 !== undefined
+                    ? config.multiplier_p50
+                    : AHR999_DEFAULT_MULTIPLIERS.p50,
+            p75:
+                config.multiplier_p75 !== undefined
+                    ? config.multiplier_p75
+                    : AHR999_DEFAULT_MULTIPLIERS.p75,
+            p90:
+                config.multiplier_p90 !== undefined
+                    ? config.multiplier_p90
+                    : AHR999_DEFAULT_MULTIPLIERS.p90,
+            p100:
+                config.multiplier_p100 !== undefined
+                    ? config.multiplier_p100
+                    : AHR999_DEFAULT_MULTIPLIERS.p100,
         };
     }
 
@@ -583,11 +637,11 @@ class AHR999PercentileStrategy extends Strategy {
         const historicalAHR999 = this.dataLoader.getHistoricalAHR999Values();
 
         this.ahr999Percentiles = {
-            p10: getPercentileValue(historicalAHR999, 10),  // Bottom 10%
-            p25: getPercentileValue(historicalAHR999, 25),  // 10-25%
-            p50: getPercentileValue(historicalAHR999, 50),  // 25-50%
-            p75: getPercentileValue(historicalAHR999, 75),  // 50-75%
-            p90: getPercentileValue(historicalAHR999, 90),  // 75-90%
+            p10: getPercentileValue(historicalAHR999, 10), // Bottom 10%
+            p25: getPercentileValue(historicalAHR999, 25), // 10-25%
+            p50: getPercentileValue(historicalAHR999, 50), // 25-50%
+            p75: getPercentileValue(historicalAHR999, 75), // 50-75%
+            p90: getPercentileValue(historicalAHR999, 90), // 75-90%
         };
 
         console.log("AHR999 Percentiles:", this.ahr999Percentiles);
@@ -709,18 +763,31 @@ class BacktestEngine {
 
                 // Track if a transaction occurred (for portfolio history recording)
                 let hasTransaction = false;
-                
+
                 // Execute investment if strategy decided to invest
                 if (investAmount > 0) {
-                    // Limit investment to remaining total budget
-                    const budgetRemaining = totalBudget - totalInvested;
-                    const actualInvestment = Math.min(investAmount, Math.max(0, budgetRemaining));
-                    
+                    // Check if strategy has unlimited budget mode enabled
+                    const isUnlimitedBudget =
+                        this.strategy.unlimitedBudget || false;
+
+                    let actualInvestment;
+                    if (isUnlimitedBudget) {
+                        // Unlimited budget: invest full amount requested by strategy
+                        actualInvestment = investAmount;
+                    } else {
+                        // Limited budget: respect total budget constraint
+                        const budgetRemaining = totalBudget - totalInvested;
+                        actualInvestment = Math.min(
+                            investAmount,
+                            Math.max(0, budgetRemaining)
+                        );
+                    }
+
                     if (actualInvestment > 0) {
                         const btcBought = actualInvestment / price;
                         btcBalance += btcBought;
                         totalInvested += actualInvestment;
-                        
+
                         // Record transaction with AHR999 value
                         result.transactions.push(
                             new Transaction(
@@ -731,7 +798,7 @@ class BacktestEngine {
                                 dayData.ahr999 || null
                             )
                         );
-                        
+
                         // Update cashBalance
                         cashBalance -= actualInvestment;
                         hasTransaction = true;
@@ -750,7 +817,7 @@ class BacktestEngine {
                 );
                 const isSamplingDay = daysSinceStart % 7 === 0;
                 const isEndDate = currentDate.getTime() === endDate.getTime();
-                
+
                 if (isSamplingDay || hasTransaction || isEndDate) {
                     result.portfolioHistory.push(
                         new PortfolioState(
@@ -825,18 +892,20 @@ function renderBacktestChart(result, canvasId) {
     const investedValues = result.portfolioHistory.map(
         (state) => state.totalInvested
     );
-    
+
     // Prepare buy points data - mark points where transactions occurred
     // Since we now record all transaction days in portfolioHistory, we can directly match dates
     const buyPoints = labels.map((label, index) => {
         const portfolioDate = result.portfolioHistory[index].date;
         // Check if any transaction matches this exact date
-        const hasTransaction = result.transactions.some(t => {
+        const hasTransaction = result.transactions.some((t) => {
             const tDate = new Date(t.date);
             const pHistDate = new Date(portfolioDate);
-            return tDate.getFullYear() === pHistDate.getFullYear() &&
-                   tDate.getMonth() === pHistDate.getMonth() &&
-                   tDate.getDate() === pHistDate.getDate();
+            return (
+                tDate.getFullYear() === pHistDate.getFullYear() &&
+                tDate.getMonth() === pHistDate.getMonth() &&
+                tDate.getDate() === pHistDate.getDate()
+            );
         });
         return hasTransaction ? portfolioValues[index] : null;
     });
@@ -1021,7 +1090,7 @@ class BacktestUI {
     attachEventListeners() {
         // Note: Strategy config panel visibility is handled by index.html
         // We only handle the backtest button here
-        
+
         // Run backtest button
         const runButton = document.getElementById("runBacktestButton");
         if (runButton) {
@@ -1098,14 +1167,37 @@ class BacktestUI {
                         const parsed = parseFloat(value);
                         return isNaN(parsed) ? defaultValue : parsed;
                     };
-                    
-                    const multiplier_p10 = getMultiplier("tier-p10", 5.0);
-                    const multiplier_p25 = getMultiplier("tier-p25", 3.0);
-                    const multiplier_p50 = getMultiplier("tier-p50", 2.0);
-                    const multiplier_p75 = getMultiplier("tier-p75", 1.0);
-                    const multiplier_p90 = getMultiplier("tier-p90", 0.5);
-                    const multiplier_p100 = getMultiplier("tier-p100", 0);
-                    
+
+                    const multiplier_p10 = getMultiplier(
+                        "tier-p10",
+                        AHR999_DEFAULT_MULTIPLIERS.p10
+                    );
+                    const multiplier_p25 = getMultiplier(
+                        "tier-p25",
+                        AHR999_DEFAULT_MULTIPLIERS.p25
+                    );
+                    const multiplier_p50 = getMultiplier(
+                        "tier-p50",
+                        AHR999_DEFAULT_MULTIPLIERS.p50
+                    );
+                    const multiplier_p75 = getMultiplier(
+                        "tier-p75",
+                        AHR999_DEFAULT_MULTIPLIERS.p75
+                    );
+                    const multiplier_p90 = getMultiplier(
+                        "tier-p90",
+                        AHR999_DEFAULT_MULTIPLIERS.p90
+                    );
+                    const multiplier_p100 = getMultiplier(
+                        "tier-p100",
+                        AHR999_DEFAULT_MULTIPLIERS.p100
+                    );
+
+                    // Read unlimited budget setting
+                    const unlimitedBudget =
+                        document.getElementById("unlimitedBudget")?.checked ||
+                        false;
+
                     console.log("AHR999 Percentile Multipliers:", {
                         multiplier_p10,
                         multiplier_p25,
@@ -1113,8 +1205,9 @@ class BacktestUI {
                         multiplier_p75,
                         multiplier_p90,
                         multiplier_p100,
+                        unlimitedBudget,
                     });
-                    
+
                     strategy = new AHR999PercentileStrategy(monthlyBudget, {
                         multiplier_p10,
                         multiplier_p25,
@@ -1122,6 +1215,7 @@ class BacktestUI {
                         multiplier_p75,
                         multiplier_p90,
                         multiplier_p100,
+                        unlimitedBudget,
                     });
                     break;
 
@@ -1226,7 +1320,9 @@ class BacktestUI {
                 </div>
 
                 <div class="transactions-table">
-                    <h4>Transaction History (${result.transactions.length} purchases)</h4>
+                    <h4>Transaction History (${
+                        result.transactions.length
+                    } purchases)</h4>
                     <div class="transactions-table-wrapper">
                         <table>
                             <thead>
@@ -1239,20 +1335,43 @@ class BacktestUI {
                                 </tr>
                             </thead>
                             <tbody>
-                                ${result.transactions.map(tx => `
+                                ${result.transactions
+                                    .map(
+                                        (tx) => `
                                     <tr>
                                         <td>${tx.date.toLocaleDateString()}</td>
-                                        <td class="text-right">$${tx.investAmount.toFixed(2)}</td>
-                                        <td class="text-right">${tx.btcAmount.toFixed(6)} BTC</td>
-                                        <td class="text-right">$${tx.price.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
-                                        <td class="text-right">${tx.ahr999 !== null ? tx.ahr999.toFixed(2) : 'N/A'}</td>
+                                        <td class="text-right">$${tx.investAmount.toFixed(
+                                            2
+                                        )}</td>
+                                        <td class="text-right">${tx.btcAmount.toFixed(
+                                            6
+                                        )} BTC</td>
+                                        <td class="text-right">$${tx.price.toLocaleString(
+                                            "en-US",
+                                            {
+                                                minimumFractionDigits: 2,
+                                                maximumFractionDigits: 2,
+                                            }
+                                        )}</td>
+                                        <td class="text-right">${
+                                            tx.ahr999 !== null
+                                                ? tx.ahr999.toFixed(2)
+                                                : "N/A"
+                                        }</td>
                                     </tr>
-                                `).join('')}
+                                `
+                                    )
+                                    .join("")}
                             </tbody>
                         </table>
                     </div>
                     <div class="transactions-table-summary">
-                        Average purchase price: $${(result.totalInvested / result.finalBtcBalance).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})} per BTC
+                        Average purchase price: $${(
+                            result.totalInvested / result.finalBtcBalance
+                        ).toLocaleString("en-US", {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                        })} per BTC
                         &nbsp;|&nbsp;
                         Total transactions: ${result.transactions.length}
                     </div>
@@ -1307,14 +1426,14 @@ export {
 // ============================================================================
 
 // Initialize when DOM is ready (only in browser environment)
-if (typeof window !== 'undefined' && typeof document !== 'undefined') {
+if (typeof window !== "undefined" && typeof document !== "undefined") {
     let backtestUI;
     const initBacktestUI = async () => {
         backtestUI = new BacktestUI();
         await backtestUI.initialize();
     };
-    
-    if (document.readyState === 'loading') {
+
+    if (document.readyState === "loading") {
         document.addEventListener("DOMContentLoaded", initBacktestUI);
     } else {
         // DOM already loaded, initialize immediately
