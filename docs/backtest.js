@@ -500,14 +500,10 @@ class MonthlyDCAStrategy extends Strategy {
     }
 
     shouldInvest(date, price, dayData) {
-        // Invest if it's the target day of month AND we have cash
-        if (
-            isDayOfMonth(date, this.dayOfMonth) &&
-            this.cashBuffer >= this.monthlyBudget
-        ) {
-            const investAmount = this.monthlyBudget;
-            this.cashBuffer -= investAmount;
-            return investAmount;
+        // Invest if it's the target day of month
+        // (Engine will ensure we don't exceed budget)
+        if (isDayOfMonth(date, this.dayOfMonth)) {
+            return this.monthlyBudget;
         }
         return 0;
     }
@@ -647,6 +643,11 @@ class BacktestEngine {
             (endDate - startDate) / (1000 * 60 * 60 * 24)
         );
 
+        // Calculate total budget for entire backtest period
+        const totalDays = result.durationDays + 1; // +1 to include both start and end dates
+        const totalMonths = totalDays / BACKTEST_CONFIG.DAYS_PER_MONTH;
+        const totalBudget = totalMonths * monthlyBudget;
+
         // Initialize strategy
         this.strategy.initialize();
 
@@ -686,13 +687,9 @@ class BacktestEngine {
 
                 // Execute investment if strategy decided to invest
                 if (investAmount > 0) {
-                    // Calculate total budget available so far (based on time elapsed)
-                    const maxAvailableBudget = monthsElapsed * monthlyBudget;
-                    const budgetRemaining = maxAvailableBudget - totalInvested;
-                    
-                    // Allow investment up to remaining budget
-                    // (don't limit by cashBalance for daily strategies that don't accumulate)
-                    const actualInvestment = Math.min(investAmount, budgetRemaining);
+                    // Limit investment to remaining total budget
+                    const budgetRemaining = totalBudget - totalInvested;
+                    const actualInvestment = Math.min(investAmount, Math.max(0, budgetRemaining));
                     
                     if (actualInvestment > 0) {
                         const btcBought = actualInvestment / price;
@@ -709,7 +706,7 @@ class BacktestEngine {
                             )
                         );
                         
-                        // Update cashBalance for tracking (can go negative for daily strategies)
+                        // Update cashBalance
                         cashBalance -= actualInvestment;
                     }
                 }
