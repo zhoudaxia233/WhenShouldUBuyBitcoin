@@ -317,6 +317,90 @@ describe("Strategy: AHR999 Percentile", () => {
         expect(getMultiplier("abc", 5.0)).toBe(5.0); // Invalid → default
         expect(getMultiplier("  0  ", 5.0)).toBe(0); // Whitespace trimmed
     });
+
+    it("should allow investing full budget over 5 years with extreme multiplier", async () => {
+        // Test that AHR999 with 90x multiplier can invest up to full budget
+        // This verifies the fix for budget calculation (total budget vs. elapsed months)
+        const monthlyBudget = 500;
+        const strategy = new AHR999PercentileStrategy(monthlyBudget, {
+            multiplier_p10: 90, // Extreme multiplier
+            multiplier_p25: 0,
+            multiplier_p50: 0,
+            multiplier_p75: 0,
+            multiplier_p90: 0,
+            multiplier_p100: 0,
+        });
+        const engine = new BacktestEngine(strategy, dataLoader);
+
+        const startDate = new Date("2020-11-15");
+        const endDate = new Date("2025-11-13");
+
+        const result = await engine.run(startDate, endDate, monthlyBudget);
+
+        // Calculate expected total budget (5 years ≈ 60 months)
+        const durationDays = Math.floor((endDate - startDate) / (1000 * 60 * 60 * 24)) + 1;
+        const expectedMonths = durationDays / 30.44;
+        const expectedBudget = expectedMonths * monthlyBudget;
+
+        console.log("5-year extreme multiplier test:", {
+            durationDays,
+            expectedMonths: expectedMonths.toFixed(2),
+            expectedBudget: expectedBudget.toFixed(2),
+            totalInvested: result.totalInvested.toFixed(2),
+            utilizationRate: (result.totalInvested / expectedBudget * 100).toFixed(1) + "%",
+            transactions: result.transactions.length
+        });
+
+        // Should invest close to full budget (within 5% tolerance)
+        expect(result.totalInvested).toBeGreaterThan(expectedBudget * 0.95);
+        expect(result.totalInvested).toBeLessThanOrEqual(expectedBudget * 1.01);
+        
+        // Should have many transactions (investing frequently due to extreme cheap periods)
+        expect(result.transactions.length).toBeGreaterThan(10);
+    });
+
+    it("should allow single transactions to exceed monthly budget with high multipliers", async () => {
+        // Verify that individual transactions can exceed monthly budget when using high multipliers
+        // This confirms strategies can "borrow" from future months
+        const monthlyBudget = 500;
+        const dailyBudget = monthlyBudget / 30.44; // ~$16.43/day
+        
+        const strategy = new AHR999PercentileStrategy(monthlyBudget, {
+            multiplier_p10: 90, // 90x = $1478.95/day
+            multiplier_p25: 0,
+            multiplier_p50: 0,
+            multiplier_p75: 0,
+            multiplier_p90: 0,
+            multiplier_p100: 0,
+        });
+        const engine = new BacktestEngine(strategy, dataLoader);
+
+        // Use a longer period (3 months) to have enough budget for large transactions
+        const startDate = new Date("2020-03-01"); // During cheap period
+        const endDate = new Date("2020-05-31"); // 3 months
+
+        const result = await engine.run(startDate, endDate, monthlyBudget);
+
+        // Find the largest single transaction
+        const maxTransaction = Math.max(...result.transactions.map(t => t.investAmount));
+        const expectedDailyInvestment = dailyBudget * 90; // ~$1478.32
+        
+        console.log("High multiplier transaction test:", {
+            dailyBudget: dailyBudget.toFixed(2),
+            expectedDailyInvestment: expectedDailyInvestment.toFixed(2),
+            maxTransaction: maxTransaction.toFixed(2),
+            totalInvested: result.totalInvested.toFixed(2),
+            transactions: result.transactions.length
+        });
+
+        // Some transactions should be much larger than monthly budget
+        // (because we're borrowing from future months)
+        expect(maxTransaction).toBeGreaterThan(monthlyBudget);
+        
+        // The max transaction should be close to the expected daily investment
+        // (allowing for budget constraints on some days)
+        expect(maxTransaction).toBeGreaterThan(expectedDailyInvestment * 0.3); // At least 30% of expected
+    });
 });
 
 describe("DataLoader", () => {

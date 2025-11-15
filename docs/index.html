@@ -725,8 +725,8 @@
         }
 
         .tier-daily {
-            font-weight: 600;
-            color: #0071e3;
+            font-weight: 500;
+            color: #1d1d1f;
             font-size: 14px;
         }
 
@@ -1175,6 +1175,9 @@
                             Configure investment multipliers based on where current AHR999 ranks historically.
                             Lower percentiles = cheaper Bitcoin.
                         </p>
+                        <p style="font-size: 12px; color: #ff9500; background: #fff3e0; padding: 8px 12px; border-radius: 6px; margin-bottom: 12px; border-left: 3px solid #ff9500;">
+                            <strong>⚠️ Note:</strong> This strategy can invest more than your monthly budget in a single month if multipliers are high and Bitcoin is undervalued. The total investment is still constrained by the overall backtest period budget (monthly budget × number of months).
+                        </p>
                         
                         <div class="percentile-tiers">
                             <div class="tier-row tier-header">
@@ -1534,13 +1537,15 @@
             } else if (selectedStrategy === 'ahr999-percentile') {
                 dailyAmountDiv.innerHTML = `→ Base daily amount: <strong>$${dailyAmount.toFixed(2)}</strong>/day (varies by AHR999 percentile)`;
                 dailyAmountDiv.style.display = 'block';
+                // Update AHR999 tier amounts when budget changes
+                updatePercentileTiersOnly();
             } else {
                 dailyAmountDiv.style.display = 'none';
             }
         }
 
-        // Update percentile tier amounts
-        function updatePercentileTiers() {
+        // Update percentile tier amounts only (no circular call)
+        function updatePercentileTiersOnly() {
             const monthlyBudget = parseFloat(document.getElementById('backtestBudget').value) || 0;
             const DAYS_PER_MONTH = 30.44;
             const dailyAmount = monthlyBudget / DAYS_PER_MONTH;
@@ -1551,9 +1556,11 @@
                 const amount = dailyAmount * multiplier;
                 document.getElementById(`tier-${tier}-amount`).textContent = `$${amount.toFixed(2)}/day`;
             });
-            
-            // Also update main display
-            updateDailyAmount();
+        }
+
+        // Update percentile tier amounts (called when user changes multipliers in tier inputs)
+        function updatePercentileTiers() {
+            updatePercentileTiersOnly();
         }
 
         // Check if end date is in the future and disable AHR999 strategy accordingly
