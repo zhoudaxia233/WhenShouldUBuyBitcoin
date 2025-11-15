@@ -29,8 +29,9 @@ Using two independent metrics reduces false signals and identifies stronger buyi
 
 ### Data Updates
 
-- Historical data updates **daily at 00:30 UTC**
+- Historical data updates **daily at 00:30 UTC** via automated script
 - Real-time check fetches **live price** from Yahoo Finance
+- **Note**: Yahoo Finance BTC-USD data may have 1-2 day delay and typically excludes weekends (even though Bitcoin trades 24/7). This is a limitation of the data source, not the tool.
 
 ---
 
