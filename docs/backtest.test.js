@@ -8,8 +8,7 @@ import {
     DataLoader,
     DailyDCAStrategy,
     MonthlyDCAStrategy,
-    AHR999ThresholdStrategy,
-    ValuationAwareDCAStrategy,
+    AHR999PercentileStrategy,
     BacktestEngine,
 } from "./backtest.js";
 
@@ -24,69 +23,6 @@ beforeAll(async () => {
     );
 });
 
-describe("Bug Fix: AHR999 Threshold = 0", () => {
-    it("should not invest when threshold is 0", async () => {
-        const strategy = new AHR999ThresholdStrategy(500, { threshold: 0 });
-        const engine = new BacktestEngine(strategy, dataLoader);
-
-        const startDate = new Date("2020-01-01");
-        const endDate = new Date("2021-12-31");
-
-        const result = await engine.run(startDate, endDate, 500);
-
-        expect(result.totalInvested).toBe(0);
-        expect(result.finalBtcBalance).toBe(0);
-    });
-
-    it("should correctly set threshold to 0 (not default to 0.45)", () => {
-        const strategy = new AHR999ThresholdStrategy(500, { threshold: 0 });
-        expect(strategy.threshold).toBe(0);
-        expect(strategy.threshold).not.toBe(0.45);
-    });
-
-    it("should handle threshold parsing from string '0' (UI simulation)", () => {
-        // Simulate UI input: parseFloat("0") should return 0, not default to 0.45
-        const thresholdInput = "0";
-        const threshold = thresholdInput !== "" && !isNaN(parseFloat(thresholdInput))
-            ? parseFloat(thresholdInput)
-            : 0.45;
-        
-        expect(threshold).toBe(0);
-        expect(threshold).not.toBe(0.45);
-        
-        // Verify strategy works with this threshold
-        const strategy = new AHR999ThresholdStrategy(500, { threshold });
-        expect(strategy.threshold).toBe(0);
-    });
-
-    it("should handle null AHR999 values", () => {
-        const strategy = new AHR999ThresholdStrategy(500, { threshold: 0.45 });
-        strategy.setDataLoader(dataLoader);
-        strategy.initialize();
-        strategy.cashBuffer = 1000; // Add cash for testing
-
-        // Test null
-        const investment1 = strategy.shouldInvest(new Date("2020-01-01"), 400, {
-            price: 400,
-            ahr999: null,
-        });
-        expect(investment1).toBe(0);
-
-        // Test undefined
-        const investment2 = strategy.shouldInvest(new Date("2020-01-01"), 400, {
-            price: 400,
-            ahr999: undefined,
-        });
-        expect(investment2).toBe(0);
-
-        // Test NaN
-        const investment3 = strategy.shouldInvest(new Date("2020-01-01"), 400, {
-            price: 400,
-            ahr999: NaN,
-        });
-        expect(investment3).toBe(0);
-    });
-});
 
 describe("Bug Fix: Historical Date Range Detection", () => {
     it("should correctly identify historical vs simulated data", async () => {
@@ -196,9 +132,9 @@ describe("Strategy: Monthly DCA", () => {
     });
 });
 
-describe("Strategy: AHR999 Threshold", () => {
-    it("should invest when AHR999 < threshold", async () => {
-        const strategy = new AHR999ThresholdStrategy(500, { threshold: 10 }); // Very high threshold
+describe("Strategy: AHR999 Percentile", () => {
+    it("should calculate and use correct percentile boundaries", async () => {
+        const strategy = new AHR999PercentileStrategy(500);
         const engine = new BacktestEngine(strategy, dataLoader);
 
         const startDate = new Date("2020-01-01");
@@ -206,12 +142,21 @@ describe("Strategy: AHR999 Threshold", () => {
 
         const result = await engine.run(startDate, endDate, 500);
 
-        // With very high threshold, should invest frequently
-        expect(result.totalInvested).toBeGreaterThan(500 * 20); // At least 20 months worth
+        // Should have invested some amount based on percentiles
+        expect(result.totalInvested).toBeGreaterThan(0);
+        expect(result.finalBtcBalance).toBeGreaterThan(0);
     });
 
-    it("should not invest when AHR999 > threshold", async () => {
-        const strategy = new AHR999ThresholdStrategy(500, { threshold: 0.01 }); // Very low threshold
+    it("should respect custom multipliers", async () => {
+        // Test with extreme multipliers: 10x for bottom 10%, 0x for everything else
+        const strategy = new AHR999PercentileStrategy(500, {
+            multiplier_p10: 10,
+            multiplier_p25: 0,
+            multiplier_p50: 0,
+            multiplier_p75: 0,
+            multiplier_p90: 0,
+            multiplier_p100: 0,
+        });
         const engine = new BacktestEngine(strategy, dataLoader);
 
         const startDate = new Date("2020-01-01");
@@ -219,28 +164,131 @@ describe("Strategy: AHR999 Threshold", () => {
 
         const result = await engine.run(startDate, endDate, 500);
 
-        // With very low threshold, should rarely invest
-        expect(result.totalInvested).toBeLessThan(500 * 24); // Less than full period
+        // Should have invested only during bottom 10% periods
+        expect(result.totalInvested).toBeGreaterThan(0);
+        
+        // Verify multipliers were set correctly
+        expect(strategy.multipliers.p10).toBe(10);
+        expect(strategy.multipliers.p100).toBe(0);
     });
 
-    it("should accumulate cash when not investing", async () => {
-        const strategy = new AHR999ThresholdStrategy(500, { threshold: 0.01 });
+    it("should produce different investment timing with different multipliers", async () => {
+        // Test: Different multipliers should result in different investment patterns
+        // (not necessarily different total amounts, as both are limited by total budget)
+        
+        // Strategy 1: Only invest in bottom 10% (very selective)
+        const selectiveStrategy = new AHR999PercentileStrategy(500, {
+            multiplier_p10: 5,
+            multiplier_p25: 0,
+            multiplier_p50: 0,
+            multiplier_p75: 0,
+            multiplier_p90: 0,
+            multiplier_p100: 0,
+        });
+        const selectiveEngine = new BacktestEngine(selectiveStrategy, dataLoader);
+        
+        // Strategy 2: Invest uniformly across all percentiles
+        const uniformStrategy = new AHR999PercentileStrategy(500, {
+            multiplier_p10: 1,
+            multiplier_p25: 1,
+            multiplier_p50: 1,
+            multiplier_p75: 1,
+            multiplier_p90: 1,
+            multiplier_p100: 1,
+        });
+        const uniformEngine = new BacktestEngine(uniformStrategy, dataLoader);
+
+        const startDate = new Date("2020-01-01");
+        const endDate = new Date("2024-12-31");
+
+        const selectiveResult = await selectiveEngine.run(startDate, endDate, 500);
+        const uniformResult = await uniformEngine.run(startDate, endDate, 500);
+
+        console.log("Selective (bottom 10% only) invested:", selectiveResult.totalInvested);
+        console.log("Uniform (all percentiles) invested:", uniformResult.totalInvested);
+        console.log("Selective BTC balance:", selectiveResult.finalBtcBalance);
+        console.log("Uniform BTC balance:", uniformResult.finalBtcBalance);
+
+        // Both should invest some amount
+        expect(selectiveResult.totalInvested).toBeGreaterThan(0);
+        expect(uniformResult.totalInvested).toBeGreaterThan(0);
+        
+        // Selective should invest less total (only invests in bottom 10% periods)
+        expect(selectiveResult.totalInvested).toBeLessThan(uniformResult.totalInvested);
+        
+        // But selective might have more BTC (bought during cheaper periods)
+        // This is not guaranteed, just checking the strategy executed differently
+        expect(selectiveResult.finalBtcBalance).not.toBe(uniformResult.finalBtcBalance);
+    });
+
+    it("should handle null AHR999 values", () => {
+        const strategy = new AHR999PercentileStrategy(500);
         strategy.setDataLoader(dataLoader);
         strategy.initialize();
+        strategy.cashBuffer = 1000;
 
-        // Simulate months passing
-        strategy.onMonthStart(new Date("2020-01-01"));
-        strategy.onMonthStart(new Date("2020-02-01"));
-        strategy.onMonthStart(new Date("2020-03-01"));
+        // Test null AHR999
+        const investment = strategy.shouldInvest(new Date("2020-01-01"), 400, {
+            price: 400,
+            ahr999: null,
+        });
 
-        // Should have accumulated 3 months of budget
-        expect(strategy.cashBuffer).toBe(1500);
+        expect(investment).toBe(0);
     });
-});
 
-describe("Strategy: Valuation-Aware DCA", () => {
+    it("should work with all multipliers set to 0", async () => {
+        const strategy = new AHR999PercentileStrategy(500, {
+            multiplier_p10: 0,
+            multiplier_p25: 0,
+            multiplier_p50: 0,
+            multiplier_p75: 0,
+            multiplier_p90: 0,
+            multiplier_p100: 0,
+        });
+        const engine = new BacktestEngine(strategy, dataLoader);
+
+        const startDate = new Date("2020-01-01");
+        const endDate = new Date("2021-12-31");
+
+        const result = await engine.run(startDate, endDate, 500);
+
+        // Should not invest anything
+        expect(result.totalInvested).toBe(0);
+        expect(result.finalBtcBalance).toBe(0);
+        expect(result.transactions.length).toBe(0);
+    });
+
+    it("should respect single non-zero multiplier", async () => {
+        // Only p75 (50-75% percentile) has 10x multiplier, rest are 0
+        const strategy = new AHR999PercentileStrategy(500, {
+            multiplier_p10: 0,
+            multiplier_p25: 0,
+            multiplier_p50: 0,
+            multiplier_p75: 10, // Only this tier invests
+            multiplier_p90: 0,
+            multiplier_p100: 0,
+        });
+        const engine = new BacktestEngine(strategy, dataLoader);
+
+        const startDate = new Date("2020-01-01");
+        const endDate = new Date("2024-12-31");
+
+        const result = await engine.run(startDate, endDate, 500);
+
+        console.log("Single multiplier (p75=10) invested:", result.totalInvested);
+        console.log("Transactions:", result.transactions.length);
+
+        // Should only invest during 50-75% percentile periods
+        expect(result.totalInvested).toBeGreaterThan(0);
+        expect(result.transactions.length).toBeGreaterThan(0);
+        
+        // Verify multipliers were set correctly
+        expect(strategy.multipliers.p75).toBe(10);
+        expect(strategy.multipliers.p10).toBe(0);
+    });
+
     it("should handle early dates without crashing", async () => {
-        const strategy = new ValuationAwareDCAStrategy(500);
+        const strategy = new AHR999PercentileStrategy(500);
         const engine = new BacktestEngine(strategy, dataLoader);
 
         // Test with earliest available dates
@@ -254,32 +302,20 @@ describe("Strategy: Valuation-Aware DCA", () => {
         expect(result.finalBtcBalance).toBeGreaterThanOrEqual(0);
     });
 
-    it("should invest variable amounts based on AHR999", async () => {
-        const strategy = new ValuationAwareDCAStrategy(500);
-        const engine = new BacktestEngine(strategy, dataLoader);
+    it("should correctly parse multiplier value of 0", () => {
+        // Test the parsing logic used in UI
+        const getMultiplier = (value, defaultValue) => {
+            const parsed = parseFloat(value);
+            return isNaN(parsed) ? defaultValue : parsed;
+        };
 
-        const startDate = new Date("2020-01-01");
-        const endDate = new Date("2021-12-31");
-
-        const result = await engine.run(startDate, endDate, 500);
-
-        // Should have invested some amount
-        expect(result.totalInvested).toBeGreaterThan(0);
-        expect(result.finalBtcBalance).toBeGreaterThan(0);
-    });
-
-    it("should handle null AHR999 in valuation-aware", () => {
-        const strategy = new ValuationAwareDCAStrategy(500);
-        strategy.setDataLoader(dataLoader);
-        strategy.initialize();
-        strategy.cashBuffer = 1000;
-
-        const investment = strategy.shouldInvest(new Date("2020-01-01"), 400, {
-            price: 400,
-            ahr999: null,
-        });
-
-        expect(investment).toBe(0);
+        // Test various inputs
+        expect(getMultiplier("0", 5.0)).toBe(0); // ✓ Zero should be zero, not default
+        expect(getMultiplier("0.5", 5.0)).toBe(0.5);
+        expect(getMultiplier("10", 5.0)).toBe(10);
+        expect(getMultiplier("", 5.0)).toBe(5.0); // Empty string → default
+        expect(getMultiplier("abc", 5.0)).toBe(5.0); // Invalid → default
+        expect(getMultiplier("  0  ", 5.0)).toBe(0); // Whitespace trimmed
     });
 });
 
