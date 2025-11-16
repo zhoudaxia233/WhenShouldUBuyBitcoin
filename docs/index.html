@@ -697,6 +697,94 @@
             margin-bottom: 6px;
         }
 
+        /* Useful Links Section */
+        .links-section {
+            background: white;
+            border-radius: 18px;
+            padding: 40px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+        }
+
+        .links-section h2 {
+            font-size: 1.8em;
+            font-weight: 600;
+            margin-bottom: 8px;
+            text-align: center;
+            color: #1d1d1f;
+        }
+
+        .links-section p {
+            text-align: center;
+            color: #86868b;
+            font-size: 15px;
+            margin-bottom: 32px;
+        }
+
+        .links-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 16px;
+            margin-top: 24px;
+        }
+
+        .link-card {
+            background: #f5f5f7;
+            border-radius: 12px;
+            padding: 20px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            text-decoration: none;
+            color: inherit;
+            display: block;
+            border: 1px solid transparent;
+        }
+
+        .link-card:hover {
+            background: #e8e8ed;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+            border-color: #d2d2d7;
+        }
+
+        .link-card:active {
+            transform: translateY(0);
+        }
+
+        .link-icon {
+            font-size: 24px;
+            margin-bottom: 12px;
+            display: block;
+        }
+
+        .link-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #1d1d1f;
+            margin-bottom: 6px;
+            line-height: 1.3;
+        }
+
+        .link-description {
+            font-size: 13px;
+            color: #86868b;
+            line-height: 1.4;
+        }
+
+        .link-url {
+            font-size: 12px;
+            color: #0071e3;
+            margin-top: 8px;
+            display: block;
+            word-break: break-all;
+            opacity: 0.8;
+        }
+
+        @media (max-width: 768px) {
+            .links-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
         .strategy-config input {
             margin-top: 6px;
         }
@@ -1907,6 +1995,51 @@
                 document.getElementById('lastUpdate').textContent = 'Unknown';
             });
     </script>
+
+        <!-- Useful Links Section -->
+        <div class="links-section">
+            <h2>🔗 Useful Links</h2>
+            <p>Quick access to essential Bitcoin resources and analytics</p>
+            <div class="links-grid">
+                <a href="https://bitinfocharts.com/top-100-richest-bitcoin-addresses.html" target="_blank" rel="noopener noreferrer" class="link-card">
+                    <span class="link-icon">💰</span>
+                    <div class="link-title">Bitcoin Rich List</div>
+                    <div class="link-description">Top 100 richest Bitcoin addresses and distribution statistics</div>
+                    <span class="link-url">bitinfocharts.com</span>
+                </a>
+                <a href="https://intel.arkm.com/explorer/entity/microstrategy" target="_blank" rel="noopener noreferrer" class="link-card">
+                    <span class="link-icon">🏢</span>
+                    <div class="link-title">MicroStrategy on Arkham</div>
+                    <div class="link-description">Track MicroStrategy's Bitcoin holdings and transactions</div>
+                    <span class="link-url">intel.arkm.com</span>
+                </a>
+                <a href="https://intel.arkm.com/explorer/entity/blackrock" target="_blank" rel="noopener noreferrer" class="link-card">
+                    <span class="link-icon">🏛️</span>
+                    <div class="link-title">BlackRock on Arkham</div>
+                    <div class="link-description">Monitor BlackRock's Bitcoin ETF and institutional activity</div>
+                    <span class="link-url">intel.arkm.com</span>
+                </a>
+                <a href="https://www.tradingview.com/symbols/BTCUSD/?timeframe=YTD" target="_blank" rel="noopener noreferrer" class="link-card">
+                    <span class="link-icon">📈</span>
+                    <div class="link-title">BTC/USD Chart</div>
+                    <div class="link-description">Advanced Bitcoin price charts and technical analysis</div>
+                    <span class="link-url">tradingview.com</span>
+                </a>
+                <a href="https://www.coinglass.com/pro/i/long-term-holder-supply" target="_blank" rel="noopener noreferrer" class="link-card">
+                    <span class="link-icon">📊</span>
+                    <div class="link-title">Long-term Holder Supply</div>
+                    <div class="link-description">Analyze Bitcoin long-term holder supply trends</div>
+                    <span class="link-url">coinglass.com</span>
+                </a>
+                <a href="https://www.strategy.com/" target="_blank" rel="noopener noreferrer" class="link-card">
+                    <span class="link-icon">🏢</span>
+                    <div class="link-title">MicroStrategy Official</div>
+                    <div class="link-description">MicroStrategy company website with key metrics like mNAV</div>
+                    <span class="link-url">strategy.com</span>
+                </a>
+            </div>
+        </div>
+    </div>
 </body>
 </html>
 
