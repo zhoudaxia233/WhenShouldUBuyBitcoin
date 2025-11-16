@@ -28,6 +28,190 @@ def get_output_dir() -> Path:
     return charts_dir
 
 
+def add_yaxis_autoscale_script(html_path: Path) -> None:
+    """
+    Add JavaScript code to enable y-axis auto-scaling when x-axis range changes.
+
+    This function reads the HTML file, injects JavaScript code that listens for
+    x-axis range changes and automatically adjusts the y-axis to fit visible data.
+
+    Args:
+        html_path: Path to the HTML file to modify
+    """
+    if not html_path.exists():
+        return
+
+    # Read the HTML content
+    with open(html_path, "r", encoding="utf-8") as f:
+        html_content = f.read()
+
+    # JavaScript code to enable y-axis auto-scaling on x-axis range changes
+    # Find the plotly graph div by class and attach event listener
+    autoscale_script = """
+    <script>
+    (function() {
+        // Enable y-axis auto-scaling when x-axis range changes (including box select/zoom)
+        function setupYAxisAutoScale() {
+            // Find all plotly graph divs
+            var plotlyDivs = document.querySelectorAll('.plotly-graph-div');
+            
+            plotlyDivs.forEach(function(gd) {
+                if (!gd || !gd._fullLayout) {
+                    // Retry if Plotly not ready
+                    setTimeout(setupYAxisAutoScale, 200);
+                    return;
+                }
+                
+                // Track previous x-axis range
+                var prevXRange = null;
+                var updateTimeout = null;
+                var isUpdatingYAxis = false;  // Flag to prevent recursive updates
+                
+                // Function to force y-axis autorange update
+                function forceYAxisAutorange() {
+                    // Prevent recursive calls
+                    if (isUpdatingYAxis) {
+                        return;
+                    }
+                    
+                    if (updateTimeout) {
+                        clearTimeout(updateTimeout);
+                    }
+                    
+                    updateTimeout = setTimeout(function() {
+                        try {
+                            // Get current x-axis state
+                            var xaxis = gd._fullLayout.xaxis;
+                            var currentXRange = xaxis.range && !xaxis.autorange ? xaxis.range : null;
+                            
+                            // Check if x-axis range actually changed
+                            var shouldUpdate = false;
+                            if (currentXRange && prevXRange) {
+                                // Compare ranges (allow 1ms difference for floating point)
+                                if (Math.abs(currentXRange[0] - prevXRange[0]) > 1 || 
+                                    Math.abs(currentXRange[1] - prevXRange[1]) > 1) {
+                                    shouldUpdate = true;
+                                }
+                            } else if (currentXRange !== prevXRange) {
+                                shouldUpdate = true;
+                            }
+                            
+                            if (shouldUpdate || currentXRange) {
+                                // Update previous range
+                                prevXRange = currentXRange ? [currentXRange[0], currentXRange[1]] : null;
+                                
+                                // Set flag to prevent recursive updates
+                                isUpdatingYAxis = true;
+                                
+                                // Force y-axis autorange - use a single relayout call
+                                Plotly.relayout(gd, {
+                                    'yaxis.autorange': true
+                                }).then(function() {
+                                    // Reset flag after a short delay to allow layout to settle
+                                    setTimeout(function() {
+                                        isUpdatingYAxis = false;
+                                    }, 100);
+                                }).catch(function(err) {
+                                    // Reset flag on error
+                                    isUpdatingYAxis = false;
+                                });
+                            }
+                        } catch(e) {
+                            console.error('Error updating y-axis autorange:', e);
+                            isUpdatingYAxis = false;
+                        }
+                    }, 100);
+                }
+                
+                // Listen for relayout events, but only respond to user-initiated x-axis changes
+                gd.on('plotly_relayout', function(eventData) {
+                    // Skip if we're currently updating y-axis (to prevent recursion)
+                    if (isUpdatingYAxis) {
+                        return;
+                    }
+                    
+                    // Check if this is a user-initiated x-axis change (not y-axis change)
+                    var isXAxisChange = false;
+                    var isYAxisChange = false;
+                    
+                    for (var key in eventData) {
+                        // Check for x-axis range changes (user zoom/box select)
+                        if (key.indexOf('xaxis.range') === 0 || key === 'xaxis.autorange') {
+                            isXAxisChange = true;
+                        }
+                        // Check for y-axis changes (likely from our own updates)
+                        if (key.indexOf('yaxis') === 0) {
+                            isYAxisChange = true;
+                        }
+                    }
+                    
+                    // Only update if it's an x-axis change and NOT a y-axis change
+                    // (y-axis changes are likely from our own updates)
+                    if (isXAxisChange && !isYAxisChange) {
+                        forceYAxisAutorange();
+                    }
+                });
+                
+                // Use afterplot event as a backup - it fires after all rendering is complete
+                // This is safer because it won't trigger during our own relayout calls
+                gd.on('plotly_afterplot', function() {
+                    // Skip if we're updating
+                    if (isUpdatingYAxis) {
+                        return;
+                    }
+                    
+                    // Check if x-axis has a manual range (indicating zoom/box select)
+                    var xaxis = gd._fullLayout.xaxis;
+                    if (xaxis && xaxis.range && !xaxis.autorange) {
+                        var currentXRange = [xaxis.range[0], xaxis.range[1]];
+                        
+                        // Check if range actually changed
+                        var rangeChanged = false;
+                        if (prevXRange) {
+                            if (Math.abs(currentXRange[0] - prevXRange[0]) > 1 || 
+                                Math.abs(currentXRange[1] - prevXRange[1]) > 1) {
+                                rangeChanged = true;
+                            }
+                        } else {
+                            rangeChanged = true;
+                        }
+                        
+                        if (rangeChanged) {
+                            prevXRange = [currentXRange[0], currentXRange[1]];
+                            forceYAxisAutorange();
+                        }
+                    }
+                });
+                
+                // Initialize previous range
+                var xaxis = gd._fullLayout.xaxis;
+                if (xaxis && xaxis.range && !xaxis.autorange) {
+                    prevXRange = [xaxis.range[0], xaxis.range[1]];
+                }
+            });
+        }
+        
+        // Setup when page is ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', function() {
+                setTimeout(setupYAxisAutoScale, 500);
+            });
+        } else {
+            // DOM already loaded, wait for Plotly to initialize
+            setTimeout(setupYAxisAutoScale, 1000);
+        }
+    })();
+    </script>
+    """
+
+    # Insert the script before the closing </body> tag
+    if "</body>" in html_content:
+        html_content = html_content.replace("</body>", autoscale_script + "\n</body>")
+        # Write back to file
+        with open(html_path, "w", encoding="utf-8") as f:
+            f.write(html_content)
+
+
 def plot_valuation_ratios(
     df: pd.DataFrame,
     output_filename: str = "valuation_ratios.html",
@@ -179,6 +363,10 @@ def plot_valuation_ratios(
         },
         xaxis_title="Date",
         yaxis_title="Ratio Value",
+        yaxis=dict(
+            autorange=True,  # Enable auto-scaling for y-axis
+            fixedrange=False,  # Allow y-axis to be zoomed and auto-adjusted
+        ),
         hovermode="x unified",
         template="plotly_white",
         height=650,
@@ -212,6 +400,9 @@ def plot_valuation_ratios(
     output_dir = get_output_dir()
     output_path = output_dir / output_filename
     fig.write_html(str(output_path), auto_open=auto_open)
+
+    # Add JavaScript to enable y-axis auto-scaling when x-axis range changes
+    add_yaxis_autoscale_script(output_path)
 
     print(f"✓ Saved interactive chart to: {output_path}")
     if auto_open:
@@ -317,7 +508,11 @@ def plot_price_comparison(
         },
         xaxis_title="Date",
         yaxis_title="Price (USD)",
-        yaxis_type="log",  # Log scale to better show the power law growth
+        yaxis=dict(
+            type="log",  # Log scale to better show the power law growth
+            autorange=True,  # Enable auto-scaling for y-axis
+            fixedrange=False,  # Allow y-axis to be zoomed and auto-adjusted
+        ),
         hovermode="x unified",
         template="plotly_white",
         height=700,
@@ -359,6 +554,9 @@ def plot_price_comparison(
     output_dir = get_output_dir()
     output_path = output_dir / output_filename
     fig.write_html(str(output_path), auto_open=auto_open)
+
+    # Add JavaScript to enable y-axis auto-scaling when x-axis range changes
+    add_yaxis_autoscale_script(output_path)
 
     print(f"✓ Saved price comparison chart to: {output_path}")
     if auto_open:
