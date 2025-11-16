@@ -50,6 +50,60 @@
             font-weight: 400;
         }
 
+        /* Main Tab Navigation */
+        .main-tabs {
+            display: flex;
+            justify-content: center;
+            gap: 0;
+            margin: 40px 0 30px;
+            background: white;
+            border-radius: 12px;
+            padding: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .main-tab {
+            flex: 1;
+            padding: 12px 20px;
+            font-size: 15px;
+            font-weight: 500;
+            color: #86868b;
+            background: transparent;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-align: center;
+        }
+
+        .main-tab:hover {
+            color: #1d1d1f;
+            background: #f5f5f7;
+        }
+
+        .main-tab.active {
+            color: #0071e3;
+            background: #e8f4fd;
+        }
+
+        /* Tab Content */
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.3s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
         /* Chart Container */
         .chart-container {
             background: white;
@@ -783,6 +837,24 @@
             .links-grid {
                 grid-template-columns: 1fr;
             }
+
+            .main-tabs {
+                max-width: 100%;
+                margin: 30px 0 20px;
+                padding: 6px;
+            }
+
+            .main-tab {
+                padding: 10px 12px;
+                font-size: 14px;
+            }
+
+            .chart-container,
+            .check-section,
+            .forecast-section,
+            .backtest-section {
+                padding: 20px;
+            }
         }
 
         .strategy-config input {
@@ -1241,61 +1313,84 @@
             <p>Real-time Double Undervaluation Analysis</p>
         </div>
 
-        <!-- Embedded Charts with Tabs -->
-        <div class="chart-container">
-            <div class="chart-tabs">
-                <button class="chart-tab active" onclick="switchChart('ratios')">
-                    Valuation Ratios
-                </button>
-                <button class="chart-tab" onclick="switchChart('prices')">
-                    Price Comparison
-                </button>
-            </div>
-            
-            <div id="ratios-chart" class="chart-content active">
-                <iframe src="charts/valuation_ratios.html"></iframe>
-            </div>
-            
-            <div id="prices-chart" class="chart-content">
-                <iframe src="charts/price_comparison.html"></iframe>
-            </div>
-        </div>
-
-        <!-- Real-time Check Section -->
-        <div class="check-section">
-            <button id="checkButton" class="check-button">
-                Check Real-Time Status
+        <!-- Main Tab Navigation -->
+        <div class="main-tabs">
+            <button class="main-tab active" onclick="switchMainTab('charts')">
+                Charts
             </button>
+            <button class="main-tab" onclick="switchMainTab('analysis')">
+                Analysis
+            </button>
+            <button class="main-tab" onclick="switchMainTab('tools')">
+                Tools
+            </button>
+            <button class="main-tab" onclick="switchMainTab('resources')">
+                Resources
+            </button>
+        </div>
 
-            <div id="loading" class="loading" style="display: none;">
-                Loading...
-            </div>
-
-            <div id="results" class="result-section">
-                <!-- Results will be inserted here -->
+        <!-- Charts Tab Content -->
+        <div id="charts-tab" class="tab-content active">
+            <div class="chart-container">
+                <div class="chart-tabs">
+                    <button class="chart-tab active" onclick="switchChart('ratios')">
+                        Valuation Ratios
+                    </button>
+                    <button class="chart-tab" onclick="switchChart('prices')">
+                        Price Comparison
+                    </button>
+                </div>
+                
+                <div id="ratios-chart" class="chart-content active">
+                    <iframe src="charts/valuation_ratios.html"></iframe>
+                </div>
+                
+                <div id="prices-chart" class="chart-content">
+                    <iframe src="charts/price_comparison.html"></iframe>
+                </div>
             </div>
         </div>
 
-        <!-- Future Price Forecast Calculator -->
-        <div class="forecast-section">
-            <h2>🔮 Future Price Forecast</h2>
-            <p>Calculate Bitcoin's predicted price on any future date based on the Power Law model</p>
-            
-            <div class="forecast-input-group">
-                <label for="forecastDate">Select Date:</label>
-                <input type="date" id="forecastDate" />
-                <button class="forecast-button" onclick="calculateForecast()">
-                    Calculate Forecast
+        <!-- Analysis Tab Content -->
+        <div id="analysis-tab" class="tab-content">
+            <!-- Real-time Check Section -->
+            <div class="check-section">
+                <button id="checkButton" class="check-button">
+                    Check Real-Time Status
                 </button>
+
+                <div id="loading" class="loading" style="display: none;">
+                    Loading...
+                </div>
+
+                <div id="results" class="result-section">
+                    <!-- Results will be inserted here -->
+                </div>
             </div>
 
-            <div id="forecastResult" class="forecast-result">
-                <!-- Forecast results will be inserted here -->
+            <!-- Future Price Forecast Calculator -->
+            <div class="forecast-section">
+                <h2>🔮 Future Price Forecast</h2>
+                <p>Calculate Bitcoin's predicted price on any future date based on the Power Law model</p>
+                
+                <div class="forecast-input-group">
+                    <label for="forecastDate">Select Date:</label>
+                    <input type="date" id="forecastDate" />
+                    <button class="forecast-button" onclick="calculateForecast()">
+                        Calculate Forecast
+                    </button>
+                </div>
+
+                <div id="forecastResult" class="forecast-result">
+                    <!-- Forecast results will be inserted here -->
+                </div>
             </div>
         </div>
 
-        <!-- Backtest / Strategy Simulator -->
-        <div class="backtest-section">
+        <!-- Tools Tab Content -->
+        <div id="tools-tab" class="tab-content">
+            <!-- Backtest / Strategy Simulator -->
+            <div class="backtest-section">
             <h2>📊 Backtest / Strategy Simulator</h2>
             <p>Test different Bitcoin investment strategies using historical data and power law projections</p>
             
@@ -1454,6 +1549,60 @@
                 </div>
             </div>
         </div>
+        </div>
+
+        <!-- Resources Tab Content -->
+        <div id="resources-tab" class="tab-content">
+            <!-- Useful Links Section -->
+            <div class="links-section">
+                <h2>🔗 Useful Links</h2>
+                <p>Quick access to essential Bitcoin resources and analytics</p>
+                <div class="links-grid">
+                    <a href="https://bitinfocharts.com/top-100-richest-bitcoin-addresses.html" target="_blank" rel="noopener noreferrer" class="link-card">
+                        <span class="link-icon">💰</span>
+                        <div class="link-title">Bitcoin Rich List</div>
+                        <div class="link-description">Top 100 richest Bitcoin addresses and distribution statistics</div>
+                        <span class="link-url">bitinfocharts.com</span>
+                    </a>
+                    <a href="https://intel.arkm.com/explorer/entity/microstrategy" target="_blank" rel="noopener noreferrer" class="link-card">
+                        <span class="link-icon">🏢</span>
+                        <div class="link-title">MicroStrategy on Arkham</div>
+                        <div class="link-description">Track MicroStrategy's Bitcoin holdings and transactions</div>
+                        <span class="link-url">intel.arkm.com</span>
+                    </a>
+                    <a href="https://intel.arkm.com/explorer/entity/blackrock" target="_blank" rel="noopener noreferrer" class="link-card">
+                        <span class="link-icon">🏛️</span>
+                        <div class="link-title">BlackRock on Arkham</div>
+                        <div class="link-description">Monitor BlackRock's Bitcoin ETF and institutional activity</div>
+                        <span class="link-url">intel.arkm.com</span>
+                    </a>
+                    <a href="https://www.tradingview.com/symbols/BTCUSD/?timeframe=YTD" target="_blank" rel="noopener noreferrer" class="link-card">
+                        <span class="link-icon">📈</span>
+                        <div class="link-title">BTC/USD Chart</div>
+                        <div class="link-description">Advanced Bitcoin price charts and technical analysis</div>
+                        <span class="link-url">tradingview.com</span>
+                    </a>
+                    <a href="https://www.coinglass.com/pro/i/long-term-holder-supply" target="_blank" rel="noopener noreferrer" class="link-card">
+                        <span class="link-icon">📊</span>
+                        <div class="link-title">Long-term Holder Supply</div>
+                        <div class="link-description">Analyze Bitcoin long-term holder supply trends</div>
+                        <span class="link-url">coinglass.com</span>
+                    </a>
+                    <a href="https://www.strategy.com/" target="_blank" rel="noopener noreferrer" class="link-card">
+                        <span class="link-icon">🏢</span>
+                        <div class="link-title">MicroStrategy Official</div>
+                        <div class="link-description">MicroStrategy company website with key metrics like mNAV</div>
+                        <span class="link-url">strategy.com</span>
+                    </a>
+                    <a href="https://polymarket.com/crypto?tab=bitcoin" target="_blank" rel="noopener noreferrer" class="link-card">
+                        <span class="link-icon">📊</span>
+                        <div class="link-title">Polymarket Bitcoin</div>
+                        <div class="link-description">Bitcoin prediction markets and price forecasts on Polymarket</div>
+                        <span class="link-url">polymarket.com</span>
+                    </a>
+                </div>
+            </div>
+        </div>
 
         <div class="footer">
             Last data update: <span id="lastUpdate">Loading...</span>
@@ -1477,6 +1626,23 @@
     <!-- Backtest engine -->
     <script type="module" src="backtest.js"></script>
     <script>
+        // Main tab switching function
+        function switchMainTab(tabName) {
+            // Update main tabs
+            const mainTabs = document.querySelectorAll('.main-tab');
+            mainTabs.forEach(tab => tab.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            // Update tab content
+            const tabContents = document.querySelectorAll('.tab-content');
+            tabContents.forEach(content => content.classList.remove('active'));
+            
+            const activeTab = document.getElementById(tabName + '-tab');
+            if (activeTab) {
+                activeTab.classList.add('active');
+            }
+        }
+
         // Chart switching function
         function switchChart(chartType) {
             // Update tabs
@@ -1995,57 +2161,6 @@
                 document.getElementById('lastUpdate').textContent = 'Unknown';
             });
     </script>
-
-        <!-- Useful Links Section -->
-        <div class="links-section">
-            <h2>🔗 Useful Links</h2>
-            <p>Quick access to essential Bitcoin resources and analytics</p>
-            <div class="links-grid">
-                <a href="https://bitinfocharts.com/top-100-richest-bitcoin-addresses.html" target="_blank" rel="noopener noreferrer" class="link-card">
-                    <span class="link-icon">💰</span>
-                    <div class="link-title">Bitcoin Rich List</div>
-                    <div class="link-description">Top 100 richest Bitcoin addresses and distribution statistics</div>
-                    <span class="link-url">bitinfocharts.com</span>
-                </a>
-                <a href="https://intel.arkm.com/explorer/entity/microstrategy" target="_blank" rel="noopener noreferrer" class="link-card">
-                    <span class="link-icon">🏢</span>
-                    <div class="link-title">MicroStrategy on Arkham</div>
-                    <div class="link-description">Track MicroStrategy's Bitcoin holdings and transactions</div>
-                    <span class="link-url">intel.arkm.com</span>
-                </a>
-                <a href="https://intel.arkm.com/explorer/entity/blackrock" target="_blank" rel="noopener noreferrer" class="link-card">
-                    <span class="link-icon">🏛️</span>
-                    <div class="link-title">BlackRock on Arkham</div>
-                    <div class="link-description">Monitor BlackRock's Bitcoin ETF and institutional activity</div>
-                    <span class="link-url">intel.arkm.com</span>
-                </a>
-                <a href="https://www.tradingview.com/symbols/BTCUSD/?timeframe=YTD" target="_blank" rel="noopener noreferrer" class="link-card">
-                    <span class="link-icon">📈</span>
-                    <div class="link-title">BTC/USD Chart</div>
-                    <div class="link-description">Advanced Bitcoin price charts and technical analysis</div>
-                    <span class="link-url">tradingview.com</span>
-                </a>
-                <a href="https://www.coinglass.com/pro/i/long-term-holder-supply" target="_blank" rel="noopener noreferrer" class="link-card">
-                    <span class="link-icon">📊</span>
-                    <div class="link-title">Long-term Holder Supply</div>
-                    <div class="link-description">Analyze Bitcoin long-term holder supply trends</div>
-                    <span class="link-url">coinglass.com</span>
-                </a>
-                <a href="https://www.strategy.com/" target="_blank" rel="noopener noreferrer" class="link-card">
-                    <span class="link-icon">🏢</span>
-                    <div class="link-title">MicroStrategy Official</div>
-                    <div class="link-description">MicroStrategy company website with key metrics like mNAV</div>
-                    <span class="link-url">strategy.com</span>
-                </a>
-                <a href="https://polymarket.com/crypto?tab=bitcoin" target="_blank" rel="noopener noreferrer" class="link-card">
-                    <span class="link-icon">📊</span>
-                    <div class="link-title">Polymarket Bitcoin</div>
-                    <div class="link-description">Bitcoin prediction markets and price forecasts on Polymarket</div>
-                    <span class="link-url">polymarket.com</span>
-                </a>
-            </div>
-        </div>
-    </div>
 </body>
 </html>
 
