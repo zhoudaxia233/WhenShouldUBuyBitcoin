@@ -407,11 +407,20 @@ async function checkRealtimeStatus() {
     const loadingEl = document.getElementById("loading");
     const resultsEl = document.getElementById("results");
     const buttonEl = document.getElementById("checkButton");
+    const placeholderEl = document.getElementById("results-placeholder");
 
     try {
+        // Switch to Analysis tab
+        if (typeof switchMainTab === "function") {
+            switchMainTab("analysis");
+        }
+
         // Show loading state
         loadingEl.style.display = "block";
         resultsEl.classList.remove("show");
+        if (placeholderEl) {
+            placeholderEl.classList.add("hidden");
+        }
         buttonEl.disabled = true;
 
         // 1. Load historical data
@@ -480,6 +489,12 @@ async function checkRealtimeStatus() {
             lastDataDate: csvData[csvData.length - 1].date,
         });
     } catch (error) {
+        // Hide placeholder on error
+        const placeholderEl = document.getElementById("results-placeholder");
+        if (placeholderEl) {
+            placeholderEl.classList.add("hidden");
+        }
+
         // Display error
         resultsEl.innerHTML = `
             <div class="error">
@@ -510,6 +525,12 @@ async function checkRealtimeStatus() {
  */
 function displayResults(data) {
     const resultsEl = document.getElementById("results");
+    const placeholderEl = document.getElementById("results-placeholder");
+
+    // Hide placeholder and show results
+    if (placeholderEl) {
+        placeholderEl.classList.add("hidden");
+    }
 
     // Build compact HTML with Apple-style design
     const html = `
