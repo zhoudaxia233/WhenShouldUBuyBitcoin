@@ -44,10 +44,20 @@
             transform: translateY(-0.08em);
         }
 
-        .header p {
-            font-size: 1.2em;
-            color: #86868b;
-            font-weight: 400;
+        .header-actions {
+            margin-top: 24px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .header .check-button {
+            margin: 0;
+        }
+
+        .header .loading {
+            margin: 0;
         }
 
         /* Main Tab Navigation */
@@ -158,7 +168,7 @@
             border-radius: 12px;
         }
 
-        /* Check Button */
+        /* Check Section (Results Only) */
         .check-section {
             background: white;
             border-radius: 18px;
@@ -166,6 +176,40 @@
             margin-bottom: 30px;
             box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
             text-align: center;
+            max-width: 900px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        /* Results Placeholder */
+        .results-placeholder {
+            text-align: center;
+            padding: 60px 20px;
+            color: #86868b;
+        }
+
+        .results-placeholder.hidden {
+            display: none;
+        }
+
+        .placeholder-icon {
+            font-size: 64px;
+            margin-bottom: 20px;
+            opacity: 0.6;
+        }
+
+        .results-placeholder h3 {
+            font-size: 1.5em;
+            font-weight: 600;
+            color: #1d1d1f;
+            margin-bottom: 12px;
+        }
+
+        .results-placeholder p {
+            font-size: 15px;
+            line-height: 1.6;
+            max-width: 500px;
+            margin: 0 auto;
         }
 
         .check-button {
@@ -1310,21 +1354,28 @@
     <div class="container">
         <div class="header">
             <h1>When Should You Buy <img src="bitcoin.svg" alt="Bitcoin" class="bitcoin-icon"></h1>
-            <p>Real-time Double Undervaluation Analysis</p>
+            <div class="header-actions">
+                <button id="checkButton" class="check-button">
+                    Check Real-Time Status
+                </button>
+                <div id="loading" class="loading" style="display: none;">
+                    Loading...
+                </div>
+            </div>
         </div>
 
         <!-- Main Tab Navigation -->
         <div class="main-tabs">
-            <button class="main-tab active" onclick="switchMainTab('charts')">
+            <button class="main-tab active" onclick="switchMainTab('charts', this)">
                 Charts
             </button>
-            <button class="main-tab" onclick="switchMainTab('analysis')">
+            <button class="main-tab" onclick="switchMainTab('analysis', this)">
                 Analysis
             </button>
-            <button class="main-tab" onclick="switchMainTab('tools')">
+            <button class="main-tab" onclick="switchMainTab('tools', this)">
                 Tools
             </button>
-            <button class="main-tab" onclick="switchMainTab('resources')">
+            <button class="main-tab" onclick="switchMainTab('resources', this)">
                 Resources
             </button>
         </div>
@@ -1353,16 +1404,14 @@
 
         <!-- Analysis Tab Content -->
         <div id="analysis-tab" class="tab-content">
-            <!-- Real-time Check Section -->
+            <!-- Real-time Check Results Section -->
             <div class="check-section">
-                <button id="checkButton" class="check-button">
-                    Check Real-Time Status
-                </button>
-
-                <div id="loading" class="loading" style="display: none;">
-                    Loading...
+                <!-- Placeholder when no results -->
+                <div id="results-placeholder" class="results-placeholder">
+                    <div class="placeholder-icon">📊</div>
+                    <h3>Real-Time Analysis</h3>
+                    <p>Click "Check Real-Time Status" in the header to analyze current Bitcoin valuation metrics and determine if it's a good time to buy.</p>
                 </div>
-
                 <div id="results" class="result-section">
                     <!-- Results will be inserted here -->
                 </div>
@@ -1627,11 +1676,23 @@
     <script type="module" src="backtest.js"></script>
     <script>
         // Main tab switching function
-        function switchMainTab(tabName) {
+        function switchMainTab(tabName, sourceElement) {
             // Update main tabs
             const mainTabs = document.querySelectorAll('.main-tab');
             mainTabs.forEach(tab => tab.classList.remove('active'));
-            event.target.classList.add('active');
+            
+            // Find the clicked tab button
+            if (sourceElement) {
+                sourceElement.classList.add('active');
+            } else {
+                // If called programmatically, find the tab by data attribute or text
+                mainTabs.forEach(tab => {
+                    if (tab.textContent.trim().toLowerCase() === tabName.toLowerCase() || 
+                        tab.getAttribute('data-tab') === tabName) {
+                        tab.classList.add('active');
+                    }
+                });
+            }
             
             // Update tab content
             const tabContents = document.querySelectorAll('.tab-content');
