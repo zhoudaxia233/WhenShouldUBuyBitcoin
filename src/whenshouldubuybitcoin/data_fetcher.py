@@ -10,6 +10,11 @@ from typing import Optional
 import pandas as pd
 import yfinance as yf
 
+try:
+    import requests
+except ImportError:
+    requests = None
+
 
 def fetch_btc_history(
     days: Optional[int] = None, start_date: Optional[str] = None
@@ -128,38 +133,59 @@ def get_latest_btc_price() -> tuple[datetime, float]:
 def get_realtime_btc_price() -> tuple[datetime, float]:
     """
     Get the current real-time BTC price.
-
-    This fetches the most recent price available, which may be intraday
-    (before market close) and updates more frequently than daily close prices.
+    
+    Priority: Binance -> Coinbase
+    Yahoo Finance is only used for historical data analysis.
 
     Returns:
         Tuple of (datetime, price) for the current price
 
     Raises:
-        Exception: If data fetching fails
+        Exception: If data fetching fails from all sources
     """
+    if requests is None:
+        raise ImportError("requests library is required for real-time price fetching. Install it with: pip install requests")
+    
+    def validate_price(price: float) -> bool:
+        """Validate price is within reasonable range"""
+        return 1000 < price < 200000
+    
+    # Try Binance first
     try:
-        btc = yf.Ticker("BTC-USD")
-
-        # Get very recent data (1 day with 1-minute interval for latest)
-        df = btc.history(period="1d", interval="1m")
-
-        if df.empty:
-            # Fallback to regular latest price
-            print("⚠ No intraday data, using latest daily close")
-            return get_latest_btc_price()
-
-        # Get the most recent price point
-        latest = df.iloc[-1]
-        date = latest.name.to_pydatetime().replace(tzinfo=None)
-        price = float(latest["Close"])
-
-        return date, price
-
+        response = requests.get(
+            "https://api.binance.com/api/v3/ticker/price?symbol=BTCUSDT",
+            timeout=5
+        )
+        response.raise_for_status()
+        data = response.json()
+        
+        if data and "price" in data:
+            price = float(data["price"])
+            if validate_price(price):
+                print(f"✓ Fetched real-time price from Binance: ${price:,.2f}")
+                return datetime.now(), price
     except Exception as e:
-        print(f"⚠ Error fetching realtime price, using fallback: {e}")
-        # Fallback to regular latest price
-        return get_latest_btc_price()
+        print(f"⚠ Binance API error: {e}")
+    
+    # Fallback to Coinbase
+    try:
+        response = requests.get(
+            "https://api.coinbase.com/v2/exchange-rates?currency=BTC",
+            timeout=5
+        )
+        response.raise_for_status()
+        data = response.json()
+        
+        if data and "data" in data and "rates" in data["data"] and "USD" in data["data"]["rates"]:
+            price = float(data["data"]["rates"]["USD"])
+            if validate_price(price):
+                print(f"✓ Fetched real-time price from Coinbase: ${price:,.2f}")
+                return datetime.now(), price
+    except Exception as e:
+        print(f"⚠ Coinbase API error: {e}")
+    
+    # All sources failed
+    raise Exception("Failed to fetch real-time price from Binance and Coinbase")
 
 
 if __name__ == "__main__":
