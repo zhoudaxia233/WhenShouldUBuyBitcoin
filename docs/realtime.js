@@ -10,14 +10,9 @@
 // ============================================================================
 
 const CONFIG = {
-    // Yahoo Finance API endpoint for BTC-USD
-    YAHOO_API:
-        "https://query1.finance.yahoo.com/v8/finance/chart/BTC-USD?interval=1m&range=1d",
-
-    // CORS proxy (needed if Yahoo Finance blocks direct browser access)
-    // You can use: https://corsproxy.io/ or https://cors-anywhere.herokuapp.com/
-    USE_CORS_PROXY: true,
-    CORS_PROXY: "https://corsproxy.io/?",
+    // Real-time price APIs (priority order: Binance -> Coinbase)
+    BINANCE_API: "https://api.binance.com/api/v3/ticker/price?symbol=BTCUSDT",
+    COINBASE_API: "https://api.coinbase.com/v2/exchange-rates?currency=BTC",
 
     // Data paths (relative to the docs folder)
     DATA_CSV: "data/btc_metrics.csv",
@@ -25,6 +20,10 @@ const CONFIG = {
 
     // DCA window
     DCA_WINDOW: 200,
+
+    // Retry configuration
+    MAX_RETRIES: 3,
+    RETRY_DELAY: 1000, // milliseconds
 };
 
 // ============================================================================
@@ -76,57 +75,139 @@ async function loadMetadata() {
 }
 
 // ============================================================================
-// YAHOO FINANCE API
+// REAL-TIME PRICE APIs
 // ============================================================================
 
 /**
- * Fetch real-time BTC price from Yahoo Finance
- * @returns {Promise<Object>} Object with price and timestamp
+ * Validate price data
+ * @param {number} price - Price to validate
+ * @returns {boolean} True if price is valid
+ */
+function validatePrice(price) {
+    if (typeof price !== "number" || isNaN(price) || !isFinite(price)) {
+        return false;
+    }
+    // Bitcoin price should be between $1,000 and $200,000 (reasonable range)
+    return price > 1000 && price < 200000;
+}
+
+/**
+ * Fetch real-time BTC price from Binance
+ * @returns {Promise<Object>} Object with price, timestamp, and source
+ */
+async function fetchPriceFromBinance() {
+    const response = await fetch(CONFIG.BINANCE_API);
+
+    if (!response.ok) {
+        throw new Error(`Binance API error: ${response.status}`);
+    }
+
+    const data = await response.json();
+
+    if (!data || !data.price) {
+        throw new Error("Invalid response from Binance API");
+    }
+
+    const price = parseFloat(data.price);
+
+    if (!validatePrice(price)) {
+        throw new Error(`Invalid price from Binance: ${price}`);
+    }
+
+    // Binance returns current server time, use it for timestamp
+    const timestamp = new Date();
+
+    return {
+        price: price,
+        timestamp: timestamp,
+        source: "Binance",
+    };
+}
+
+/**
+ * Fetch real-time BTC price from Coinbase
+ * @returns {Promise<Object>} Object with price, timestamp, and source
+ */
+async function fetchPriceFromCoinbase() {
+    const response = await fetch(CONFIG.COINBASE_API);
+
+    if (!response.ok) {
+        throw new Error(`Coinbase API error: ${response.status}`);
+    }
+
+    const data = await response.json();
+
+    if (!data || !data.data || !data.data.rates || !data.data.rates.USD) {
+        throw new Error("Invalid response from Coinbase API");
+    }
+
+    const price = parseFloat(data.data.rates.USD);
+
+    if (!validatePrice(price)) {
+        throw new Error(`Invalid price from Coinbase: ${price}`);
+    }
+
+    // Coinbase doesn't provide timestamp, use current time
+    const timestamp = new Date();
+
+    return {
+        price: price,
+        timestamp: timestamp,
+        source: "Coinbase",
+    };
+}
+
+/**
+ * Fetch real-time BTC price with retry logic
+ * Priority: Binance -> Coinbase
+ * @returns {Promise<Object>} Object with price, timestamp, and source
  */
 async function fetchRealtimeBTCPrice() {
-    try {
-        // Construct URL (with or without CORS proxy)
-        const url = CONFIG.USE_CORS_PROXY
-            ? CONFIG.CORS_PROXY + encodeURIComponent(CONFIG.YAHOO_API)
-            : CONFIG.YAHOO_API;
+    const sources = [
+        { name: "Binance", fetch: fetchPriceFromBinance },
+        { name: "Coinbase", fetch: fetchPriceFromCoinbase },
+    ];
 
-        const response = await fetch(url);
+    let lastError = null;
 
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
+    // Try each source
+    for (const source of sources) {
+        // Retry logic for each source
+        for (let attempt = 1; attempt <= CONFIG.MAX_RETRIES; attempt++) {
+            try {
+                console.log(
+                    `Attempting to fetch price from ${source.name} (attempt ${attempt}/${CONFIG.MAX_RETRIES})...`
+                );
+                const result = await source.fetch();
+                console.log(
+                    `✓ Successfully fetched price from ${
+                        result.source
+                    }: $${result.price.toFixed(2)}`
+                );
+                return result;
+            } catch (error) {
+                console.error(
+                    `✗ Error fetching from ${source.name} (attempt ${attempt}):`,
+                    error.message
+                );
+                lastError = error;
+
+                // Wait before retry (except on last attempt)
+                if (attempt < CONFIG.MAX_RETRIES) {
+                    await new Promise((resolve) =>
+                        setTimeout(resolve, CONFIG.RETRY_DELAY)
+                    );
+                }
+            }
         }
-
-        const data = await response.json();
-
-        // Extract price and timestamp from Yahoo Finance response
-        const result = data.chart.result[0];
-        const meta = result.meta;
-
-        // Get the latest price (regularMarketPrice)
-        const price = meta.regularMarketPrice;
-
-        // Get timestamp (current time in UTC)
-        const timestamp = new Date();
-
-        return {
-            price: price,
-            timestamp: timestamp,
-        };
-    } catch (error) {
-        console.error("Error fetching Yahoo Finance data:", error);
-
-        // If CORS error, suggest enabling proxy
-        if (
-            error.message.includes("CORS") ||
-            error.message.includes("Failed to fetch")
-        ) {
-            throw new Error(
-                "CORS error - Yahoo Finance blocked browser access. Enable CORS proxy or use alternative data source."
-            );
-        }
-
-        throw error;
     }
+
+    // All sources failed
+    throw new Error(
+        `Failed to fetch price from all sources. Last error: ${
+            lastError?.message || "Unknown error"
+        }`
+    );
 }
 
 // ============================================================================
@@ -233,7 +314,8 @@ function getAhr999Zone(ahr999Value) {
             zone: "bottom",
             emoji: "🔥",
             label: "Bottom Zone",
-            description: "Exceptional buying opportunity - historical bottom territory",
+            description:
+                "Exceptional buying opportunity - historical bottom territory",
             action: "Strong Buy",
             color: "#28a745",
         };
@@ -242,7 +324,8 @@ function getAhr999Zone(ahr999Value) {
             zone: "dca",
             emoji: "💎",
             label: "DCA Zone",
-            description: "Good accumulation zone - suitable for dollar-cost averaging",
+            description:
+                "Good accumulation zone - suitable for dollar-cost averaging",
             action: "Accumulate",
             color: "#0071e3",
         };
@@ -435,8 +518,12 @@ async function checkRealtimeStatus() {
 
         // 2. Fetch real-time price
         console.log("Fetching real-time BTC price...");
-        const { price: realtimePrice, timestamp } =
-            await fetchRealtimeBTCPrice();
+        const {
+            price: realtimePrice,
+            timestamp,
+            source: priceSource,
+        } = await fetchRealtimeBTCPrice();
+        console.log(`Price source: ${priceSource}`);
 
         // 3. Calculate DCA
         // Use last 199 days + today's real-time price
@@ -466,7 +553,10 @@ async function checkRealtimeStatus() {
         const ahr999 = ratioDCA * ratioTrend;
         const ahr999Zone = getAhr999Zone(ahr999);
         const ahr999Percentile = calculateAhr999Percentile(csvData, ahr999);
-        const ahr999PercentileBelowOne = calculateAhr999PercentileBelowOne(csvData, ahr999);
+        const ahr999PercentileBelowOne = calculateAhr999PercentileBelowOne(
+            csvData,
+            ahr999
+        );
 
         // 7. Format timestamps
         const timestamps = formatTimestamps(timestamp);
@@ -474,6 +564,7 @@ async function checkRealtimeStatus() {
         // 8. Display results
         displayResults({
             price: realtimePrice,
+            priceSource: priceSource,
             timestamps,
             dcaCost,
             ratioDCA,
@@ -560,6 +651,11 @@ function displayResults(data) {
             <div class="price-timestamp">
                 As of ${data.timestamps.localTime} (${data.timestamps.localTZ})
             </div>
+            ${
+                data.priceSource
+                    ? `<div class="price-source" style="font-size: 12px; color: #86868b; margin-top: 4px;">Source: ${data.priceSource}</div>`
+                    : ""
+            }
         </div>
 
         <div class="metrics-grid">
@@ -641,7 +737,9 @@ function displayResults(data) {
                         <strong>Buy Zone Percentile:</strong> ${data.ahr999PercentileBelowOne.toFixed(
                             1
                         )}th percentile (among ahr999 < 1.0 days)
-                        ${getBuyZonePercentileInterpretation(data.ahr999PercentileBelowOne)}
+                        ${getBuyZonePercentileInterpretation(
+                            data.ahr999PercentileBelowOne
+                        )}
                     </div>
                 `
                         : `
