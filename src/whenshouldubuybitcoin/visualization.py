@@ -130,25 +130,53 @@ def add_yaxis_autoscale_script(html_path: Path) -> None:
                         return;
                     }
                     
-                    // Check if this is a user-initiated x-axis change (not y-axis change)
+                    // Check what changed in this event
                     var isXAxisChange = false;
-                    var isYAxisChange = false;
+                    var isYAxisRangeChange = false;
                     
                     for (var key in eventData) {
                         // Check for x-axis range changes (user zoom/box select)
                         if (key.indexOf('xaxis.range') === 0 || key === 'xaxis.autorange') {
                             isXAxisChange = true;
                         }
-                        // Check for y-axis changes (likely from our own updates)
-                        if (key.indexOf('yaxis') === 0) {
-                            isYAxisChange = true;
+                        // Check for y-axis RANGE changes (not autorange, which is our own update)
+                        if (key.indexOf('yaxis.range') === 0) {
+                            isYAxisRangeChange = true;
                         }
                     }
                     
-                    // Only update if it's an x-axis change and NOT a y-axis change
-                    // (y-axis changes are likely from our own updates)
-                    if (isXAxisChange && !isYAxisChange) {
-                        forceYAxisAutorange();
+                    // If both x and y ranges changed, user did a box-select, so DON'T auto-scale
+                    if (isXAxisChange && isYAxisRangeChange) {
+                        // Box-select: user manually set both axes, respect their selection
+                        var xaxis = gd._fullLayout.xaxis;
+                        var currentXRange = xaxis && xaxis.range && !xaxis.autorange ? xaxis.range : null;
+                        if (currentXRange) {
+                            prevXRange = [currentXRange[0], currentXRange[1]];
+                        }
+                        return;
+                    }
+                    
+                    // If only x-axis changed, check if the range actually changed
+                    if (isXAxisChange) {
+                        var xaxis = gd._fullLayout.xaxis;
+                        var currentXRange = xaxis && xaxis.range && !xaxis.autorange ? xaxis.range : null;
+                        
+                        // Check if range actually changed (to prevent duplicate auto-scale calls)
+                        var rangeChanged = false;
+                        if (currentXRange && prevXRange) {
+                            if (Math.abs(currentXRange[0] - prevXRange[0]) > 1 || 
+                                Math.abs(currentXRange[1] - prevXRange[1]) > 1) {
+                                rangeChanged = true;
+                            }
+                        } else if (currentXRange !== prevXRange) {
+                            rangeChanged = true;
+                        }
+                        
+                        // Only trigger auto-scale if range actually changed
+                        if (rangeChanged && currentXRange) {
+                            prevXRange = [currentXRange[0], currentXRange[1]];
+                            forceYAxisAutorange();
+                        }
                     }
                 });
                 
@@ -162,7 +190,23 @@ def add_yaxis_autoscale_script(html_path: Path) -> None:
                     
                     // Check if x-axis has a manual range (indicating zoom/box select)
                     var xaxis = gd._fullLayout.xaxis;
+                    var yaxis = gd._fullLayout.yaxis;
+                    
                     if (xaxis && xaxis.range && !xaxis.autorange) {
+                        // If y-axis is also manually set (not autorange), this was a box-select
+                        // Don't override user's manual y-axis selection
+                        if (yaxis && yaxis.range && !yaxis.autorange) {
+                            // Box-select: both axes manually set, just update tracking
+                            var currentXRange = [xaxis.range[0], xaxis.range[1]];
+                            if (!prevXRange || 
+                                Math.abs(currentXRange[0] - prevXRange[0]) > 1 || 
+                                Math.abs(currentXRange[1] - prevXRange[1]) > 1) {
+                                prevXRange = [currentXRange[0], currentXRange[1]];
+                            }
+                            return;
+                        }
+                        
+                        // Only x-axis manually set: normal zoom, apply auto-scale
                         var currentXRange = [xaxis.range[0], xaxis.range[1]];
                         
                         // Check if range actually changed
