@@ -16,7 +16,12 @@ from pathlib import Path
 # Add src to path
 sys.path.insert(0, str(Path(__file__).parent / "src"))
 
-from whenshouldubuybitcoin.data_fetcher import fetch_btc_history, get_latest_btc_price
+from whenshouldubuybitcoin.data_fetcher import (
+    fetch_btc_history,
+    fetch_usdjpy_history,
+    fetch_yield_data,
+    get_latest_btc_price,
+)
 from whenshouldubuybitcoin.metrics import (
     compute_valuation_metrics,
     get_dca_summary,
@@ -29,7 +34,11 @@ from whenshouldubuybitcoin.persistence import (
     merge_with_existing,
     get_days_to_fetch,
 )
-from whenshouldubuybitcoin.visualization import generate_all_charts
+from whenshouldubuybitcoin.visualization import (
+    generate_all_charts,
+    plot_usdjpy,
+    plot_usdjpy_risk_map,
+)
 from whenshouldubuybitcoin.realtime_check import check_realtime_status
 
 
@@ -278,12 +287,30 @@ def main():
         # Generate interactive charts
         generate_all_charts(df, auto_open=True)
 
+        # Generate USD/JPY charts
+        print("\n" + "=" * 80)
+        print("GENERATING USD/JPY CHARTS")
+        print("=" * 80)
+        usdjpy_df = fetch_usdjpy_history(days=None)  # Fetch all available data
+        plot_usdjpy(usdjpy_df, auto_open=False)
+
+        # Generate USD/JPY Risk Map
+        print("\nGenerating USD/JPY Systemic Risk Map...")
+        try:
+            yield_df, data_source = fetch_yield_data(days=None)  # Fetch all available data
+            plot_usdjpy_risk_map(usdjpy_df, yield_df, data_source=data_source, auto_open=False)
+            print("✓ USD/JPY Risk Map generated successfully")
+        except Exception as e:
+            print(f"⚠ Warning: Failed to generate USD/JPY Risk Map: {e}")
+            print("  This may be due to Yahoo Finance data limitations.")
+            print("  The basic USD/JPY chart is still available.")
+
         print("\n" + "=" * 80)
         print("✓ Step 5+ MVP Complete!")
         print("=" * 80)
         print("\n🎉 Data is now persisted to CSV for efficient daily updates!")
         print(f"   Data: docs/data/btc_metrics.csv")
-        print(f"   Charts: docs/charts/ (3 interactive HTML files)")
+        print(f"   Charts: docs/charts/ (5 interactive HTML files)")
         print("\nNext run will:")
         print("  - Load existing data from CSV")
         print("  - Only fetch recent days (not full 2000 days)")
