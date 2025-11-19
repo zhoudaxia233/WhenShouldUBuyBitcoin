@@ -383,17 +383,6 @@ def plot_valuation_ratios(
     # Add range slider
     fig.update_xaxes(
         rangeslider_visible=True,
-        rangeselector=dict(
-            buttons=list(
-                [
-                    dict(count=1, label="1M", step="month", stepmode="backward"),
-                    dict(count=6, label="6M", step="month", stepmode="backward"),
-                    dict(count=1, label="1Y", step="year", stepmode="backward"),
-                    dict(count=2, label="2Y", step="year", stepmode="backward"),
-                    dict(step="all", label="All"),
-                ]
-            )
-        ),
     )
 
     # Save to HTML
@@ -534,20 +523,9 @@ def plot_price_comparison(
         margin=dict(t=120),  # Provide enough top margin for title + legend stack
     )
 
-    # Add range slider and selectors
+    # Add range slider
     fig.update_xaxes(
         rangeslider_visible=True,
-        rangeselector=dict(
-            buttons=list(
-                [
-                    dict(count=1, label="1M", step="month", stepmode="backward"),
-                    dict(count=6, label="6M", step="month", stepmode="backward"),
-                    dict(count=1, label="1Y", step="year", stepmode="backward"),
-                    dict(count=2, label="2Y", step="year", stepmode="backward"),
-                    dict(step="all", label="All"),
-                ]
-            )
-        ),
     )
 
     # Save to HTML
@@ -1092,21 +1070,9 @@ def plot_usdjpy_risk_map(
         secondary_y=True,
     )
 
-    # Add range slider and selectors
+    # Add range slider
     fig.update_xaxes(
         rangeslider_visible=True,
-        rangeselector=dict(
-            buttons=list(
-                [
-                    dict(count=1, label="1M", step="month", stepmode="backward"),
-                    dict(count=6, label="6M", step="month", stepmode="backward"),
-                    dict(count=1, label="1Y", step="year", stepmode="backward"),
-                    dict(count=2, label="2Y", step="year", stepmode="backward"),
-                    dict(count=5, label="5Y", step="year", stepmode="backward"),
-                    dict(step="all", label="All"),
-                ]
-            )
-        ),
     )
 
     # Add risk rules text as annotation
