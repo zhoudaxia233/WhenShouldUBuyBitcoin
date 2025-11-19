@@ -31,3 +31,6 @@ build/
 
 __pycache__
 *.pyc
+
+# Environment variables
+.env

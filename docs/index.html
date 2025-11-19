@@ -1390,6 +1390,9 @@
                     <button class="chart-tab" onclick="switchChart('prices')">
                         Price Comparison
                     </button>
+                    <button class="chart-tab" onclick="switchChart('usdjpy')">
+                        USD/JPY
+                    </button>
                 </div>
                 
                 <div id="ratios-chart" class="chart-content active">
@@ -1398,6 +1401,10 @@
                 
                 <div id="prices-chart" class="chart-content">
                     <iframe src="charts/price_comparison.html"></iframe>
+                </div>
+                
+                <div id="usdjpy-chart" class="chart-content">
+                    <iframe src="charts/usdjpy_risk_map.html" style="height: 800px;"></iframe>
                 </div>
             </div>
         </div>

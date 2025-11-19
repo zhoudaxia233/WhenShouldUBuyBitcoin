@@ -30,6 +30,8 @@ jobs:
           poetry install --no-interaction
           
       - name: Run data update
+        env:
+          FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
         run: |
           poetry run python main.py
           
