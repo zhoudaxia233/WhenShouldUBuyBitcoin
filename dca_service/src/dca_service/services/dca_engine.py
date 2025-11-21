@@ -16,6 +16,7 @@ class DCADecision(BaseModel):
     suggested_amount_usd: float
     price_usd: float
     timestamp: datetime
+    metrics_source: str
 
 def calculate_dca_decision(session: Session) -> DCADecision:
     """
@@ -37,7 +38,8 @@ def calculate_dca_decision(session: Session) -> DCADecision:
         "base_amount_usd": 0.0,
         "suggested_amount_usd": 0.0,
         "price_usd": 0.0,
-        "timestamp": timestamp
+        "timestamp": timestamp,
+        "metrics_source": "unknown"
     }
 
     if not strategy:
@@ -52,6 +54,7 @@ def calculate_dca_decision(session: Session) -> DCADecision:
 
     price = metrics["price_usd"]
     ahr999 = metrics["ahr999"]
+    source = metrics.get("source", "unknown")
     
     # 2. Determine Band & Multiplier
     if ahr999 < 0.45:
@@ -85,9 +88,6 @@ def calculate_dca_decision(session: Session) -> DCADecision:
     # I will infer `base_amount` = `total_budget_usd` / 100 (just as a placeholder) OR
     # I will treat `total_budget_usd` as the "daily budget" if the user meant that?
     # No, "Total Budget" usually means total cap.
-    # Let's assume a fixed base amount of $100 for now, or derive it.
-    # actually, let's assume the user intended `total_budget_usd` to be the amount to spend *per buy*?
-    # No, "allow_over_budget" implies a cap.
     # I will add a hardcoded base_amount = 100.0 for now, or better yet, 
     # I will use `total_budget_usd` as the base amount if it's small, but that's risky.
     # Let's assume base_amount is $100.
@@ -109,7 +109,8 @@ def calculate_dca_decision(session: Session) -> DCADecision:
             "multiplier": multiplier,
             "base_amount_usd": base_amount,
             "suggested_amount_usd": suggested_amount,
-            "price_usd": price
+            "price_usd": price,
+            "metrics_source": source
         })
         return DCADecision(**decision_data)
 
@@ -131,7 +132,8 @@ def calculate_dca_decision(session: Session) -> DCADecision:
                 "multiplier": multiplier,
                 "base_amount_usd": base_amount,
                 "suggested_amount_usd": suggested_amount,
-                "price_usd": price
+                "price_usd": price,
+                "metrics_source": source
             })
             return DCADecision(**decision_data)
 
@@ -144,5 +146,6 @@ def calculate_dca_decision(session: Session) -> DCADecision:
         base_amount_usd=base_amount,
         suggested_amount_usd=suggested_amount,
         price_usd=price,
-        timestamp=timestamp
+        timestamp=timestamp,
+        metrics_source=source
     )

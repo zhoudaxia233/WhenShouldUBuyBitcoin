@@ -170,6 +170,18 @@
                 
                 document.getElementById('previewReason').textContent = decision.reason;
                 document.getElementById('previewTimestamp').textContent = 'Updated: ' + new Date(decision.timestamp).toLocaleTimeString();
+                
+                // Show Metrics Source
+                const sourceBadge = document.createElement('span');
+                sourceBadge.className = 'badge bg-secondary ms-2';
+                sourceBadge.textContent = `Source: ${decision.metrics_source || 'unknown'}`;
+                
+                // Clear previous badge if any
+                const timestampContainer = document.getElementById('previewTimestamp').parentNode;
+                const existingBadge = timestampContainer.querySelector('.badge.bg-secondary');
+                if (existingBadge) existingBadge.remove();
+                
+                timestampContainer.appendChild(sourceBadge);
 
                 const btn = document.getElementById('executeSimulatedBtn');
                 const warningBox = document.getElementById('metricsWarning');
