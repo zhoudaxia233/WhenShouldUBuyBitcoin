@@ -34,3 +34,6 @@ __pycache__
 
 # Environment variables
 .env
+
+# Database
+dca.db
