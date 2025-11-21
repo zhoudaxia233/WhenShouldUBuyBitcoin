@@ -596,8 +596,8 @@ def plot_double_undervaluation_stats(
     Create statistical charts about double undervaluation occurrences.
 
     Shows:
-    - Distribution of double undervaluation by year
-    - Duration of double undervaluation periods
+    - Distribution of double undervaluation by year (Dual Axis: Days + Percentage)
+    - Normalized BTC Price trend
 
     Args:
         df: DataFrame with valuation metrics
@@ -613,70 +613,142 @@ def plot_double_undervaluation_stats(
     # Add year column
     plot_df["year"] = plot_df["date"].dt.year
 
-    # Count double undervaluation days by year
+    # 1. Calculate yearly stats for undervaluation
     yearly_stats = (
         plot_df.groupby("year")
-        .agg({"is_double_undervalued": ["sum", "count"]})
+        .agg({
+            "is_double_undervalued": ["sum", "count"],
+            "close_price": "mean"  # Calculate average price per year
+        })
         .reset_index()
     )
-    yearly_stats.columns = ["year", "double_uv_days", "total_days"]
+    
+    # Flatten columns
+    yearly_stats.columns = ["year", "double_uv_days", "total_days", "avg_price"]
+    
+    # Calculate percentage
     yearly_stats["percentage"] = (
         yearly_stats["double_uv_days"] / yearly_stats["total_days"]
     ) * 100
 
-    # Create subplots
-    fig = make_subplots(
-        rows=2,
-        cols=1,
-        subplot_titles=(
-            "Double Undervaluation Days by Year",
-            "Percentage of Days in Buy Zone by Year",
-        ),
-        vertical_spacing=0.15,
-    )
+    # 2. Calculate Normalized BTC Price Index (0-100)
+    min_price = yearly_stats["avg_price"].min()
+    max_price = yearly_stats["avg_price"].max()
+    
+    # Avoid division by zero if min == max
+    if max_price > min_price:
+        yearly_stats["price_index"] = 100 * (yearly_stats["avg_price"] - min_price) / (max_price - min_price)
+    else:
+        yearly_stats["price_index"] = 50  # Default if flat
 
-    # Bar chart: absolute days
+    # Create dual-axis chart
+    fig = make_subplots(specs=[[{"secondary_y": True}]])
+
+    # 1. Bar chart: Absolute days (Left Axis)
     fig.add_trace(
         go.Bar(
             x=yearly_stats["year"],
             y=yearly_stats["double_uv_days"],
-            name="Buy Zone Days",
-            marker_color="rgb(220, 53, 69)",
+            name="Days",
+            marker_color="rgb(220, 53, 69)",  # Red
+            opacity=0.7,
             hovertemplate="<b>Year:</b> %{x}<br>"
             + "<b>Days:</b> %{y}<br>"
             + "<extra></extra>",
         ),
-        row=1,
-        col=1,
+        secondary_y=False,
     )
 
-    # Bar chart: percentage
+    # 2. Line chart: Percentage (Right Axis)
     fig.add_trace(
-        go.Bar(
+        go.Scatter(
             x=yearly_stats["year"],
             y=yearly_stats["percentage"],
-            name="Percentage",
-            marker_color="rgb(255, 127, 80)",
+            name="% of days in zone",
+            mode="lines+markers",
+            marker=dict(size=8, color="rgb(255, 140, 0)"),  # Dark Orange
+            line=dict(width=3, color="rgb(255, 140, 0)"),
             hovertemplate="<b>Year:</b> %{x}<br>"
             + "<b>Percentage:</b> %{y:.1f}%<br>"
             + "<extra></extra>",
-            showlegend=False,
         ),
-        row=2,
-        col=1,
+        secondary_y=True,
+    )
+
+    # 3. Line chart: Normalized Price Index (Right Axis)
+    fig.add_trace(
+        go.Scatter(
+            x=yearly_stats["year"],
+            y=yearly_stats["price_index"],
+            name="BTC price index",
+            mode="lines+markers",
+            marker=dict(size=6, symbol="diamond", color="#2c3e50"),  # Dark Blue/Grey
+            line=dict(width=2, color="#2c3e50", dash="dot"),
+            hovertemplate="<b>Year:</b> %{x}<br>"
+            + "<b>Price Index:</b> %{y:.1f} (Avg: $%{customdata:,.0f})<br>"
+            + "<extra></extra>",
+            customdata=yearly_stats["avg_price"]
+        ),
+        secondary_y=True,
     )
 
     # Update layout
     fig.update_layout(
-        title_text="Double Undervaluation Statistics by Year",
-        height=800,
+        title=dict(
+            text="Double Undervaluation Statistics by Year",
+            y=0.96,
+            x=0.5,
+            xanchor='center',
+            yanchor='top'
+        ),
+        height=550,
         template="plotly_white",
-        showlegend=True,
+        showlegend=False,  # Disable standard legend
+        margin=dict(l=60, r=60, t=80, b=50),
+        hovermode="x unified"
     )
 
-    fig.update_yaxes(title_text="Days", row=1, col=1)
-    fig.update_yaxes(title_text="Percentage (%)", row=2, col=1)
-    fig.update_xaxes(title_text="Year", row=2, col=1)
+    # Add custom legend as annotation (to avoid clipping)
+    fig.add_annotation(
+        text=(
+            "<span style='color:#dc3545; font-size:14px'>■</span> Days<br>" +
+            "<span style='color:#ff8c00; font-size:14px'>●</span> % of days in zone<br>" +
+            "<span style='color:#2c3e50; font-size:14px'>♦</span> BTC price index"
+        ),
+        xref="paper", yref="paper",
+        x=0.02, y=0.98,  # Top-left inside plot
+        xanchor="left", yanchor="top",
+        showarrow=False,
+        align="left",
+        font=dict(size=12, color="#333"),
+        bgcolor="rgba(255, 255, 255, 0.9)",
+        bordercolor="#e5e5e5",
+        borderwidth=1,
+        borderpad=6
+    )
+
+    # Configure X-axis (Show every year)
+    fig.update_xaxes(
+        title_text="Year",
+        tickmode="linear",
+        dtick=1,  # Force label for every year
+        tickangle=-45 if len(yearly_stats) > 10 else 0  # Rotate if many years
+    )
+
+    # Configure Y-axes
+    fig.update_yaxes(
+        title_text="Days",
+        secondary_y=False,
+        showgrid=True,
+        gridcolor="#f0f0f0"
+    )
+    
+    fig.update_yaxes(
+        title_text="Percentage (%) / Normalized BTC Price (0-100)",
+        secondary_y=True,
+        range=[0, 105],  # Fixed range 0-100%
+        showgrid=False
+    )
 
     # Save to HTML
     output_dir = get_output_dir()
@@ -798,50 +870,31 @@ def plot_usdjpy(
         status = "Very Strong USD (150-160)"
         status_color = "rgb(255, 100, 100)"
     else:
-        status = "Extremely Strong USD (Above 160)"
-        status_color = "rgb(220, 53, 69)"
+        status = "Extreme USD (>160)"
+        status_color = "rgb(139, 0, 0)"
 
     # Update layout
     fig.update_layout(
         title={
-            "text": f"USD/JPY Exchange Rate<br><sub>Current: {current_rate:.2f} - {status}</sub>",
+            "text": f"USD/JPY Exchange Rate<br><sub>Current: {current_rate:.2f} ({status})</sub>",
             "x": 0.5,
             "xanchor": "center",
         },
         xaxis_title="Date",
-        yaxis_title="USD/JPY Rate",
+        yaxis_title="USD/JPY",
         yaxis=dict(
-            autorange=True,  # Enable auto-scaling for y-axis
-            fixedrange=False,  # Allow y-axis to be zoomed and auto-adjusted
+            autorange=True,
+            fixedrange=False,
         ),
         hovermode="x unified",
         template="plotly_white",
-        height=650,
-        showlegend=True,
-        legend=dict(
-            yanchor="top",
-            y=0.99,
-            xanchor="left",
-            x=0.01,
-            bgcolor="rgba(255, 255, 255, 0.8)",
-        ),
+        height=600,
+        showlegend=False,
     )
 
-    # Add range slider and selectors
+    # Add range slider
     fig.update_xaxes(
         rangeslider_visible=True,
-        rangeselector=dict(
-            buttons=list(
-                [
-                    dict(count=1, label="1M", step="month", stepmode="backward"),
-                    dict(count=6, label="6M", step="month", stepmode="backward"),
-                    dict(count=1, label="1Y", step="year", stepmode="backward"),
-                    dict(count=2, label="2Y", step="year", stepmode="backward"),
-                    dict(count=5, label="5Y", step="year", stepmode="backward"),
-                    dict(step="all", label="All"),
-                ]
-            )
-        ),
     )
 
     # Save to HTML
@@ -1252,7 +1305,512 @@ def generate_all_charts(df: pd.DataFrame, auto_open: bool = True) -> dict:
     return charts
 
 
+    fig.add_trace(
+        go.Scatter(
+            x=history_df["date"],
+            y=history_df["regime_score_est"],
+            mode="lines",
+            name="Regime Score (Est)",
+            line=dict(color="blue", width=2),
+            fill='tozeroy',
+            fillcolor='rgba(0, 0, 255, 0.1)'
+        ),
+        row=3, col=1
+    )
+    
+    # Add reference lines for Regime
+    for y_val, color, label in [
+        (65, "green", "Bull"),
+        (35, "red", "Bear")
+    ]:
+        fig.add_shape(
+            type="line",
+            x0=min_date, x1=max_date,
+            y0=y_val, y1=y_val,
+            line=dict(color=color, width=2, dash="dot"),
+            row=3, col=1
+        )
+        fig.add_annotation(
+            x=max_date, y=y_val,
+            text=label,
+            showarrow=False,
+            xanchor="left",
+            font=dict(color=color, size=10),
+            row=3, col=1
+        )
+    
+    # --- Layout ---
+    
+    fig.update_layout(
+        title={
+            "text": f"Market Health Dashboard (Total Score: {snapshot['total_score']} - Signal: {snapshot['signal_label']})",
+            "x": 0.5,
+            "xanchor": "center"
+        },
+        height=1000,
+        template="plotly_white",
+        showlegend=False,
+    )
+    
+    # Update axes
+    fig.update_yaxes(range=[0, 100], title="Score", row=2, col=1)
+    fig.update_yaxes(range=[0, 100], title="Score", row=3, col=1)
+    
+    # Save
+    output_dir = get_output_dir()
+    output_path = output_dir / output_filename
+    fig.write_html(str(output_path), auto_open=auto_open)
+    
+    # Add auto-scale script
+    add_yaxis_autoscale_script(output_path)
+    
+    print(f"✓ Saved Market Health Dashboard to: {output_path}")
+    if auto_open:
+        print("  Opening in browser...")
+        
+    return str(output_path)
+
+
 if __name__ == "__main__":
     # Quick test
     print("Testing visualization module...")
     print(f"Charts directory: {get_output_dir()}")
+
+def create_futures_oi_timeseries_chart(
+    btc_df: pd.DataFrame, 
+    oi_df: pd.DataFrame, 
+    output_path: str
+) -> None:
+    """
+    Create a professional Bloomberg-style chart:
+    Row 1: BTC Price (log) vs 200-day MA with regime backgrounds
+    Row 2: Futures Open Interest (USD) with risk zones
+    
+    Args:
+        btc_df: DataFrame with 'close_price' and date index.
+        oi_df: DataFrame with 'oi_usd' and date index.
+        output_path: HTML output file path.
+    """
+    import plotly.graph_objects as go
+    from plotly.subplots import make_subplots
+    from pathlib import Path
+    import numpy as np
+    
+    # Ensure indices are datetime
+    if not isinstance(btc_df.index, pd.DatetimeIndex):
+        btc_df.index = pd.to_datetime(btc_df.index)
+    if not isinstance(oi_df.index, pd.DatetimeIndex):
+        oi_df.index = pd.to_datetime(oi_df.index)
+
+    # Time range alignment
+    start_date = max(btc_df.index.min(), oi_df.index.min())
+    end_date = min(btc_df.index.max(), oi_df.index.max())
+    
+    btc_plot = btc_df.loc[start_date:end_date].copy()
+    oi_plot = oi_df.loc[start_date:end_date].copy()
+    
+    if btc_plot.empty or oi_plot.empty:
+        print("⚠ No overlapping data found for Futures OI chart.")
+        return
+
+    # Calculate 200-day MA
+    if 'ma200' not in btc_plot.columns:
+        btc_df['ma200'] = btc_df['close_price'].rolling(window=200).mean()
+        btc_plot['ma200'] = btc_df.loc[start_date:end_date, 'ma200']
+
+    # Create subplots with NO subplot titles (we'll use a unified title)
+    fig = make_subplots(
+        rows=2, cols=1,
+        shared_xaxes=True,
+        vertical_spacing=0.08,
+        row_heights=[0.58, 0.42],
+        subplot_titles=None
+    )
+
+    # ===== ROW 1: PRICE PANEL WITH REGIME BACKGROUNDS =====
+    
+    # Add regime background fills (price > MA = bullish, price < MA = bearish)
+    price_above_ma = btc_plot['close_price'] > btc_plot['ma200']
+    
+    # Create segments for background coloring
+    for i in range(1, len(btc_plot)):
+        if pd.notna(btc_plot['ma200'].iloc[i]):
+            color = 'rgba(144, 238, 144, 0.12)' if price_above_ma.iloc[i] else 'rgba(255, 182, 193, 0.12)'
+            fig.add_vrect(
+                x0=btc_plot.index[i-1], x1=btc_plot.index[i],
+                fillcolor=color, line_width=0, layer="below",
+                row=1, col=1
+            )
+    
+    # BTC Price line
+    fig.add_trace(
+        go.Scatter(
+            x=btc_plot.index,
+            y=btc_plot['close_price'],
+            name="BTC Price",
+            line=dict(color='#1a1a1a', width=1.8),
+            hovertemplate="$%{y:,.0f}<extra></extra>"
+        ),
+        row=1, col=1
+    )
+    
+    # 200D MA line (BLUE DASHED - restored)
+    fig.add_trace(
+        go.Scatter(
+            x=btc_plot.index,
+            y=btc_plot['ma200'],
+            name="200D MA",
+            line=dict(color='#2962FF', width=1.5, dash='dash'),  # DASHED line
+            hovertemplate="$%{y:,.0f}<extra></extra>"
+        ),
+        row=1, col=1
+    )
+
+    fig.update_yaxes(
+        type="log", 
+        title_text=None,  # Remove axis title for cleaner look
+        tickformat="$,.0f",
+        dtick=1, 
+        row=1, col=1,
+        showgrid=True,
+        gridcolor='#f0f0f0'
+    )
+
+    # ===== ROW 2: OI PANEL =====
+    
+    fig.add_trace(
+        go.Scatter(
+            x=oi_plot.index,
+            y=oi_plot['oi_usd'],
+            name="OI (USD)",
+            line=dict(color='#DAA520', width=1.8),
+            fill='tozeroy',
+            fillcolor='rgba(218, 165, 32, 0.08)',
+            hovertemplate="$%{y:,.0f}<extra></extra>"
+        ),
+        row=2, col=1
+    )
+    
+    fig.update_yaxes(
+        title_text=None,
+        tickformat="$,.0s", 
+        row=2, col=1,
+        showgrid=True,
+        gridcolor='#f0f0f0'
+    )
+
+    # Risk Zones
+    if not oi_plot.empty:
+        oi_values = oi_plot['oi_usd'].dropna()
+        if not oi_values.empty:
+            top_10 = oi_values.quantile(0.90)
+            bottom_10 = oi_values.quantile(0.10)
+            
+            # High OI Zone (risk)
+            fig.add_hrect(
+                y0=top_10, y1=oi_values.max() * 1.5,
+                fillcolor="rgba(220, 53, 69, 0.08)",
+                line_width=0,
+                row=2, col=1
+            )
+            fig.add_annotation(
+                x=end_date, y=top_10,
+                text="High Leverage",
+                showarrow=False,
+                yshift=8, xanchor="right",
+                font=dict(size=9, color="#dc3545"),
+                row=2, col=1
+            )
+            
+            # Low OI Zone (clean)
+            fig.add_hrect(
+                y0=0, y1=bottom_10,
+                fillcolor="rgba(40, 167, 69, 0.08)",
+                line_width=0,
+                row=2, col=1
+            )
+            fig.add_annotation(
+                x=end_date, y=bottom_10,
+                text="Deleveraged",
+                showarrow=False,
+                yshift=-8, xanchor="right",
+                font=dict(size=9, color="#28a745"),
+                row=2, col=1
+            )
+    
+    # ===== UNIFIED TITLE BLOCK WITH LEGEND =====
+    title_text = (
+        "<b style='font-size:16px'>BTC Price (log) & Futures Open Interest (USD)</b><br>" +
+        "<span style='font-size:11px; color:#666'>Price Trend Regime (Price vs 200D MA)</span>"
+    )
+    
+    # Create annotations list with data source and legend
+    annotations_list = [
+        # Data source label (bottom-left)
+        dict(
+            text="Data: Binance",
+            xref="paper", yref="paper",
+            x=0.01, y=0.01,
+            xanchor='left', yanchor='bottom',
+            showarrow=False,
+            font=dict(size=8, color='#999'),
+            opacity=0.6
+        ),
+        # Legend annotation (under title, outside plot area)
+        dict(
+            text="<span style='font-size:16px; font-weight:bold'>━</span> BTC Price   <span style='font-size:16px; color:#2962FF; font-weight:bold'>- - -</span> 200D MA   <span style='font-size:16px; color:#DAA520; font-weight:bold'>━</span> OI (USD)",
+            xref="paper", yref="paper",
+            x=0.5, y=1.0,  # Top center, just below title
+            xanchor='center', yanchor='bottom',
+            showarrow=False,
+            font=dict(size=12, color='#333'),
+            bgcolor="rgba(255, 255, 255, 0.9)",
+            bordercolor="#e5e5e5",
+            borderwidth=1,
+            borderpad=6
+        )
+    ]
+    
+    fig.update_layout(
+        title=dict(
+            text=title_text,
+            y=0.98,
+            x=0.5,
+            xanchor='center',
+            yanchor='top',
+            pad=dict(b=40)  # Extra padding below title for legend
+        ),
+        template="plotly_white",
+        height=620,
+        hovermode="x unified",
+        showlegend=False,  # Using annotation instead
+        margin=dict(l=60, r=40, t=110, b=50),  # Increased top margin for title block
+        plot_bgcolor='white',
+        annotations=annotations_list
+    )
+    
+    fig.update_xaxes(rangeslider_visible=False, row=2, col=1)
+    fig.update_yaxes(showgrid=True, gridwidth=1, gridcolor='#f0f0f0')
+
+    # Save
+    output_file = Path(output_path)
+    fig.write_html(
+        output_file,
+        include_plotlyjs='cdn',
+        config={'displayModeBar': False}
+    )
+    
+    print(f"✓ Saved Futures OI chart to: {output_file}")
+    add_yaxis_autoscale_script(output_file)
+    print(f"✓ Saved Futures OI chart to: {output_file.resolve()}")
+
+
+def create_oi_quadrant_chart(
+    btc_df: pd.DataFrame,
+    oi_df: pd.DataFrame,
+    output_path: str,
+    lookback_days: int = 5
+) -> None:
+    """
+    Create a professional 4-quadrant chart: Price Change vs OI Change.
+    
+    Args:
+        btc_df: DataFrame with 'close_price'.
+        oi_df: DataFrame with 'oi_usd'.
+        output_path: HTML output file path.
+        lookback_days: Window for calculating percentage change.
+    """
+    import plotly.graph_objects as go
+    from pathlib import Path
+    
+    # Ensure indices are datetime
+    if not isinstance(btc_df.index, pd.DatetimeIndex):
+        btc_df.index = pd.to_datetime(btc_df.index)
+    if not isinstance(oi_df.index, pd.DatetimeIndex):
+        oi_df.index = pd.to_datetime(oi_df.index)
+        
+    # Align data
+    start_date = max(btc_df.index.min(), oi_df.index.min())
+    end_date = min(btc_df.index.max(), oi_df.index.max())
+    
+    btc_aligned = btc_df.loc[start_date:end_date]['close_price']
+    oi_aligned = oi_df.loc[start_date:end_date]['oi_usd']
+    
+    # Calculate % Change
+    btc_pct = btc_aligned.pct_change(lookback_days) * 100
+    oi_pct = oi_aligned.pct_change(lookback_days) * 100
+    
+    # Combine into one DF
+    df = pd.DataFrame({'price_chg': btc_pct, 'oi_chg': oi_pct}).dropna()
+    
+    if df.empty:
+        print("⚠ Not enough data for Quadrant chart.")
+        return
+        
+    # Get recent history (trail) and today
+    trail_len = 20
+    recent_df = df.iloc[-trail_len:]
+    today = df.iloc[-1]
+    
+    # Determine Current Mode
+    p_chg = today['price_chg']
+    o_chg = today['oi_chg']
+    
+    if p_chg > 0 and o_chg > 0:
+        mode_label = "Risky Up (leveraged)"
+        mode_color = "#ff8800"  # Orange
+    elif p_chg > 0 and o_chg < 0:
+        mode_label = "Healthy Up (spot-led)"
+        mode_color = "#28a745"  # Green
+    elif p_chg < 0 and o_chg > 0:
+        mode_label = "Squeeze Setup (crowded)"
+        mode_color = "#ffc107"  # Yellow
+    elif p_chg < 0 and o_chg < 0:
+        mode_label = "Flush-Out (deleveraging)"
+        mode_color = "#6c757d"  # Grey
+    else:
+        mode_label = "Neutral"
+        mode_color = "#888"
+        
+    # Create Figure
+    fig = go.Figure()
+    
+    # Determine axis limits for backgrounds
+    price_max = max(abs(recent_df['price_chg'].max()), abs(recent_df['price_chg'].min()), 5)
+    oi_max = max(abs(recent_df['oi_chg'].max()), abs(recent_df['oi_chg'].min()), 5)
+    
+    # ===== QUADRANT BACKGROUNDS (trader-friendly semantic colors) =====
+    
+    # Price ↑, OI ↑ (top-right): Risky Up - soft red/orange
+    fig.add_shape(type="rect",
+        x0=0, x1=price_max*1.1, y0=0, y1=oi_max*1.1,
+        fillcolor="rgba(255, 99, 71, 0.08)", line_width=0, layer="below")
+    
+    # Price ↑, OI ↓ (bottom-right): Healthy Up - soft green
+    fig.add_shape(type="rect",
+        x0=0, x1=price_max*1.1, y0=-oi_max*1.1, y1=0,
+        fillcolor="rgba(40, 167, 69, 0.08)", line_width=0, layer="below")
+    
+    # Price ↓, OI ↑ (top-left): Squeeze Setup - soft yellow
+    fig.add_shape(type="rect",
+        x0=-price_max*1.1, x1=0, y0=0, y1=oi_max*1.1,
+        fillcolor="rgba(255, 193, 7, 0.10)", line_width=0, layer="below")
+    
+    # Price ↓, OI ↓ (bottom-left): Flush-Out - soft blue-grey
+    fig.add_shape(type="rect",
+        x0=-price_max*1.1, x1=0, y0=-oi_max*1.1, y1=0,
+        fillcolor="rgba(108, 117, 125, 0.08)", line_width=0, layer="below")
+    
+    # Quadrant lines
+    fig.add_hline(y=0, line_color="#999", line_width=1.5)
+    fig.add_vline(x=0, line_color="#999", line_width=1.5)
+    
+    # ===== QUADRANT LABELS (short text inside each quadrant) =====
+    label_offset_x = price_max * 0.7
+    label_offset_y = oi_max * 0.7
+    
+    quadrant_labels = [
+        (label_offset_x, label_offset_y, "Risky Up", "#FF6347"),       # top-right, red/orange
+        (label_offset_x, -label_offset_y, "Healthy Up", "#28a745"),   # bottom-right, green
+        (-label_offset_x, label_offset_y, "Squeeze\nSetup", "#FFC107"), # top-left, yellow
+        (-label_offset_x, -label_offset_y, "Flush-Out", "#6c757d"),   # bottom-left, grey
+    ]
+    
+    for x, y, text, color in quadrant_labels:
+        fig.add_annotation(
+            x=x, y=y,
+            text=text,
+            showarrow=False,
+            font=dict(size=10, color=color),
+            opacity=0.5
+        )
+    
+    # ===== HISTORICAL TRAIL =====
+    fig.add_trace(go.Scatter(
+        x=recent_df['price_chg'],
+        y=recent_df['oi_chg'],
+        mode='lines+markers',
+        name='Trail',
+        line=dict(color='#ccc', width=1, dash='dot'),
+        marker=dict(size=3, color='#bbb', opacity=0.4),
+        hovertemplate="<b>%{hovertext}</b><br>" +
+                      "Price Change: %{x:.1f}%<br>" +
+                      "OI Change: %{y:.1f}%<extra></extra>",
+        hovertext=recent_df.index.strftime('%Y-%m-%d'),
+        showlegend=False
+    ))
+    
+    # ===== TODAY'S MARKER (large, with outline) =====
+    fig.add_trace(go.Scatter(
+        x=[today['price_chg']],
+        y=[today['oi_chg']],
+        mode='markers',
+        name='Current',
+        marker=dict(size=16, color=mode_color, line=dict(width=2, color='white')),
+        hovertemplate=f"<b>{today.name.strftime('%Y-%m-%d')}</b><br>" +
+                      f"Price: %{{x:.1f}}%<br>" +
+                      f"OI: %{{y:.1f}}%<br>" +
+                      f"{mode_label}<extra></extra>",
+        showlegend=False
+    ))
+    
+    # ===== DATA SOURCE LABEL =====
+    data_source_text = "Data: Binance"
+    
+    # ===== LAYOUT =====
+    title_text = f"<b style='font-size:15px'>Price vs OI Change ({lookback_days}-Day)</b>"
+    
+    fig.update_layout(
+        title=dict(
+            text=title_text,
+            y=0.97,
+            x=0.5,
+            xanchor='center',
+            yanchor='top',
+            font=dict(size=15)
+        ),
+        xaxis=dict(
+            title=None,
+            tickformat='.0f%',
+            showgrid=True,
+            gridcolor='#f5f5f5',
+            zeroline=False
+        ),
+        yaxis=dict(
+            title=None,
+            tickformat='.0f%',
+            showgrid=True,
+            gridcolor='#f5f5f5',
+            zeroline=False
+        ),
+        annotations=[
+            # Data source label (bottom-right)
+            dict(
+                text=data_source_text,
+                xref="paper", yref="paper",
+                x=0.99, y=0.01,
+                xanchor='right',
+                yanchor='bottom',
+                showarrow=False,
+                font=dict(size=8, color='#999'),
+                opacity=0.6
+            )
+        ],
+        template="plotly_white",
+        height=460,
+        width=460,
+        showlegend=False,
+        margin=dict(l=50, r=40, t=80, b=50),
+        plot_bgcolor='white'
+    )
+    
+    # Save
+    output_file = Path(output_path)
+    fig.write_html(
+        output_file,
+        full_html=False,
+        include_plotlyjs='cdn',
+        config={'displayModeBar': False}
+    )
+    
+    print(f"✓ Saved OI Quadrant chart to: {output_file.resolve()}")
