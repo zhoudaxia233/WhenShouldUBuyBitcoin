@@ -21,6 +21,44 @@
             </div>
         </header>
 
+        <!-- DCA Control Section -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">DCA Preview & Control</h5>
+                <span id="previewTimestamp" class="text-muted small"></span>
+            </div>
+            <div class="card-body">
+                <div class="row text-center mb-3">
+                    <div class="col-md-3">
+                        <div class="text-muted small">AHR999 Index</div>
+                        <div class="h4" id="previewAhr">--</div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="text-muted small">Current Price</div>
+                        <div class="h4" id="previewPrice">--</div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="text-muted small">Strategy Band</div>
+                        <div class="h4" id="previewBand">--</div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="text-muted small">Suggested Action</div>
+                        <div class="h4 text-primary" id="previewAction">--</div>
+                    </div>
+                </div>
+                
+                <div class="alert alert-light border" id="previewReasonBox">
+                    <strong>Status:</strong> <span id="previewReason">Loading...</span>
+                </div>
+
+                <div class="d-flex justify-content-end">
+                    <button id="executeSimulatedBtn" class="btn btn-success" disabled>
+                        Simulate DCA Now
+                    </button>
+                </div>
+            </div>
+        </div>
+
         <div class="card shadow-sm">
             <div class="card-header bg-white">
                 <h5 class="mb-0">Transaction History</h5>
@@ -103,8 +141,67 @@
             }
         });
 
+        async function loadPreview() {
+            try {
+                const response = await fetch('/api/dca/preview');
+                const decision = await response.json();
+                
+                document.getElementById('previewAhr').textContent = decision.ahr999_value.toFixed(4);
+                document.getElementById('previewPrice').textContent = '$' + decision.price_usd.toLocaleString();
+                document.getElementById('previewBand').textContent = decision.ahr_band.toUpperCase();
+                document.getElementById('previewAction').textContent = decision.can_execute 
+                    ? `BUY $${decision.suggested_amount_usd.toFixed(2)}` 
+                    : 'WAIT';
+                
+                document.getElementById('previewReason').textContent = decision.reason;
+                document.getElementById('previewTimestamp').textContent = 'Updated: ' + new Date(decision.timestamp).toLocaleTimeString();
+
+                const btn = document.getElementById('executeSimulatedBtn');
+                if (decision.can_execute) {
+                    btn.disabled = false;
+                    btn.textContent = `Simulate BUY ($${decision.suggested_amount_usd.toFixed(2)})`;
+                } else {
+                    btn.disabled = true;
+                    btn.textContent = 'Conditions Not Met';
+                }
+
+            } catch (error) {
+                console.error('Error loading preview:', error);
+                document.getElementById('previewReason').textContent = 'Error loading data';
+            }
+        }
+
+        document.getElementById('executeSimulatedBtn').addEventListener('click', async () => {
+            const btn = document.getElementById('executeSimulatedBtn');
+            const originalText = btn.textContent;
+            btn.disabled = true;
+            btn.textContent = 'Executing...';
+
+            try {
+                const response = await fetch('/api/dca/execute-simulated', {
+                    method: 'POST'
+                });
+                const result = await response.json();
+                
+                if (result.transaction) {
+                    alert(`Success! ${result.message}`);
+                    loadTransactions(); // Refresh history
+                    loadPreview();      // Refresh preview (budget might have changed)
+                } else {
+                    alert(`Skipped: ${result.message}`);
+                    loadPreview();
+                }
+            } catch (error) {
+                console.error('Error executing simulated DCA:', error);
+                alert('Execution failed');
+                btn.disabled = false;
+                btn.textContent = originalText;
+            }
+        });
+
         // Load on start
         loadTransactions();
+        loadPreview();
     </script>
 </body>
 </html>
