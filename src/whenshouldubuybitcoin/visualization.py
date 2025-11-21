@@ -373,8 +373,19 @@ def plot_valuation_ratios(
         line_dash="dash",
         line_color="gray",
         line_width=1.5,
-        annotation_text="Fair Value (1.0)",
-        annotation_position="right",
+    )
+    fig.add_annotation(
+        x=0.99,
+        y=1.0,
+        xref="paper",
+        yref="y",
+        text="Fair Value (1.0)",
+        showarrow=False,
+        xanchor="right",
+        yanchor="bottom",
+        yshift=5,
+        font=dict(color="gray", size=10),
+        bgcolor="rgba(255, 255, 255, 0.6)",
     )
 
     # Add ahr999 threshold lines
@@ -383,9 +394,19 @@ def plot_valuation_ratios(
         line_dash="dot",
         line_color="rgb(40, 167, 69)",
         line_width=2,
-        annotation_text="🔥 ahr999 Bottom Zone (0.45)",
-        annotation_position="left",
-        annotation_font_color="rgb(40, 167, 69)",
+    )
+    fig.add_annotation(
+        x=0.01,
+        y=0.45,
+        xref="paper",
+        yref="y",
+        text="🔥 ahr999 Bottom Zone (0.45)",
+        showarrow=False,
+        xanchor="left",
+        yanchor="bottom",
+        yshift=5,
+        font=dict(color="rgb(40, 167, 69)", size=10),
+        bgcolor="rgba(255, 255, 255, 0.6)",
     )
 
     fig.add_hline(
@@ -393,9 +414,19 @@ def plot_valuation_ratios(
         line_dash="dot",
         line_color="rgb(255, 149, 0)",
         line_width=2,
-        annotation_text="⚠️ ahr999 Watch Zone (1.2)",
-        annotation_position="left",
-        annotation_font_color="rgb(255, 149, 0)",
+    )
+    fig.add_annotation(
+        x=0.01,
+        y=1.2,
+        xref="paper",
+        yref="y",
+        text="⚠️ ahr999 Watch Zone (1.2)",
+        showarrow=False,
+        xanchor="left",
+        yanchor="bottom",
+        yshift=5,
+        font=dict(color="rgb(255, 149, 0)", size=10),
+        bgcolor="rgba(255, 255, 255, 0.6)",
     )
 
     # Update layout
