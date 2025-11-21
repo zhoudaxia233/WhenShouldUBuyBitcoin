@@ -3,7 +3,8 @@ from pathlib import Path
 
 class Settings(BaseSettings):
     DATABASE_URL: str = "sqlite:///./dca.db"
-    METRICS_FILE_PATH: str = "data/metrics.csv"
+    METRICS_CSV_PATH: str = "../docs/data/btc_metrics.csv"
+    METRICS_MAX_AGE_HOURS: int = 48
     API_V1_STR: str = "/api"
     PROJECT_NAME: str = "DCA Service"
 

@@ -44,6 +44,21 @@
                         <label class="form-check-label" for="allowOverBudget">Allow Over Budget (Continue buying even if budget exceeded)</label>
                     </div>
 
+                    <h5 class="mt-4 mb-3">Schedule (UTC)</h5>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Frequency</label>
+                            <select class="form-select" id="executionFrequency">
+                                <option value="daily">Daily</option>
+                                <option value="weekly">Weekly</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Time (UTC)</label>
+                            <input type="time" class="form-control" id="executionTimeUtc" required>
+                        </div>
+                    </div>
+
                     <h6 class="mt-4 mb-3">AHR999 Multipliers</h6>
                     <div class="row mb-3">
                         <div class="col-md-4">
@@ -75,13 +90,15 @@
                 const strategy = await response.json();
                 
                 if (strategy) {
-                    document.getElementById('isActive').checked = strategy.is_active;
-                    document.getElementById('totalBudget').value = strategy.total_budget_usd;
-                    document.getElementById('allowOverBudget').checked = strategy.allow_over_budget;
-                    document.getElementById('targetBtc').value = strategy.target_btc_amount;
-                    document.getElementById('multLow').value = strategy.ahr999_multiplier_low;
-                    document.getElementById('multMid').value = strategy.ahr999_multiplier_mid;
-                    document.getElementById('multHigh').value = strategy.ahr999_multiplier_high;
+                    document.getElementById('is_active').checked = strategy.is_active;
+                    document.getElementById('total_budget_usd').value = strategy.total_budget_usd;
+                    document.getElementById('allow_over_budget').checked = strategy.allow_over_budget;
+                    document.getElementById('target_btc_amount').value = strategy.target_btc_amount;
+                    document.getElementById('ahr999_multiplier_low').value = strategy.ahr999_multiplier_low;
+                    document.getElementById('ahr999_multiplier_mid').value = strategy.ahr999_multiplier_mid;
+                    document.getElementById('ahr999_multiplier_high').value = strategy.ahr999_multiplier_high;
+                    document.getElementById('execution_frequency').value = strategy.execution_frequency || 'daily';
+                    document.getElementById('execution_time_utc').value = strategy.execution_time_utc || '00:00';
                 }
             } catch (error) {
                 console.error('Error loading strategy:', error);
@@ -92,13 +109,15 @@
             e.preventDefault();
             
             const data = {
-                is_active: document.getElementById('isActive').checked,
-                total_budget_usd: parseFloat(document.getElementById('totalBudget').value),
-                allow_over_budget: document.getElementById('allowOverBudget').checked,
-                target_btc_amount: parseFloat(document.getElementById('targetBtc').value),
-                ahr999_multiplier_low: parseFloat(document.getElementById('multLow').value),
-                ahr999_multiplier_mid: parseFloat(document.getElementById('multMid').value),
-                ahr999_multiplier_high: parseFloat(document.getElementById('multHigh').value)
+                is_active: document.getElementById('is_active').checked,
+                total_budget_usd: parseFloat(document.getElementById('total_budget_usd').value),
+                allow_over_budget: document.getElementById('allow_over_budget').checked,
+                target_btc_amount: parseFloat(document.getElementById('target_btc_amount').value),
+                ahr999_multiplier_low: parseFloat(document.getElementById('ahr999_multiplier_low').value),
+                ahr999_multiplier_mid: parseFloat(document.getElementById('ahr999_multiplier_mid').value),
+                ahr999_multiplier_high: parseFloat(document.getElementById('ahr999_multiplier_high').value),
+                execution_frequency: document.getElementById('execution_frequency').value,
+                execution_time_utc: document.getElementById('execution_time_utc').value
             };
 
             try {

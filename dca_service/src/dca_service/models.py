@@ -28,6 +28,8 @@ class DCAStrategy(SQLModel, table=True):
     ahr999_multiplier_mid: float
     ahr999_multiplier_high: float
     target_btc_amount: float = Field(default=1.0)
+    execution_frequency: str = Field(default="daily") # "daily" or "weekly"
+    execution_time_utc: str = Field(default="00:00") # "HH:MM"
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
 
