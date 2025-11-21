@@ -10,6 +10,8 @@ class StrategyBase(BaseModel):
     ahr999_multiplier_mid: float
     ahr999_multiplier_high: float
     target_btc_amount: float = 1.0
+    execution_frequency: str = "daily"
+    execution_time_utc: str = "00:00"
 
 class StrategyCreate(StrategyBase):
     pass
