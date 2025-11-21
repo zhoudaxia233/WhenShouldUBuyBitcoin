@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ project_name }} - Strategy Config</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { padding-top: 20px; background-color: #f8f9fa; }
+        .container { max-width: 800px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="d-flex justify-content-between align-items-center mb-4">
+            <h1>{{ project_name }}</h1>
+            <a href="/" class="btn btn-outline-secondary">Back to Dashboard</a>
+        </header>
+
+        <div class="card shadow-sm">
+            <div class="card-header bg-white">
+                <h5 class="mb-0">DCA Strategy Configuration</h5>
+            </div>
+            <div class="card-body">
+                <form id="strategyForm">
+                    <div class="mb-3 form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="isActive">
+                        <label class="form-check-label fw-bold" for="isActive">Enable DCA Strategy</label>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="totalBudget" class="form-label">Total Budget (USD)</label>
+                            <input type="number" class="form-control" id="totalBudget" step="0.01" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="targetBtc" class="form-label">Target BTC Amount</label>
+                            <input type="number" class="form-control" id="targetBtc" step="0.00000001" value="1.0">
+                        </div>
+                    </div>
+
+                    <div class="mb-3 form-check">
+                        <input class="form-check-input" type="checkbox" id="allowOverBudget">
+                        <label class="form-check-label" for="allowOverBudget">Allow Over Budget (Continue buying even if budget exceeded)</label>
+                    </div>
+
+                    <h6 class="mt-4 mb-3">AHR999 Multipliers</h6>
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <label for="multLow" class="form-label">Low (< 0.45)</label>
+                            <input type="number" class="form-control" id="multLow" step="0.1" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="multMid" class="form-label">Mid (0.45 - 1.2)</label>
+                            <input type="number" class="form-control" id="multMid" step="0.1" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="multHigh" class="form-label">High (> 1.2)</label>
+                            <input type="number" class="form-control" id="multHigh" step="0.1" required>
+                        </div>
+                    </div>
+
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
+                        <button type="submit" class="btn btn-primary">Save Configuration</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        async function loadStrategy() {
+            try {
+                const response = await fetch('/api/strategy');
+                const strategy = await response.json();
+                
+                if (strategy) {
+                    document.getElementById('isActive').checked = strategy.is_active;
+                    document.getElementById('totalBudget').value = strategy.total_budget_usd;
+                    document.getElementById('allowOverBudget').checked = strategy.allow_over_budget;
+                    document.getElementById('targetBtc').value = strategy.target_btc_amount;
+                    document.getElementById('multLow').value = strategy.ahr999_multiplier_low;
+                    document.getElementById('multMid').value = strategy.ahr999_multiplier_mid;
+                    document.getElementById('multHigh').value = strategy.ahr999_multiplier_high;
+                }
+            } catch (error) {
+                console.error('Error loading strategy:', error);
+            }
+        }
+
+        document.getElementById('strategyForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const data = {
+                is_active: document.getElementById('isActive').checked,
+                total_budget_usd: parseFloat(document.getElementById('totalBudget').value),
+                allow_over_budget: document.getElementById('allowOverBudget').checked,
+                target_btc_amount: parseFloat(document.getElementById('targetBtc').value),
+                ahr999_multiplier_low: parseFloat(document.getElementById('multLow').value),
+                ahr999_multiplier_mid: parseFloat(document.getElementById('multMid').value),
+                ahr999_multiplier_high: parseFloat(document.getElementById('multHigh').value)
+            };
+
+            try {
+                const response = await fetch('/api/strategy', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                
+                if (response.ok) {
+                    alert('Strategy saved successfully!');
+                } else {
+                    alert('Error saving strategy');
+                }
+            } catch (error) {
+                console.error('Error saving strategy:', error);
+                alert('Error saving strategy');
+            }
+        });
+
+        loadStrategy();
+    </script>
+</body>
+</html>
