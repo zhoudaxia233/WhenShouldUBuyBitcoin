@@ -12,6 +12,7 @@ Usage:
 
 import sys
 from pathlib import Path
+import pandas as pd
 
 # Add src to path
 sys.path.insert(0, str(Path(__file__).parent / "src"))
@@ -34,10 +35,12 @@ from whenshouldubuybitcoin.persistence import (
     merge_with_existing,
     get_days_to_fetch,
 )
+from whenshouldubuybitcoin.providers.binance_api import fetch_btc_funding_rate, fetch_open_interest_history
 from whenshouldubuybitcoin.visualization import (
     generate_all_charts,
     plot_usdjpy,
     plot_usdjpy_risk_map,
+    create_futures_oi_timeseries_chart,
 )
 from whenshouldubuybitcoin.realtime_check import check_realtime_status
 
@@ -304,13 +307,73 @@ def main():
             print(f"⚠ Warning: Failed to generate USD/JPY Risk Map: {e}")
             print("  This may be due to Yahoo Finance data limitations.")
             print("  The basic USD/JPY chart is still available.")
+            
+        # --- Step 6: Futures Data Analysis ---
+        print("\n" + "=" * 80)
+        print("STEP 6: Futures Data Analysis")
+        print("=" * 80)
+        
+        try:
+            print("Fetching Binance Open Interest History...")
+            oi_data = fetch_open_interest_history(limit=500) # Max limit per request is 500
+            
+            output_dir = Path("docs/charts")
+            
+            if oi_data:
+                print(f"✓ Fetched {len(oi_data)} data points for Open Interest")
+                
+                # Convert to DataFrame
+                oi_df = pd.DataFrame(oi_data)
+                if not oi_df.empty and 'timestamp' in oi_df.columns:
+                    oi_df['timestamp'] = pd.to_datetime(oi_df['timestamp'], unit='ms')
+                    oi_df['sumOpenInterestValue'] = pd.to_numeric(oi_df['sumOpenInterestValue'])
+                    oi_df.rename(columns={'sumOpenInterestValue': 'oi_usd'}, inplace=True)
+                    oi_df.set_index('timestamp', inplace=True)
+                    
+                    # Prepare BTC data for the chart
+                    # Use history_df (calculated from df) or just df
+                    # Since we removed calculate_historical_scores, we'll use df directly
+                    btc_df = df.copy()
+                    if 'date' in btc_df.columns:
+                        btc_df['date'] = pd.to_datetime(btc_df['date'])
+                        btc_df.set_index('date', inplace=True)
+                    
+                    # 1. Generate Main Timeseries Chart
+                    create_futures_oi_timeseries_chart(
+                        btc_df=btc_df,
+                        oi_df=oi_df,
+                        output_path=str(output_dir / "futures_oi.html")
+                    )
+                    
+                    # 2. Generate Quadrant Chart
+                    from whenshouldubuybitcoin.visualization import create_oi_quadrant_chart
+                    create_oi_quadrant_chart(
+                        btc_df=btc_df,
+                        oi_df=oi_df,
+                        output_path=str(output_dir / "oi_quadrant.html"),
+                        lookback_days=5 # 5-day lookback as default
+                    )
+                else:
+                     print("⚠ OI Data is empty or missing columns.")
+                
+            else:
+                print("⚠ Failed to fetch Open Interest data.")
+
+            print("\n================================================================================")
+            print("✓ All steps complete!")
+            print("================================================================================")
+            
+        except Exception as e:
+            print(f"⚠ Warning: Failed to generate futures analysis: {e}")
+            import traceback
+            traceback.print_exc()
 
         print("\n" + "=" * 80)
         print("✓ Step 5+ MVP Complete!")
         print("=" * 80)
         print("\n🎉 Data is now persisted to CSV for efficient daily updates!")
         print(f"   Data: docs/data/btc_metrics.csv")
-        print(f"   Charts: docs/charts/ (5 interactive HTML files)")
+        print(f"   Charts: docs/charts/ (4 interactive HTML files)")
         print("\nNext run will:")
         print("  - Load existing data from CSV")
         print("  - Only fetch recent days (not full 2000 days)")
@@ -344,6 +407,7 @@ if __name__ == "__main__":
             print("  python main.py                    Run full analysis and update")
             print("  python main.py --check-now        Quick real-time buy zone check")
             print("  python main.py --realtime         Same as --check-now")
+            print("  python main.py --market-health    Run full analysis and show market health")
             print("  python main.py --help             Show this help message")
             print("\nDescription:")
             print("  Full analysis: Fetches historical data, calculates metrics,")

@@ -1384,19 +1384,21 @@
         <div id="charts-tab" class="tab-content active">
             <div class="chart-container">
                 <div class="chart-tabs">
-                    <button class="chart-tab active" onclick="switchChart('ratios')">
-                        Valuation Ratios
-                    </button>
-                    <button class="chart-tab" onclick="switchChart('prices')">
-                        Price Comparison
-                    </button>
-                    <button class="chart-tab" onclick="switchChart('usdjpy')">
-                        USD/JPY
-                    </button>
-                </div>
-                
+                    <button class="chart-tab active" onclick="switchChart('ratios')">Valuation Ratios</button>
+                <button class="chart-tab" onclick="switchChart('prices')">Price Comparison</button>
+                <button class="chart-tab" onclick="switchChart('stats')">Statistics</button>
+                <button class="chart-tab" onclick="switchChart('usdjpy')">USD/JPY Risk</button>
+                <button class="chart-tab" onclick="switchChart('futures-oi')">Futures OI & Price</button>
+            </div>
+
+            <!-- Chart Content Areas -->
+            <div class="chart-display">
                 <div id="ratios-chart" class="chart-content active">
                     <iframe src="charts/valuation_ratios.html"></iframe>
+                </div>
+                
+                <div id="stats-chart" class="chart-content">
+                    <iframe src="charts/double_uv_stats.html"></iframe>
                 </div>
                 
                 <div id="prices-chart" class="chart-content">
@@ -1406,8 +1408,28 @@
                 <div id="usdjpy-chart" class="chart-content">
                     <iframe src="charts/usdjpy_risk_map.html" style="height: 800px;"></iframe>
                 </div>
+
+                <div id="futures-oi-chart" class="chart-content">
+                    <div style="display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-start;">
+                        <div style="flex: 1; min-width: 300px;">
+                            <iframe src="charts/futures_oi.html" style="width: 100%; height: 650px; border: none;"></iframe>
+                        </div>
+                        <div style="flex: 0 0 auto; min-width: 300px; max-width: 460px; width: 100%;">
+                            <iframe src="charts/oi_quadrant.html" style="width: 100%; height: 480px; border: none;"></iframe>
+                            <!-- Quadrant Legend (below chart) - exact width match with reduced padding -->
+                            <div style="background: white; padding: 4px 8px; border-radius: 4px; margin: 6px auto 0 auto; width: calc(100% - 80px); font-size: 0.85em; border: 1px solid #e5e5e5; box-shadow: 0 1px 2px rgba(0,0,0,0.04); word-wrap: break-word; overflow-wrap: break-word; line-height: 1.4;">
+                                <div style="color: #FF6347; margin-bottom: 1px;"><b>↗ Price ↑ & OI ↑</b> — Risky Up (leveraged)</div>
+                                <div style="color: #28a745; margin-bottom: 1px;"><b>↘ Price ↑ & OI ↓</b> — Healthy Up (spot-led)</div>
+                                <div style="color: #FFC107; margin-bottom: 1px;"><b>↖ Price ↓ & OI ↑</b> — Squeeze Setup (crowded) <span style="background: #FFC107; color: #333; padding: 1px 5px; border-radius: 6px; font-size: 0.95em; margin-left: 2px; white-space: nowrap;">Current</span></div>
+                                <div style="color: #6c757d;"><b>↙ Price ↓ & OI ↓</b> — Flush-Out (deleveraging)</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
             </div>
         </div>
+
 
         <!-- Analysis Tab Content -->
         <div id="analysis-tab" class="tab-content">
