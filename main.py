@@ -368,18 +368,7 @@ def main():
             import traceback
             traceback.print_exc()
 
-        print("\n" + "=" * 80)
-        print("✓ Step 5+ MVP Complete!")
-        print("=" * 80)
-        print("\n🎉 Data is now persisted to CSV for efficient daily updates!")
-        print(f"   Data: docs/data/btc_metrics.csv")
-        print(f"   Charts: docs/charts/ (4 interactive HTML files)")
-        print("\nNext run will:")
-        print("  - Load existing data from CSV")
-        print("  - Only fetch recent days (not full 2000 days)")
-        print("  - Update metrics efficiently")
-        print("  - Regenerate charts with latest data")
-        print("\nNext: Step 6 will add daily update logic & scheduling")
+
 
     except Exception as e:
         print(f"\n✗ Error: {e}")
