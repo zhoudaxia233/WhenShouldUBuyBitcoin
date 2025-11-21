@@ -1389,6 +1389,7 @@
                 <button class="chart-tab" onclick="switchChart('stats')">Statistics</button>
                 <button class="chart-tab" onclick="switchChart('usdjpy')">USD/JPY Risk</button>
                 <button class="chart-tab" onclick="switchChart('futures-oi')">Futures OI & Price</button>
+                <button class="chart-tab" onclick="switchChart('ma-cross')">MA Cross Analysis</button>
             </div>
 
             <!-- Chart Content Areas -->
@@ -1425,6 +1426,10 @@
                             </div>
                         </div>
                     </div>
+                </div>
+
+                <div id="ma-cross-chart" class="chart-content">
+                    <iframe src="charts/ma_cross_analysis.html" style="height: 800px;"></iframe>
                 </div>
             </div>
             </div>

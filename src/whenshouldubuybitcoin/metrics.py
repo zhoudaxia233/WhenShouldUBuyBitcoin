@@ -495,6 +495,53 @@ def get_ahr999_summary(df: pd.DataFrame) -> dict:
 
 
 # ============================================================================
+# MOVING AVERAGES (50D / 200D)
+# ============================================================================
+
+
+def add_ma_metrics(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Add Moving Average (MA) metrics to the DataFrame.
+    
+    Calculates:
+    - 50-day SMA
+    - 200-day SMA
+    - MA spread (50D - 200D)
+    - Cross events (Golden Cross, Death Cross)
+    
+    Args:
+        df: DataFrame with 'close_price' column
+        
+    Returns:
+        DataFrame with added MA columns
+    """
+    df = df.copy()
+    
+    # Calculate MAs
+    df["ma_50"] = df["close_price"].rolling(window=50).mean()
+    df["ma_200"] = df["close_price"].rolling(window=200).mean()
+    
+    # Calculate Spread
+    df["ma_spread"] = df["ma_50"] - df["ma_200"]
+    
+    # Detect crosses
+    # We look for where the sign of the spread changes
+    
+    # Previous day's spread
+    prev_spread = df["ma_spread"].shift(1)
+    
+    # Golden Cross: Spread goes from negative to positive
+    # (Yesterday < 0) AND (Today >= 0)
+    df["golden_cross"] = (prev_spread < 0) & (df["ma_spread"] >= 0)
+    
+    # Death Cross: Spread goes from positive to negative
+    # (Yesterday > 0) AND (Today <= 0)
+    df["death_cross"] = (prev_spread > 0) & (df["ma_spread"] <= 0)
+    
+    return df
+
+
+# ============================================================================
 # COMBINED VALUATION METRICS & DOUBLE UNDERVALUATION
 # ============================================================================
 
@@ -529,6 +576,9 @@ def compute_valuation_metrics(df: pd.DataFrame, dca_window: int = 200) -> pd.Dat
     
     # Add trend metrics
     df = add_trend_metrics(df)
+
+    # Add MA metrics (50D/200D)
+    df = add_ma_metrics(df)
     
     # Add double undervaluation flag
     # Both conditions must be met:
