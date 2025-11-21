@@ -1149,7 +1149,7 @@ def plot_usdjpy_risk_map(
             entrywidth=0.20,  # Allocate width for responsiveness
             font=dict(size=11),
         ),
-        margin=dict(t=140, b=150, r=50, l=50),  # Increased top margin for legend, standard sides
+        margin=dict(t=140, b=260, r=50, l=50),  # Increased bottom margin for rules text
     )
 
     # Update y-axes
@@ -1190,7 +1190,7 @@ def plot_usdjpy_risk_map(
         xref="paper",
         yref="paper",
         x=0.5,
-        y=-0.25,  # Position below the chart/slider
+        y=-0.45,  # Position well below the chart/slider
         xanchor="center",
         yanchor="top",
         showarrow=False,
