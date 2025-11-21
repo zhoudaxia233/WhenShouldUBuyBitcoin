@@ -25,9 +25,15 @@
         <div class="card shadow-sm mb-4">
             <div class="card-header bg-white d-flex justify-content-between align-items-center">
                 <h5 class="mb-0">DCA Preview & Control</h5>
-                <span id="previewTimestamp" class="text-muted small"></span>
+                <div>
+                    <span id="scheduleDisplay" class="badge bg-info text-dark me-2">Loading Schedule...</span>
+                    <span id="previewTimestamp" class="text-muted small"></span>
+                </div>
             </div>
             <div class="card-body">
+                <div id="metricsWarning" class="alert alert-danger d-none">
+                    <strong>Warning:</strong> Metrics are stale or unavailable. DCA execution disabled.
+                </div>
                 <div class="row text-center mb-3">
                     <div class="col-md-3">
                         <div class="text-muted small">AHR999 Index</div>
@@ -143,6 +149,15 @@
 
         async function loadPreview() {
             try {
+                // Load Strategy for Schedule
+                const stratResponse = await fetch('/api/strategy');
+                const strategy = await stratResponse.json();
+                if (strategy) {
+                    const freq = strategy.execution_frequency.charAt(0).toUpperCase() + strategy.execution_frequency.slice(1);
+                    document.getElementById('scheduleDisplay').textContent = `Schedule: ${freq} at ${strategy.execution_time_utc} UTC`;
+                }
+
+                // Load Preview
                 const response = await fetch('/api/dca/preview');
                 const decision = await response.json();
                 
@@ -157,12 +172,21 @@
                 document.getElementById('previewTimestamp').textContent = 'Updated: ' + new Date(decision.timestamp).toLocaleTimeString();
 
                 const btn = document.getElementById('executeSimulatedBtn');
-                if (decision.can_execute) {
-                    btn.disabled = false;
-                    btn.textContent = `Simulate BUY ($${decision.suggested_amount_usd.toFixed(2)})`;
-                } else {
+                const warningBox = document.getElementById('metricsWarning');
+
+                if (decision.reason.includes("Metrics unavailable") || decision.reason.includes("stale")) {
+                    warningBox.classList.remove('d-none');
                     btn.disabled = true;
-                    btn.textContent = 'Conditions Not Met';
+                    btn.textContent = 'Metrics Error';
+                } else {
+                    warningBox.classList.add('d-none');
+                    if (decision.can_execute) {
+                        btn.disabled = false;
+                        btn.textContent = `Simulate BUY ($${decision.suggested_amount_usd.toFixed(2)})`;
+                    } else {
+                        btn.disabled = true;
+                        btn.textContent = 'Conditions Not Met';
+                    }
                 }
 
             } catch (error) {

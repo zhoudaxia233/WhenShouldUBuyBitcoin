@@ -1,5 +1,5 @@
-from datetime import datetime
-from typing import Optional
+from datetime import datetime, timezone
+from typing import Optional, Dict
 from pydantic import BaseModel
 from sqlmodel import Session, select
 
@@ -25,7 +25,7 @@ def calculate_dca_decision(session: Session) -> DCADecision:
     strategy = session.exec(select(DCAStrategy)).first()
     metrics = get_latest_metrics()
     
-    timestamp = datetime.utcnow()
+    timestamp = datetime.now(timezone.utc)
     
     # Defaults if things fail
     base_decision = {
@@ -41,10 +41,14 @@ def calculate_dca_decision(session: Session) -> DCADecision:
     }
 
     if not strategy:
-        return DCADecision(**base_decision, reason="No strategy found")
+        decision_data = base_decision.copy()
+        decision_data["reason"] = "No strategy found"
+        return DCADecision(**decision_data)
 
     if not metrics:
-        return DCADecision(**base_decision, reason="Metrics unavailable")
+        decision_data = base_decision.copy()
+        decision_data["reason"] = "Metrics unavailable or stale"
+        return DCADecision(**decision_data)
 
     price = metrics["price_usd"]
     ahr999 = metrics["ahr999"]
