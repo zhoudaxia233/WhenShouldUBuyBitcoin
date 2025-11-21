@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ project_name }} - Transaction History</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { padding-top: 20px; background-color: #f8f9fa; }
+        .container { max-width: 1200px; }
+        .status-badge { font-size: 0.9em; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="d-flex justify-content-between align-items-center mb-4">
+            <h1>{{ project_name }}</h1>
+            <button id="simulateBtn" class="btn btn-primary">Simulate Transaction</button>
+        </header>
+
+        <div class="card shadow-sm">
+            <div class="card-header bg-white">
+                <h5 class="mb-0">Transaction History</h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>ID</th>
+                                <th>Timestamp</th>
+                                <th>Status</th>
+                                <th>Fiat Amount</th>
+                                <th>BTC Amount</th>
+                                <th>Price</th>
+                                <th>AHR999</th>
+                                <th>Notes</th>
+                            </tr>
+                        </thead>
+                        <tbody id="transactionsTable">
+                            <!-- Data will be loaded here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        async function loadTransactions() {
+            try {
+                const response = await fetch('/api/transactions?limit=50');
+                const transactions = await response.json();
+                const tbody = document.getElementById('transactionsTable');
+                tbody.innerHTML = '';
+
+                transactions.forEach(tx => {
+                    const row = document.createElement('tr');
+                    const date = new Date(tx.timestamp).toLocaleString();
+                    const statusClass = tx.status === 'SUCCESS' ? 'bg-success' : 
+                                      tx.status === 'FAILED' ? 'bg-danger' : 'bg-secondary';
+                    
+                    row.innerHTML = `
+                        <td>${tx.id}</td>
+                        <td>${date}</td>
+                        <td><span class="badge ${statusClass} status-badge">${tx.status}</span></td>
+                        <td>$${tx.fiat_amount.toFixed(2)}</td>
+                        <td>${tx.btc_amount ? tx.btc_amount.toFixed(8) : '-'}</td>
+                        <td>$${tx.price.toFixed(2)}</td>
+                        <td>${tx.ahr999.toFixed(4)}</td>
+                        <td>${tx.notes || ''}</td>
+                    `;
+                    tbody.appendChild(row);
+                });
+            } catch (error) {
+                console.error('Error loading transactions:', error);
+            }
+        }
+
+        document.getElementById('simulateBtn').addEventListener('click', async () => {
+            try {
+                const response = await fetch('/api/transactions/simulate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        fiat_amount: 100.0,
+                        ahr999: 0.45,
+                        price: 50000.0,
+                        notes: 'Manual simulation'
+                    })
+                });
+                
+                if (response.ok) {
+                    loadTransactions();
+                } else {
+                    alert('Simulation failed');
+                }
+            } catch (error) {
+                console.error('Error simulating:', error);
+            }
+        });
+
+        // Load on start
+        loadTransactions();
+    </script>
+</body>
+</html>
