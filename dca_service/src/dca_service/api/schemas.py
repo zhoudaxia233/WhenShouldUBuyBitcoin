@@ -1,6 +1,6 @@
 from datetime import datetime
 from typing import Optional
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 class MetricsSourceSchema(BaseModel):
     """Schema for metrics source information"""
@@ -36,23 +36,17 @@ class SimulationRequest(BaseModel):
     price: float
     notes: Optional[str] = None
 
-class ManualTransactionCreate(BaseModel):
-    type: str  # BUY, TRANSFER_IN, TRANSFER_OUT, OTHER
+class ColdWalletEntryCreate(BaseModel):
     btc_amount: float
-    fiat_amount: Optional[float] = None
-    price_usd: Optional[float] = None
-    fee_usdc: Optional[float] = None
+    fee_btc: Optional[float] = None
     notes: Optional[str] = None
-    timestamp: Optional[datetime] = None
+    timestamp: datetime
 
-class ManualTransactionRead(BaseModel):
+class ColdWalletEntryRead(BaseModel):
     id: int
     timestamp: datetime
-    type: str
     btc_amount: float
-    fiat_amount: Optional[float] = None
-    price_usd: Optional[float] = None
-    fee_usdc: Optional[float] = None
+    fee_btc: Optional[float] = None
     notes: Optional[str] = None
     created_at: datetime
 
@@ -60,7 +54,7 @@ class ManualTransactionRead(BaseModel):
 class UnifiedTransaction(BaseModel):
     id: str # Changed from int to str to support prefixes (e.g. "DCA-1", "MAN-1")
     timestamp: datetime
-    type: str # BUY, SELL, TRANSFER_IN, TRANSFER_OUT, OTHER, DCA
+    type: str # BUY, SELL, TRANSFER_IN, TRANSFER_OUT, OTHER, DCA, MANUAL
     status: str # SUCCESS, FAILED, SKIPPED, COMPLETED (for manual)
     btc_amount: Optional[float] = None
     fiat_amount: Optional[float] = None
@@ -71,6 +65,29 @@ class UnifiedTransaction(BaseModel):
     # Extra fields for DCA
     ahr999: Optional[float] = None
     
-    # Extra fields for Manual
+    # Extra fields for Manual (Legacy/Optional)
     fee_usdc: Optional[float] = None
 
+# Strategy Schemas (Merged from schemas_strategy.py)
+class StrategyBase(BaseModel):
+    is_active: bool = False
+    total_budget_usd: float
+    allow_over_budget: bool = False
+    ahr999_multiplier_low: float
+    ahr999_multiplier_mid: float
+    ahr999_multiplier_high: float
+    target_btc_amount: float = 1.0
+    execution_frequency: str = "daily"
+    execution_day_of_week: Optional[str] = None
+    execution_time_utc: str = "00:00"
+
+class StrategyCreate(StrategyBase):
+    pass
+
+class StrategyUpdate(StrategyBase):
+    pass
+
+class StrategyRead(StrategyBase):
+    id: int
+    created_at: datetime
+    updated_at: datetime
