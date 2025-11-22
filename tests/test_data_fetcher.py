@@ -36,7 +36,7 @@ class TestGetRealtimeBtcPrice:
         assert price == 50000.50
         assert 1000 < price < 200000  # Price validation
         mock_requests.get.assert_called_once_with(
-            "https://api.binance.com/api/v3/ticker/price?symbol=BTCUSDT",
+            "https://api.binance.com/api/v3/ticker/price?symbol=BTCUSDC",
             timeout=5,
         )
 
@@ -49,9 +49,7 @@ class TestGetRealtimeBtcPrice:
         mock_requests.get.side_effect = [
             mock_binance_response,  # First call (Binance) fails
             Mock(  # Second call (Coinbase) succeeds
-                json=lambda: {
-                    "data": {"rates": {"USD": "51000.75"}}
-                },
+                json=lambda: {"data": {"rates": {"USD": "51000.75"}}},
                 raise_for_status=Mock(),
             ),
         ]
@@ -99,7 +97,9 @@ class TestGetRealtimeBtcPrice:
 
         # Should fallback to Coinbase, but if that also fails, raise error
         mock_coinbase_response = Mock()
-        mock_coinbase_response.raise_for_status.side_effect = Exception("Coinbase error")
+        mock_coinbase_response.raise_for_status.side_effect = Exception(
+            "Coinbase error"
+        )
         mock_requests.get.side_effect = [mock_response, mock_coinbase_response]
 
         # Should raise exception when all sources fail
@@ -117,7 +117,9 @@ class TestGetRealtimeBtcPrice:
 
         # Mock Coinbase also fails
         mock_coinbase_response = Mock()
-        mock_coinbase_response.raise_for_status.side_effect = Exception("Coinbase error")
+        mock_coinbase_response.raise_for_status.side_effect = Exception(
+            "Coinbase error"
+        )
         mock_requests.get.side_effect = [mock_response, mock_coinbase_response]
 
         # Should raise exception
@@ -181,6 +183,7 @@ class TestGetRealtimeBtcPrice:
         """Test behavior when requests library is not installed."""
         # Simulate requests being None (not installed)
         import whenshouldubuybitcoin.data_fetcher as data_fetcher_module
+
         original_requests = data_fetcher_module.requests
         data_fetcher_module.requests = None
 
@@ -191,4 +194,3 @@ class TestGetRealtimeBtcPrice:
         finally:
             # Restore original requests
             data_fetcher_module.requests = original_requests
-

@@ -11,7 +11,7 @@
 
 const CONFIG = {
     // Real-time price APIs (priority order: Binance -> Coinbase)
-    BINANCE_API: "https://api.binance.com/api/v3/ticker/price?symbol=BTCUSDT",
+    BINANCE_API: "https://api.binance.com/api/v3/ticker/price?symbol=BTCUSDC",
     COINBASE_API: "https://api.coinbase.com/v2/exchange-rates?currency=BTC",
 
     // Data paths (relative to the docs folder)
