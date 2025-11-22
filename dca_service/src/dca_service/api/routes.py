@@ -3,19 +3,58 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlmodel import Session, select
 
 from dca_service.database import get_session
-from dca_service.models import DCATransaction
-from dca_service.api.schemas import TransactionRead, SimulationRequest
+from dca_service.models import DCATransaction, ManualTransaction
+from dca_service.api.schemas import TransactionRead, SimulationRequest, UnifiedTransaction
 
 router = APIRouter()
 
-@router.get("/transactions", response_model=List[TransactionRead])
+@router.get("/transactions", response_model=List[UnifiedTransaction])
 def read_transactions(
     offset: int = 0,
     limit: int = Query(default=100, le=100),
     session: Session = Depends(get_session)
 ):
-    transactions = session.exec(select(DCATransaction).offset(offset).limit(limit).order_by(DCATransaction.timestamp.desc())).all()
-    return transactions
+    # Fetch DCA transactions
+    dca_txs = session.exec(select(DCATransaction)).all()
+    
+    # Fetch Manual transactions
+    manual_txs = session.exec(select(ManualTransaction)).all()
+    
+    unified_list = []
+    
+    for tx in dca_txs:
+        unified_list.append(UnifiedTransaction(
+            id=f"DCA-{tx.id}",
+            timestamp=tx.timestamp,
+            type="DCA",
+            status=tx.status,
+            btc_amount=tx.btc_amount,
+            fiat_amount=tx.fiat_amount,
+            price=tx.price,
+            notes=tx.notes,
+            source=tx.source or "SIMULATED",
+            ahr999=tx.ahr999
+        ))
+        
+    for tx in manual_txs:
+        unified_list.append(UnifiedTransaction(
+            id=f"MAN-{tx.id}",
+            timestamp=tx.timestamp,
+            type=tx.type,
+            status="COMPLETED",
+            btc_amount=tx.btc_amount,
+            fiat_amount=tx.fiat_amount,
+            price=tx.price_usd,
+            notes=tx.notes,
+            source="MANUAL",
+            fee_usdc=tx.fee_usdc
+        ))
+    
+    # Sort by timestamp desc
+    unified_list.sort(key=lambda x: x.timestamp, reverse=True)
+    
+    # Apply offset and limit
+    return unified_list[offset : offset + limit]
 
 @router.get("/transactions/{transaction_id}", response_model=TransactionRead)
 def read_transaction(transaction_id: int, session: Session = Depends(get_session)):

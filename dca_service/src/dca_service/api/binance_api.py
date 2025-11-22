@@ -137,11 +137,18 @@ async def get_holdings(session: Session = Depends(get_session)):
         btc_bal = balances.get("BTC", 0.0)
         quote_bal = balances.get(quote_asset, 0.0)
         
-        progress = min(btc_bal / target_btc, 1.0) if target_btc > 0 else 0.0
+        # Add manual holdings (Phase 8)
+        from dca_service.models import ManualTransaction
+        manual_txs = session.exec(select(ManualTransaction)).all()
+        manual_btc = sum(tx.btc_amount for tx in manual_txs)
+        
+        total_btc = btc_bal + manual_btc
+        
+        progress = min(total_btc / target_btc, 1.0) if target_btc > 0 else 0.0
         
         return HoldingsSummary(
             connected=True,
-            btc_balance=btc_bal,
+            btc_balance=total_btc, # Return total (Binance + Manual)
             quote_balance=quote_bal,
             quote_asset=quote_asset,
             target_btc_amount=target_btc,
