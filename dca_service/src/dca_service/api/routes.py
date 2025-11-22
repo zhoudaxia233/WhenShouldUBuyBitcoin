@@ -41,7 +41,10 @@ def simulate_transaction(
         btc_amount=btc_amount,
         price=request.price,
         ahr999=request.ahr999,
-        notes=request.notes or "Simulated transaction"
+        notes=request.notes or "Simulated transaction",
+        source="SIMULATED",
+        fee_amount=0.0,
+        fee_asset="USDC"
     )
     
     session.add(transaction)

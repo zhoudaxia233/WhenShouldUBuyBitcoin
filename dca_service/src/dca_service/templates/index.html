@@ -10,6 +10,13 @@
         body { padding-top: 20px; background-color: #f8f9fa; }
         .container { max-width: 1200px; }
         .status-badge { font-size: 0.9em; }
+        /* Ensure tooltips are visible */
+        [title] {
+            cursor: help;
+        }
+        #remainingBudget[title] {
+            cursor: help !important;
+        }
     </style>
 </head>
 <body>
@@ -71,17 +78,21 @@
                     <strong>Warning:</strong> Metrics are stale or unavailable. DCA execution disabled.
                 </div>
                 <div class="row text-center mb-3">
-                    <div class="col-md-3">
+                    <div class="col-md-2">
                         <div class="text-muted small">AHR999 Index</div>
                         <div class="h4" id="previewAhr">--</div>
                     </div>
-                    <div class="col-md-3">
+                    <div class="col-md-2">
                         <div class="text-muted small">Current Price</div>
                         <div class="h4" id="previewPrice">--</div>
                     </div>
-                    <div class="col-md-3">
+                    <div class="col-md-2">
                         <div class="text-muted small">Strategy Band</div>
                         <div class="h4" id="previewBand">--</div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="text-muted small">Remaining Budget</div>
+                        <div class="h4" id="remainingBudget" style="cursor: help;" data-bs-toggle="tooltip" data-bs-placement="top" title="Loading budget information...">--</div>
                     </div>
                     <div class="col-md-3">
                         <div class="text-muted small">Suggested Action</div>
@@ -118,7 +129,9 @@
                                 <th>ID</th>
                                 <th>Timestamp</th>
                                 <th>Status</th>
+                                <th>Source</th>
                                 <th>Fiat Amount</th>
+                                <th>Fee</th>
                                 <th>BTC Amount</th>
                                 <th>Price</th>
                                 <th>AHR999</th>
@@ -227,11 +240,34 @@
                     const statusClass = tx.status === 'SUCCESS' ? 'bg-success' : 
                                       tx.status === 'FAILED' ? 'bg-danger' : 'bg-secondary';
                     
+                    // Source badge
+                    const source = tx.source || 'SIMULATED';
+                    let sourceBadge = '';
+                    if (source === 'SIMULATED') {
+                        sourceBadge = '<span class="badge bg-secondary status-badge">SIM</span>';
+                    } else if (source === 'BINANCE') {
+                        sourceBadge = '<span class="badge bg-primary status-badge">BIN</span>';
+                    } else if (source === 'LEDGER') {
+                        sourceBadge = '<span class="badge bg-info text-dark status-badge">LEDGER</span>';
+                    } else {
+                        sourceBadge = `<span class="badge bg-secondary status-badge">${source}</span>`;
+                    }
+                    
+                    // Fee display
+                    let feeDisplay = '—';
+                    if (tx.fee_amount !== null && tx.fee_amount !== undefined && tx.fee_amount > 0) {
+                        const feeAsset = tx.fee_asset || 'USDC';
+                        feeDisplay = `${tx.fee_amount.toFixed(4)} ${feeAsset}`;
+                    }
+                    // For 0 or null/undefined fees, show "—" (already set above)
+                    
                     row.innerHTML = `
                         <td>${tx.id}</td>
                         <td>${date}</td>
                         <td><span class="badge ${statusClass} status-badge">${tx.status}</span></td>
+                        <td>${sourceBadge}</td>
                         <td>$${tx.fiat_amount.toFixed(2)}</td>
+                        <td>${feeDisplay}</td>
                         <td>${tx.btc_amount ? tx.btc_amount.toFixed(8) : '-'}</td>
                         <td>$${tx.price.toFixed(2)}</td>
                         <td>${tx.ahr999.toFixed(4)}</td>
@@ -302,6 +338,75 @@
                 // Update status
                 document.getElementById('previewReason').textContent = decision.reason;
                 document.getElementById('previewTimestamp').textContent = 'Last updated: ' + new Date(decision.timestamp).toLocaleTimeString();
+                
+                // Update remaining budget
+                const remainingBudgetElem = document.getElementById('remainingBudget');
+                if (!remainingBudgetElem) {
+                    console.error('remainingBudget element not found');
+                    return;
+                }
+                
+                if (decision.remaining_budget !== null && decision.remaining_budget !== undefined) {
+                    remainingBudgetElem.textContent = '$' + decision.remaining_budget.toFixed(2);
+                    
+                    // Set tooltip based on reset behavior
+                    // Handle both boolean true and string "true" from JSON
+                    const budgetResets = decision.budget_resets === true || decision.budget_resets === 'true';
+                    let tooltipText = '';
+                    
+                    if (budgetResets) {
+                        // When budget resets monthly (allow_over_budget=False), show time until reset
+                        const timeUntilReset = decision.time_until_reset;
+                        if (timeUntilReset && String(timeUntilReset).trim() !== '' && timeUntilReset !== 'null' && timeUntilReset !== null) {
+                            tooltipText = `Budget resets in ${timeUntilReset}`;
+                        } else {
+                            tooltipText = 'Budget resets monthly';
+                        }
+                    } else {
+                        // When allow_over_budget=True, budget does not reset
+                        tooltipText = 'Budget does not reset in this mode';
+                    }
+                    
+                    // Set tooltip using Bootstrap tooltip API
+                    // Destroy existing tooltip instance if any
+                    const existingTooltip = bootstrap.Tooltip.getInstance(remainingBudgetElem);
+                    if (existingTooltip) {
+                        existingTooltip.dispose();
+                    }
+                    
+                    // Update title attribute
+                    remainingBudgetElem.setAttribute('data-bs-original-title', tooltipText);
+                    remainingBudgetElem.setAttribute('title', tooltipText);
+                    
+                    // Initialize new Bootstrap tooltip
+                    new bootstrap.Tooltip(remainingBudgetElem, {
+                        placement: 'top',
+                        trigger: 'hover'
+                    });
+                    
+                    // Debug: log tooltip setting
+                    console.log('Budget tooltip set:', {
+                        budget_resets: decision.budget_resets,
+                        time_until_reset: decision.time_until_reset,
+                        tooltip: tooltipText,
+                        element_title: remainingBudgetElem.getAttribute('title')
+                    });
+                } else {
+                    remainingBudgetElem.textContent = '--';
+                    const tooltipText = 'Budget information unavailable';
+                    
+                    // Update Bootstrap tooltip
+                    const existingTooltip = bootstrap.Tooltip.getInstance(remainingBudgetElem);
+                    if (existingTooltip) {
+                        existingTooltip.dispose();
+                    }
+                    remainingBudgetElem.setAttribute('data-bs-original-title', tooltipText);
+                    remainingBudgetElem.setAttribute('title', tooltipText);
+                    new bootstrap.Tooltip(remainingBudgetElem, {
+                        placement: 'top',
+                        trigger: 'hover'
+                    });
+                }
 
                 const btn = document.getElementById('executeSimulatedBtn');
                 const warningBox = document.getElementById('metricsWarning');
