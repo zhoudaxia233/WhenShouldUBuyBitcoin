@@ -36,3 +36,41 @@ class SimulationRequest(BaseModel):
     price: float
     notes: Optional[str] = None
 
+class ManualTransactionCreate(BaseModel):
+    type: str  # BUY, TRANSFER_IN, TRANSFER_OUT, OTHER
+    btc_amount: float
+    fiat_amount: Optional[float] = None
+    price_usd: Optional[float] = None
+    fee_usdc: Optional[float] = None
+    notes: Optional[str] = None
+    timestamp: Optional[datetime] = None
+
+class ManualTransactionRead(BaseModel):
+    id: int
+    timestamp: datetime
+    type: str
+    btc_amount: float
+    fiat_amount: Optional[float] = None
+    price_usd: Optional[float] = None
+    fee_usdc: Optional[float] = None
+    notes: Optional[str] = None
+    created_at: datetime
+
+# Unified schema for list display
+class UnifiedTransaction(BaseModel):
+    id: str # Changed from int to str to support prefixes (e.g. "DCA-1", "MAN-1")
+    timestamp: datetime
+    type: str # BUY, SELL, TRANSFER_IN, TRANSFER_OUT, OTHER, DCA
+    status: str # SUCCESS, FAILED, SKIPPED, COMPLETED (for manual)
+    btc_amount: Optional[float] = None
+    fiat_amount: Optional[float] = None
+    price: Optional[float] = None
+    notes: Optional[str] = None
+    source: str # SIMULATED, BINANCE, LEDGER (MANUAL)
+    
+    # Extra fields for DCA
+    ahr999: Optional[float] = None
+    
+    # Extra fields for Manual
+    fee_usdc: Optional[float] = None
+
