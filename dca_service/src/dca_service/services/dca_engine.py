@@ -16,7 +16,7 @@ class DCADecision(BaseModel):
     suggested_amount_usd: float
     price_usd: float
     timestamp: datetime
-    metrics_source: str
+    metrics_source: Dict[str, str]  # {"backend": "csv"|"realtime", "label": "..."}
 
 def calculate_dca_decision(session: Session) -> DCADecision:
     """
@@ -39,7 +39,7 @@ def calculate_dca_decision(session: Session) -> DCADecision:
         "suggested_amount_usd": 0.0,
         "price_usd": 0.0,
         "timestamp": timestamp,
-        "metrics_source": "unknown"
+        "metrics_source": {"backend": "unknown", "label": "Unknown"}
     }
 
     if not strategy:
@@ -54,7 +54,8 @@ def calculate_dca_decision(session: Session) -> DCADecision:
 
     price = metrics["price_usd"]
     ahr999 = metrics["ahr999"]
-    source = metrics.get("source", "unknown")
+    source_backend = metrics.get("source", "unknown")
+    source_label = metrics.get("source_label", "Unknown")
     
     # 2. Determine Band & Multiplier
     if ahr999 < 0.45:
@@ -110,7 +111,7 @@ def calculate_dca_decision(session: Session) -> DCADecision:
             "base_amount_usd": base_amount,
             "suggested_amount_usd": suggested_amount,
             "price_usd": price,
-            "metrics_source": source
+            "metrics_source": {"backend": source_backend, "label": source_label}
         })
         return DCADecision(**decision_data)
 
@@ -133,7 +134,7 @@ def calculate_dca_decision(session: Session) -> DCADecision:
                 "base_amount_usd": base_amount,
                 "suggested_amount_usd": suggested_amount,
                 "price_usd": price,
-                "metrics_source": source
+                "metrics_source": {"backend": source_backend, "label": source_label}
             })
             return DCADecision(**decision_data)
 
@@ -147,5 +148,5 @@ def calculate_dca_decision(session: Session) -> DCADecision:
         suggested_amount_usd=suggested_amount,
         price_usd=price,
         timestamp=timestamp,
-        metrics_source=source
+        metrics_source={"backend": source_backend, "label": source_label}
     )

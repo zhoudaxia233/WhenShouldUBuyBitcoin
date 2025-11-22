@@ -18,11 +18,16 @@ COL_PRICE = "close_price"
 COL_AHR999 = "ahr999"
 
 @dataclass
+class MetricsSource:
+    backend: str  # "csv" or "realtime"
+    label: str    # Human-readable description
+
+@dataclass
 class Metrics:
     ahr999: float
     price_usd: float
     timestamp: datetime
-    source: str = "unknown"
+    source: MetricsSource
 
 class BaseMetricsBackend(Protocol):
     def get_latest_metrics(self) -> Metrics:
@@ -74,7 +79,10 @@ class CsvMetricsBackend:
                     ahr999=ahr999,
                     price_usd=price_usd,
                     timestamp=timestamp,
-                    source="csv"
+                    source=MetricsSource(
+                        backend="csv",
+                        label="Historical CSV"
+                    )
                 )
 
         except Exception as e:
@@ -122,7 +130,10 @@ class RealtimeMetricsBackend:
                 ahr999=ahr999,
                 price_usd=price_usd,
                 timestamp=timestamp,
-                source="realtime"
+                source=MetricsSource(
+                    backend="realtime",
+                    label="Binance"
+                )
             )
             
         except ImportError as e:
@@ -151,7 +162,8 @@ def get_latest_metrics() -> Optional[Dict[str, Any]]:
             "ahr999": metrics.ahr999,
             "price_usd": metrics.price_usd,
             "timestamp": metrics.timestamp,
-            "source": metrics.source
+            "source": metrics.source.backend,
+            "source_label": metrics.source.label
         }
     except Exception as e:
         print(f"Error fetching metrics from {settings.METRICS_BACKEND}: {e}")
@@ -166,7 +178,8 @@ def get_latest_metrics() -> Optional[Dict[str, Any]]:
                     "ahr999": metrics.ahr999,
                     "price_usd": metrics.price_usd,
                     "timestamp": metrics.timestamp,
-                    "source": "csv (fallback)"
+                    "source": "csv",
+                    "source_label": "Historical CSV [fallback]"
                 }
             except Exception as csv_e:
                 print(f"Fallback CSV backend also failed: {csv_e}")
