@@ -53,7 +53,8 @@ def execute_simulated_dca(session: Session = Depends(get_session)):
         executed_amount_btc=btc_amount,
         avg_execution_price_usd=decision.price_usd,
         fee_amount=0.0,  # No fees in simulation
-        fee_asset=None
+        fee_asset="USDC",
+        source="SIMULATED"
     )
     
     session.add(transaction)

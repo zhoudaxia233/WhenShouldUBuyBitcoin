@@ -28,6 +28,7 @@ class TransactionRead(TransactionBase):
     avg_execution_price_usd: Optional[float] = None
     fee_amount: Optional[float] = None
     fee_asset: Optional[str] = None
+    source: Optional[str] = "SIMULATED"  # SIMULATED, BINANCE, LEDGER
 
 class SimulationRequest(BaseModel):
     fiat_amount: float
