@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ project_name }} - Transaction History</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/notyf@3.10.0/notyf.min.css">
     <style>
         body { padding-top: 20px; background-color: #f8f9fa; }
         .container { max-width: 1200px; }
@@ -204,6 +205,14 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/notyf@3.10.0/notyf.min.js"></script>
+    <script>
+        window.notyf = new Notyf({
+            duration: 3000,
+            dismissible: true,
+            position: { x: 'right', y: 'top' }
+        });
+    </script>
     <script>
         async function loadTransactions() {
             try {
@@ -249,12 +258,14 @@
                 });
                 
                 if (response.ok) {
+                    notyf.success('Simulated transaction created');
                     loadTransactions();
                 } else {
-                    alert('Simulation failed');
+                    notyf.error('Simulation failed');
                 }
             } catch (error) {
                 console.error('Error simulating:', error);
+                notyf.error('Network error or backend unreachable');
             }
         });
 
@@ -314,6 +325,7 @@
                 console.error('Error loading preview:', error);
                 const reasonElem = document.getElementById('previewReason');
                 if (reasonElem) reasonElem.textContent = 'Error loading data';
+                notyf.error('Failed to load metrics');
             }
         }
 
@@ -323,10 +335,15 @@
             btn.disabled = true;
             btn.textContent = '🔄 Refreshing...';
             
-            await loadPreview();
-            
-            btn.disabled = false;
-            btn.textContent = '🔄 Refresh';
+            try {
+                await loadPreview();
+                notyf.success('Metrics refreshed');
+            } catch (error) {
+                notyf.error('Failed to load metrics');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = '🔄 Refresh';
+            }
         });
 
         document.getElementById('executeSimulatedBtn').addEventListener('click', async () => {
@@ -342,18 +359,18 @@
                 const result = await response.json();
                 
                 if (result.transaction) {
-                    alert(`Success! ${result.message}`);
+                    notyf.success(`Simulated buy executed: ${result.message}`);
                     // Auto-refresh after successful execution (Phase 6)
                     loadTransactions(); // Refresh history
                     loadPreview();      // Refresh preview (budget might have changed)
                 } else {
-                    alert(`Skipped: ${result.message}`);
+                    notyf.open({ type: 'warning', message: `Skipped: ${result.message}` });
                     // Don't refresh transactions if skipped, but refresh preview to show updated status
                     loadPreview();
                 }
             } catch (error) {
                 console.error('Error executing simulated DCA:', error);
-                alert('Execution failed');
+                notyf.error('Execution failed');
                 btn.disabled = false;
                 btn.textContent = originalText;
             }
@@ -426,16 +443,16 @@
                 const result = await response.json();
                 
                 if (response.ok) {
-                    alert(result.message);
+                    notyf.success('API key stored');
                     document.getElementById('apiKey').value = '';
                     document.getElementById('apiSecret').value = '';
                     loadBinanceStatus();
                     loadHoldings();
                 } else {
-                    alert('Error: ' + result.detail);
+                    notyf.error('Invalid API key: ' + result.detail);
                 }
             } catch (error) {
-                alert('Error saving credentials');
+                notyf.error('Error saving credentials');
             }
         });
 
@@ -451,14 +468,17 @@
                 if (result.success) {
                     resultDiv.textContent = '✔ Connected to Binance (read-only).';
                     resultDiv.className = 'mt-2 small text-success fw-bold';
+                    notyf.success('Connected to Binance');
                     loadHoldings();
                 } else {
                     resultDiv.textContent = '❌ Connection failed: ' + result.error_message;
                     resultDiv.className = 'mt-2 small text-danger fw-bold';
+                    notyf.error('Connection failed: ' + result.error_message);
                 }
             } catch (error) {
                 resultDiv.textContent = '❌ Error testing connection';
                 resultDiv.className = 'mt-2 small text-danger';
+                notyf.error('Network error or backend unreachable');
             }
         });
 
