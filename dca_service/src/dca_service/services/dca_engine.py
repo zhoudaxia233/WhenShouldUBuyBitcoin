@@ -17,6 +17,9 @@ class DCADecision(BaseModel):
     price_usd: float
     timestamp: datetime
     metrics_source: Dict[str, str]  # {"backend": "csv"|"realtime", "label": "..."}
+    remaining_budget: Optional[float] = None
+    budget_resets: bool = False  # Whether budget resets monthly
+    time_until_reset: Optional[str] = None  # Human-readable time until reset (e.g., "5 days")
 
 def calculate_dca_decision(session: Session) -> DCADecision:
     """
@@ -39,7 +42,10 @@ def calculate_dca_decision(session: Session) -> DCADecision:
         "suggested_amount_usd": 0.0,
         "price_usd": 0.0,
         "timestamp": timestamp,
-        "metrics_source": {"backend": "unknown", "label": "Unknown"}
+        "metrics_source": {"backend": "unknown", "label": "Unknown"},
+        "remaining_budget": None,
+        "budget_resets": False,
+        "time_until_reset": None
     }
 
     if not strategy:
@@ -99,7 +105,51 @@ def calculate_dca_decision(session: Session) -> DCADecision:
     
     suggested_amount = base_amount * multiplier
 
-    # 4. Check Constraints
+    # 4. Calculate budget spent (with monthly reset logic)
+    now = datetime.now(timezone.utc)
+    budget_resets = not strategy.allow_over_budget
+    
+    if budget_resets:
+        # Calculate start of current month in UTC
+        month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        # Only count transactions from current month
+        total_spent = session.exec(
+            select(DCATransaction.fiat_amount).where(
+                DCATransaction.status == "SUCCESS",
+                DCATransaction.timestamp >= month_start
+            )
+        ).all()
+    else:
+        # Count all transactions (no reset)
+        total_spent = session.exec(
+            select(DCATransaction.fiat_amount).where(DCATransaction.status == "SUCCESS")
+        ).all()
+    
+    # Calculate total spent (handle empty list)
+    total_spent_sum = sum(total_spent) if total_spent else 0.0
+    remaining_budget = max(0.0, strategy.total_budget_usd - total_spent_sum)
+    
+    # Calculate time until reset (if applicable)
+    time_until_reset = None
+    if budget_resets:
+        # Calculate next month start
+        if now.month == 12:
+            next_month_start = now.replace(year=now.year + 1, month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
+        else:
+            next_month_start = now.replace(month=now.month + 1, day=1, hour=0, minute=0, second=0, microsecond=0)
+        
+        time_diff = next_month_start - now
+        days = time_diff.days
+        hours = time_diff.seconds // 3600
+        
+        if days > 0:
+            time_until_reset = f"{days} day{'s' if days != 1 else ''}"
+        elif hours > 0:
+            time_until_reset = f"{hours} hour{'s' if hours != 1 else ''}"
+        else:
+            time_until_reset = "Less than an hour"
+
+    # 5. Check Constraints
     if not strategy.is_active:
         decision_data = base_decision.copy()
         decision_data.update({
@@ -111,30 +161,31 @@ def calculate_dca_decision(session: Session) -> DCADecision:
             "base_amount_usd": base_amount,
             "suggested_amount_usd": suggested_amount,
             "price_usd": price,
-            "metrics_source": {"backend": source_backend, "label": source_label}
+            "metrics_source": {"backend": source_backend, "label": source_label},
+            "remaining_budget": remaining_budget,
+            "budget_resets": budget_resets,
+            "time_until_reset": time_until_reset
         })
         return DCADecision(**decision_data)
 
     # Check Budget
-    # Sum all SUCCESS transactions
-    total_spent = session.exec(
-        select(DCATransaction.fiat_amount).where(DCATransaction.status == "SUCCESS")
-    ).all()
-    total_spent_sum = sum(total_spent)
-
     if total_spent_sum + suggested_amount > strategy.total_budget_usd:
         if not strategy.allow_over_budget:
+            reset_info = " (resets monthly)" if budget_resets else ""
             decision_data = base_decision.copy()
             decision_data.update({
                 "can_execute": False,
-                "reason": f"Over budget. Spent: ${total_spent_sum:.2f}, Budget: ${strategy.total_budget_usd:.2f}",
+                "reason": f"Over budget. Spent: ${total_spent_sum:.2f}, Budget: ${strategy.total_budget_usd:.2f}{reset_info}",
                 "ahr999_value": ahr999,
                 "ahr_band": band,
                 "multiplier": multiplier,
                 "base_amount_usd": base_amount,
                 "suggested_amount_usd": suggested_amount,
                 "price_usd": price,
-                "metrics_source": {"backend": source_backend, "label": source_label}
+                "metrics_source": {"backend": source_backend, "label": source_label},
+                "remaining_budget": remaining_budget,
+                "budget_resets": budget_resets,
+                "time_until_reset": time_until_reset
             })
             return DCADecision(**decision_data)
 
@@ -148,5 +199,8 @@ def calculate_dca_decision(session: Session) -> DCADecision:
         suggested_amount_usd=suggested_amount,
         price_usd=price,
         timestamp=timestamp,
-        metrics_source={"backend": source_backend, "label": source_label}
+        metrics_source={"backend": source_backend, "label": source_label},
+        remaining_budget=remaining_budget,
+        budget_resets=budget_resets,
+        time_until_reset=time_until_reset
     )

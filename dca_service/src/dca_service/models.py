@@ -28,6 +28,9 @@ class DCATransaction(SQLModel, table=True):
     # Fee fields (for future Binance trading)
     fee_amount: Optional[float] = None
     fee_asset: Optional[str] = None
+    
+    # Source field - where the transaction came from
+    source: Optional[str] = Field(default="SIMULATED")  # SIMULATED, BINANCE, LEDGER
 
     # Pydantic v2 config to allow population by alias
     model_config = {"populate_by_name": True}
