@@ -141,7 +141,7 @@ def get_latest_btc_price() -> tuple[datetime, float]:
 def get_realtime_btc_price() -> tuple[datetime, float]:
     """
     Get the current real-time BTC price.
-    
+
     Priority: Binance -> Coinbase
     Yahoo Finance is only used for historical data analysis.
 
@@ -152,21 +152,22 @@ def get_realtime_btc_price() -> tuple[datetime, float]:
         Exception: If data fetching fails from all sources
     """
     if requests is None:
-        raise ImportError("requests library is required for real-time price fetching. Install it with: pip install requests")
-    
+        raise ImportError(
+            "requests library is required for real-time price fetching. Install it with: pip install requests"
+        )
+
     def validate_price(price: float) -> bool:
         """Validate price is within reasonable range"""
         return 1000 < price < 200000
-    
+
     # Try Binance first
     try:
         response = requests.get(
-            "https://api.binance.com/api/v3/ticker/price?symbol=BTCUSDT",
-            timeout=5
+            "https://api.binance.com/api/v3/ticker/price?symbol=BTCUSDC", timeout=5
         )
         response.raise_for_status()
         data = response.json()
-        
+
         if data and "price" in data:
             price = float(data["price"])
             if validate_price(price):
@@ -174,24 +175,28 @@ def get_realtime_btc_price() -> tuple[datetime, float]:
                 return datetime.now(), price
     except Exception as e:
         print(f"⚠ Binance API error: {e}")
-    
+
     # Fallback to Coinbase
     try:
         response = requests.get(
-            "https://api.coinbase.com/v2/exchange-rates?currency=BTC",
-            timeout=5
+            "https://api.coinbase.com/v2/exchange-rates?currency=BTC", timeout=5
         )
         response.raise_for_status()
         data = response.json()
-        
-        if data and "data" in data and "rates" in data["data"] and "USD" in data["data"]["rates"]:
+
+        if (
+            data
+            and "data" in data
+            and "rates" in data["data"]
+            and "USD" in data["data"]["rates"]
+        ):
             price = float(data["data"]["rates"]["USD"])
             if validate_price(price):
                 print(f"✓ Fetched real-time price from Coinbase: ${price:,.2f}")
                 return datetime.now(), price
     except Exception as e:
         print(f"⚠ Coinbase API error: {e}")
-    
+
     # All sources failed
     raise Exception("Failed to fetch real-time price from Binance and Coinbase")
 
@@ -313,7 +318,7 @@ def fetch_fred_series(
         )
 
     end_date = datetime.now()
-    
+
     if start_date:
         start_str = start_date
     elif days:
@@ -323,9 +328,9 @@ def fetch_fred_series(
         # Default to 10 years of data
         calc_start = end_date - timedelta(days=3650)
         start_str = calc_start.strftime("%Y-%m-%d")
-    
+
     end_str = end_date.strftime("%Y-%m-%d")
-    
+
     # FRED API endpoint
     url = f"https://api.stlouisfed.org/fred/series/observations"
     params = {
@@ -372,7 +377,9 @@ def fetch_fred_series(
 
         print(f"✓ Successfully fetched {len(df)} days of {series_id} data")
         print(f"  Date range: {df['date'].min().date()} to {df['date'].max().date()}")
-        print(f"  Value range: {df['close_price'].min():.2f} to {df['close_price'].max():.2f}")
+        print(
+            f"  Value range: {df['close_price'].min():.2f} to {df['close_price'].max():.2f}"
+        )
 
         return df
 
@@ -384,19 +391,19 @@ def fetch_fred_series(
 def fetch_mof_japan_yield() -> pd.DataFrame:
     """
     Fetch historical and current Japan 2-year government bond yields from Ministry of Finance Japan.
-    
+
     Returns:
         DataFrame with 'date' and 'jp_2y' columns.
     """
     try:
         print("\nFetching Japan 2Y yield data from Ministry of Finance (MOF)...")
-        
+
         # URLs for MOF data
         # Historical data (1974-present)
         hist_url = "https://www.mof.go.jp/english/policy/jgbs/reference/interest_rate/historical/jgbcme_all.csv"
         # Current month data (sometimes newer than historical file)
         curr_url = "https://www.mof.go.jp/english/policy/jgbs/reference/interest_rate/jgbcme.csv"
-        
+
         dfs = []
         for url in [hist_url, curr_url]:
             try:
@@ -404,52 +411,57 @@ def fetch_mof_japan_yield() -> pd.DataFrame:
                 # The actual header is on the second row (index 1)
                 response = requests.get(url)
                 response.raise_for_status()
-                
+
                 # Use io.StringIO to parse the text content
                 import io
+
                 # Skip the first line which is just a title
-                content = response.text.split('\n', 1)[1]
+                content = response.text.split("\n", 1)[1]
                 df = pd.read_csv(io.StringIO(content))
-                
+
                 # Clean up column names
                 df.columns = [c.strip() for c in df.columns]
-                
+
                 # Check if '2Y' column exists
-                if '2Y' in df.columns and 'Date' in df.columns:
+                if "2Y" in df.columns and "Date" in df.columns:
                     # Convert Date to datetime
-                    df['Date'] = pd.to_datetime(df['Date'], errors='coerce')
-                    
+                    df["Date"] = pd.to_datetime(df["Date"], errors="coerce")
+
                     # Convert 2Y to numeric, handling '-' or other non-numeric values
-                    df['2Y'] = pd.to_numeric(df['2Y'], errors='coerce')
-                    
+                    df["2Y"] = pd.to_numeric(df["2Y"], errors="coerce")
+
                     # Rename columns
-                    df = df.rename(columns={'Date': 'date', '2Y': 'jp_2y'})
-                    
+                    df = df.rename(columns={"Date": "date", "2Y": "jp_2y"})
+
                     # Filter valid data
-                    df = df.dropna(subset=['date', 'jp_2y'])
-                    dfs.append(df[['date', 'jp_2y']])
+                    df = df.dropna(subset=["date", "jp_2y"])
+                    dfs.append(df[["date", "jp_2y"]])
             except Exception as e:
                 print(f"⚠ Warning fetching MOF URL {url}: {e}")
-                
+
         if not dfs:
             raise ValueError("No valid data fetched from MOF")
-            
+
         # Combine and deduplicate
-        full_df = pd.concat(dfs).drop_duplicates(subset=['date']).sort_values('date')
-        
+        full_df = pd.concat(dfs).drop_duplicates(subset=["date"]).sort_values("date")
+
         print(f"✓ Fetched {len(full_df)} data points from MOF")
-        print(f"  Range: {full_df['date'].min().date()} to {full_df['date'].max().date()}")
+        print(
+            f"  Range: {full_df['date'].min().date()} to {full_df['date'].max().date()}"
+        )
         print(f"  Latest 2Y Yield: {full_df['jp_2y'].iloc[-1]}%")
-        
+
         return full_df
-        
+
     except Exception as e:
         print(f"⚠ Failed to fetch MOF data: {e}")
-        return pd.DataFrame(columns=['date', 'jp_2y'])
+        return pd.DataFrame(columns=["date", "jp_2y"])
+
 
 # Constant for Japan 2Y yield estimate (used as last resort fallback)
 # Updated Nov 2025 based on market data
 JAPAN_2Y_ESTIMATE = 0.93
+
 
 def fetch_yield_data(
     days: Optional[int] = None, start_date: Optional[str] = None
@@ -477,13 +489,13 @@ def fetch_yield_data(
     # Try FRED API first for US data
     try:
         print("\nAttempting to fetch yield data from FRED API...")
-        
+
         print("Fetching US 2-year yield (DGS2) from FRED...")
         us_2y_df = fetch_fred_series("DGS2", days=days, start_date=start_date)
-        
+
         jp_2y_df = None
         data_source_str = "FRED"
-        
+
         # Try fetching Japan data
         try:
             # 1. Try FRED (Legacy/Preferred if working)
@@ -496,24 +508,26 @@ def fetch_yield_data(
             try:
                 # 2. Try MOF (Official Source)
                 jp_2y_df = fetch_mof_japan_yield()
-                
+
                 if not jp_2y_df.empty:
                     data_source_str = "FRED (US) / MOF (JP)"
-                    jp_2y_df["close_price"] = jp_2y_df["jp_2y"] 
+                    jp_2y_df["close_price"] = jp_2y_df["jp_2y"]
                 else:
                     raise ValueError("Empty MOF data")
-                    
+
             except Exception as e:
                 print(f"⚠ Could not fetch Japan 2Y from MOF: {e}")
                 print("Falling back to Yahoo Finance for Japan data...")
                 # 3. Fallback to Estimate
-                print(f"Using estimated Japan 2Y yield ({JAPAN_2Y_ESTIMATE}%) as Yahoo Finance fallback...")
-                
+                print(
+                    f"Using estimated Japan 2Y yield ({JAPAN_2Y_ESTIMATE}%) as Yahoo Finance fallback..."
+                )
+
                 # Create dummy dataframe for Japan yield matching US dates
                 jp_2y_df = us_2y_df.copy()
                 jp_2y_df["close_price"] = JAPAN_2Y_ESTIMATE
                 data_source_str = "FRED (US) / Yahoo (JP)"
-        
+
         # Merge on date
         merged = pd.merge(
             us_2y_df,
@@ -522,31 +536,36 @@ def fetch_yield_data(
             how="inner",
             suffixes=("_us", "_jp"),
         )
-        
+
         # Calculate spread
         merged["us_2y"] = merged["close_price_us"]
         merged["jp_2y"] = merged["close_price_jp"]
         merged["spread"] = merged["us_2y"] - merged["jp_2y"]
-        
+
         # Keep only needed columns
         result = merged[["date", "us_2y", "jp_2y", "spread"]].copy()
-        
+
         print(f"\n✓ Successfully fetched yield data")
         print(f"  Source: {data_source_str}")
-        print(f"  Date range: {result['date'].min().date()} to {result['date'].max().date()}")
-        print(f"  US 2Y range: {result['us_2y'].min():.2f}% to {result['us_2y'].max():.2f}%")
-        print(f"  Japan 2Y range: {result['jp_2y'].min():.2f}% to {result['jp_2y'].max():.2f}%")
-        print(f"  Spread range: {result['spread'].min():.2f}% to {result['spread'].max():.2f}%")
-        
+        print(
+            f"  Date range: {result['date'].min().date()} to {result['date'].max().date()}"
+        )
+        print(
+            f"  US 2Y range: {result['us_2y'].min():.2f}% to {result['us_2y'].max():.2f}%"
+        )
+        print(
+            f"  Japan 2Y range: {result['jp_2y'].min():.2f}% to {result['jp_2y'].max():.2f}%"
+        )
+        print(
+            f"  Spread range: {result['spread'].min():.2f}% to {result['spread'].max():.2f}%"
+        )
+
         return result, data_source_str
-        
+
     except Exception as e:
         print(f"\n⚠ FRED API failed: {type(e).__name__}: {e}")
         print("Falling back to Yahoo Finance...")
         return fetch_yield_data_yahoo_fallback(days=days, start_date=start_date)
-
-
-
 
 
 def fetch_yield_data_yahoo_fallback(
@@ -554,56 +573,66 @@ def fetch_yield_data_yahoo_fallback(
 ) -> tuple[pd.DataFrame, str]:
     """
     Fallback: Fetch yield data from Yahoo Finance when FRED API is unavailable.
-    
+
     Note: Yahoo Finance has limited yield data, so this is a fallback option.
     """
     end_date = datetime.now()
-    
+
     if start_date:
         calc_start = pd.to_datetime(start_date)
     else:
         if days is None:
             days = 3650  # Default to 10 years
         calc_start = end_date - timedelta(days=days)
-    
+
     try:
         print("\nFetching US Treasury yields from Yahoo Finance...")
         # Use US 5-year yield as proxy for 2-year
         print("Using US 5-year yield (^FVX) as proxy for 2-year yield...")
-        
+
         us_5y = yf.Ticker("^FVX")
         us_5y_df = us_5y.history(
             start=calc_start.strftime("%Y-%m-%d"),
             end=end_date.strftime("%Y-%m-%d"),
             interval="1d",
         )
-        
+
         if us_5y_df.empty:
             raise ValueError("No US yield data from Yahoo Finance")
-        
+
         us_5y_df = us_5y_df.reset_index()
         us_5y_df = us_5y_df.rename(columns={"Date": "date", "Close": "us_2y"})
         us_5y_df["date"] = pd.to_datetime(us_5y_df["date"]).dt.tz_localize(None)
         us_5y_df = us_5y_df[["date", "us_2y"]]
-        
+
         # For Japan, use estimated value
-        print(f"Using estimated Japan 2Y yield (typically 0.0-0.3% due to BOJ policy)...")
-        jp_2y_estimate = JAPAN_2Y_ESTIMATE  # Approximate Japan 2Y yield (Updated Nov 2025)
-        
+        print(
+            f"Using estimated Japan 2Y yield (typically 0.0-0.3% due to BOJ policy)..."
+        )
+        jp_2y_estimate = (
+            JAPAN_2Y_ESTIMATE  # Approximate Japan 2Y yield (Updated Nov 2025)
+        )
+
         result = us_5y_df.copy()
         result["jp_2y"] = jp_2y_estimate
         result["spread"] = result["us_2y"] - result["jp_2y"]
-        
+
         result = result[["date", "us_2y", "jp_2y", "spread"]].copy()
-        
+
         print(f"✓ Fetched yield data from Yahoo Finance (fallback)")
-        print(f"  Date range: {result['date'].min().date()} to {result['date'].max().date()}")
-        print(f"  US 2Y (proxy) range: {result['us_2y'].min():.2f}% to {result['us_2y'].max():.2f}%")
+        print(
+            f"  Date range: {result['date'].min().date()} to {result['date'].max().date()}"
+        )
+        print(
+            f"  US 2Y (proxy) range: {result['us_2y'].min():.2f}% to {result['us_2y'].max():.2f}%"
+        )
         print(f"  Japan 2Y (estimated): {jp_2y_estimate:.2f}%")
-        print(f"  Spread range: {result['spread'].min():.2f}% to {result['spread'].max():.2f}%")
-        
+        print(
+            f"  Spread range: {result['spread'].min():.2f}% to {result['spread'].max():.2f}%"
+        )
+
         return result, "Yahoo Finance"
-        
+
     except Exception as e:
         raise Exception(f"Yahoo Finance fallback also failed: {e}")
 
