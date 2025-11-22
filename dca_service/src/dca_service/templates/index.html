@@ -252,7 +252,17 @@
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Timestamp</label>
-                            <input type="datetime-local" class="form-control" id="manualTimestamp" required>
+                            <div class="row">
+                                <div class="col-md-8">
+                                    <input type="datetime-local" class="form-control" id="manualTimestamp" required>
+                                </div>
+                                <div class="col-md-4">
+                                    <select class="form-select" id="manualTimezone">
+                                        <option value="Europe/Berlin" selected>Germany</option>
+                                        <option value="UTC">UTC</option>
+                                    </select>
+                                </div>
+                            </div>
                         </div>
                         <button type="submit" class="btn btn-primary w-100">Record Entry</button>
                     </form>
@@ -271,6 +281,99 @@
         });
     </script>
     <script>
+        // Timezone conversion utilities
+        function convertToUTC(datetimeLocal, timezone) {
+            // datetime-local gives us a string like "2025-11-22T15:30"
+            // We need to interpret it in the specified timezone and convert to UTC
+            if (timezone === 'UTC') {
+                // If already UTC, just append Z
+                return new Date(datetimeLocal + 'Z').toISOString();
+            } else if (timezone === 'Europe/Berlin') {
+                // Parse as Germany time, convert to UTC
+                // Strategy: Use the browser's Date parser with timezone info
+                const parts = datetimeLocal.match(/(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/);
+                if (!parts) return null;
+                
+                const [, year, month, day, hour, minute] = parts;
+                
+                // Create a date string that can be parsed as Germany time
+                // We'll use toLocaleString to understand what UTC time this represents
+                const dateStr = `${year}-${month}-${day}T${hour}:${minute}:00`;
+                
+                // Create temporary date object (this will be in local browser timezone)
+                const tempDate = new Date(dateStr);
+                
+                // Format it as if it's in Europe/Berlin timezone
+                const berlinStr = tempDate.toLocaleString('en-US', {
+                    timeZone: 'Europe/Berlin',
+                    year: 'numeric',
+                    month: '2-digit',
+                    day: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit',
+                    hour12: false
+                });
+                
+                // Now we know what time it would be in Berlin if tempDate was that time locally
+                // We need to find the UTC time that would display as our input in Berlin
+                // Simpler approach: manually calculate offset for Berlin
+                // Germany is UTC+1 (winter) or UTC+2 (summer)
+                
+                // Better approach: Use Intl to get the offset
+                const formatter = new Intl.DateTimeFormat('en-US', {
+                    timeZone: 'Europe/Berlin',
+                    year: 'numeric',
+                    month: '2-digit',
+                    day: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit',
+                    hour12: false,
+                    timeZoneName: 'longOffset'
+                });
+                
+                // Create a reference date to get the offset
+                const refDate = new Date(`${year}-${month}-${day}T12:00:00Z`);
+                const formatted = formatter.format(refDate);
+                
+                // Extract offset from formatted string (e.g., "GMT+01:00" or "GMT+02:00")
+                const offsetMatch = formatted.match(/GMT([+-])(\d{2}):(\d{2})/);
+                let offsetHours = 1; // Default to CET (UTC+1)
+                if (offsetMatch) {
+                    const sign = offsetMatch[1] === '+' ? 1 : -1;
+                    offsetHours = sign * parseInt(offsetMatch[2]);
+                }
+                
+                // Now convert: Germany time - offset = UTC
+                // If input is 23:22 Germany time (CET, UTC+1), UTC should be 22:22
+                const utcDate = new Date(Date.UTC(year, month - 1, day, hour, minute, 0));
+                const correctedUTC = new Date(utcDate.getTime() - offsetHours * 60 * 60 * 1000);
+                
+                return correctedUTC.toISOString();
+            }
+            return null;
+        }
+        
+        function formatTimestampInTimezone(isoString, timezone) {
+            const date = new Date(isoString);
+            if (timezone === 'UTC') {
+                return date.toISOString().replace('T', ' ').substring(0, 19) + ' UTC';
+            } else if (timezone === 'Europe/Berlin') {
+                return date.toLocaleString('de-DE', {
+                    timeZone: 'Europe/Berlin',
+                    day: '2-digit',
+                    month: '2-digit',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit',
+                    hour12: false
+                }) + ' CET/CEST';
+            }
+            return isoString;
+        }
+        
         async function loadTransactions() {
             try {
                 const response = await fetch('/api/transactions?limit=50');
@@ -280,15 +383,8 @@
 
                 transactions.forEach(tx => {
                     const row = document.createElement('tr');
-                    const date = new Date(tx.timestamp).toLocaleString('de-DE', {
-                        day: '2-digit',
-                        month: '2-digit',
-                        year: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit',
-                        second: '2-digit',
-                        hour12: false
-                    });
+                    // Always display in UTC
+                    const date = formatTimestampInTimezone(tx.timestamp, 'UTC');
                     const statusClass = tx.status === 'SUCCESS' ? 'bg-success' : 
                                       tx.status === 'FAILED' ? 'bg-danger' : 'bg-secondary';
                     
@@ -652,11 +748,21 @@
         document.getElementById('manualEntryForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             
+            // Convert timestamp to UTC based on selected timezone
+            const timezone = document.getElementById('manualTimezone').value;
+            const datetimeLocal = document.getElementById('manualTimestamp').value;
+            const timestampUTC = convertToUTC(datetimeLocal, timezone);
+            
+            if (!timestampUTC) {
+                notyf.error('Invalid timestamp');
+                return;
+            }
+            
             const data = {
                 btc_amount: parseFloat(document.getElementById('manualBtc').value),
                 fee_btc: document.getElementById('manualFee').value ? parseFloat(document.getElementById('manualFee').value) : null,
                 notes: document.getElementById('manualNotes').value,
-                timestamp: document.getElementById('manualTimestamp').value
+                timestamp: timestampUTC
             };
             
             try {
@@ -683,6 +789,7 @@
             }
         });
 
+        
         // Load on start (Phase 6: auto-refresh on page load)
         loadTransactions();
         loadPreview();
