@@ -24,54 +24,68 @@
             <div class="card-body">
                 <form id="strategyForm">
                     <div class="mb-3 form-check form-switch">
-                        <input class="form-check-input" type="checkbox" id="isActive">
-                        <label class="form-check-label fw-bold" for="isActive">Enable DCA Strategy</label>
+                        <input class="form-check-input" type="checkbox" id="is_active">
+                        <label class="form-check-label fw-bold" for="is_active">Enable DCA Strategy</label>
                     </div>
 
                     <div class="row mb-3">
                         <div class="col-md-6">
-                            <label for="totalBudget" class="form-label">Total Budget (USD)</label>
-                            <input type="number" class="form-control" id="totalBudget" step="0.01" required>
+                            <label for="total_budget_usd" class="form-label">Total Budget (USD)</label>
+                            <input type="number" class="form-control" id="total_budget_usd" step="0.01" required>
+                            <div class="form-text text-muted" id="dailyBudgetCalc"></div>
                         </div>
                         <div class="col-md-6">
-                            <label for="targetBtc" class="form-label">Target BTC Amount</label>
-                            <input type="number" class="form-control" id="targetBtc" step="0.00000001" value="1.0">
+                            <label for="target_btc_amount" class="form-label">Target BTC Amount</label>
+                            <input type="number" class="form-control" id="target_btc_amount" step="0.00000001" value="1.0">
                         </div>
                     </div>
 
                     <div class="mb-3 form-check">
-                        <input class="form-check-input" type="checkbox" id="allowOverBudget">
-                        <label class="form-check-label" for="allowOverBudget">Allow Over Budget (Continue buying even if budget exceeded)</label>
+                        <input class="form-check-input" type="checkbox" id="allow_over_budget">
+                        <label class="form-check-label" for="allow_over_budget">Allow Over Budget (Continue buying even if budget exceeded)</label>
                     </div>
 
                     <h5 class="mt-4 mb-3">Schedule (UTC)</h5>
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label class="form-label">Frequency</label>
-                            <select class="form-select" id="executionFrequency">
+                            <select class="form-select" id="execution_frequency">
                                 <option value="daily">Daily</option>
                                 <option value="weekly">Weekly</option>
                             </select>
+                            
+                            <div id="dayOfWeekContainer" class="mt-2 d-none">
+                                <label class="form-label small">Day of Week</label>
+                                <select class="form-select form-select-sm" id="execution_day_of_week">
+                                    <option value="monday">Monday</option>
+                                    <option value="tuesday">Tuesday</option>
+                                    <option value="wednesday">Wednesday</option>
+                                    <option value="thursday">Thursday</option>
+                                    <option value="friday">Friday</option>
+                                    <option value="saturday">Saturday</option>
+                                    <option value="sunday">Sunday</option>
+                                </select>
+                            </div>
                         </div>
                         <div class="col-md-6 mb-3">
                             <label class="form-label">Time (UTC)</label>
-                            <input type="time" class="form-control" id="executionTimeUtc" required>
+                            <input type="time" class="form-control" id="execution_time_utc" required>
                         </div>
                     </div>
 
                     <h6 class="mt-4 mb-3">AHR999 Multipliers</h6>
                     <div class="row mb-3">
                         <div class="col-md-4">
-                            <label for="multLow" class="form-label">Low (< 0.45)</label>
-                            <input type="number" class="form-control" id="multLow" step="0.1" required>
+                            <label for="ahr999_multiplier_low" class="form-label">Low (< 0.45)</label>
+                            <input type="number" class="form-control" id="ahr999_multiplier_low" step="0.1" required>
                         </div>
                         <div class="col-md-4">
-                            <label for="multMid" class="form-label">Mid (0.45 - 1.2)</label>
-                            <input type="number" class="form-control" id="multMid" step="0.1" required>
+                            <label for="ahr999_multiplier_mid" class="form-label">Mid (0.45 - 1.2)</label>
+                            <input type="number" class="form-control" id="ahr999_multiplier_mid" step="0.1" required>
                         </div>
                         <div class="col-md-4">
-                            <label for="multHigh" class="form-label">High (> 1.2)</label>
-                            <input type="number" class="form-control" id="multHigh" step="0.1" required>
+                            <label for="ahr999_multiplier_high" class="form-label">High (> 1.2)</label>
+                            <input type="number" class="form-control" id="ahr999_multiplier_high" step="0.1" required>
                         </div>
                     </div>
 
@@ -98,7 +112,12 @@
                     document.getElementById('ahr999_multiplier_mid').value = strategy.ahr999_multiplier_mid;
                     document.getElementById('ahr999_multiplier_high').value = strategy.ahr999_multiplier_high;
                     document.getElementById('execution_frequency').value = strategy.execution_frequency || 'daily';
+                    document.getElementById('execution_day_of_week').value = strategy.execution_day_of_week || 'monday';
                     document.getElementById('execution_time_utc').value = strategy.execution_time_utc || '00:00';
+                    
+                    // Trigger updates
+                    updateDailyCalc();
+                    toggleDayOfWeek();
                 }
             } catch (error) {
                 console.error('Error loading strategy:', error);
@@ -117,6 +136,7 @@
                 ahr999_multiplier_mid: parseFloat(document.getElementById('ahr999_multiplier_mid').value),
                 ahr999_multiplier_high: parseFloat(document.getElementById('ahr999_multiplier_high').value),
                 execution_frequency: document.getElementById('execution_frequency').value,
+                execution_day_of_week: document.getElementById('execution_frequency').value === 'weekly' ? document.getElementById('execution_day_of_week').value : null,
                 execution_time_utc: document.getElementById('execution_time_utc').value
             };
 
@@ -128,7 +148,8 @@
                 });
                 
                 if (response.ok) {
-                    alert('Strategy saved successfully!');
+                    alert('Strategy saved successfully! Redirecting to dashboard...');
+                    window.location.href = '/';
                 } else {
                     alert('Error saving strategy');
                 }
@@ -137,6 +158,33 @@
                 alert('Error saving strategy');
             }
         });
+
+
+
+        // UX Enhancements
+        function updateDailyCalc() {
+            const total = parseFloat(document.getElementById('total_budget_usd').value) || 0;
+            const daily = total / 30.0; // Approximate
+            const helpText = document.getElementById('dailyBudgetCalc');
+            if (total > 0) {
+                helpText.textContent = `Estimated Daily Amount: $${daily.toFixed(2)} (assuming monthly budget)`;
+            } else {
+                helpText.textContent = '';
+            }
+        }
+
+        function toggleDayOfWeek() {
+            const freq = document.getElementById('execution_frequency').value;
+            const container = document.getElementById('dayOfWeekContainer');
+            if (freq === 'weekly') {
+                container.classList.remove('d-none');
+            } else {
+                container.classList.add('d-none');
+            }
+        }
+
+        document.getElementById('total_budget_usd').addEventListener('input', updateDailyCalc);
+        document.getElementById('execution_frequency').addEventListener('change', toggleDayOfWeek);
 
         loadStrategy();
     </script>

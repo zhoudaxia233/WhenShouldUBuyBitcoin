@@ -26,8 +26,11 @@
             <div class="card-header bg-white d-flex justify-content-between align-items-center">
                 <h5 class="mb-0">DCA Preview & Control</h5>
                 <div>
+                    <span id="dataSourceBadge" class="badge bg-secondary me-2">Source: --</span>
                     <span id="scheduleDisplay" class="badge bg-info text-dark me-2">Loading Schedule...</span>
-                    <span id="previewTimestamp" class="text-muted small"></span>
+                    <button id="refreshBtn" class="btn btn-sm btn-outline-primary" title="Refresh preview">
+                        🔄 Refresh
+                    </button>
                 </div>
             </div>
             <div class="card-body">
@@ -53,8 +56,13 @@
                     </div>
                 </div>
                 
-                <div class="alert alert-light border" id="previewReasonBox">
-                    <strong>Status:</strong> <span id="previewReason">Loading...</span>
+                <div class="alert alert-light border mb-3" id="previewReasonBox">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <strong>Status:</strong> <span id="previewReason">Loading...</span>
+                        </div>
+                        <small class="text-muted" id="previewTimestamp"></small>
+                    </div>
                 </div>
 
                 <div class="d-flex justify-content-end">
@@ -161,6 +169,7 @@
                 const response = await fetch('/api/dca/preview');
                 const decision = await response.json();
                 
+                // Update metrics display
                 document.getElementById('previewAhr').textContent = decision.ahr999_value.toFixed(4);
                 document.getElementById('previewPrice').textContent = '$' + decision.price_usd.toLocaleString();
                 document.getElementById('previewBand').textContent = decision.ahr_band.toUpperCase();
@@ -168,20 +177,17 @@
                     ? `BUY $${decision.suggested_amount_usd.toFixed(2)}` 
                     : 'WAIT';
                 
+                // Update data source (Phase 6)
+                const metricsSource = decision.metrics_source || {backend: 'unknown', label: 'Unknown'};
+                const sourceBadge = document.getElementById('dataSourceBadge');
+                if (sourceBadge) {
+                    sourceBadge.textContent = `Source: ${metricsSource.label}`;
+                    sourceBadge.title = metricsSource.label; // Tooltip for full label
+                }
+                
+                // Update status
                 document.getElementById('previewReason').textContent = decision.reason;
-                document.getElementById('previewTimestamp').textContent = 'Updated: ' + new Date(decision.timestamp).toLocaleTimeString();
-                
-                // Show Metrics Source
-                const sourceBadge = document.createElement('span');
-                sourceBadge.className = 'badge bg-secondary ms-2';
-                sourceBadge.textContent = `Source: ${decision.metrics_source || 'unknown'}`;
-                
-                // Clear previous badge if any
-                const timestampContainer = document.getElementById('previewTimestamp').parentNode;
-                const existingBadge = timestampContainer.querySelector('.badge.bg-secondary');
-                if (existingBadge) existingBadge.remove();
-                
-                timestampContainer.appendChild(sourceBadge);
+                document.getElementById('previewTimestamp').textContent = 'Last updated: ' + new Date(decision.timestamp).toLocaleTimeString();
 
                 const btn = document.getElementById('executeSimulatedBtn');
                 const warningBox = document.getElementById('metricsWarning');
@@ -203,9 +209,22 @@
 
             } catch (error) {
                 console.error('Error loading preview:', error);
-                document.getElementById('previewReason').textContent = 'Error loading data';
+                const reasonElem = document.getElementById('previewReason');
+                if (reasonElem) reasonElem.textContent = 'Error loading data';
             }
         }
+
+        // Refresh button handler (Phase 6)
+        document.getElementById('refreshBtn').addEventListener('click', async () => {
+            const btn = document.getElementById('refreshBtn');
+            btn.disabled = true;
+            btn.textContent = '🔄 Refreshing...';
+            
+            await loadPreview();
+            
+            btn.disabled = false;
+            btn.textContent = '🔄 Refresh';
+        });
 
         document.getElementById('executeSimulatedBtn').addEventListener('click', async () => {
             const btn = document.getElementById('executeSimulatedBtn');
@@ -221,10 +240,12 @@
                 
                 if (result.transaction) {
                     alert(`Success! ${result.message}`);
+                    // Auto-refresh after successful execution (Phase 6)
                     loadTransactions(); // Refresh history
                     loadPreview();      // Refresh preview (budget might have changed)
                 } else {
                     alert(`Skipped: ${result.message}`);
+                    // Don't refresh transactions if skipped, but refresh preview to show updated status
                     loadPreview();
                 }
             } catch (error) {
@@ -235,7 +256,7 @@
             }
         });
 
-        // Load on start
+        // Load on start (Phase 6: auto-refresh on page load)
         loadTransactions();
         loadPreview();
     </script>

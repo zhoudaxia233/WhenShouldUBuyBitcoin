@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional
 from sqlmodel import Field, SQLModel
 
@@ -6,13 +6,28 @@ class DCATransaction(SQLModel, table=True):
     __tablename__ = "dca_transactions"
     
     id: Optional[int] = Field(default=None, primary_key=True)
-    timestamp: datetime = Field(default_factory=datetime.utcnow)
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     status: str  # SUCCESS, FAILED, SKIPPED
-    fiat_amount: float = Field(alias="amount_usd") # Mapping old field if needed, or just renaming
+    
+    # Legacy fields (keep for backwards compatibility)
+    fiat_amount: float = Field(alias="amount_usd")
     btc_amount: Optional[float] = Field(default=None, alias="amount_btc")
     price: float
     ahr999: float = Field(alias="ahr999_value")
     notes: Optional[str] = Field(default=None, alias="note")
+    
+    # New fields for Binance integration (Phase 6)
+    # Intent fields - what we wanted to execute
+    intended_amount_usd: Optional[float] = None
+    
+    # Execution fields - what actually happened (for future Binance fills)
+    executed_amount_usd: Optional[float] = None
+    executed_amount_btc: Optional[float] = None
+    avg_execution_price_usd: Optional[float] = None
+    
+    # Fee fields (for future Binance trading)
+    fee_amount: Optional[float] = None
+    fee_asset: Optional[str] = None
 
     # Pydantic v2 config to allow population by alias
     model_config = {"populate_by_name": True}
@@ -29,7 +44,8 @@ class DCAStrategy(SQLModel, table=True):
     ahr999_multiplier_high: float
     target_btc_amount: float = Field(default=1.0)
     execution_frequency: str = Field(default="daily") # "daily" or "weekly"
+    execution_day_of_week: Optional[str] = Field(default=None) # "monday", "tuesday", etc. (only for weekly)
     execution_time_utc: str = Field(default="00:00") # "HH:MM"
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
