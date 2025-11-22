@@ -11,6 +11,7 @@ class StrategyBase(BaseModel):
     ahr999_multiplier_high: float
     target_btc_amount: float = 1.0
     execution_frequency: str = "daily"
+    execution_day_of_week: Optional[str] = None
     execution_time_utc: str = "00:00"
 
 class StrategyCreate(StrategyBase):
