@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlmodel import Session, select
 
 from dca_service.database import get_session
-from dca_service.models import DCATransaction, ManualTransaction
+from dca_service.models import DCATransaction, ColdWalletEntry
 from dca_service.api.schemas import TransactionRead, SimulationRequest, UnifiedTransaction
 
 router = APIRouter()
@@ -17,8 +17,8 @@ def read_transactions(
     # Fetch DCA transactions
     dca_txs = session.exec(select(DCATransaction)).all()
     
-    # Fetch Manual transactions
-    manual_txs = session.exec(select(ManualTransaction)).all()
+    # Fetch Manual transactions (Cold Wallet)
+    manual_txs = session.exec(select(ColdWalletEntry)).all()
     
     unified_list = []
     
@@ -40,14 +40,14 @@ def read_transactions(
         unified_list.append(UnifiedTransaction(
             id=f"MAN-{tx.id}",
             timestamp=tx.timestamp,
-            type=tx.type,
+            type="MANUAL",
             status="COMPLETED",
             btc_amount=tx.btc_amount,
-            fiat_amount=tx.fiat_amount,
-            price=tx.price_usd,
+            fiat_amount=None,
+            price=None,
             notes=tx.notes,
-            source="MANUAL",
-            fee_usdc=tx.fee_usdc
+            source="LEDGER",
+            fee_usdc=None
         ))
     
     # Sort by timestamp desc

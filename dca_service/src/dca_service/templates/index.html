@@ -41,8 +41,12 @@
                 <div id="holdingsContent" class="d-none">
                     <div class="row text-center mb-3">
                         <div class="col-md-4">
-                            <div class="text-muted small">BTC Balance</div>
+                            <div class="text-muted small">Total BTC Balance</div>
                             <div class="h4" id="btcBalance">--</div>
+                            <div class="small text-muted">
+                                <span id="hotBalance" title="Binance (Hot)">Hot: --</span> | 
+                                <span id="coldBalance" title="Ledger (Cold)">Cold: --</span>
+                            </div>
                         </div>
                         <div class="col-md-4">
                             <div class="text-muted small">Quote Balance (<span id="quoteAsset">USDC</span>)</div>
@@ -67,7 +71,7 @@
                 <h5 class="mb-0">DCA Preview & Control</h5>
                 <div>
                     <button class="btn btn-sm btn-outline-secondary me-2" data-bs-toggle="modal" data-bs-target="#manualEntryModal">
-                        📝 Manual Entry
+                        ❄️ Cold Wallet
                     </button>
                     <span id="dataSourceBadge" class="badge bg-secondary me-2">Source: --</span>
                     <span id="scheduleDisplay" class="badge bg-info text-dark me-2">Loading Schedule...</span>
@@ -225,50 +229,32 @@
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Record Manual Transaction</h5>
+                    <h5 class="modal-title">Update Cold Wallet Balance</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
                     <form id="manualEntryForm">
+                        <div class="alert alert-info small">
+                            Enter the amount of BTC added to your Ledger (Cold Wallet).
+                        </div>
                         <div class="mb-3">
-                            <label class="form-label">Type</label>
-                            <select class="form-select" id="manualType" required>
-                                <option value="BUY">BUY (Purchase)</option>
-                                <option value="TRANSFER_IN">TRANSFER IN (Deposit)</option>
-                                <option value="TRANSFER_OUT">TRANSFER OUT (Withdrawal)</option>
-                                <option value="OTHER">OTHER</option>
-                            </select>
+                            <label class="form-label">BTC Amount</label>
+                            <input type="number" step="0.00000001" class="form-control" id="manualBtc" required>
+                            <div class="form-text">Positive value adds to cold wallet balance.</div>
                         </div>
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label">BTC Amount</label>
-                                <input type="number" step="0.00000001" class="form-control" id="manualBtc" required>
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label">Fiat Amount (USD)</label>
-                                <input type="number" step="0.01" class="form-control" id="manualFiat" required>
-                            </div>
-                        </div>
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label">Price (USD)</label>
-                                <input type="number" step="0.01" class="form-control" id="manualPrice" required>
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label">Fee (USDC) <span class="text-muted small">(Optional)</span></label>
-                                <input type="number" step="0.01" class="form-control" id="manualFee">
-                            </div>
+                        <div class="mb-3">
+                            <label class="form-label">Fee (BTC) <span class="text-muted small">(Optional)</span></label>
+                            <input type="number" step="0.00000001" class="form-control" id="manualFee">
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Notes</label>
-                            <textarea class="form-control" id="manualNotes" rows="2"></textarea>
+                            <textarea class="form-control" id="manualNotes" rows="2" placeholder="e.g. Withdrawal from Binance"></textarea>
                         </div>
                         <div class="mb-3">
-                            <label class="form-label">Timestamp (Optional)</label>
-                            <input type="datetime-local" class="form-control" id="manualTimestamp">
-                            <div class="form-text">Leave blank for current time</div>
+                            <label class="form-label">Timestamp</label>
+                            <input type="datetime-local" class="form-control" id="manualTimestamp" required>
                         </div>
-                        <button type="submit" class="btn btn-primary w-100">Record Transaction</button>
+                        <button type="submit" class="btn btn-primary w-100">Record Entry</button>
                     </form>
                 </div>
             </div>
@@ -325,7 +311,7 @@
                     let feeDisplay = '—';
                     if (tx.fee_amount !== null && tx.fee_amount !== undefined && tx.fee_amount > 0) {
                         const feeAsset = tx.fee_asset || 'USDC';
-                        feeDisplay = `${tx.fee_amount.toFixed(4)} ${feeAsset}`;
+                        feeDisplay = `${tx.fee_amount.toFixed(2)} ${feeAsset}`;
                     }
                     // For 0 or null/undefined fees, show "—" (already set above)
                     
@@ -338,8 +324,8 @@
                         <td>${feeDisplay}</td>
                         <td>${tx.btc_amount ? tx.btc_amount.toFixed(8) : '-'}</td>
                         <td>${tx.price ? '$' + tx.price.toFixed(2) : '-'}</td>
-                        <td>${tx.ahr999 ? tx.ahr999.toFixed(4) : '-'}</td>
-                        <td>${tx.notes || ''}</td>
+                        <td>${tx.ahr999 ? tx.ahr999.toFixed(2) : '-'}</td>
+                        <td>${tx.notes || '—'}</td>
                     `;
                     tbody.appendChild(row);
                 });
@@ -388,7 +374,7 @@
                 const decision = await response.json();
                 
                 // Update metrics display
-                document.getElementById('previewAhr').textContent = decision.ahr999_value.toFixed(4);
+                document.getElementById('previewAhr').textContent = decision.ahr999_value.toFixed(2);
                 document.getElementById('previewPrice').textContent = '$' + decision.price_usd.toLocaleString();
                 document.getElementById('previewBand').textContent = decision.ahr_band.toUpperCase();
                 document.getElementById('previewAction').textContent = decision.can_execute 
@@ -581,10 +567,17 @@
                     contentBox.classList.remove('d-none');
                     
                     document.getElementById('btcBalance').textContent = data.btc_balance.toFixed(8) + ' BTC';
+                    
+                    // Breakdown
+                    const hot = data.binance_btc_balance !== null ? data.binance_btc_balance.toFixed(8) : '0.00000000';
+                    const cold = data.cold_wallet_btc_balance !== null ? data.cold_wallet_btc_balance.toFixed(8) : '0.00000000';
+                    document.getElementById('hotBalance').textContent = `Hot: ${hot}`;
+                    document.getElementById('coldBalance').textContent = `Cold: ${cold}`;
+                    
                     document.getElementById('quoteBalance').textContent = data.quote_balance.toFixed(2);
                     document.getElementById('quoteAsset').textContent = data.quote_asset;
                     
-                    const progress = (data.progress_ratio * 100).toFixed(1);
+                    const progress = (data.progress_ratio * 100).toFixed(5);
                     document.getElementById('progressPercent').textContent = progress + '%';
                     document.getElementById('targetAmount').textContent = `Target: ${data.target_btc_amount} BTC`;
                     document.getElementById('progressBar').style.width = progress + '%';
@@ -660,17 +653,14 @@
             e.preventDefault();
             
             const data = {
-                type: document.getElementById('manualType').value,
                 btc_amount: parseFloat(document.getElementById('manualBtc').value),
-                fiat_amount: document.getElementById('manualFiat').value ? parseFloat(document.getElementById('manualFiat').value) : null,
-                price_usd: document.getElementById('manualPrice').value ? parseFloat(document.getElementById('manualPrice').value) : null,
-                fee_usdc: document.getElementById('manualFee').value ? parseFloat(document.getElementById('manualFee').value) : null,
+                fee_btc: document.getElementById('manualFee').value ? parseFloat(document.getElementById('manualFee').value) : null,
                 notes: document.getElementById('manualNotes').value,
-                timestamp: document.getElementById('manualTimestamp').value || null
+                timestamp: document.getElementById('manualTimestamp').value
             };
             
             try {
-                const response = await fetch('/api/manual_transaction', {
+                const response = await fetch('/api/cold_wallet', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(data)

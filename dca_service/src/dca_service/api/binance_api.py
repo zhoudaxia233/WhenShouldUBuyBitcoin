@@ -33,6 +33,9 @@ class HoldingsSummary(BaseModel):
     quote_asset: str
     target_btc_amount: Optional[float] = None
     progress_ratio: Optional[float] = None
+    # Breakdown
+    binance_btc_balance: Optional[float] = None
+    cold_wallet_btc_balance: Optional[float] = None
 
 @router.post("/credentials")
 def save_credentials(creds: CredentialsSchema, session: Session = Depends(get_session)):
@@ -137,9 +140,9 @@ async def get_holdings(session: Session = Depends(get_session)):
         btc_bal = balances.get("BTC", 0.0)
         quote_bal = balances.get(quote_asset, 0.0)
         
-        # Add manual holdings (Phase 8)
-        from dca_service.models import ManualTransaction
-        manual_txs = session.exec(select(ManualTransaction)).all()
+        # Add manual holdings (Cold Wallet)
+        from dca_service.models import ColdWalletEntry
+        manual_txs = session.exec(select(ColdWalletEntry)).all()
         manual_btc = sum(tx.btc_amount for tx in manual_txs)
         
         total_btc = btc_bal + manual_btc
@@ -152,7 +155,9 @@ async def get_holdings(session: Session = Depends(get_session)):
             quote_balance=quote_bal,
             quote_asset=quote_asset,
             target_btc_amount=target_btc,
-            progress_ratio=progress
+            progress_ratio=progress,
+            binance_btc_balance=btc_bal,
+            cold_wallet_btc_balance=manual_btc
         )
     except Exception as e:
         return HoldingsSummary(

@@ -61,16 +61,13 @@ class BinanceCredentials(SQLModel, table=True):
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
-class ManualTransaction(SQLModel, table=True):
-    __tablename__ = "manual_transactions"
+class ColdWalletEntry(SQLModel, table=True):
+    __tablename__ = "cold_wallet_entries"
     
     id: Optional[int] = Field(default=None, primary_key=True)
     timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-    type: str  # BUY, TRANSFER_IN, TRANSFER_OUT, OTHER
     btc_amount: float
-    fiat_amount: Optional[float] = None
-    price_usd: Optional[float] = None
-    fee_usdc: Optional[float] = None
+    fee_btc: Optional[float] = None
     notes: Optional[str] = None
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
