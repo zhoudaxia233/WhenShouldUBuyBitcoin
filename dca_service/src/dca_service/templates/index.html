@@ -356,8 +356,20 @@
         }
         
         function formatTimestampInTimezone(isoString, timezone) {
-            const date = new Date(isoString);
+            // Ensure the ISO string has a Z or timezone indicator
+            let dateStr = isoString;
+            if (!dateStr.endsWith('Z') && !dateStr.includes('+') && !dateStr.includes('T')) {
+                // If it's just a datetime without timezone, assume UTC
+                dateStr = dateStr.replace(' ', 'T') + 'Z';
+            } else if (!dateStr.endsWith('Z') && dateStr.includes('T') && !dateStr.includes('+')) {
+                // If it has T but no timezone, add Z
+                dateStr = dateStr + 'Z';
+            }
+            
+            const date = new Date(dateStr);
+            
             if (timezone === 'UTC') {
+                // For UTC, use toISOString() which always returns UTC
                 return date.toISOString().replace('T', ' ').substring(0, 19) + ' UTC';
             } else if (timezone === 'Europe/Berlin') {
                 return date.toLocaleString('de-DE', {
