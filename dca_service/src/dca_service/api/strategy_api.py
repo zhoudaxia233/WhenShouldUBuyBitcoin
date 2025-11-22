@@ -5,7 +5,7 @@ from datetime import datetime
 
 from dca_service.database import get_session
 from dca_service.models import DCAStrategy
-from dca_service.api.schemas_strategy import StrategyCreate, StrategyRead, StrategyUpdate
+from dca_service.api.schemas import StrategyCreate, StrategyRead, StrategyUpdate
 
 router = APIRouter()
 
