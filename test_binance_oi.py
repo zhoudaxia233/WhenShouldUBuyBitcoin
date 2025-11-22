@@ -1,5 +1,6 @@
 import requests
 
+
 def test_endpoint(url, params):
     print(f"Testing {url} with {params}...")
     try:
@@ -15,20 +16,18 @@ def test_endpoint(url, params):
         print(f"Error: {e}")
     print("-" * 50)
 
+
 # Test 1: fapi/v1/openInterestHist (The one that failed)
 test_endpoint(
     "https://fapi.binance.com/fapi/v1/openInterestHist",
-    {"symbol": "BTCUSDT", "period": "1d", "limit": 10}
+    {"symbol": "BTCUSDC", "period": "1d", "limit": 10},
 )
 
 # Test 2: futures/data/openInterestHist (Alternative)
 test_endpoint(
     "https://fapi.binance.com/futures/data/openInterestHist",
-    {"symbol": "BTCUSDT", "period": "1d", "limit": 10}
+    {"symbol": "BTCUSDC", "period": "1d", "limit": 10},
 )
 
 # Test 3: fapi/v1/openInterest (Current OI only)
-test_endpoint(
-    "https://fapi.binance.com/fapi/v1/openInterest",
-    {"symbol": "BTCUSDT"}
-)
+test_endpoint("https://fapi.binance.com/fapi/v1/openInterest", {"symbol": "BTCUSDC"})

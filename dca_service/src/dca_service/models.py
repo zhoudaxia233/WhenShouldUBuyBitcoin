@@ -49,3 +49,12 @@ class DCAStrategy(SQLModel, table=True):
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
+class BinanceCredentials(SQLModel, table=True):
+    __tablename__ = "binance_credentials"
+    
+    id: Optional[int] = Field(default=None, primary_key=True)
+    api_key_encrypted: str
+    api_secret_encrypted: str
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
