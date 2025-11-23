@@ -1306,15 +1306,15 @@ def plot_ma_cross_analysis(
     auto_open: bool = False,
 ) -> str:
     """
-    Create an interactive plot of BTC price with 50D/200D MAs, cross signals, and spread.
+    Create an interactive plot of BTC price with 50D/200D/2100D MAs, cross signals, and spread.
 
     Features:
-    - Top subplot: BTC Price (log), 50D MA, 200D MA, Golden/Death Cross markers.
+    - Top subplot: BTC Price (log), 50D MA, 200D MA, 2100D MA (300 weeks), Golden/Death Cross markers.
     - Bottom subplot: MA Spread with structural shading (Bullish/Bearish).
     - Post-Death Cross risk window highlighting.
 
     Args:
-        df: DataFrame with 'date', 'close_price', 'ma_50', 'ma_200', 'ma_spread', 'golden_cross', 'death_cross'.
+        df: DataFrame with 'date', 'close_price', 'ma_50', 'ma_200', 'ma_2100', 'ma_spread', 'golden_cross', 'death_cross'.
         output_filename: Name of the output HTML file (default: "ma_cross_analysis.html")
         auto_open: Whether to automatically open the chart in browser (default: False)
 
@@ -1404,6 +1404,21 @@ def plot_ma_cross_analysis(
         row=1,
         col=1,
     )
+
+    # 4a. 2100D MA (300 weeks)
+    if "ma_2100" in plot_df.columns:
+        fig.add_trace(
+            go.Scatter(
+                x=plot_df["date"],
+                y=plot_df["ma_2100"],
+                mode="lines",
+                name="2100D MA (300W)",
+                line=dict(color="#9C27B0", width=1.5),  # Purple
+                hovertemplate="<b>2100D MA (300W):</b> $%{y:,.2f}<extra></extra>",
+            ),
+            row=1,
+            col=1,
+        )
 
     # 5. Golden Cross Markers
     if "golden_cross" in plot_df.columns:
@@ -1528,7 +1543,8 @@ def plot_ma_cross_analysis(
         text=(
             "<span style='color:black; font-size:18px'><b>—</b></span> <span style='font-size:13px'>BTC Price</span>   "
             "<span style='color:#2962FF; font-size:18px'><b>—</b></span> <span style='font-size:13px'>50D MA</span>   "
-            "<span style='color:#D50000; font-size:18px'><b>—</b></span> <span style='font-size:13px'>200D MA</span><br>"
+            "<span style='color:#D50000; font-size:18px'><b>—</b></span> <span style='font-size:13px'>200D MA</span>   "
+            "<span style='color:#9C27B0; font-size:18px'><b>—</b></span> <span style='font-size:13px'>2100D MA (300W)</span><br>"
             "<span style='color:#00C853; font-size:16px'>▲</span> <span style='font-size:12px'>Golden Cross</span>   "
             "<span style='color:#D50000; font-size:16px'>▼</span> <span style='font-size:12px'>Death Cross</span>"
         ),
