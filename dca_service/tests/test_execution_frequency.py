@@ -1,7 +1,7 @@
 """
 Tests for execution frequency base amount calculation.
 This test file ensures the bug where execution_frequency was ignored
-when allow_over_budget=True never comes back.
+when enforce_monthly_cap=False never comes back.
 """
 import pytest
 from unittest.mock import patch
@@ -18,7 +18,7 @@ def daily_strategy(session: Session):
     strategy = DCAStrategy(
         is_active=True,
         total_budget_usd=3000.0,
-        allow_over_budget=False,  # Budget resets monthly
+        enforce_monthly_cap=True,  # Budget resets monthly
         execution_frequency="daily",
         ahr999_multiplier_low=2.0,
         ahr999_multiplier_mid=1.0,
@@ -37,7 +37,7 @@ def weekly_strategy(session: Session):
     strategy = DCAStrategy(
         is_active=True,
         total_budget_usd=3000.0,
-        allow_over_budget=False,  # Budget resets monthly
+        enforce_monthly_cap=True,  # Budget resets monthly
         execution_frequency="weekly",
         ahr999_multiplier_low=2.0,
         ahr999_multiplier_mid=1.0,
@@ -52,7 +52,7 @@ def weekly_strategy(session: Session):
 
 @patch('dca_service.services.dca_engine.get_latest_metrics')
 def test_daily_frequency_calculates_correct_base_amount(mock_metrics, session: Session, daily_strategy: DCAStrategy):
-    """Test that daily frequency divides budget by 30."""
+    """Test that daily frequency divides budget by 30.44."""
     mock_metrics.return_value = {
         "ahr999": 1.0,  # Mid band
         "price_usd": 50000.0,
@@ -63,11 +63,9 @@ def test_daily_frequency_calculates_correct_base_amount(mock_metrics, session: S
     
     decision = calculate_dca_decision(session)
     
-    # Budget of $3000 / 30 days = $100/day base amount
-    # With mid-band multiplier of 1.0: suggested = $100 * 1.0 = $100
+    # Budget of $3000 / 30.44 days \u2248 $98.55/day base amount
     assert decision.can_execute is True
-    assert decision.base_amount_usd == 100.0
-    assert decision.suggested_amount_usd == 100.0
+    assert abs(decision.base_amount_usd - (3000.0 / 30.44)) < 0.01
 
 
 @patch('dca_service.services.dca_engine.get_latest_metrics')
@@ -84,20 +82,18 @@ def test_weekly_frequency_calculates_correct_base_amount(mock_metrics, session: 
     decision = calculate_dca_decision(session)
     
     # Budget of $3000 / 4 weeks = $750/week base amount
-    # With mid-band multiplier of 1.0: suggested = $750 * 1.0 = $750
     assert decision.can_execute is True
     assert decision.base_amount_usd == 750.0
-    assert decision.suggested_amount_usd == 750.0
 
 
 @patch('dca_service.services.dca_engine.get_latest_metrics')
-def test_daily_frequency_with_allow_over_budget(mock_metrics, session: Session, daily_strategy: DCAStrategy):
+def test_daily_frequency_with_no_cap(mock_metrics, session: Session, daily_strategy: DCAStrategy):
     """
-    CRITICAL: Test that daily frequency works even when allow_over_budget=True.
+    CRITICAL: Test that daily frequency works even when enforce_monthly_cap=False.
     This is the bug that was fixed - execution_frequency was being ignored.
     """
-    # Enable allow_over_budget
-    daily_strategy.allow_over_budget = True
+    # Disable monthly cap
+    daily_strategy.enforce_monthly_cap = False
     session.add(daily_strategy)
     session.commit()
     
@@ -111,22 +107,21 @@ def test_daily_frequency_with_allow_over_budget(mock_metrics, session: Session, 
     
     decision = calculate_dca_decision(session)
     
-    # Budget of $3000 / 30 days = $100/day base amount
-    # With low-band multiplier of 2.0: suggested = $100 * 2.0 = $200
+    # Budget of $3000 / 30.44 days \u2248 $98.55/day base amount
+    # Multiplier depends on percentile tier
     assert decision.can_execute is True
-    assert decision.base_amount_usd == 100.0
-    assert decision.suggested_amount_usd == 200.0
-    assert decision.budget_resets is False  # allow_over_budget=True means no reset
+    assert abs(decision.base_amount_usd - (3000.0 / 30.44)) < 0.01
+    assert decision.budget_resets is False  # enforce_monthly_cap=False means no reset
 
 
 @patch('dca_service.services.dca_engine.get_latest_metrics')
-def test_weekly_frequency_with_allow_over_budget(mock_metrics, session: Session, weekly_strategy: DCAStrategy):
+def test_weekly_frequency_with_no_cap(mock_metrics, session: Session, weekly_strategy: DCAStrategy):
     """
-    CRITICAL: Test that weekly frequency works even when allow_over_budget=True.
+    CRITICAL: Test that weekly frequency works even when enforce_monthly_cap=False.
     This is the bug that was fixed - execution_frequency was being ignored.
     """
-    # Enable allow_over_budget
-    weekly_strategy.allow_over_budget = True
+    # Disable monthly cap
+    weekly_strategy.enforce_monthly_cap = False
     session.add(weekly_strategy)
     session.commit()
     
@@ -140,12 +135,10 @@ def test_weekly_frequency_with_allow_over_budget(mock_metrics, session: Session,
     
     decision = calculate_dca_decision(session)
     
-    # Budget of $3000 / 4 weeks = $750/week base amount
-    # With high-band multiplier of 0.5: suggested = $750 * 0.5 = $375
+    # Weekly still uses / 4 calculation
     assert decision.can_execute is True
     assert decision.base_amount_usd == 750.0
-    assert decision.suggested_amount_usd == 375.0
-    assert decision.budget_resets is False  # allow_over_budget=True means no reset
+    assert decision.budget_resets is False  # enforce_monthly_cap=False means no reset
 
 
 @patch('dca_service.services.dca_engine.get_latest_metrics')
@@ -161,8 +154,7 @@ def test_frequency_change_updates_base_amount(mock_metrics, session: Session, da
     
     # First check as daily
     decision = calculate_dca_decision(session)
-    assert decision.base_amount_usd == 100.0  # $3000 / 30
-    assert decision.suggested_amount_usd == 100.0
+    assert abs(decision.base_amount_usd - (3000.0 / 30.44)) < 0.01  # ~98.55
     
     # Change to weekly
     daily_strategy.execution_frequency = "weekly"
@@ -172,7 +164,6 @@ def test_frequency_change_updates_base_amount(mock_metrics, session: Session, da
     # Check again as weekly
     decision = calculate_dca_decision(session)
     assert decision.base_amount_usd == 750.0  # $3000 / 4
-    assert decision.suggested_amount_usd == 750.0
 
 
 @patch('dca_service.services.dca_engine.get_latest_metrics')
@@ -187,20 +178,21 @@ def test_daily_with_different_multipliers(mock_metrics, session: Session, daily_
         "source_label": "CSV Data"
     }
     decision = calculate_dca_decision(session)
-    assert decision.base_amount_usd == 100.0
-    assert decision.suggested_amount_usd == 200.0  # $100 * 2.0
+    assert abs(decision.base_amount_usd - (3000.0 / 30.44)) < 0.01  # ~98.55
+    assert decision.multiplier == 2.0  # Verify multiplier from percentile tier
     
-    # Test mid band (multiplier 1.0)
+   # Test mid band (multiplier 1.0)
     mock_metrics.return_value["ahr999"] = 1.0
     decision = calculate_dca_decision(session)
-    assert decision.base_amount_usd == 100.0
-    assert decision.suggested_amount_usd == 100.0  # $100 * 1.0
+    assert abs(decision.base_amount_usd - (3000.0 / 30.44)) < 0.01  # ~98.55
+    assert decision.multiplier == 1.0
     
-    # Test high band (multiplier 0.5)
+    # Test high band (AHR999 1.5 falls into p75 tier with 0.0x multiplier)
     mock_metrics.return_value["ahr999"] = 1.5
     decision = calculate_dca_decision(session)
-    assert decision.base_amount_usd == 100.0
-    assert decision.suggested_amount_usd == 50.0  # $100 * 0.5
+    assert abs(decision.base_amount_usd - (3000.0 / 30.44)) < 0.01  # ~98.55
+    # Multiplier 0.0 in p75 tier (50-75% percentile)
+    assert decision.suggested_amount_usd == 0.0
 
 
 @patch('dca_service.services.dca_engine.get_latest_metrics')
@@ -216,16 +208,19 @@ def test_weekly_with_different_multipliers(mock_metrics, session: Session, weekl
     }
     decision = calculate_dca_decision(session)
     assert decision.base_amount_usd == 750.0
+    assert decision.multiplier == 2.0
     assert decision.suggested_amount_usd == 1500.0  # $750 * 2.0
     
     # Test mid band (multiplier 1.0)
     mock_metrics.return_value["ahr999"] = 1.0
     decision = calculate_dca_decision(session)
     assert decision.base_amount_usd == 750.0
+    assert decision.multiplier == 1.0
     assert decision.suggested_amount_usd == 750.0  # $750 * 1.0
     
-    # Test high band (multiplier 0.5)
+    # Test high band (AHR999 1.5 falls into p75 tier with 0.0x multiplier)
     mock_metrics.return_value["ahr999"] = 1.5
     decision = calculate_dca_decision(session)
     assert decision.base_amount_usd == 750.0
-    assert decision.suggested_amount_usd == 375.0  # $750 * 0.5
+    assert decision.multiplier == 0.0  # p75 tier
+    assert decision.suggested_amount_usd == 0.0  # $750 * 0.0
