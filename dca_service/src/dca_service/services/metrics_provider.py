@@ -26,6 +26,7 @@ class MetricsSource:
 class Metrics:
     ahr999: float
     price_usd: float
+    peak180: float
     timestamp: datetime
     source: MetricsSource
 
@@ -65,6 +66,18 @@ class CsvMetricsBackend:
                 price_usd = float(last_row[COL_PRICE])
                 ahr999 = float(last_row[COL_AHR999])
                 
+                # Calculate peak180 from last 180 rows
+                # Get last 180 rows (including current)
+                last_180_rows = rows[-180:]
+                prices_180 = []
+                for r in last_180_rows:
+                    try:
+                        prices_180.append(float(r[COL_PRICE]))
+                    except (ValueError, KeyError):
+                        continue
+                
+                peak180 = max(prices_180) if prices_180 else price_usd
+                
                 # Check for NaN/Inf
                 if price_usd != price_usd or ahr999 != ahr999:
                     raise ValueError("Metrics contain NaN values")
@@ -78,6 +91,7 @@ class CsvMetricsBackend:
                 return Metrics(
                     ahr999=ahr999,
                     price_usd=price_usd,
+                    peak180=peak180,
                     timestamp=timestamp,
                     source=MetricsSource(
                         backend="csv",
@@ -103,6 +117,7 @@ class RealtimeMetricsBackend:
             ahr999 = data.get("ahr999")
             price_usd = data.get("realtime_price")
             timestamp = data.get("timestamp")
+            peak180 = data.get("peak180", price_usd) # Fallback to current price if missing
             
             # Validate
             if ahr999 is None or price_usd is None or timestamp is None:
@@ -129,6 +144,7 @@ class RealtimeMetricsBackend:
             return Metrics(
                 ahr999=ahr999,
                 price_usd=price_usd,
+                peak180=peak180,
                 timestamp=timestamp,
                 source=MetricsSource(
                     backend="realtime",
@@ -161,6 +177,7 @@ def get_latest_metrics() -> Optional[Dict[str, Any]]:
         return {
             "ahr999": metrics.ahr999,
             "price_usd": metrics.price_usd,
+            "peak180": metrics.peak180,
             "timestamp": metrics.timestamp,
             "source": metrics.source.backend,
             "source_label": metrics.source.label
@@ -177,6 +194,7 @@ def get_latest_metrics() -> Optional[Dict[str, Any]]:
                 return {
                     "ahr999": metrics.ahr999,
                     "price_usd": metrics.price_usd,
+                    "peak180": metrics.peak180,
                     "timestamp": metrics.timestamp,
                     "source": "csv",
                     "source_label": "Historical CSV [fallback]"

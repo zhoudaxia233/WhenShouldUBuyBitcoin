@@ -74,19 +74,97 @@
                         </div>
                     </div>
 
-                    <h6 class="mt-4 mb-3">AHR999 Multipliers</h6>
-                    <div class="row mb-3">
-                        <div class="col-md-4">
-                            <label for="ahr999_multiplier_low" class="form-label">Low (< 0.45)</label>
-                            <input type="number" class="form-control" id="ahr999_multiplier_low" step="0.1" required>
+                    <!-- Strategy Logic Section -->
+                    <h5 class="mt-4 mb-3">Strategy Logic</h5>
+                    
+                    <div class="row">
+                        <div class="col-12 mb-3">
+                            <label for="strategy_type" class="form-label">Strategy Type</label>
+                            <select class="form-select" id="strategy_type">
+                                <option value="legacy_band">Legacy Band Strategy (Simple)</option>
+                                <option value="dynamic_ahr999">Dynamic AHR999 Strategy (Advanced)</option>
+                            </select>
+                            <div class="form-text text-muted">
+                                Choose between the classic band-based approach or the new continuous curve strategy.
+                            </div>
                         </div>
-                        <div class="col-md-4">
-                            <label for="ahr999_multiplier_mid" class="form-label">Mid (0.45 - 1.2)</label>
-                            <input type="number" class="form-control" id="ahr999_multiplier_mid" step="0.1" required>
+                    </div>
+
+                    <!-- Legacy Config Section -->
+                    <div id="legacyConfigSection">
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label for="ahr999_multiplier_low" class="form-label">Low Multiplier (< 0.45)</label>
+                                <input type="number" class="form-control" id="ahr999_multiplier_low" step="0.1">
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="ahr999_multiplier_mid" class="form-label">Mid Multiplier (0.45 - 1.2)</label>
+                                <input type="number" class="form-control" id="ahr999_multiplier_mid" step="0.1">
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="ahr999_multiplier_high" class="form-label">High Multiplier (> 1.2)</label>
+                                <input type="number" class="form-control" id="ahr999_multiplier_high" step="0.1">
+                            </div>
                         </div>
-                        <div class="col-md-4">
-                            <label for="ahr999_multiplier_high" class="form-label">High (> 1.2)</label>
-                            <input type="number" class="form-control" id="ahr999_multiplier_high" step="0.1" required>
+                    </div>
+
+                    <!-- Dynamic Config Section -->
+                    <div id="dynamicConfigSection" class="d-none">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="dynamic_min_multiplier" class="form-label">Min Multiplier</label>
+                                <input type="number" class="form-control" id="dynamic_min_multiplier" step="0.1" value="0.0">
+                                <div class="form-text text-muted">Floor multiplier when Bitcoin is expensive.</div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="dynamic_max_multiplier" class="form-label">Max Multiplier</label>
+                                <input type="number" class="form-control" id="dynamic_max_multiplier" step="0.1" value="10.0">
+                                <div class="form-text text-muted">Ceiling multiplier when Bitcoin is cheap.</div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="dynamic_a_low" class="form-label">Low AHR (Max Buy)</label>
+                                <input type="number" class="form-control" id="dynamic_a_low" step="0.01" value="0.45">
+                                <div class="form-text text-muted">AHR999 value where buying is maximized.</div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="dynamic_a_high" class="form-label">High AHR (Min Buy)</label>
+                                <input type="number" class="form-control" id="dynamic_a_high" step="0.01" value="1.0">
+                                <div class="form-text text-muted">AHR999 value where buying stops (or hits min).</div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="dynamic_gamma" class="form-label">Gamma (Aggressiveness)</label>
+                                <input type="number" class="form-control" id="dynamic_gamma" step="0.1" value="2.0">
+                                <div class="form-text text-muted">Higher values buy more aggressively only when very cheap.</div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Drawdown Boost</label>
+                                <div class="form-check form-switch mt-2">
+                                    <input class="form-check-input" type="checkbox" id="dynamic_enable_drawdown_boost" checked>
+                                    <label class="form-check-label" for="dynamic_enable_drawdown_boost">Enable Drawdown Boost</label>
+                                </div>
+                                <div class="form-text text-muted">Boosts multiplier up to 2x if price is far below 180-day peak.</div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Monthly Cap</label>
+                                <div class="form-check form-switch mt-2">
+                                    <input class="form-check-input" type="checkbox" id="dynamic_enable_monthly_cap" checked>
+                                    <label class="form-check-label" for="dynamic_enable_monthly_cap">Enable Monthly Cap</label>
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-3" id="monthlyCapInput">
+                                <label for="dynamic_monthly_cap" class="form-label">Monthly Cap Amount (USD)</label>
+                                <input type="number" class="form-control" id="dynamic_monthly_cap" step="10" value="800">
+                                <div class="form-text text-muted">Maximum USD to spend per calendar month.</div>
+                            </div>
                         </div>
                     </div>
 
@@ -118,16 +196,33 @@
                     document.getElementById('total_budget_usd').value = strategy.total_budget_usd;
                     document.getElementById('allow_over_budget').checked = strategy.allow_over_budget;
                     document.getElementById('target_btc_amount').value = strategy.target_btc_amount;
-                    document.getElementById('ahr999_multiplier_low').value = strategy.ahr999_multiplier_low;
-                    document.getElementById('ahr999_multiplier_mid').value = strategy.ahr999_multiplier_mid;
-                    document.getElementById('ahr999_multiplier_high').value = strategy.ahr999_multiplier_high;
                     document.getElementById('execution_frequency').value = strategy.execution_frequency || 'daily';
                     document.getElementById('execution_day_of_week').value = strategy.execution_day_of_week || 'monday';
                     document.getElementById('execution_time_utc').value = strategy.execution_time_utc || '00:00';
                     
+                    // Strategy Type
+                    document.getElementById('strategy_type').value = strategy.strategy_type || 'legacy_band';
+
+                    // Legacy Fields
+                    document.getElementById('ahr999_multiplier_low').value = strategy.ahr999_multiplier_low;
+                    document.getElementById('ahr999_multiplier_mid').value = strategy.ahr999_multiplier_mid;
+                    document.getElementById('ahr999_multiplier_high').value = strategy.ahr999_multiplier_high;
+                    
+                    // Dynamic Fields
+                    document.getElementById('dynamic_min_multiplier').value = strategy.dynamic_min_multiplier !== null ? strategy.dynamic_min_multiplier : 0.0;
+                    document.getElementById('dynamic_max_multiplier').value = strategy.dynamic_max_multiplier !== null ? strategy.dynamic_max_multiplier : 10.0;
+                    document.getElementById('dynamic_gamma').value = strategy.dynamic_gamma !== null ? strategy.dynamic_gamma : 2.0;
+                    document.getElementById('dynamic_a_low').value = strategy.dynamic_a_low !== null ? strategy.dynamic_a_low : 0.45;
+                    document.getElementById('dynamic_a_high').value = strategy.dynamic_a_high !== null ? strategy.dynamic_a_high : 1.0;
+                    document.getElementById('dynamic_enable_drawdown_boost').checked = strategy.dynamic_enable_drawdown_boost !== null ? strategy.dynamic_enable_drawdown_boost : true;
+                    document.getElementById('dynamic_enable_monthly_cap').checked = strategy.dynamic_enable_monthly_cap !== null ? strategy.dynamic_enable_monthly_cap : true;
+                    document.getElementById('dynamic_monthly_cap').value = strategy.dynamic_monthly_cap !== null ? strategy.dynamic_monthly_cap : 800.0;
+                    
                     // Trigger updates
                     updateDailyCalc();
                     toggleDayOfWeek();
+                    toggleStrategyType();
+                    toggleMonthlyCapInput();
                 }
             } catch (error) {
                 console.error('Error loading strategy:', error);
@@ -142,12 +237,27 @@
                 total_budget_usd: parseFloat(document.getElementById('total_budget_usd').value),
                 allow_over_budget: document.getElementById('allow_over_budget').checked,
                 target_btc_amount: parseFloat(document.getElementById('target_btc_amount').value),
-                ahr999_multiplier_low: parseFloat(document.getElementById('ahr999_multiplier_low').value),
-                ahr999_multiplier_mid: parseFloat(document.getElementById('ahr999_multiplier_mid').value),
-                ahr999_multiplier_high: parseFloat(document.getElementById('ahr999_multiplier_high').value),
                 execution_frequency: document.getElementById('execution_frequency').value,
                 execution_day_of_week: document.getElementById('execution_frequency').value === 'weekly' ? document.getElementById('execution_day_of_week').value : null,
-                execution_time_utc: document.getElementById('execution_time_utc').value
+                execution_time_utc: document.getElementById('execution_time_utc').value,
+                
+                // Strategy Type
+                strategy_type: document.getElementById('strategy_type').value,
+                
+                // Legacy Fields
+                ahr999_multiplier_low: parseFloat(document.getElementById('ahr999_multiplier_low').value) || 0,
+                ahr999_multiplier_mid: parseFloat(document.getElementById('ahr999_multiplier_mid').value) || 0,
+                ahr999_multiplier_high: parseFloat(document.getElementById('ahr999_multiplier_high').value) || 0,
+                
+                // Dynamic Fields
+                dynamic_min_multiplier: parseFloat(document.getElementById('dynamic_min_multiplier').value),
+                dynamic_max_multiplier: parseFloat(document.getElementById('dynamic_max_multiplier').value),
+                dynamic_gamma: parseFloat(document.getElementById('dynamic_gamma').value),
+                dynamic_a_low: parseFloat(document.getElementById('dynamic_a_low').value),
+                dynamic_a_high: parseFloat(document.getElementById('dynamic_a_high').value),
+                dynamic_enable_drawdown_boost: document.getElementById('dynamic_enable_drawdown_boost').checked,
+                dynamic_enable_monthly_cap: document.getElementById('dynamic_enable_monthly_cap').checked,
+                dynamic_monthly_cap: parseFloat(document.getElementById('dynamic_monthly_cap').value)
             };
 
             try {
@@ -194,9 +304,35 @@
                 container.classList.add('d-none');
             }
         }
+        
+        function toggleStrategyType() {
+            const type = document.getElementById('strategy_type').value;
+            const legacySection = document.getElementById('legacyConfigSection');
+            const dynamicSection = document.getElementById('dynamicConfigSection');
+            
+            if (type === 'dynamic_ahr999') {
+                legacySection.classList.add('d-none');
+                dynamicSection.classList.remove('d-none');
+            } else {
+                legacySection.classList.remove('d-none');
+                dynamicSection.classList.add('d-none');
+            }
+        }
+        
+        function toggleMonthlyCapInput() {
+            const enabled = document.getElementById('dynamic_enable_monthly_cap').checked;
+            const inputDiv = document.getElementById('monthlyCapInput');
+            if (enabled) {
+                inputDiv.classList.remove('d-none');
+            } else {
+                inputDiv.classList.add('d-none');
+            }
+        }
 
         document.getElementById('total_budget_usd').addEventListener('input', updateDailyCalc);
         document.getElementById('execution_frequency').addEventListener('change', toggleDayOfWeek);
+        document.getElementById('strategy_type').addEventListener('change', toggleStrategyType);
+        document.getElementById('dynamic_enable_monthly_cap').addEventListener('change', toggleMonthlyCapInput);
 
         loadStrategy();
     </script>

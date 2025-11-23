@@ -80,6 +80,17 @@ class StrategyBase(BaseModel):
     execution_frequency: str = "daily"
     execution_day_of_week: Optional[str] = None
     execution_time_utc: str = "00:00"
+    
+    # Dynamic Strategy Config
+    strategy_type: str = "legacy_band" # "legacy_band" or "dynamic_ahr999"
+    dynamic_min_multiplier: Optional[float] = None
+    dynamic_max_multiplier: Optional[float] = None
+    dynamic_gamma: Optional[float] = None
+    dynamic_a_low: Optional[float] = None
+    dynamic_a_high: Optional[float] = None
+    dynamic_enable_drawdown_boost: Optional[bool] = None
+    dynamic_enable_monthly_cap: Optional[bool] = None
+    dynamic_monthly_cap: Optional[float] = None
 
 class StrategyCreate(StrategyBase):
     pass
