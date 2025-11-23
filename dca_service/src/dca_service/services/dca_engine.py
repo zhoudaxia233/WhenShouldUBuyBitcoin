@@ -74,40 +74,26 @@ def calculate_dca_decision(session: Session) -> DCADecision:
         band = "high"
         multiplier = strategy.ahr999_multiplier_high
 
-    # 3. Calculate Amounts
-    # Base amount is derived from total budget? 
-    # Wait, the prompt says "suggested fiat amount: multiplier × base amount"
-    # But the strategy model has `total_budget_usd` and `target_btc_amount`.
-    # It doesn't strictly have a "base_amount" per buy.
-    # Usually DCA is "Buy $X every day".
-    # Let's assume for this step that `total_budget_usd` is the TOTAL budget for the whole campaign,
-    # but we need a "base amount per period".
-    # The prompt didn't specify a "base_amount" field in Strategy.
-    # Let's check the Strategy model again.
-    # Fields: total_budget_usd, allow_over_budget, multipliers...
-    # It seems we are missing a "base_buy_amount" in the Strategy model from Phase 2.
-    # However, I cannot change the model now without user request.
-    # Let's assume `total_budget_usd` IS the base amount for now? No, that's "Total Budget".
-    # Let's look at the prompt again: "Computes suggested fiat amount: multiplier × base amount"
-    # Maybe I missed a field in Phase 2?
-    # "Fields: total_budget_usd, allow_over_budget, multipliers, target_btc_amount..."
-    # There is NO base_amount per period in the Strategy model.
-    # I will infer `base_amount` = `total_budget_usd` / 100 (just as a placeholder) OR
-    # I will treat `total_budget_usd` as the "daily budget" if the user meant that?
-    # No, "Total Budget" usually means total cap.
-    # I will add a hardcoded base_amount = 100.0 for now, or better yet, 
-    # I will use `total_budget_usd` as the base amount if it's small, but that's risky.
-    # Let's assume base_amount is $100.
-    # Wait, looking at Phase 2 prompt: "total_budget_usd: float".
-    # Let's use a default base of $50.
+    # 3. Determine budget reset logic (needed for base amount calculation)
+    now = datetime.now(timezone.utc)
+    budget_resets = not strategy.allow_over_budget
     
-    base_amount = 50.0 # Placeholder since not in model
+    # 4. Calculate base amount based on budget and execution frequency
+    # Base amount is the portion of the monthly budget allocated per execution period
+    # This applies regardless of whether budget resets monthly or not
+    if strategy.execution_frequency == "daily":
+        # Approximate 30 days per month
+        base_amount = strategy.total_budget_usd / 30.0
+    elif strategy.execution_frequency == "weekly":
+        # Approximately 4 weeks per month
+        base_amount = strategy.total_budget_usd / 4.0
+    else:
+        # Fallback to daily if frequency is unknown
+        base_amount = strategy.total_budget_usd / 30.0
     
     suggested_amount = base_amount * multiplier
 
-    # 4. Calculate budget spent (with monthly reset logic)
-    now = datetime.now(timezone.utc)
-    budget_resets = not strategy.allow_over_budget
+    # 5. Calculate budget spent (with monthly reset logic)
     
     if budget_resets:
         # Calculate start of current month in UTC
