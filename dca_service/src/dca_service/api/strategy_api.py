@@ -6,6 +6,7 @@ from datetime import datetime
 from dca_service.database import get_session
 from dca_service.models import DCAStrategy
 from dca_service.api.schemas import StrategyCreate, StrategyRead, StrategyUpdate
+from dca_service.services.metrics_provider import calculate_ahr999_percentile_thresholds
 
 router = APIRouter()
 
@@ -59,3 +60,12 @@ def delete_strategy(session: Session = Depends(get_session)):
     session.delete(strategy)
     session.commit()
     return {"ok": True}
+
+@router.get("/metrics/percentiles")
+def get_percentile_thresholds():
+    """Get AHR999 percentile thresholds calculated from historical data"""
+    try:
+        percentiles = calculate_ahr999_percentile_thresholds()
+        return percentiles
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error calculating percentiles: {str(e)}")

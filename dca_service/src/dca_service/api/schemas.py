@@ -73,9 +73,18 @@ class StrategyBase(BaseModel):
     is_active: bool = False
     total_budget_usd: float
     enforce_monthly_cap: bool = True
-    ahr999_multiplier_low: float
-    ahr999_multiplier_mid: float
-    ahr999_multiplier_high: float
+    ahr999_multiplier_low: float  # Legacy field, kept for backward compatibility
+    ahr999_multiplier_mid: float  # Legacy field, kept for backward compatibility
+    ahr999_multiplier_high: float  # Legacy field, kept for backward compatibility
+    
+    # AHR999 Percentile Strategy multipliers (6 tiers)
+    ahr999_multiplier_p10: Optional[float] = None  # Bottom 10% (EXTREME CHEAP)
+    ahr999_multiplier_p25: Optional[float] = None  # 10-25% (Very Cheap)
+    ahr999_multiplier_p50: Optional[float] = None  # 25-50% (Cheap)
+    ahr999_multiplier_p75: Optional[float] = None  # 50-75% (Fair)
+    ahr999_multiplier_p90: Optional[float] = None  # 75-90% (Expensive)
+    ahr999_multiplier_p100: Optional[float] = None  # Top 10% (VERY EXPENSIVE)
+    
     target_btc_amount: float = 1.0
     execution_frequency: str = "daily"
     execution_day_of_week: Optional[str] = None

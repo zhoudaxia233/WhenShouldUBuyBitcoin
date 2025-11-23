@@ -2270,6 +2270,67 @@
             }
         }
 
+        // Update AHR999 percentile range displays with calculated values
+        async function updateAHR999PercentileRanges() {
+            try {
+                // Get DataLoader instance (it's created when backtest runs, but we need it earlier)
+                // For now, we'll calculate from the CSV data directly
+                const response = await fetch('data/btc_metrics.csv');
+                if (!response.ok) return;
+                
+                const csvText = await response.text();
+                const lines = csvText.trim().split('\n');
+                if (lines.length < 2) return;
+                
+                // Parse CSV
+                const headers = lines[0].split(',');
+                const ahr999Index = headers.indexOf('ahr999');
+                if (ahr999Index === -1) return;
+                
+                // Extract AHR999 values
+                const ahr999Values = [];
+                for (let i = 1; i < lines.length; i++) {
+                    const values = lines[i].split(',');
+                    if (values[ahr999Index]) {
+                        const val = parseFloat(values[ahr999Index]);
+                        if (!isNaN(val)) {
+                            ahr999Values.push(val);
+                        }
+                    }
+                }
+                
+                if (ahr999Values.length === 0) return;
+                
+                // Calculate percentiles
+                const sorted = [...ahr999Values].sort((a, b) => a - b);
+                const getPercentileValue = (percentile) => {
+                    const index = Math.floor((percentile / 100) * sorted.length);
+                    return sorted[Math.min(index, sorted.length - 1)];
+                };
+                
+                const p10 = getPercentileValue(10);
+                const p25 = getPercentileValue(25);
+                const p50 = getPercentileValue(50);
+                const p75 = getPercentileValue(75);
+                const p90 = getPercentileValue(90);
+                
+                // Update UI
+                const updateRange = (id, text) => {
+                    const elem = document.getElementById(id);
+                    if (elem) elem.textContent = text;
+                };
+                
+                updateRange('ahr999-range-p10', `(AHR999 < ${p10.toFixed(2)})`);
+                updateRange('ahr999-range-p25', `(${p10.toFixed(2)} - ${p25.toFixed(2)})`);
+                updateRange('ahr999-range-p50', `(${p25.toFixed(2)} - ${p50.toFixed(2)})`);
+                updateRange('ahr999-range-p75', `(${p50.toFixed(2)} - ${p75.toFixed(2)})`);
+                updateRange('ahr999-range-p90', `(${p75.toFixed(2)} - ${p90.toFixed(2)})`);
+                updateRange('ahr999-range-p100', `(AHR999 ≥ ${p90.toFixed(2)})`);
+            } catch (error) {
+                console.error('Error updating AHR999 percentile ranges:', error);
+            }
+        }
+
         // Initialize function
         function initializeBacktestUI() {
             // Update strategy config panels
@@ -2277,6 +2338,7 @@
             updateDailyAmount();
             updatePercentileTiers();
             validateFutureDateForStrategies();
+            updateAHR999PercentileRanges(); // Update AHR999 ranges with calculated values
             
             // Update when strategy changes
             document.querySelectorAll('input[name="backtestStrategy"]').forEach(radio => {
