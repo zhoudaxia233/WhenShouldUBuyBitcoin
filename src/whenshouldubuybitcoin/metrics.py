@@ -506,6 +506,7 @@ def add_ma_metrics(df: pd.DataFrame) -> pd.DataFrame:
     Calculates:
     - 50-day SMA
     - 200-day SMA
+    - 2100-day SMA (300 weeks)
     - MA spread (50D - 200D)
     - Cross events (Golden Cross, Death Cross)
     
@@ -520,6 +521,7 @@ def add_ma_metrics(df: pd.DataFrame) -> pd.DataFrame:
     # Calculate MAs
     df["ma_50"] = df["close_price"].rolling(window=50).mean()
     df["ma_200"] = df["close_price"].rolling(window=200).mean()
+    df["ma_2100"] = df["close_price"].rolling(window=2100).mean()  # 300 weeks
     
     # Calculate Spread
     df["ma_spread"] = df["ma_50"] - df["ma_200"]
