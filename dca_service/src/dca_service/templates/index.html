@@ -123,7 +123,7 @@
                 
                 <div class="alert alert-light border mb-3" id="previewReasonBox">
                     <div>
-                        <strong>Status:</strong> <span id="previewReason">Loading...</span>
+                        <strong>Status:</strong> <span id="previewReason" style="white-space: pre-line; font-family: monospace; font-size: 0.9em;">Loading...</span>
                     </div>
                 </div>
 
@@ -518,8 +518,12 @@
                     sourceBadge.title = metricsSource.label; // Tooltip for full label
                 }
                 
-                // Update status
-                document.getElementById('previewReason').textContent = decision.reason;
+                // Update status (support line breaks)
+                const reasonElem = document.getElementById('previewReason');
+                if (reasonElem) {
+                    // Replace " | " with newlines for better readability
+                    reasonElem.textContent = decision.reason.replace(/\s*\|\s*/g, '\n');
+                }
                 
                 // Update global refresh timestamp
                 updateGlobalRefreshTime(decision.timestamp);

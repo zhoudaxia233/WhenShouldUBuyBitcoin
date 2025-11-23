@@ -139,9 +139,15 @@
 
                         <div class="row">
                             <div class="col-md-6 mb-3">
-                                <label for="dynamic_gamma" class="form-label">Gamma (Aggressiveness)</label>
-                                <input type="number" class="form-control" id="dynamic_gamma" step="0.1" value="2.0">
-                                <div class="form-text text-muted">Higher values buy more aggressively only when very cheap.</div>
+                                <label for="dynamic_gamma" class="form-label">Gamma (Curve Shape)</label>
+                                <input type="number" class="form-control" id="dynamic_gamma" step="0.1" value="2.0" min="0.5" max="10.0">
+                                <div class="form-text text-muted">
+                                    Controls how aggressively to invest when Bitcoin is cheap. 
+                                    <strong>Recommended: 1.0-3.0</strong> (2.0 is balanced). 
+                                    Lower values (1.0-2.0) = more gradual increase. 
+                                    Higher values (3.0-5.0) = only invest heavily when extremely cheap. 
+                                    Values &gt; 5.0 are too extreme and not recommended.
+                                </div>
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label class="form-label">Drawdown Boost</label>
