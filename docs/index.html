@@ -1518,6 +1518,13 @@
                                 <button type="button" class="strategy-info-btn" onclick="showStrategyInfo('ahr999-percentile'); event.stopPropagation();">i</button>
                             </label>
                         </div>
+                        <div class="strategy-option">
+                            <input type="radio" id="strategy-dynamic-ahr999" name="backtestStrategy" value="dynamic-ahr999" />
+                            <label for="strategy-dynamic-ahr999">
+                                Dynamic AHR999 (Advanced)
+                                <button type="button" class="strategy-info-btn" onclick="showStrategyInfo('dynamic-ahr999'); event.stopPropagation();">i</button>
+                            </label>
+                        </div>
                     </div>
 
                     <!-- Strategy-specific configs -->
@@ -1619,6 +1626,67 @@
                                 </div>
                                 <div class="tier-daily" id="tier-p100-amount">$0/day</div>
                             </div>
+                        </div>
+                    </div>
+
+                    <div id="dynamicAhr999Config" class="strategy-config">
+                        <label style="display: block; margin-bottom: 12px;">Dynamic AHR999 Strategy Configuration</label>
+                        <p style="font-size: 12px; color: #86868b; margin-bottom: 12px;">
+                            Configure the continuous curve strategy with power law multiplier and optional drawdown boost.
+                        </p>
+
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
+                            <div>
+                                <label for="dynamic-min-multiplier" style="display: block; margin-bottom: 4px; font-size: 13px;">Min Multiplier</label>
+                                <input type="number" id="dynamic-min-multiplier" value="0.0" min="0" max="10" step="0.1" style="width: 100%; padding: 8px; border: 1px solid #d2d2d7; border-radius: 6px;" />
+                                <p style="font-size: 11px; color: #86868b; margin-top: 4px;">Floor multiplier when Bitcoin is expensive</p>
+                            </div>
+                            <div>
+                                <label for="dynamic-max-multiplier" style="display: block; margin-bottom: 4px; font-size: 13px;">Max Multiplier</label>
+                                <input type="number" id="dynamic-max-multiplier" value="10.0" min="0" max="20" step="0.1" style="width: 100%; padding: 8px; border: 1px solid #d2d2d7; border-radius: 6px;" />
+                                <p style="font-size: 11px; color: #86868b; margin-top: 4px;">Ceiling multiplier when Bitcoin is cheap</p>
+                            </div>
+                        </div>
+
+                        <div style="margin-bottom: 16px;">
+                            <label for="dynamic-gamma" style="display: block; margin-bottom: 4px; font-size: 13px;">Gamma (Curve Shape)</label>
+                            <input type="number" id="dynamic-gamma" value="2.0" min="0.5" max="10" step="0.1" style="width: 100%; padding: 8px; border: 1px solid #d2d2d7; border-radius: 6px;" />
+                            <p style="font-size: 11px; color: #86868b; margin-top: 4px;">
+                                Controls curve shape. Recommended: 1.0-3.0 (2.0 is balanced). Higher values = more aggressive (only invest heavily when extremely cheap).
+                            </p>
+                        </div>
+
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
+                            <div>
+                                <label for="dynamic-a-low" style="display: block; margin-bottom: 4px; font-size: 13px;">Low AHR (Max Buy)</label>
+                                <input type="number" id="dynamic-a-low" value="0.45" min="0" max="2" step="0.01" style="width: 100%; padding: 8px; border: 1px solid #d2d2d7; border-radius: 6px;" />
+                                <p style="font-size: 11px; color: #86868b; margin-top: 4px;">AHR999 value where buying is maximized</p>
+                            </div>
+                            <div>
+                                <label for="dynamic-a-high" style="display: block; margin-bottom: 4px; font-size: 13px;">High AHR (Min Buy)</label>
+                                <input type="number" id="dynamic-a-high" value="1.0" min="0" max="5" step="0.01" style="width: 100%; padding: 8px; border: 1px solid #d2d2d7; border-radius: 6px;" />
+                                <p style="font-size: 11px; color: #86868b; margin-top: 4px;">AHR999 value where buying stops (or hits min)</p>
+                            </div>
+                        </div>
+
+                        <div style="margin-bottom: 16px; padding: 12px; background: #f5f5f7; border-radius: 8px;">
+                            <label style="display: flex; align-items: center; gap: 8px; font-size: 14px; cursor: pointer;">
+                                <input type="checkbox" id="dynamic-enable-drawdown-boost" checked style="width: 18px; height: 18px; cursor: pointer;" />
+                                <span><strong>Enable Drawdown Boost</strong></span>
+                            </label>
+                            <p style="font-size: 11px; color: #86868b; margin: 8px 0 0 26px;">
+                                Boosts multiplier up to 2x if price is far below 180-day peak. Helps catch major dips.
+                            </p>
+                        </div>
+
+                        <div style="margin-bottom: 16px; padding: 12px; background: #f5f5f7; border-radius: 8px;">
+                            <label style="display: flex; align-items: center; gap: 8px; font-size: 14px; cursor: pointer;">
+                                <input type="checkbox" id="dynamic-enable-monthly-cap" checked style="width: 18px; height: 18px; cursor: pointer;" />
+                                <span><strong>Enforce Monthly Cap</strong></span>
+                            </label>
+                            <p style="font-size: 11px; color: #86868b; margin: 8px 0 0 26px;">
+                                Budget resets at the start of each calendar month. Uncheck to allow unlimited spending.
+                            </p>
                         </div>
                     </div>
                 </div>
@@ -1907,6 +1975,64 @@
                     <p>Sophisticated investors, those who want to "time the market" systematically, medium-to-long time horizons (2+ years), investors willing to accept complexity for potential alpha.</p>
                 `
             },
+            'dynamic-ahr999': {
+                title: 'Dynamic AHR999 Strategy (Advanced)',
+                content: `
+                    <h4>How It Works</h4>
+                    <p>Uses a <strong>continuous curve approach</strong> instead of discrete bands. Maps AHR999 to a cheapness score (0-1) and uses a power law function (gamma) to calculate investment multiplier. Optionally boosts buying when price drops significantly below 180-day peak.</p>
+                    
+                    <h4>Key Features</h4>
+                    <ul>
+                        <li><strong>Continuous Curve</strong>: Smooth multiplier scaling based on AHR999 value</li>
+                        <li><strong>Power Law (Gamma)</strong>: Controls how aggressively to invest when cheap (recommended: 2.0)</li>
+                        <li><strong>Drawdown Boost</strong>: Automatically increases buying when price is far below recent peak</li>
+                        <li><strong>Monthly Cap</strong>: Optional budget enforcement that resets each month</li>
+                    </ul>
+                    
+                    <h4>Formula</h4>
+                    <p><code>Cheapness = (a_high - AHR999) / (a_high - a_low)</code></p>
+                    <p><code>Mult_base = min + (max - min) × (cheapness ^ gamma)</code></p>
+                    <p><code>Mult_final = Mult_base × Boost (if enabled)</code></p>
+                    <p><code>Buy = Base × Mult_final</code></p>
+                    
+                    <h4>Example</h4>
+                    <p>Monthly: $600, Base: $20/day, AHR999: 0.57, Gamma: 2.0</p>
+                    <ul>
+                        <li>Cheapness = 0.78 (relatively cheap)</li>
+                        <li>Mult_base = 0 + (10 - 0) × (0.78²) = 6.08x</li>
+                        <li>With 1.2x boost: Mult_final = 7.30x</li>
+                        <li>Buy = $20 × 7.30 = $146/day</li>
+                    </ul>
+                    
+                    <h4>Configuration Parameters</h4>
+                    <ul>
+                        <li><strong>Min/Max Multiplier</strong>: Range of investment multipliers (e.g., 0x to 10x)</li>
+                        <li><strong>Gamma</strong>: Curve shape (1.0=linear, 2.0=quadratic recommended, higher=more aggressive)</li>
+                        <li><strong>Low/High AHR</strong>: Thresholds for cheapness calculation (default: 0.45 to 1.0)</li>
+                        <li><strong>Drawdown Boost</strong>: Increases multiplier when price drops 20%+ below 180-day peak</li>
+                        <li><strong>Monthly Cap</strong>: Enforces monthly budget limit (resets each month)</li>
+                    </ul>
+                    
+                    <h4>Pros</h4>
+                    <ul>
+                        <li><strong>Smooth scaling</strong> - no sudden jumps between bands</li>
+                        <li><strong>Intuitive</strong> - cheaper = more investment, automatically</li>
+                        <li><strong>Flexible</strong> - adjustable aggressiveness via gamma</li>
+                        <li><strong>Smart boost</strong> - catches major dips automatically</li>
+                        <li><strong>Budget control</strong> - optional monthly cap prevents overspending</li>
+                    </ul>
+                    
+                    <h4>Cons</h4>
+                    <ul>
+                        <li>More complex than simple DCA</li>
+                        <li>Requires understanding of parameters</li>
+                        <li>Gamma too high (>5) can make strategy too conservative</li>
+                    </ul>
+                    
+                    <h4>Best For</h4>
+                    <p>Advanced users who want value-based investing with smooth scaling, those who understand AHR999 and want to optimize their entry points, investors comfortable with parameter tuning.</p>
+                `
+            },
             'ahr999-percentile': {
                 title: 'AHR999 Historical Percentile Strategy',
                 content: `
@@ -1986,20 +2112,25 @@
             // Get config panels
             const monthlyConfig = document.getElementById('monthlyDcaConfig');
             const ahr999Config = document.getElementById('ahr999ThresholdConfig');
+            const dynamicAhr999Config = document.getElementById('dynamicAhr999Config');
             
             // Hide all config panels (remove active class)
             monthlyConfig.classList.remove('active');
             ahr999Config.classList.remove('active');
+            if (dynamicAhr999Config) dynamicAhr999Config.classList.remove('active');
             
             // Remove any inline display styles that might interfere
             monthlyConfig.style.display = '';
             ahr999Config.style.display = '';
+            if (dynamicAhr999Config) dynamicAhr999Config.style.display = '';
             
             // Show the relevant config panel (add active class)
             if (selectedStrategy === 'monthly-dca') {
                 monthlyConfig.classList.add('active');
             } else if (selectedStrategy === 'ahr999-percentile') {
                 ahr999Config.classList.add('active');
+            } else if (selectedStrategy === 'dynamic-ahr999') {
+                if (dynamicAhr999Config) dynamicAhr999Config.classList.add('active');
             }
         }
 
@@ -2044,11 +2175,13 @@
             updatePercentileTiersOnly();
         }
 
-        // Check if end date is in the future and disable AHR999 strategy accordingly
+        // Check if end date is in the future and disable AHR999 strategies accordingly
         function validateFutureDateForStrategies() {
             const endDateInput = document.getElementById('backtestEndDate');
             const ahr999Radio = document.getElementById('strategy-ahr999');
-            const ahr999Label = ahr999Radio.parentElement;
+            const dynamicAhr999Radio = document.getElementById('strategy-dynamic-ahr999');
+            const ahr999Label = ahr999Radio ? ahr999Radio.parentElement : null;
+            const dynamicAhr999Label = dynamicAhr999Radio ? dynamicAhr999Radio.parentElement : null;
             
             if (!endDateInput.value) {
                 return; // No date set, nothing to validate
@@ -2062,21 +2195,51 @@
             const isFuture = endDate > today;
             
             if (isFuture) {
-                // Disable AHR999 Percentile for future dates
-                ahr999Radio.disabled = true;
-                ahr999Label.style.opacity = '0.5';
-                ahr999Label.title = 'Cannot use AHR999 strategy with future end dates (no historical data)';
-                
-                // If currently selected, switch to daily DCA
-                if (ahr999Radio.checked) {
-                    document.getElementById('strategy-daily').checked = true;
-                    updateDailyAmount();
+                // Disable AHR999 strategies for future dates
+                if (ahr999Radio) {
+                    ahr999Radio.disabled = true;
+                    if (ahr999Radio.checked) {
+                        document.getElementById('strategy-daily').checked = true;
+                        updateDailyAmount();
+                        updateStrategyConfigPanels();
+                    }
+                }
+                if (dynamicAhr999Radio) {
+                    dynamicAhr999Radio.disabled = true;
+                    if (dynamicAhr999Radio.checked) {
+                        document.getElementById('strategy-daily').checked = true;
+                        updateDailyAmount();
+                        updateStrategyConfigPanels();
+                    }
+                }
+                if (ahr999Label) {
+                    ahr999Label.style.opacity = '0.5';
+                    ahr999Label.style.cursor = 'not-allowed';
+                    ahr999Label.title = 'Cannot use AHR999 strategy with future end dates (no historical data)';
+                }
+                if (dynamicAhr999Label) {
+                    dynamicAhr999Label.style.opacity = '0.5';
+                    dynamicAhr999Label.style.cursor = 'not-allowed';
+                    dynamicAhr999Label.title = 'Cannot use AHR999 strategy with future end dates (no historical data)';
                 }
             } else {
-                // Re-enable AHR999 Percentile for past/present dates
-                ahr999Radio.disabled = false;
-                ahr999Label.style.opacity = '1';
-                ahr999Label.title = '';
+                // Re-enable AHR999 strategies for past/present dates
+                if (ahr999Radio) {
+                    ahr999Radio.disabled = false;
+                }
+                if (dynamicAhr999Radio) {
+                    dynamicAhr999Radio.disabled = false;
+                }
+                if (ahr999Label) {
+                    ahr999Label.style.opacity = '1';
+                    ahr999Label.style.cursor = '';
+                    ahr999Label.title = '';
+                }
+                if (dynamicAhr999Label) {
+                    dynamicAhr999Label.style.opacity = '1';
+                    dynamicAhr999Label.style.cursor = '';
+                    dynamicAhr999Label.title = '';
+                }
             }
         }
 
@@ -2085,20 +2248,25 @@
             const selectedStrategy = document.querySelector('input[name="backtestStrategy"]:checked')?.value;
             const monthlyConfig = document.getElementById('monthlyDcaConfig');
             const ahr999Config = document.getElementById('ahr999ThresholdConfig');
+            const dynamicAhr999Config = document.getElementById('dynamicAhr999Config');
             
             if (!monthlyConfig || !ahr999Config) return;
             
             // Hide all
             monthlyConfig.classList.remove('active');
             ahr999Config.classList.remove('active');
+            if (dynamicAhr999Config) dynamicAhr999Config.classList.remove('active');
             monthlyConfig.style.display = '';
             ahr999Config.style.display = '';
+            if (dynamicAhr999Config) dynamicAhr999Config.style.display = '';
             
             // Show selected
             if (selectedStrategy === 'monthly-dca') {
                 monthlyConfig.classList.add('active');
             } else if (selectedStrategy === 'ahr999-percentile') {
                 ahr999Config.classList.add('active');
+            } else if (selectedStrategy === 'dynamic-ahr999') {
+                if (dynamicAhr999Config) dynamicAhr999Config.classList.add('active');
             }
         }
 
