@@ -41,7 +41,7 @@ class DCAStrategy(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     is_active: bool = Field(default=False)
     total_budget_usd: float
-    allow_over_budget: bool = Field(default=False)
+    enforce_monthly_cap: bool = Field(default=True)  # Enforce monthly budget limit
     ahr999_multiplier_low: float
     ahr999_multiplier_mid: float
     ahr999_multiplier_high: float
@@ -60,8 +60,6 @@ class DCAStrategy(SQLModel, table=True):
     dynamic_a_low: Optional[float] = None
     dynamic_a_high: Optional[float] = None
     dynamic_enable_drawdown_boost: Optional[bool] = None
-    dynamic_enable_monthly_cap: Optional[bool] = None
-    dynamic_monthly_cap: Optional[float] = None
 
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))

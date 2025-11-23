@@ -72,7 +72,7 @@ class UnifiedTransaction(BaseModel):
 class StrategyBase(BaseModel):
     is_active: bool = False
     total_budget_usd: float
-    allow_over_budget: bool = False
+    enforce_monthly_cap: bool = True
     ahr999_multiplier_low: float
     ahr999_multiplier_mid: float
     ahr999_multiplier_high: float
@@ -88,9 +88,7 @@ class StrategyBase(BaseModel):
     dynamic_gamma: Optional[float] = None
     dynamic_a_low: Optional[float] = None
     dynamic_a_high: Optional[float] = None
-    dynamic_enable_drawdown_boost: Optional[bool] = None
-    dynamic_enable_monthly_cap: Optional[bool] = None
-    dynamic_monthly_cap: Optional[float] = None
+    dynamic_enable_drawdown_boost: Optional[float] = None
 
 class StrategyCreate(StrategyBase):
     pass
