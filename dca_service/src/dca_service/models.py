@@ -49,6 +49,20 @@ class DCAStrategy(SQLModel, table=True):
     execution_frequency: str = Field(default="daily") # "daily" or "weekly"
     execution_day_of_week: Optional[str] = Field(default=None) # "monday", "tuesday", etc. (only for weekly)
     execution_time_utc: str = Field(default="00:00") # "HH:MM"
+    
+    # Strategy Configuration
+    strategy_type: str = Field(default="legacy_band") # "legacy_band" or "dynamic_ahr999"
+    
+    # Dynamic Strategy Config (Nullable, used if strategy_type="dynamic_ahr999")
+    dynamic_min_multiplier: Optional[float] = None
+    dynamic_max_multiplier: Optional[float] = None
+    dynamic_gamma: Optional[float] = None
+    dynamic_a_low: Optional[float] = None
+    dynamic_a_high: Optional[float] = None
+    dynamic_enable_drawdown_boost: Optional[bool] = None
+    dynamic_enable_monthly_cap: Optional[bool] = None
+    dynamic_monthly_cap: Optional[float] = None
+
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 

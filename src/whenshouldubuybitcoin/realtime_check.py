@@ -132,6 +132,12 @@ def check_realtime_status(verbose: bool = True) -> Optional[Dict]:
     realtime_dca = 200.0 / sum(1.0 / p for p in prices_200)
     ratio_dca = realtime_price / realtime_dca
     
+    # Calculate 180-day peak (for dynamic strategy drawdown boost)
+    # Use last 179 days + today
+    last_179_days = df.tail(179)
+    prices_180 = list(last_179_days['close_price']) + [realtime_price]
+    peak180 = max(prices_180) if prices_180 else realtime_price
+    
     # Calculate real-time Trend
     # Get power law trend parameters from historical fit
     trend_a = df.attrs.get('trend_a')
@@ -186,7 +192,8 @@ def check_realtime_status(verbose: bool = True) -> Optional[Dict]:
         "ahr999_percentile": ahr999_percentile,
         "ahr999_percentile_below_one": ahr999_percentile_below_one,
         "last_data_date": last_data_date,
-        "days_old": days_old
+        "days_old": days_old,
+        "peak180": peak180
     }
     
     # Print detailed output
