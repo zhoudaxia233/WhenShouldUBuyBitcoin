@@ -56,6 +56,10 @@ def read_root(request: Request):
 def read_strategy_page(request: Request):
     return templates.TemplateResponse("strategy.html", {"request": request, "project_name": settings.PROJECT_NAME})
 
+@app.get("/settings/binance")
+def read_binance_settings_page(request: Request):
+    return templates.TemplateResponse("binance_settings.html", {"request": request, "project_name": settings.PROJECT_NAME})
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run("dca_service.main:app", host="0.0.0.0", port=8000, reload=True)

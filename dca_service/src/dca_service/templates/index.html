@@ -24,6 +24,7 @@
         <header class="d-flex justify-content-between align-items-center mb-3">
             <h1>{{ project_name }}</h1>
             <div>
+                <a href="/settings/binance" class="btn btn-outline-secondary me-2">Binance Settings</a>
                 <a href="/strategy" class="btn btn-outline-secondary me-2">Strategy Config</a>
                 <button id="simulateBtn" class="btn btn-primary">Simulate Transaction</button>
             </div>
@@ -134,7 +135,7 @@
             </div>
         </div>
 
-        <div class="card shadow-sm">
+        <div class="card shadow-sm mb-5">
             <div class="card-header bg-white">
                 <h5 class="mb-0">Transaction History</h5>
             </div>
@@ -170,74 +171,6 @@
             </div>
         </div>
 
-        <!-- Binance Connection Section (Phase 7) -->
-        <div class="card shadow-sm mt-4 mb-5">
-            <div class="card-header bg-white d-flex justify-content-between align-items-center">
-                <h5 class="mb-0">Binance Connection (Read-Only)</h5>
-                <button class="btn btn-sm btn-info text-white" data-bs-toggle="modal" data-bs-target="#binanceHelpModal">
-                    ℹ️ How to get API Key
-                </button>
-            </div>
-            <div class="card-body">
-                <div class="row">
-                    <div class="col-md-6">
-                        <form id="binanceForm">
-                            <div class="mb-3">
-                                <label class="form-label">API Key</label>
-                                <input type="text" class="form-control" id="apiKey" required>
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label">API Secret</label>
-                                <input type="password" class="form-control" id="apiSecret" required>
-                            </div>
-                            <button type="submit" class="btn btn-primary">Save Credentials</button>
-                        </form>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="card bg-light h-100">
-                            <div class="card-body">
-                                <h6>Connection Status</h6>
-                                <p id="credStatus">Checking...</p>
-                                <button id="testConnectionBtn" class="btn btn-outline-secondary">Test Connection</button>
-                                <div id="testResult" class="mt-2 small"></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Binance Help Modal -->
-    <div class="modal fade" id="binanceHelpModal" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">How to create a Read-Only API Key</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <ol>
-                        <li>Log into your <strong>Binance</strong> account.</li>
-                        <li>Go to <strong>API Management</strong> (under Account section in the left sidebar).</li>
-                        <li>Click the yellow <strong>Create API</strong> button.</li>
-                        <li>In the "Choose API Key type" modal, select <strong>System generated</strong> (HMAC symmetric encryption - this is the default option).</li>
-                        <li>Click <strong>Next</strong> and give it a label (e.g. "DCA Read-Only").</li>
-                        <li>Complete the security verification.</li>
-                        <li><strong>IMPORTANT:</strong> Under "API Restrictions", ensure ONLY <strong>"Enable Reading"</strong> is checked.</li>
-                        <li>Uncheck "Enable Spot & Margin Trading" and "Enable Withdrawals".</li>
-                        <li>Copy the <strong>API Key</strong> and <strong>Secret Key</strong> immediately.</li>
-                        <li>Paste them into the form on this page and click <strong>Save</strong>.</li>
-                    </ol>
-                    <div class="alert alert-warning small">
-                        <strong>Security Note:</strong> Your keys are encrypted before storage. We never display your Secret Key again.
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                </div>
-            </div>
-        </div>
     </div>
 
     <!-- Manual Entry Modal (Phase 8) -->
@@ -748,25 +681,7 @@
             }
         });
 
-        // Binance Integration (Phase 7)
-        async function loadBinanceStatus() {
-            try {
-                const response = await fetch('/api/binance/credentials/status');
-                const status = await response.json();
-                
-                const statusElem = document.getElementById('credStatus');
-                if (status.has_credentials) {
-                    statusElem.innerHTML = `<span class="text-success">✔ Credentials stored</span><br>Key: ${status.masked_api_key}`;
-                    document.getElementById('apiKey').placeholder = "Enter new key to update";
-                    document.getElementById('apiSecret').placeholder = "Enter new secret to update";
-                } else {
-                    statusElem.innerHTML = `<span class="text-muted">No credentials saved.</span>`;
-                }
-            } catch (error) {
-                console.error('Error loading binance status:', error);
-            }
-        }
-
+        // Holdings function still needed by dashboard
         async function loadHoldings() {
             try {
                 const response = await fetch('/api/binance/holdings');
@@ -803,7 +718,7 @@
                     contentBox.classList.add('d-none');
                     errorBox.classList.remove('d-none');
                     if (data.reason === 'no_credentials') {
-                        errorBox.textContent = "Binance not connected. Please configure your API key below.";
+                        errorBox.textContent = "Binance not connected. Configure your API keys in Binance Settings.";
                     } else {
                         errorBox.textContent = `Connection Error: ${data.reason}`;
                     }
@@ -812,59 +727,6 @@
                 console.error('Error loading holdings:', error);
             }
         }
-
-        document.getElementById('binanceForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const apiKey = document.getElementById('apiKey').value;
-            const apiSecret = document.getElementById('apiSecret').value;
-            
-            try {
-                const response = await fetch('/api/binance/credentials', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ api_key: apiKey, api_secret: apiSecret })
-                });
-                const result = await response.json();
-                
-                if (response.ok) {
-                    notyf.success('API key stored');
-                    document.getElementById('apiKey').value = '';
-                    document.getElementById('apiSecret').value = '';
-                    loadBinanceStatus();
-                    loadHoldings();
-                } else {
-                    notyf.error('Invalid API key: ' + result.detail);
-                }
-            } catch (error) {
-                notyf.error('Error saving credentials');
-            }
-        });
-
-        document.getElementById('testConnectionBtn').addEventListener('click', async () => {
-            const resultDiv = document.getElementById('testResult');
-            resultDiv.textContent = 'Testing...';
-            resultDiv.className = 'mt-2 small text-muted';
-            
-            try {
-                const response = await fetch('/api/binance/test-connection', { method: 'POST' });
-                const result = await response.json();
-                
-                if (result.success) {
-                    resultDiv.textContent = '✔ Connected to Binance (read-only).';
-                    resultDiv.className = 'mt-2 small text-success fw-bold';
-                    notyf.success('Connected to Binance');
-                    loadHoldings();
-                } else {
-                    resultDiv.textContent = '❌ Connection failed: ' + result.error_message;
-                    resultDiv.className = 'mt-2 small text-danger fw-bold';
-                    notyf.error('Connection failed: ' + result.error_message);
-                }
-            } catch (error) {
-                resultDiv.textContent = '❌ Error testing connection';
-                resultDiv.className = 'mt-2 small text-danger';
-                notyf.error('Network error or backend unreachable');
-            }
-        });
 
         // Manual Entry Form Submission (Phase 8)
         document.getElementById('manualEntryForm').addEventListener('submit', async (e) => {
@@ -915,7 +777,6 @@
         // Load on start (Phase 6: auto-refresh on page load)
         loadTransactions();
         loadPreview();
-        loadBinanceStatus();
         loadHoldings();
     </script>
 </body>
