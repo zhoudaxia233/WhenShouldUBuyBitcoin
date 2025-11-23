@@ -36,7 +36,7 @@ class BaseMetricsBackend(Protocol):
 
 class CsvMetricsBackend:
     def get_latest_metrics(self) -> Metrics:
-        file_path = Path(settings.METRICS_CSV_PATH)
+        file_path = _resolve_csv_path()
         
         if not file_path.exists():
             raise FileNotFoundError(f"Metrics file not found: {file_path}")
@@ -204,3 +204,113 @@ def get_latest_metrics() -> Optional[Dict[str, Any]]:
                 return None
         
         return None
+
+def _resolve_csv_path() -> Path:
+    """
+    Resolve the CSV path from settings, handling relative paths correctly.
+    The path "../docs/data/btc_metrics.csv" should resolve relative to dca_service/ directory.
+    """
+    csv_path_str = settings.METRICS_CSV_PATH
+    
+    if Path(csv_path_str).is_absolute():
+        return Path(csv_path_str)
+    
+    # For relative paths like "../docs/data/btc_metrics.csv"
+    # Resolve from dca_service/ directory (parent of src/)
+    # __file__ is dca_service/src/dca_service/services/metrics_provider.py
+    # We want to go to dca_service/ directory
+    dca_service_dir = Path(__file__).resolve().parent.parent.parent.parent
+    # Now resolve the relative path from dca_service/
+    # "../docs/data/btc_metrics.csv" -> go up one level, then docs/data/btc_metrics.csv
+    if csv_path_str.startswith("../"):
+        # Remove "../" and resolve from parent of dca_service/
+        relative_part = csv_path_str[3:]  # Remove "../"
+        file_path = (dca_service_dir.parent / relative_part).resolve()
+    else:
+        file_path = (dca_service_dir / csv_path_str).resolve()
+    
+    # If still not found, try from current working directory
+    if not file_path.exists():
+        alt_path = Path(csv_path_str)
+        if alt_path.exists():
+            return alt_path
+    
+    return file_path
+
+def get_historical_ahr999_values() -> list[float]:
+    """
+    Get all historical AHR999 values from CSV file.
+    Used for calculating percentiles in AHR999 percentile strategy.
+    
+    Returns:
+        List of AHR999 values (float), sorted by date
+    """
+    file_path = _resolve_csv_path()
+    
+    if not file_path.exists():
+        return []
+    
+    try:
+        with open(file_path, 'r') as f:
+            reader = csv.DictReader(f)
+            
+            if not reader.fieldnames or COL_AHR999 not in reader.fieldnames:
+                return []
+            
+            ahr999_values = []
+            for row in reader:
+                try:
+                    ahr999_val = float(row[COL_AHR999])
+                    if ahr999_val == ahr999_val:  # Check for NaN
+                        ahr999_values.append(ahr999_val)
+                except (ValueError, KeyError):
+                    continue
+            
+            return ahr999_values
+    except Exception as e:
+        print(f"Error reading historical AHR999 values: {e}")
+        return []
+
+def calculate_ahr999_percentile_thresholds() -> dict[str, float]:
+    """
+    Calculate AHR999 percentile thresholds (p10, p25, p50, p75, p90).
+    Used for AHR999 percentile strategy to determine which tier the current AHR999 falls into.
+    
+    Returns:
+        Dictionary with percentile thresholds:
+        {
+            "p10": float,  # 10th percentile (bottom 10%)
+            "p25": float,  # 25th percentile
+            "p50": float,  # 50th percentile (median)
+            "p75": float,  # 75th percentile
+            "p90": float,  # 90th percentile
+        }
+    """
+    historical_values = get_historical_ahr999_values()
+    
+    if not historical_values:
+        # Fallback to fixed thresholds if no historical data
+        return {
+            "p10": 0.45,
+            "p25": 0.60,
+            "p50": 0.90,
+            "p75": 1.20,
+            "p90": 1.80,
+        }
+    
+    sorted_values = sorted(historical_values)
+    n = len(sorted_values)
+    
+    def get_percentile_value(percentile: int) -> float:
+        """Get the value at a given percentile (0-100)"""
+        index = int((percentile / 100.0) * n)
+        index = min(index, n - 1)  # Ensure index is within bounds
+        return sorted_values[index]
+    
+    return {
+        "p10": get_percentile_value(10),
+        "p25": get_percentile_value(25),
+        "p50": get_percentile_value(50),
+        "p75": get_percentile_value(75),
+        "p90": get_percentile_value(90),
+    }

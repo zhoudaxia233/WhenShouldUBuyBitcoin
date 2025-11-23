@@ -8,7 +8,67 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/notyf@3.10.0/notyf.min.css">
     <style>
         body { padding-top: 20px; background-color: #f8f9fa; }
-        .container { max-width: 800px; }
+        .container { max-width: 1000px; }
+        
+        .percentile-tiers {
+            margin-top: 12px;
+        }
+
+        .tier-row {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1.2fr;
+            gap: 12px;
+            padding: 10px;
+            align-items: center;
+            border-bottom: 1px solid #e5e5e5;
+        }
+
+        .tier-row.tier-header {
+            font-weight: 600;
+            font-size: 12px;
+            text-transform: uppercase;
+            color: #86868b;
+            background: #f5f5f7;
+            border-radius: 6px 6px 0 0;
+        }
+
+        .tier-row.tier-header .tier-daily {
+            color: #86868b;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .tier-label {
+            font-size: 13px;
+        }
+
+        .ahr999-range {
+            display: block;
+            font-size: 11px;
+            color: #86868b;
+            font-weight: 400;
+            margin-top: 4px;
+        }
+
+        .tier-multiplier {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .tier-input {
+            width: 80px;
+            padding: 6px 8px;
+            border: 1px solid #d2d2d7;
+            border-radius: 6px;
+            font-size: 13px;
+        }
+
+        .tier-daily {
+            font-size: 13px;
+            color: #1d1d1f;
+            font-weight: 500;
+        }
     </style>
 </head>
 <body>
@@ -82,30 +142,92 @@
                         <div class="col-12 mb-3">
                             <label for="strategy_type" class="form-label">Strategy Type</label>
                             <select class="form-select" id="strategy_type">
-                                <option value="legacy_band">Legacy Band Strategy (Simple)</option>
+                                <option value="legacy_band">AHR999 Percentile Strategy</option>
                                 <option value="dynamic_ahr999">Dynamic AHR999 Strategy (Advanced)</option>
                             </select>
                             <div class="form-text text-muted">
-                                Choose between the classic band-based approach or the new continuous curve strategy.
+                                Choose between the percentile-based approach (uses historical AHR999 distribution) or the new continuous curve strategy.
                             </div>
                         </div>
                     </div>
 
-                    <!-- Legacy Config Section -->
+                    <!-- AHR999 Percentile Config Section (6 tiers) -->
                     <div id="legacyConfigSection">
-                        <div class="row">
-                            <div class="col-md-4 mb-3">
-                                <label for="ahr999_multiplier_low" class="form-label">Low Multiplier (< 0.45)</label>
-                                <input type="number" class="form-control" id="ahr999_multiplier_low" step="0.1">
+                        <div class="percentile-tiers">
+                            <div class="tier-row tier-header">
+                                <div class="tier-label">Percentile Range</div>
+                                <div class="tier-multiplier">Multiplier</div>
+                                <div class="tier-daily">Daily Amount</div>
                             </div>
-                            <div class="col-md-4 mb-3">
-                                <label for="ahr999_multiplier_mid" class="form-label">Mid Multiplier (0.45 - 1.2)</label>
-                                <input type="number" class="form-control" id="ahr999_multiplier_mid" step="0.1">
+                            
+                            <div class="tier-row">
+                                <div class="tier-label">
+                                    Bottom 10% (EXTREME CHEAP)
+                                    <span class="ahr999-range" id="ahr999-range-p10">(AHR999 &lt; p10)</span>
+                                </div>
+                                <div class="tier-multiplier">
+                                    <input type="number" class="tier-input" id="ahr999_multiplier_p10" value="5" min="0" max="10" step="0.5" placeholder="5.0" oninput="updatePercentileTiers()" />
+                                </div>
+                                <div class="tier-daily" id="tier-p10-amount">-</div>
                             </div>
-                            <div class="col-md-4 mb-3">
-                                <label for="ahr999_multiplier_high" class="form-label">High Multiplier (> 1.2)</label>
-                                <input type="number" class="form-control" id="ahr999_multiplier_high" step="0.1">
+                            
+                            <div class="tier-row">
+                                <div class="tier-label">
+                                    10-25% (Very Cheap)
+                                    <span class="ahr999-range" id="ahr999-range-p25">(p10 - p25)</span>
+                                </div>
+                                <div class="tier-multiplier">
+                                    <input type="number" class="tier-input" id="ahr999_multiplier_p25" value="2" min="0" max="10" step="0.5" placeholder="2.0" oninput="updatePercentileTiers()" />
+                                </div>
+                                <div class="tier-daily" id="tier-p25-amount">-</div>
                             </div>
+                            
+                            <div class="tier-row">
+                                <div class="tier-label">
+                                    25-50% (Cheap)
+                                    <span class="ahr999-range" id="ahr999-range-p50">(p25 - p50)</span>
+                                </div>
+                                <div class="tier-multiplier">
+                                    <input type="number" class="tier-input" id="ahr999_multiplier_p50" value="1" min="0" max="10" step="0.5" placeholder="1.0" oninput="updatePercentileTiers()" />
+                                </div>
+                                <div class="tier-daily" id="tier-p50-amount">-</div>
+                            </div>
+                            
+                            <div class="tier-row">
+                                <div class="tier-label">
+                                    50-75% (Fair)
+                                    <span class="ahr999-range" id="ahr999-range-p75">(p50 - p75)</span>
+                                </div>
+                                <div class="tier-multiplier">
+                                    <input type="number" class="tier-input" id="ahr999_multiplier_p75" value="0" min="0" max="10" step="0.5" placeholder="0" oninput="updatePercentileTiers()" />
+                                </div>
+                                <div class="tier-daily" id="tier-p75-amount">-</div>
+                            </div>
+                            
+                            <div class="tier-row">
+                                <div class="tier-label">
+                                    75-90% (Expensive)
+                                    <span class="ahr999-range" id="ahr999-range-p90">(p75 - p90)</span>
+                                </div>
+                                <div class="tier-multiplier">
+                                    <input type="number" class="tier-input" id="ahr999_multiplier_p90" value="0" min="0" max="10" step="0.5" placeholder="0" oninput="updatePercentileTiers()" />
+                                </div>
+                                <div class="tier-daily" id="tier-p90-amount">-</div>
+                            </div>
+                            
+                            <div class="tier-row">
+                                <div class="tier-label">
+                                    Top 10% (VERY EXPENSIVE)
+                                    <span class="ahr999-range" id="ahr999-range-p100">(AHR999 ≥ p90)</span>
+                                </div>
+                                <div class="tier-multiplier">
+                                    <input type="number" class="tier-input" id="ahr999_multiplier_p100" value="0" min="0" max="10" step="0.5" placeholder="0" oninput="updatePercentileTiers()" />
+                                </div>
+                                <div class="tier-daily" id="tier-p100-amount">-</div>
+                            </div>
+                        </div>
+                        <div class="alert alert-info mt-3">
+                            <strong>Note:</strong> Percentile thresholds (p10, p25, p50, p75, p90) are calculated from historical AHR999 data and update automatically.
                         </div>
                     </div>
 
@@ -198,9 +320,14 @@
                     document.getElementById('strategy_type').value = strategy.strategy_type || 'legacy_band';
 
                     // Legacy Fields
-                    document.getElementById('ahr999_multiplier_low').value = strategy.ahr999_multiplier_low;
-                    document.getElementById('ahr999_multiplier_mid').value = strategy.ahr999_multiplier_mid;
-                    document.getElementById('ahr999_multiplier_high').value = strategy.ahr999_multiplier_high;
+                    // Load percentile multipliers (6 tiers)
+                    // Use existing fields as fallback for backward compatibility
+                    document.getElementById('ahr999_multiplier_p10').value = strategy.ahr999_multiplier_p10 || strategy.ahr999_multiplier_low || 5.0;
+                    document.getElementById('ahr999_multiplier_p25').value = strategy.ahr999_multiplier_p25 || strategy.ahr999_multiplier_mid || 2.0;
+                    document.getElementById('ahr999_multiplier_p50').value = strategy.ahr999_multiplier_p50 || 1.0;
+                    document.getElementById('ahr999_multiplier_p75').value = strategy.ahr999_multiplier_p75 || 0.0;
+                    document.getElementById('ahr999_multiplier_p90').value = strategy.ahr999_multiplier_p90 || 0.0;
+                    document.getElementById('ahr999_multiplier_p100').value = strategy.ahr999_multiplier_p100 || strategy.ahr999_multiplier_high || 0.0;
                     
                     // Dynamic Fields
                     document.getElementById('dynamic_min_multiplier').value = strategy.dynamic_min_multiplier !== null ? strategy.dynamic_min_multiplier : 0.0;
@@ -214,6 +341,7 @@
                     updateDailyCalc();
                     toggleDayOfWeek();
                     toggleStrategyType();
+                    loadPercentileThresholds();
                 }
             } catch (error) {
                 console.error('Error loading strategy:', error);
@@ -236,9 +364,18 @@
                 strategy_type: document.getElementById('strategy_type').value,
                 
                 // Legacy Fields
-                ahr999_multiplier_low: parseFloat(document.getElementById('ahr999_multiplier_low').value) || 0,
-                ahr999_multiplier_mid: parseFloat(document.getElementById('ahr999_multiplier_mid').value) || 0,
-                ahr999_multiplier_high: parseFloat(document.getElementById('ahr999_multiplier_high').value) || 0,
+                // Save percentile multipliers (6 tiers)
+                // For backward compatibility, also save to old fields
+                ahr999_multiplier_p10: parseFloat(document.getElementById('ahr999_multiplier_p10').value) || 5.0,
+                ahr999_multiplier_p25: parseFloat(document.getElementById('ahr999_multiplier_p25').value) || 2.0,
+                ahr999_multiplier_p50: parseFloat(document.getElementById('ahr999_multiplier_p50').value) || 1.0,
+                ahr999_multiplier_p75: parseFloat(document.getElementById('ahr999_multiplier_p75').value) || 0.0,
+                ahr999_multiplier_p90: parseFloat(document.getElementById('ahr999_multiplier_p90').value) || 0.0,
+                ahr999_multiplier_p100: parseFloat(document.getElementById('ahr999_multiplier_p100').value) || 0.0,
+                // Backward compatibility: map to old fields
+                ahr999_multiplier_low: parseFloat(document.getElementById('ahr999_multiplier_p10').value) || 5.0,
+                ahr999_multiplier_mid: parseFloat(document.getElementById('ahr999_multiplier_p25').value) || 2.0,
+                ahr999_multiplier_high: parseFloat(document.getElementById('ahr999_multiplier_p100').value) || 0.0,
                 
                 // Dynamic Fields
                 dynamic_min_multiplier: parseFloat(document.getElementById('dynamic_min_multiplier').value),
@@ -275,12 +412,67 @@
         // UX Enhancements
         function updateDailyCalc() {
             const total = parseFloat(document.getElementById('total_budget_usd').value) || 0;
-            const daily = total / 30.0; // Approximate
+            const DAYS_PER_MONTH = 30.44; // Average days per month (same as backtest)
+            const daily = total / DAYS_PER_MONTH;
             const helpText = document.getElementById('dailyBudgetCalc');
             if (total > 0) {
                 helpText.textContent = `Estimated Daily Amount: $${daily.toFixed(2)} (assuming monthly budget)`;
             } else {
                 helpText.textContent = '';
+            }
+            updatePercentileTiers();
+        }
+
+        function updatePercentileTiers() {
+            const monthlyBudget = parseFloat(document.getElementById('total_budget_usd').value) || 0;
+            const dailyBudget = monthlyBudget / 30.44; // Days per month
+            
+            const tiers = [
+                { id: 'p10', multiplierId: 'ahr999_multiplier_p10', amountId: 'tier-p10-amount' },
+                { id: 'p25', multiplierId: 'ahr999_multiplier_p25', amountId: 'tier-p25-amount' },
+                { id: 'p50', multiplierId: 'ahr999_multiplier_p50', amountId: 'tier-p50-amount' },
+                { id: 'p75', multiplierId: 'ahr999_multiplier_p75', amountId: 'tier-p75-amount' },
+                { id: 'p90', multiplierId: 'ahr999_multiplier_p90', amountId: 'tier-p90-amount' },
+                { id: 'p100', multiplierId: 'ahr999_multiplier_p100', amountId: 'tier-p100-amount' },
+            ];
+            
+            tiers.forEach(tier => {
+                const multiplier = parseFloat(document.getElementById(tier.multiplierId).value) || 0;
+                const amount = dailyBudget * multiplier;
+                const amountElement = document.getElementById(tier.amountId);
+                if (amountElement) {
+                    amountElement.textContent = `$${amount.toFixed(2)}/day`;
+                }
+            });
+        }
+
+        async function loadPercentileThresholds() {
+            try {
+                const response = await fetch('/api/metrics/percentiles');
+                if (response.ok) {
+                    const data = await response.json();
+                    // Update AHR999 range displays
+                    if (data.p10 !== undefined) {
+                        document.getElementById('ahr999-range-p10').textContent = `(AHR999 < ${data.p10.toFixed(2)})`;
+                    }
+                    if (data.p25 !== undefined) {
+                        document.getElementById('ahr999-range-p25').textContent = `(${data.p10?.toFixed(2) || 'p10'} - ${data.p25.toFixed(2)})`;
+                    }
+                    if (data.p50 !== undefined) {
+                        document.getElementById('ahr999-range-p50').textContent = `(${data.p25?.toFixed(2) || 'p25'} - ${data.p50.toFixed(2)})`;
+                    }
+                    if (data.p75 !== undefined) {
+                        document.getElementById('ahr999-range-p75').textContent = `(${data.p50?.toFixed(2) || 'p50'} - ${data.p75.toFixed(2)})`;
+                    }
+                    if (data.p90 !== undefined) {
+                        document.getElementById('ahr999-range-p90').textContent = `(${data.p75?.toFixed(2) || 'p75'} - ${data.p90.toFixed(2)})`;
+                    }
+                    if (data.p90 !== undefined) {
+                        document.getElementById('ahr999-range-p100').textContent = `(AHR999 ≥ ${data.p90.toFixed(2)})`;
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading percentile thresholds:', error);
             }
         }
 
@@ -314,7 +506,9 @@
         document.getElementById('execution_frequency').addEventListener('change', toggleDayOfWeek);
         document.getElementById('strategy_type').addEventListener('change', toggleStrategyType);
 
+        // Load strategy and percentile thresholds on page load
         loadStrategy();
+        loadPercentileThresholds();
     </script>
 </body>
 </html>

@@ -4,7 +4,10 @@ from pydantic import BaseModel
 from sqlmodel import Session, select
 
 from dca_service.models import DCAStrategy, DCATransaction
-from dca_service.services.metrics_provider import get_latest_metrics
+from dca_service.services.metrics_provider import (
+    get_latest_metrics,
+    calculate_ahr999_percentile_thresholds,
+)
 from whenshouldubuybitcoin.strategies.dynamic_ahr999 import (
     calculate_buy_amount,
     DynamicAhr999Params,
@@ -234,20 +237,62 @@ def calculate_dca_decision(session: Session) -> DCADecision:
         # The strategy module already capped 'buy', so suggested_amount is correct.
 
     else:
-        # Legacy Band Strategy Logic
-        if ahr999 < 0.45:
-            band = "low"
-            multiplier = strategy.ahr999_multiplier_low
-        elif ahr999 <= 1.2:
-            band = "mid"
-            multiplier = strategy.ahr999_multiplier_mid
+        # AHR999 Percentile Strategy Logic (6-tier system matching backtest)
+        # Use historical percentiles to determine which tier the current AHR999 falls into
+        percentiles = calculate_ahr999_percentile_thresholds()
+        
+        # Default multipliers matching backtest strategy
+        # Use new percentile fields if available, otherwise fall back to legacy fields or defaults
+        def get_multiplier(new_field, legacy_field, default):
+            """Get multiplier from new field, legacy field, or default"""
+            if hasattr(strategy, new_field):
+                value = getattr(strategy, new_field)
+                if value is not None:
+                    return value
+            if legacy_field and hasattr(strategy, legacy_field):
+                value = getattr(strategy, legacy_field)
+                if value is not None:
+                    return value
+            return default
+        
+        multiplier_p10 = get_multiplier('ahr999_multiplier_p10', 'ahr999_multiplier_low', 5.0)
+        multiplier_p25 = get_multiplier('ahr999_multiplier_p25', 'ahr999_multiplier_mid', 2.0)
+        multiplier_p50 = get_multiplier('ahr999_multiplier_p50', None, 1.0)
+        multiplier_p75 = get_multiplier('ahr999_multiplier_p75', None, 0.0)
+        multiplier_p90 = get_multiplier('ahr999_multiplier_p90', None, 0.0)
+        multiplier_p100 = get_multiplier('ahr999_multiplier_p100', 'ahr999_multiplier_high', 0.0)
+        
+        # Determine which percentile tier the current AHR999 falls into (6 tiers)
+        if ahr999 < percentiles["p10"]:
+            # Bottom 10% - EXTREMELY cheap
+            band = "p10"
+            multiplier = multiplier_p10
+            reason = f"AHR999 {ahr999:.4f} < p10 ({percentiles['p10']:.4f}) - Bottom 10% (EXTREME CHEAP) → {multiplier}x"
+        elif ahr999 < percentiles["p25"]:
+            # 10-25% - Very cheap
+            band = "p25"
+            multiplier = multiplier_p25
+            reason = f"AHR999 {ahr999:.4f} between p10 ({percentiles['p10']:.4f}) and p25 ({percentiles['p25']:.4f}) - 10-25% (Very Cheap) → {multiplier}x"
+        elif ahr999 < percentiles["p50"]:
+            # 25-50% - Cheap
+            band = "p50"
+            multiplier = multiplier_p50
+            reason = f"AHR999 {ahr999:.4f} between p25 ({percentiles['p25']:.4f}) and p50 ({percentiles['p50']:.4f}) - 25-50% (Cheap) → {multiplier}x"
+        elif ahr999 < percentiles["p75"]:
+            # 50-75% - Fair
+            band = "p75"
+            multiplier = multiplier_p75
+            reason = f"AHR999 {ahr999:.4f} between p50 ({percentiles['p50']:.4f}) and p75 ({percentiles['p75']:.4f}) - 50-75% (Fair) → {multiplier}x"
+        elif ahr999 < percentiles["p90"]:
+            # 75-90% - Expensive
+            band = "p90"
+            multiplier = multiplier_p90
+            reason = f"AHR999 {ahr999:.4f} between p75 ({percentiles['p75']:.4f}) and p90 ({percentiles['p90']:.4f}) - 75-90% (Expensive) → {multiplier}x"
         else:
-            band = "high"
-            multiplier = strategy.ahr999_multiplier_high
-
-        # Base amount calculation for legacy is done below, but we need it here for structure consistency
-        # We'll let the legacy flow continue, but we need to handle the divergence
-        reason = "Conditions met"
+            # Top 10% - VERY expensive
+            band = "p100"
+            multiplier = multiplier_p100
+            reason = f"AHR999 {ahr999:.4f} >= p90 ({percentiles['p90']:.4f}) - Top 10% (VERY EXPENSIVE) → {multiplier}x"
 
     # 3. Determine budget reset logic (needed for base amount calculation)
     now = datetime.now(timezone.utc)
@@ -259,14 +304,14 @@ def calculate_dca_decision(session: Session) -> DCADecision:
     # Only needed if not already calculated by dynamic strategy
     if strategy.strategy_type != "dynamic_ahr999":
         if strategy.execution_frequency == "daily":
-            # Approximate 30 days per month
-            base_amount = strategy.total_budget_usd / 30.0
+            # Use 30.44 days per month (same as backtest framework)
+            base_amount = strategy.total_budget_usd / 30.44
         elif strategy.execution_frequency == "weekly":
             # Approximately 4 weeks per month
             base_amount = strategy.total_budget_usd / 4.0
         else:
             # Fallback to daily if frequency is unknown
-            base_amount = strategy.total_budget_usd / 30.0
+            base_amount = strategy.total_budget_usd / 30.44
 
         suggested_amount = base_amount * multiplier
 
