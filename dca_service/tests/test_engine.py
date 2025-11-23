@@ -42,7 +42,9 @@ def test_engine_low_band(mock_metrics, session: Session, strategy: DCAStrategy):
     assert decision.can_execute is True
     assert decision.ahr_band == "low"
     assert decision.multiplier == 0.5
-    assert decision.suggested_amount_usd == 50.0 * 0.5 # Base 50
+    # Base amount = $1000 / 30 days = $33.33, multiplier 0.5 = $16.67
+    assert decision.base_amount_usd == pytest.approx(33.33, rel=0.01)
+    assert decision.suggested_amount_usd == pytest.approx(16.67, rel=0.01)
 
 @patch('dca_service.services.dca_engine.get_latest_metrics')
 def test_engine_mid_band(mock_metrics, session: Session, strategy: DCAStrategy):

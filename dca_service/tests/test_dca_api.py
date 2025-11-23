@@ -25,7 +25,8 @@ def test_preview_dca(mock_metrics, client: TestClient, session: Session):
     data = response.json()
     assert data["can_execute"] is True
     assert data["ahr_band"] == "low"
-    assert data["suggested_amount_usd"] == 25.0 # 50 * 0.5
+    # Budget $1000 / 30 days = $33.33, low band multiplier 0.5 = $16.67
+    assert round(data["suggested_amount_usd"], 2) == 16.67
 
 @patch('dca_service.services.dca_engine.get_latest_metrics')
 def test_execute_simulated_dca(mock_metrics, client: TestClient, session: Session):
@@ -54,4 +55,5 @@ def test_execute_simulated_dca(mock_metrics, client: TestClient, session: Sessio
     from sqlmodel import select
     tx = session.exec(select(DCATransaction)).first()
     assert tx is not None
-    assert tx.fiat_amount == 25.0
+    # Budget $1000 / 30 days = $33.33, low band multiplier 0.5 = $16.67
+    assert round(tx.fiat_amount, 2) == 16.67
