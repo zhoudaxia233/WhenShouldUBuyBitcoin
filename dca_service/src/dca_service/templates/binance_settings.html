@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ project_name }} - Binance Settings</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/notyf@3.10.0/notyf.min.css">
+    <style>
+        body { padding-top: 20px; background-color: #f8f9fa; }
+        .container { max-width: 900px; }
+        .masked-key { font-family: monospace; letter-spacing: 2px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="d-flex justify-content-between align-items-center mb-4">
+            <h1>{{ project_name }}</h1>
+            <a href="/" class="btn btn-outline-secondary">Back to Dashboard</a>
+        </header>
+
+        <div class="card shadow-sm">
+            <div class="card-header bg-white">
+                <h5 class="mb-0">Binance Settings (Read-Only)</h5>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-info mb-4">
+                    <strong>ℹ️ About this connection:</strong>
+                    <ul class="mb-0 mt-2">
+                        <li>This connection is <strong>read-only</strong> - no trading or withdrawal permissions.</li>
+                        <li>Used only to fetch BTC and USDC balances for analytics and DCA tracking.</li>
+                        <li>Your API credentials are <strong>encrypted</strong> before storage.</li>
+                    </ul>
+                </div>
+
+                <div class="row">
+                    <!-- Left: Credentials Form -->
+                    <div class="col-md-6">
+                        <h6 class="mb-3">API Credentials</h6>
+                        <form id="binanceForm">
+                            <div class="mb-3">
+                                <label class="form-label">API Key</label>
+                                <input type="text" class="form-control" id="apiKey" placeholder="Enter new key to update">
+                                <div id="currentKeyDisplay" class="form-text text-muted mt-1"></div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">API Secret</label>
+                                <input type="password" class="form-control" id="apiSecret" placeholder="Enter new secret to update">
+                                <small class="form-text text-muted">Secret is never displayed for security</small>
+                            </div>
+                            <button type="submit" class="btn btn-primary w-100">
+                                <span id="saveButtonText">Save Credentials</span>
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- Right: Status Panel -->
+                    <div class="col-md-6">
+                        <div class="card bg-light h-100">
+                            <div class="card-body">
+                                <h6>Connection Status</h6>
+                                
+                                <div class="mb-3">
+                                    <strong>Credentials:</strong>
+                                    <p id="credStatus" class="mb-1 small">Checking...</p>
+                                </div>
+
+                                <div class="mb-3">
+                                    <strong>Last Tested:</strong>
+                                    <p id="lastTested" class="mb-1 small text-muted">Never</p>
+                                </div>
+
+                                <button id="testConnectionBtn" class="btn btn-outline-secondary w-100">
+                                    <span id="testButtonText">Test Connection</span>
+                                </button>
+                                <div id="testResult" class="mt-2 small"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Help Section -->
+                <div class="mt-4">
+                    <button class="btn btn-sm btn-info text-white" type="button" data-bs-toggle="collapse" data-bs-target="#helpSection">
+                        ℹ️ How to get API Key
+                    </button>
+                    
+                    <div class="collapse mt-3" id="helpSection">
+                        <div class="card card-body bg-light">
+                            <h6>Creating a Read-Only API Key on Binance:</h6>
+                            <ol class="mb-0 small">
+                                <li>Log into your <strong>Binance</strong> account.</li>
+                                <li>Go to <strong>API Management</strong> (under Account section).</li>
+                                <li>Click <strong>Create API</strong> button.</li>
+                                <li>Select <strong>System generated</strong> (HMAC symmetric encryption).</li>
+                                <li>Give it a label (e.g. "DCA Read-Only").</li>
+                                <li>Complete security verification.</li>
+                                <li><strong>IMPORTANT:</strong> Under "API Restrictions", ensure ONLY <strong>"Enable Reading"</strong> is checked.</li>
+                                <li>Uncheck "Enable Spot & Margin Trading" and "Enable Withdrawals".</li>
+                                <li>Copy the <strong>API Key</strong> and <strong>Secret Key</strong> immediately.</li>
+                                <li>Paste them into the form above and click <strong>Save</strong>.</li>
+                            </ol>
+                            <div class="alert alert-warning small mt-3 mb-0">
+                                <strong>Security Note:</strong> Your keys are encrypted before storage. The Secret Key is never displayed again.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/notyf@3.10.0/notyf.min.js"></script>
+    <script>
+        const notyf = new Notyf({
+            duration: 3000,
+            dismissible: true,
+            position: { x: 'right', y: 'top' }
+        });
+
+        // Check credentials status on load
+        async function loadCredentialsStatus() {
+            try {
+                const response = await fetch('/api/binance/credentials/status');
+                const data = await response.json();
+                
+                const statusEl = document.getElementById('credStatus');
+                const keyDisplayEl = document.getElementById('currentKeyDisplay');
+                
+                if (data.has_credentials) {
+                    statusEl.textContent = '✔ Credentials stored';
+                    statusEl.className = 'mb-1 small text-success fw-bold';
+                    
+                    // Show masked API key
+                    if (data.masked_api_key) {
+                        keyDisplayEl.textContent = `Current: ${data.masked_api_key}`;
+                        keyDisplayEl.className = 'form-text text-success masked-key';
+                    }
+                } else {
+                    statusEl.textContent = '⚠ No credentials stored';
+                    statusEl.className = 'mb-1 small text-warning fw-bold';
+                    keyDisplayEl.textContent = '';
+                }
+            } catch (error) {
+                console.error('Error loading credentials status:', error);
+                document.getElementById('credStatus').textContent = '❌ Error checking status';
+            }
+        }
+
+        // Save credentials
+        document.getElementById('binanceForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const apiKey = document.getElementById('apiKey').value.trim();
+            const apiSecret = document.getElementById('apiSecret').value.trim();
+            
+            if (!apiKey || !apiSecret) {
+                notyf.error('Both API Key and Secret are required');
+                return;
+            }
+            
+            const saveBtn = document.querySelector('#binanceForm button[type="submit"]');
+            const saveText = document.getElementById('saveButtonText');
+            const originalText = saveText.textContent;
+            
+            saveBtn.disabled = true;
+            saveText.textContent = 'Saving...';
+            
+            try {
+                const response = await fetch('/api/binance/credentials', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ api_key: apiKey, api_secret: apiSecret })
+                });
+                
+                if (response.ok) {
+                    notyf.success('Credentials saved successfully');
+                    // Clear the form
+                    document.getElementById('apiKey').value = '';
+                    document.getElementById('apiSecret').value = '';
+                    // Reload status
+                    await loadCredentialsStatus();
+                } else {
+                    const error = await response.json();
+                    notyf.error('Error saving credentials: ' + (error.detail || 'Unknown error'));
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                notyf.error('Network error or backend unreachable');
+            } finally {
+                saveBtn.disabled = false;
+                saveText.textContent = originalText;
+            }
+        });
+
+        // Test connection
+        document.getElementById('testConnectionBtn').addEventListener('click', async () => {
+            const btn = document.getElementById('testConnectionBtn');
+            const btnText = document.getElementById('testButtonText');
+            const resultDiv = document.getElementById('testResult');
+            const originalText = btnText.textContent;
+            
+            btn.disabled = true;
+            btnText.textContent = 'Testing...';
+            resultDiv.textContent = '';
+            
+            try {
+                const response = await fetch('/api/binance/test-connection', {
+                    method: 'POST'
+                });
+                const result = await response.json();
+                
+                if (result.success) {
+                    resultDiv.textContent = '✔ Connected to Binance (read-only)';
+                    resultDiv.className = 'mt-2 small text-success fw-bold';
+                    notyf.success('Connected to Binance');
+                    
+                    // Update last tested time
+                    const now = new Date().toLocaleString('en-US', { 
+                        year: 'numeric', 
+                        month: 'short', 
+                        day: 'numeric', 
+                        hour: '2-digit', 
+                        minute: '2-digit' 
+                    });
+                    document.getElementById('lastTested').textContent = now;
+                    document.getElementById('lastTested').className = 'mb-1 small text-success';
+                } else {
+                    resultDiv.textContent = '❌ Connection failed: ' + result.error_message;
+                    resultDiv.className = 'mt-2 small text-danger fw-bold';
+                    notyf.error('Connection failed: ' + result.error_message);
+                }
+            } catch (error) {
+                resultDiv.textContent = '❌ Error testing connection';
+                resultDiv.className = 'mt-2 small text-danger';
+                notyf.error('Network error or backend unreachable');
+            } finally {
+                btn.disabled = false;
+                btnText.textContent = originalText;
+            }
+        });
+
+        // Load status on page load
+        loadCredentialsStatus();
+    </script>
+</body>
+</html>
