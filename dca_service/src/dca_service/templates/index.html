@@ -61,6 +61,9 @@
                     <div class="progress" style="height: 20px;">
                         <div id="progressBar" class="progress-bar bg-success" role="progressbar" style="width: 0%"></div>
                     </div>
+                    <div class="text-end mt-2">
+                        <small class="text-muted" style="font-size: 0.75rem;">Updated: <span id="holdingsUpdated">--</span></small>
+                    </div>
                 </div>
             </div>
         </div>
@@ -603,10 +606,13 @@
             btn.textContent = '🔄 Refreshing...';
             
             try {
-                await loadPreview();
-                notyf.success('Metrics refreshed');
+                await Promise.all([
+                    loadPreview(),
+                    loadHoldings()
+                ]);
+                notyf.success('Metrics & Holdings refreshed');
             } catch (error) {
-                notyf.error('Failed to load metrics');
+                notyf.error('Failed to refresh data');
             } finally {
                 btn.disabled = false;
                 btn.textContent = '🔄 Refresh';
@@ -689,6 +695,12 @@
                     document.getElementById('progressPercent').textContent = progress + '%';
                     document.getElementById('targetAmount').textContent = `Target: ${data.target_btc_amount} BTC`;
                     document.getElementById('progressBar').style.width = progress + '%';
+                    
+                    // Update timestamp if available
+                    if (data.holdings_last_updated) {
+                        const date = new Date(data.holdings_last_updated);
+                        document.getElementById('holdingsUpdated').textContent = date.toLocaleTimeString();
+                    }
                 } else {
                     contentBox.classList.add('d-none');
                     errorBox.classList.remove('d-none');

@@ -33,6 +33,7 @@ class HoldingsSummary(BaseModel):
     quote_asset: str
     target_btc_amount: Optional[float] = None
     progress_ratio: Optional[float] = None
+    holdings_last_updated: Optional[datetime] = None
     # Breakdown
     binance_btc_balance: Optional[float] = None
     cold_wallet_btc_balance: Optional[float] = None
@@ -157,7 +158,8 @@ async def get_holdings(session: Session = Depends(get_session)):
             target_btc_amount=target_btc,
             progress_ratio=progress,
             binance_btc_balance=btc_bal,
-            cold_wallet_btc_balance=manual_btc
+            cold_wallet_btc_balance=manual_btc,
+            holdings_last_updated=datetime.now(timezone.utc)
         )
     except Exception as e:
         return HoldingsSummary(
