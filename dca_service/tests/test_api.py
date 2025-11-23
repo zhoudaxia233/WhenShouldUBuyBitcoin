@@ -1,7 +1,13 @@
 from fastapi.testclient import TestClient
 from sqlmodel import Session, select
+from unittest.mock import patch
+from datetime import datetime, timezone
 
-from dca_service.models import DCATransaction
+from dca_service.models import DCATransaction, DCAStrategy
+
+# ============================================================================
+# TRANSACTION API TESTS
+# ============================================================================
 
 def test_read_transactions_empty(client: TestClient):
     response = client.get("/api/transactions")
@@ -43,3 +49,68 @@ def test_read_transactions_populated(client: TestClient, session: Session):
     data = response.json()
     assert len(data) >= 1
     assert data[0]["fiat_amount"] == 100.0
+
+# ============================================================================
+# DCA API TESTS
+# ============================================================================
+
+@patch('dca_service.services.dca_engine.get_latest_metrics')
+def test_dca_preview(mock_metrics, client: TestClient, session: Session):
+    """Test DCA preview endpoint"""
+    # Setup strategy
+    strategy = DCAStrategy(
+        is_active=True,
+        total_budget_usd=1000.0,
+        ahr999_multiplier_low=0.5,
+        ahr999_multiplier_mid=1.0,
+        ahr999_multiplier_high=1.5
+    )
+    session.add(strategy)
+    session.commit()
+    
+    mock_metrics.return_value = {
+        "ahr999": 0.4, 
+        "price_usd": 50000.0, 
+        "timestamp": datetime.now(timezone.utc)
+    }
+    
+    response = client.get("/api/dca/preview")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["can_execute"] is True
+    assert data["ahr_band"] == "low"
+    # Budget $1000 / 30 days = $33.33, low band multiplier 0.5 = $16.67
+    assert round(data["suggested_amount_usd"], 2) == 16.67
+
+@patch('dca_service.services.dca_engine.get_latest_metrics')
+def test_dca_execute_simulated(mock_metrics, client: TestClient, session: Session):
+    """Test simulated DCA execution endpoint"""
+    strategy = DCAStrategy(
+        is_active=True,
+        total_budget_usd=1000.0,
+        ahr999_multiplier_low=0.5,
+        ahr999_multiplier_mid=1.0,
+        ahr999_multiplier_high=1.5
+    )
+    session.add(strategy)
+    session.commit()
+    
+    mock_metrics.return_value = {
+        "ahr999": 0.4, 
+        "price_usd": 50000.0, 
+        "timestamp": datetime.now(timezone.utc)
+    }
+    
+    response = client.post("/api/dca/execute-simulated")
+    assert response.status_code == 200
+    data = response.json()
+    
+    assert data["transaction"] is not None
+    assert data["transaction"]["status"] == "SUCCESS"
+    assert data["transaction"]["notes"] == "SIMULATED"
+    
+    # Verify DB
+    tx = session.exec(select(DCATransaction)).first()
+    assert tx is not None
+    # Budget $1000 / 30 days = $33.33, low band multiplier 0.5 = $16.67
+    assert round(tx.fiat_amount, 2) == 16.67
