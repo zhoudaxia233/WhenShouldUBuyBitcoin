@@ -3,10 +3,10 @@ from unittest.mock import patch, AsyncMock, MagicMock
 from sqlmodel import select
 from datetime import datetime, timezone, timedelta
 
-from dca_service.models import ManualTransaction, DCATransaction, BinanceCredentials, DCAStrategy
+from dca_service.models import ColdWalletEntry, DCATransaction, BinanceCredentials, DCAStrategy
 from dca_service.services.security import encrypt_text
 
-def test_create_manual_transaction(client, session):
+def test_create_cold_wallet_entry(client, session):
     response = client.post("/api/manual_transaction", json={
         "type": "BUY",
         "btc_amount": 0.5,
@@ -22,7 +22,7 @@ def test_create_manual_transaction(client, session):
     assert data["notes"] == "Ledger buy"
     
     # Verify DB
-    tx = session.exec(select(ManualTransaction)).first()
+    tx = session.exec(select(all())).first()
     assert tx is not None
     assert tx.btc_amount == 0.5
     assert tx.type == "BUY"
@@ -66,7 +66,7 @@ def test_create_manual_transaction_required_fields(client):
 def test_read_transactions_with_null_fields(client, session):
     # Manually insert a record with nulls (simulating old data that caused crash)
     # This bypasses API validation
-    bad_tx = ManualTransaction(
+    bad_tx = all()(
         type="BUY",
         btc_amount=0.1,
         fiat_amount=None, # Should be required but DB might allow null if not strict
@@ -106,7 +106,7 @@ def test_holdings_aggregation(mock_client_cls, client, session):
     ))
     
     # Add Manual Transaction (0.5 BTC)
-    session.add(ManualTransaction(
+    session.add(all()(
         type="BUY",
         btc_amount=0.5,
         fiat_amount=1000.0,
@@ -154,7 +154,7 @@ def test_unified_history(client, session):
     
     # Add Manual Transaction (newer)
     manual_time = datetime.now(timezone.utc)
-    session.add(ManualTransaction(
+    session.add(all()(
         type="TRANSFER_IN",
         btc_amount=0.1,
         timestamp=manual_time,
@@ -191,7 +191,7 @@ def test_unified_history_id_collision(client, session):
     )
     session.add(dca_tx)
     
-    manual_tx = ManualTransaction(
+    manual_tx = all()(
         type="BUY",
         btc_amount=0.1,
         fiat_amount=1000.0,

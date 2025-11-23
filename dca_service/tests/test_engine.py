@@ -1,7 +1,7 @@
 import pytest
 from unittest.mock import patch
 from sqlmodel import Session, select
-from datetime import datetime
+from datetime import datetime, timezone
 
 from dca_service.models import DCAStrategy, DCATransaction
 from dca_service.services.dca_engine import calculate_dca_decision
@@ -28,7 +28,7 @@ def test_engine_inactive_strategy(mock_metrics, session: Session, strategy: DCAS
     session.add(strategy)
     session.commit()
     
-    mock_metrics.return_value = {"ahr999": 0.4, "price_usd": 50000.0, "timestamp": datetime.utcnow()}
+    mock_metrics.return_value = {"ahr999": 0.4, "price_usd": 50000.0, "timestamp": datetime.now(timezone.utc)}
     
     decision = calculate_dca_decision(session)
     assert decision.can_execute is False
@@ -36,7 +36,7 @@ def test_engine_inactive_strategy(mock_metrics, session: Session, strategy: DCAS
 
 @patch('dca_service.services.dca_engine.get_latest_metrics')
 def test_engine_low_band(mock_metrics, session: Session, strategy: DCAStrategy):
-    mock_metrics.return_value = {"ahr999": 0.4, "price_usd": 50000.0, "timestamp": datetime.utcnow()}
+    mock_metrics.return_value = {"ahr999": 0.4, "price_usd": 50000.0, "timestamp": datetime.now(timezone.utc)}
     
     decision = calculate_dca_decision(session)
     assert decision.can_execute is True
@@ -48,7 +48,7 @@ def test_engine_low_band(mock_metrics, session: Session, strategy: DCAStrategy):
 
 @patch('dca_service.services.dca_engine.get_latest_metrics')
 def test_engine_mid_band(mock_metrics, session: Session, strategy: DCAStrategy):
-    mock_metrics.return_value = {"ahr999": 1.0, "price_usd": 50000.0, "timestamp": datetime.utcnow()}
+    mock_metrics.return_value = {"ahr999": 1.0, "price_usd": 50000.0, "timestamp": datetime.now(timezone.utc)}
     
     decision = calculate_dca_decision(session)
     assert decision.can_execute is True
@@ -57,7 +57,7 @@ def test_engine_mid_band(mock_metrics, session: Session, strategy: DCAStrategy):
 
 @patch('dca_service.services.dca_engine.get_latest_metrics')
 def test_engine_high_band(mock_metrics, session: Session, strategy: DCAStrategy):
-    mock_metrics.return_value = {"ahr999": 1.5, "price_usd": 50000.0, "timestamp": datetime.utcnow()}
+    mock_metrics.return_value = {"ahr999": 1.5, "price_usd": 50000.0, "timestamp": datetime.now(timezone.utc)}
     
     decision = calculate_dca_decision(session)
     assert decision.can_execute is True
@@ -76,7 +76,7 @@ def test_engine_over_budget(mock_metrics, session: Session, strategy: DCAStrateg
     session.add(tx)
     session.commit()
     
-    mock_metrics.return_value = {"ahr999": 1.0, "price_usd": 50000.0, "timestamp": datetime.utcnow()}
+    mock_metrics.return_value = {"ahr999": 1.0, "price_usd": 50000.0, "timestamp": datetime.now(timezone.utc)}
     
     # Suggested amount = 50 * 1.0 = 50. Total spent 980 + 50 = 1030 > 1000
     decision = calculate_dca_decision(session)
@@ -98,7 +98,16 @@ def test_engine_allow_over_budget(mock_metrics, session: Session, strategy: DCAS
     session.add(tx)
     session.commit()
     
-    mock_metrics.return_value = {"ahr999": 1.0, "price_usd": 50000.0, "timestamp": datetime.utcnow()}
+    mock_metrics.return_value = {"ahr999": 1.0, "price_usd": 50000.0, "timestamp": datetime.now(timezone.utc)}
     
     decision = calculate_dca_decision(session)
     assert decision.can_execute is True
+
+@patch('dca_service.services.dca_engine.get_latest_metrics')
+def test_engine_metrics_unavailable(mock_metrics, session: Session, strategy: DCAStrategy):
+    """Test that engine handles missing/stale metrics gracefully"""
+    mock_metrics.return_value = None  # Simulate missing/stale metrics
+    
+    decision = calculate_dca_decision(session)
+    assert decision.can_execute is False
+    assert "unavailable or stale" in decision.reason
