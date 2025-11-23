@@ -31,7 +31,7 @@
 
                     <div class="row mb-3">
                         <div class="col-md-6">
-                            <label for="total_budget_usd" class="form-label">Total Budget (USD)</label>
+                            <label for="total_budget_usd" class="form-label">Monthly Budget (USD)</label>
                             <input type="number" class="form-control" id="total_budget_usd" step="0.01" required>
                             <div class="form-text text-muted" id="dailyBudgetCalc"></div>
                         </div>
@@ -41,9 +41,10 @@
                         </div>
                     </div>
 
-                    <div class="mb-3 form-check">
-                        <input class="form-check-input" type="checkbox" id="allow_over_budget">
-                        <label class="form-check-label" for="allow_over_budget">Allow Over Budget (Continue buying even if budget exceeded)</label>
+                    <div class="mb-3 form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="enforce_monthly_cap" checked>
+                        <label class="form-check-label" for="enforce_monthly_cap">Enforce Monthly Cap</label>
+                        <div class="form-text text-muted">Budget resets at the start of each calendar month. Uncheck to allow unlimited spending.</div>
                     </div>
 
                     <h5 class="mt-4 mb-3">Schedule (UTC)</h5>
@@ -152,19 +153,6 @@
                             </div>
                         </div>
 
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label">Monthly Cap</label>
-                                <div class="form-check form-switch mt-2">
-                                    <input class="form-check-input" type="checkbox" id="dynamic_enable_monthly_cap" checked>
-                                    <label class="form-check-label" for="dynamic_enable_monthly_cap">Enable Monthly Cap</label>
-                                </div>
-                            </div>
-                            <div class="col-md-6 mb-3" id="monthlyCapInput">
-                                <label for="dynamic_monthly_cap" class="form-label">Monthly Cap Amount (USD)</label>
-                                <input type="number" class="form-control" id="dynamic_monthly_cap" step="10" value="800">
-                                <div class="form-text text-muted">Maximum USD to spend per calendar month.</div>
-                            </div>
                         </div>
                     </div>
 
@@ -194,7 +182,7 @@
                 if (strategy) {
                     document.getElementById('is_active').checked = strategy.is_active;
                     document.getElementById('total_budget_usd').value = strategy.total_budget_usd;
-                    document.getElementById('allow_over_budget').checked = strategy.allow_over_budget;
+                    document.getElementById('enforce_monthly_cap').checked = strategy.enforce_monthly_cap;
                     document.getElementById('target_btc_amount').value = strategy.target_btc_amount;
                     document.getElementById('execution_frequency').value = strategy.execution_frequency || 'daily';
                     document.getElementById('execution_day_of_week').value = strategy.execution_day_of_week || 'monday';
@@ -215,14 +203,11 @@
                     document.getElementById('dynamic_a_low').value = strategy.dynamic_a_low !== null ? strategy.dynamic_a_low : 0.45;
                     document.getElementById('dynamic_a_high').value = strategy.dynamic_a_high !== null ? strategy.dynamic_a_high : 1.0;
                     document.getElementById('dynamic_enable_drawdown_boost').checked = strategy.dynamic_enable_drawdown_boost !== null ? strategy.dynamic_enable_drawdown_boost : true;
-                    document.getElementById('dynamic_enable_monthly_cap').checked = strategy.dynamic_enable_monthly_cap !== null ? strategy.dynamic_enable_monthly_cap : true;
-                    document.getElementById('dynamic_monthly_cap').value = strategy.dynamic_monthly_cap !== null ? strategy.dynamic_monthly_cap : 800.0;
                     
                     // Trigger updates
                     updateDailyCalc();
                     toggleDayOfWeek();
                     toggleStrategyType();
-                    toggleMonthlyCapInput();
                 }
             } catch (error) {
                 console.error('Error loading strategy:', error);
@@ -235,7 +220,7 @@
             const data = {
                 is_active: document.getElementById('is_active').checked,
                 total_budget_usd: parseFloat(document.getElementById('total_budget_usd').value),
-                allow_over_budget: document.getElementById('allow_over_budget').checked,
+                enforce_monthly_cap: document.getElementById('enforce_monthly_cap').checked,
                 target_btc_amount: parseFloat(document.getElementById('target_btc_amount').value),
                 execution_frequency: document.getElementById('execution_frequency').value,
                 execution_day_of_week: document.getElementById('execution_frequency').value === 'weekly' ? document.getElementById('execution_day_of_week').value : null,
@@ -255,9 +240,7 @@
                 dynamic_gamma: parseFloat(document.getElementById('dynamic_gamma').value),
                 dynamic_a_low: parseFloat(document.getElementById('dynamic_a_low').value),
                 dynamic_a_high: parseFloat(document.getElementById('dynamic_a_high').value),
-                dynamic_enable_drawdown_boost: document.getElementById('dynamic_enable_drawdown_boost').checked,
-                dynamic_enable_monthly_cap: document.getElementById('dynamic_enable_monthly_cap').checked,
-                dynamic_monthly_cap: parseFloat(document.getElementById('dynamic_monthly_cap').value)
+                dynamic_enable_drawdown_boost: document.getElementById('dynamic_enable_drawdown_boost').checked
             };
 
             try {
@@ -319,20 +302,11 @@
             }
         }
         
-        function toggleMonthlyCapInput() {
-            const enabled = document.getElementById('dynamic_enable_monthly_cap').checked;
-            const inputDiv = document.getElementById('monthlyCapInput');
-            if (enabled) {
-                inputDiv.classList.remove('d-none');
-            } else {
-                inputDiv.classList.add('d-none');
-            }
-        }
+
 
         document.getElementById('total_budget_usd').addEventListener('input', updateDailyCalc);
         document.getElementById('execution_frequency').addEventListener('change', toggleDayOfWeek);
         document.getElementById('strategy_type').addEventListener('change', toggleStrategyType);
-        document.getElementById('dynamic_enable_monthly_cap').addEventListener('change', toggleMonthlyCapInput);
 
         loadStrategy();
     </script>

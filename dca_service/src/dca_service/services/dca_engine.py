@@ -84,8 +84,9 @@ def calculate_dca_decision(session: Session) -> DCADecision:
             a_low=strategy.dynamic_a_low if strategy.dynamic_a_low is not None else 0.45,
             a_high=strategy.dynamic_a_high if strategy.dynamic_a_high is not None else 1.0,
             enable_drawdown_boost=strategy.dynamic_enable_drawdown_boost if strategy.dynamic_enable_drawdown_boost is not None else True,
-            enable_monthly_cap=strategy.dynamic_enable_monthly_cap if strategy.dynamic_enable_monthly_cap is not None else True,
-            monthly_cap=strategy.dynamic_monthly_cap if strategy.dynamic_monthly_cap is not None else 800.0
+            # Use unified budget enforcement: monthly_cap comes from total_budget_usd if enforce_monthly_cap is True
+            enable_monthly_cap=strategy.enforce_monthly_cap,
+            monthly_cap=strategy.total_budget_usd  # Use total_budget_usd as monthly cap
         )
         
         # For base_amount, we need to respect the execution frequency logic
@@ -158,11 +159,11 @@ def calculate_dca_decision(session: Session) -> DCADecision:
             
         # Base amount calculation for legacy is done below, but we need it here for structure consistency
         # We'll let the legacy flow continue, but we need to handle the divergence
-        pass
+        reason = "Conditions met"
 
     # 3. Determine budget reset logic (needed for base amount calculation)
     now = datetime.now(timezone.utc)
-    budget_resets = not strategy.allow_over_budget
+    budget_resets = strategy.enforce_monthly_cap  # Budget resets monthly if enforcement is enabled
     
     # 4. Calculate base amount based on budget and execution frequency
     # Only needed if not already calculated by dynamic strategy
@@ -242,7 +243,7 @@ def calculate_dca_decision(session: Session) -> DCADecision:
 
     # Check Budget
     if total_spent_sum + suggested_amount > strategy.total_budget_usd:
-        if not strategy.allow_over_budget:
+        if strategy.enforce_monthly_cap:
             reset_info = " (resets monthly)" if budget_resets else ""
             decision_data = base_decision.copy()
             decision_data.update({
