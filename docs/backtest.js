@@ -313,6 +313,27 @@ class DataLoader {
     }
 
     /**
+     * Calculate 180-day peak price (highest price in last 180 days)
+     * Used for drawdown boost calculation in dynamic AHR999 strategy
+     */
+    calculatePeak180(date, priceHistory) {
+        if (!priceHistory || priceHistory.length === 0) {
+            return null;
+        }
+
+        // Get last 180 prices (or all if less than 180)
+        const window = 180;
+        const lastPrices = priceHistory.slice(-window);
+
+        if (lastPrices.length === 0) {
+            return null;
+        }
+
+        // Find maximum price in the window
+        return Math.max(...lastPrices);
+    }
+
+    /**
      * Format date as YYYY-MM-DD string
      */
     formatDate(date) {
@@ -692,6 +713,211 @@ class AHR999PercentileStrategy extends Strategy {
 }
 
 // ============================================================================
+// STRATEGY D: DYNAMIC AHR999 (Advanced)
+// ============================================================================
+
+/**
+ * Dynamic AHR999 Strategy (Advanced)
+ * 
+ * This strategy uses a continuous curve approach instead of discrete bands:
+ * - Maps AHR999 to a cheapness score (0-1)
+ * - Uses power law (gamma) to calculate multiplier
+ * - Optional drawdown boost for additional buying when price drops significantly
+ * - Optional monthly cap enforcement
+ * 
+ * This is the same logic as the Python implementation in dca_service.
+ */
+class DynamicAHR999Strategy extends Strategy {
+    constructor(monthlyBudget, config = {}) {
+        super(monthlyBudget, config);
+        
+        // Strategy configuration (with defaults matching Python implementation)
+        this.config = {
+            baseAmount: monthlyBudget / BACKTEST_CONFIG.DAYS_PER_MONTH,
+            minMultiplier: config.min_multiplier !== undefined ? config.min_multiplier : 0.0,
+            maxMultiplier: config.max_multiplier !== undefined ? config.max_multiplier : 10.0,
+            gamma: config.gamma !== undefined ? config.gamma : 2.0,
+            aLow: config.a_low !== undefined ? config.a_low : 0.45,
+            aHigh: config.a_high !== undefined ? config.a_high : 1.0,
+            enableDrawdownBoost: config.enable_drawdown_boost !== undefined ? config.enable_drawdown_boost : true,
+            enableMonthlyCap: config.enable_monthly_cap !== undefined ? config.enable_monthly_cap : true,
+            monthlyCap: config.monthly_cap !== undefined ? config.monthly_cap : monthlyBudget,
+        };
+
+        // Track monthly spending for cap enforcement
+        this.monthSpent = 0;
+        this.currentMonth = null;
+        
+        // Price history for peak180 calculation
+        this.priceHistory = [];
+    }
+
+    getName() {
+        return "Dynamic AHR999 (Advanced)";
+    }
+
+    getDescription() {
+        return "Continuous curve strategy with power law multiplier and optional drawdown boost";
+    }
+
+    initialize() {
+        super.initialize();
+        this.monthSpent = 0;
+        this.currentMonth = null;
+        this.priceHistory = [];
+    }
+
+    onMonthStart(date) {
+        // Reset monthly spending at start of each month
+        // This is called by the backtest engine when a new month is detected
+        const monthKey = `${date.getFullYear()}-${date.getMonth()}`;
+        this.monthSpent = 0;
+        this.currentMonth = monthKey;
+    }
+
+    /**
+     * Clamp value between min and max
+     */
+    clamp(value, minVal, maxVal) {
+        return Math.max(minVal, Math.min(value, maxVal));
+    }
+
+    /**
+     * Calculate cheapness score from AHR999 value
+     * Maps AHR999 to [0, 1] where 1 = very cheap, 0 = expensive
+     */
+    calculateCheapness(ahr999) {
+        const { aLow, aHigh } = this.config;
+        
+        if (ahr999 <= aLow) {
+            return 1.0;
+        } else if (ahr999 >= aHigh) {
+            return 0.0;
+        } else {
+            return (aHigh - ahr999) / (aHigh - aLow);
+        }
+    }
+
+    /**
+     * Calculate base multiplier using power law
+     * Formula: mult_base = min + (max - min) * (cheapness ^ gamma)
+     */
+    calculateBaseMultiplier(cheapness) {
+        const { minMultiplier, maxMultiplier, gamma } = this.config;
+        return minMultiplier + (maxMultiplier - minMultiplier) * Math.pow(cheapness, gamma);
+    }
+
+    /**
+     * Calculate drawdown boost factor
+     * Based on how far price is below 180-day peak
+     */
+    calculateDrawdownBoost(price, peak180) {
+        if (!this.config.enableDrawdownBoost || !peak180 || peak180 <= 0) {
+            return 1.0;
+        }
+
+        const drawdown = (peak180 - price) / peak180;
+
+        // Map drawdown to boost factor (matching Python logic)
+        if (drawdown < 0.20) {
+            return 1.0;
+        } else if (drawdown < 0.35) {
+            return 1.2;
+        } else if (drawdown < 0.50) {
+            return 1.5;
+        } else {
+            return 2.0;
+        }
+    }
+
+    /**
+     * Calculate final multiplier with boost and clipping
+     */
+    calculateFinalMultiplier(baseMultiplier, boostFactor) {
+        let finalMultiplier = baseMultiplier * boostFactor;
+        
+        // Clip to max_multiplier
+        if (finalMultiplier > this.config.maxMultiplier) {
+            finalMultiplier = this.config.maxMultiplier;
+        }
+
+        return finalMultiplier;
+    }
+
+    /**
+     * Apply monthly cap if enabled
+     */
+    applyMonthlyCap(buyAmount) {
+        if (!this.config.enableMonthlyCap) {
+            return buyAmount;
+        }
+
+        const remaining = this.config.monthlyCap - this.monthSpent;
+        const cappedAmount = Math.max(0, Math.min(buyAmount, remaining));
+        
+        return cappedAmount;
+    }
+
+    shouldInvest(date, price, dayData) {
+        // Check if we need to reset monthly spending (defensive check in case onMonthStart wasn't called)
+        // This ensures monthSpent is reset even if the backtest starts mid-month
+        const monthKey = `${date.getFullYear()}-${date.getMonth()}`;
+        if (this.currentMonth !== monthKey) {
+            this.monthSpent = 0;
+            this.currentMonth = monthKey;
+        }
+
+        // Update price history
+        this.priceHistory.push(price);
+        if (this.priceHistory.length > 200) {
+            this.priceHistory.shift();
+        }
+
+        // Get AHR999 value
+        let ahr999;
+        if (dayData && dayData.ahr999 !== null) {
+            ahr999 = dayData.ahr999;
+        } else {
+            ahr999 = this.getCurrentAHR999(date);
+        }
+
+        // If we can't calculate AHR999, don't invest
+        if (ahr999 === null || ahr999 === undefined || isNaN(ahr999)) {
+            return 0;
+        }
+
+        // Step 1: Calculate cheapness score
+        const cheapness = this.calculateCheapness(ahr999);
+
+        // Step 2: Calculate base multiplier
+        const baseMultiplier = this.calculateBaseMultiplier(cheapness);
+
+        // Step 3: Calculate drawdown boost
+        const peak180 = this.dataLoader ? this.dataLoader.calculatePeak180(date, this.priceHistory) : null;
+        const boostFactor = this.calculateDrawdownBoost(price, peak180 || price);
+
+        // Step 4: Calculate final multiplier
+        const finalMultiplier = this.calculateFinalMultiplier(baseMultiplier, boostFactor);
+
+        // Step 5: Calculate buy amount
+        let buyAmount = this.config.baseAmount * finalMultiplier;
+
+        // Step 6: Apply monthly cap
+        buyAmount = this.applyMonthlyCap(buyAmount);
+
+        // Update monthly spending (for next iteration)
+        // Only update if monthly cap is enabled
+        // This tracks what we WOULD spend, actual spending is controlled by backtest engine
+        // Note: We update even if buyAmount is 0, because that means we've hit the cap
+        if (this.config.enableMonthlyCap) {
+            this.monthSpent += buyAmount;
+        }
+
+        return buyAmount;
+    }
+}
+
+// ============================================================================
 // BACKTESTING ENGINE
 // ============================================================================
 
@@ -731,14 +957,16 @@ class BacktestEngine {
             const dailyBudget = monthlyBudget / BACKTEST_CONFIG.DAYS_PER_MONTH;
             totalBudget = result.durationDays * dailyBudget; // durationDays already includes both start and end dates
         } else if (
-            this.strategy instanceof AHR999PercentileStrategy &&
-            !this.strategy.unlimitedBudget
+            (this.strategy instanceof AHR999PercentileStrategy &&
+                !this.strategy.unlimitedBudget) ||
+            (this.strategy instanceof DynamicAHR999Strategy &&
+                this.strategy.config.enableMonthlyCap)
         ) {
-            // For AHR999 (non-unlimited), calculate based on actual days (same as Daily DCA)
+            // For AHR999 strategies with monthly cap, calculate based on actual days
             const dailyBudget = monthlyBudget / BACKTEST_CONFIG.DAYS_PER_MONTH;
             totalBudget = result.durationDays * dailyBudget;
         } else {
-            // For Monthly DCA and AHR999 (unlimited), use complete months count
+            // For Monthly DCA and AHR999 (unlimited/no cap), use complete months count
             const completeMonths = getCompleteMonthsCount(startDate, endDate);
             totalBudget = completeMonths * monthlyBudget;
         }
@@ -789,7 +1017,10 @@ class BacktestEngine {
                         (daysInPeriod / BACKTEST_CONFIG.DAYS_PER_MONTH) *
                         monthlyBudget;
                     cashBalance += proportionalBudget;
-                } else if (this.strategy instanceof AHR999PercentileStrategy) {
+                } else if (
+                    this.strategy instanceof AHR999PercentileStrategy ||
+                    this.strategy instanceof DynamicAHR999Strategy
+                ) {
                     // For AHR999 strategies, do NOT add to cashBalance
                     // Investment is limited by totalBudget (for non-unlimited) or unlimited (for unlimited)
                     // cashBalance should remain 0 to avoid inflating finalPortfolioValue with unused budget
@@ -823,7 +1054,11 @@ class BacktestEngine {
                 if (investAmount > 0) {
                     // Check if strategy has unlimited budget mode enabled
                     const isUnlimitedBudget =
-                        this.strategy.unlimitedBudget || false;
+                        (this.strategy instanceof AHR999PercentileStrategy &&
+                            this.strategy.unlimitedBudget) ||
+                        (this.strategy instanceof DynamicAHR999Strategy &&
+                            !this.strategy.config.enableMonthlyCap) ||
+                        false;
 
                     let actualInvestment;
                     if (isUnlimitedBudget) {
@@ -858,7 +1093,8 @@ class BacktestEngine {
                         // For AHR999 strategies, don't update cashBalance (finalPortfolioValue doesn't include it)
                         // For other strategies, update cashBalance to track uninvested cash
                         if (
-                            !(this.strategy instanceof AHR999PercentileStrategy)
+                            !(this.strategy instanceof AHR999PercentileStrategy) &&
+                            !(this.strategy instanceof DynamicAHR999Strategy)
                         ) {
                             cashBalance -= actualInvestment;
                         }
@@ -870,7 +1106,8 @@ class BacktestEngine {
                 // For AHR999 strategies, only include BTC value (not unused budget)
                 // For other strategies, include cashBalance (uninvested cash)
                 const portfolioValue =
-                    this.strategy instanceof AHR999PercentileStrategy
+                    this.strategy instanceof AHR999PercentileStrategy ||
+                    this.strategy instanceof DynamicAHR999Strategy
                         ? btcBalance * price
                         : cashBalance + btcBalance * price;
 
@@ -912,7 +1149,10 @@ class BacktestEngine {
         } else {
             // For AHR999 strategies, finalPortfolioValue should only include BTC value, not unused budget
             // For other strategies, include cashBalance (uninvested cash)
-            if (this.strategy instanceof AHR999PercentileStrategy) {
+            if (
+                this.strategy instanceof AHR999PercentileStrategy ||
+                this.strategy instanceof DynamicAHR999Strategy
+            ) {
                 result.finalPortfolioValue = btcBalance * finalPrice;
             } else {
                 result.finalPortfolioValue =
@@ -1323,6 +1563,36 @@ class BacktestUI {
                     });
                     break;
 
+                case "dynamic-ahr999":
+                    // Get Dynamic AHR999 strategy config from UI
+                    const getDynamicValue = (id, defaultValue) => {
+                        const elem = document.getElementById(id);
+                        if (!elem) return defaultValue;
+                        const value = parseFloat(elem.value);
+                        return isNaN(value) ? defaultValue : value;
+                    };
+
+                    const getDynamicBool = (id, defaultValue) => {
+                        const elem = document.getElementById(id);
+                        return elem ? elem.checked : defaultValue;
+                    };
+
+                    const dynamicConfig = {
+                        min_multiplier: getDynamicValue("dynamic-min-multiplier", 0.0),
+                        max_multiplier: getDynamicValue("dynamic-max-multiplier", 10.0),
+                        gamma: getDynamicValue("dynamic-gamma", 2.0),
+                        a_low: getDynamicValue("dynamic-a-low", 0.45),
+                        a_high: getDynamicValue("dynamic-a-high", 1.0),
+                        enable_drawdown_boost: getDynamicBool("dynamic-enable-drawdown-boost", true),
+                        enable_monthly_cap: getDynamicBool("dynamic-enable-monthly-cap", true),
+                        monthly_cap: monthlyBudget, // Use monthly budget as cap
+                    };
+
+                    console.log("Dynamic AHR999 Config:", dynamicConfig);
+
+                    strategy = new DynamicAHR999Strategy(monthlyBudget, dynamicConfig);
+                    break;
+
                 default:
                     alert("Invalid strategy selected");
                     return;
@@ -1538,6 +1808,7 @@ export {
     DailyDCAStrategy,
     MonthlyDCAStrategy,
     AHR999PercentileStrategy,
+    DynamicAHR999Strategy,
     BacktestEngine,
     BacktestUI,
     DayData,
