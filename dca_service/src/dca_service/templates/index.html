@@ -21,13 +21,27 @@
 </head>
 <body>
     <div class="container">
-        <header class="d-flex justify-content-between align-items-center mb-4">
+        <header class="d-flex justify-content-between align-items-center mb-3">
             <h1>{{ project_name }}</h1>
             <div>
                 <a href="/strategy" class="btn btn-outline-secondary me-2">Strategy Config</a>
                 <button id="simulateBtn" class="btn btn-primary">Simulate Transaction</button>
             </div>
         </header>
+
+        <!-- Global Refresh Status Bar -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-body py-2">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div class="text-muted small">
+                        <strong>Last refresh:</strong> <span id="globalRefreshTime">Loading...</span>
+                    </div>
+                    <button id="globalRefreshBtn" class="btn btn-sm btn-outline-primary">
+                        🔄 Refresh Dashboard
+                    </button>
+                </div>
+            </div>
+        </div>
 
         <!-- Holdings & Target Section (Phase 7) -->
         <div class="card shadow-sm mb-4">
@@ -47,6 +61,11 @@
                                 <span id="hotBalance" title="Binance (Hot)">Hot: --</span> | 
                                 <span id="coldBalance" title="Ledger (Cold)">Cold: --</span>
                             </div>
+                            <div class="mt-2">
+                                <button class="btn btn-sm btn-outline-info" data-bs-toggle="modal" data-bs-target="#manualEntryModal" title="Manual entry for Ledger/cold wallet BTC. Does not affect Binance balance.">
+                                    + Add Cold Wallet BTC
+                                </button>
+                            </div>
                         </div>
                         <div class="col-md-4">
                             <div class="text-muted small">Quote Balance (<span id="quoteAsset">USDC</span>)</div>
@@ -61,9 +80,6 @@
                     <div class="progress" style="height: 20px;">
                         <div id="progressBar" class="progress-bar bg-success" role="progressbar" style="width: 0%"></div>
                     </div>
-                    <div class="text-end mt-2">
-                        <small class="text-muted" style="font-size: 0.75rem;">Updated: <span id="holdingsUpdated">--</span></small>
-                    </div>
                 </div>
             </div>
         </div>
@@ -73,14 +89,8 @@
             <div class="card-header bg-white d-flex justify-content-between align-items-center">
                 <h5 class="mb-0">DCA Preview & Control</h5>
                 <div>
-                    <button class="btn btn-sm btn-outline-secondary me-2" data-bs-toggle="modal" data-bs-target="#manualEntryModal">
-                        ❄️ Cold Wallet
-                    </button>
                     <span id="dataSourceBadge" class="badge bg-secondary me-2">Source: --</span>
-                    <span id="scheduleDisplay" class="badge bg-info text-dark me-2">Loading Schedule...</span>
-                    <button id="refreshBtn" class="btn btn-sm btn-outline-primary" title="Refresh preview">
-                        🔄 Refresh
-                    </button>
+                    <span id="scheduleDisplay" class="badge bg-info text-dark">Loading Schedule...</span>
                 </div>
             </div>
             <div class="card-body">
@@ -111,11 +121,8 @@
                 </div>
                 
                 <div class="alert alert-light border mb-3" id="previewReasonBox">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <strong>Status:</strong> <span id="previewReason">Loading...</span>
-                        </div>
-                        <small class="text-muted" id="previewTimestamp"></small>
+                    <div>
+                        <strong>Status:</strong> <span id="previewReason">Loading...</span>
                     </div>
                 </div>
 
@@ -153,7 +160,13 @@
                         </tbody>
                     </table>
                 </div>
-            </div>
+                <div class="card-footer bg-white">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <button id="prevPageBtn" class="btn btn-sm btn-outline-secondary" disabled>← Previous</button>
+                        <span id="pageInfo" class="text-muted small">Page 1 of 1</span>
+                        <button id="nextPageBtn" class="btn btn-sm btn-outline-secondary" disabled>Next →</button>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -284,7 +297,7 @@
         });
     </script>
     <script>
-        // Timezone conversion utilities
+        // Timezone and formatting utilities
         function convertToUTC(datetimeLocal, timezone) {
             // datetime-local gives us a string like "2025-11-22T15:30"
             // We need to interpret it in the specified timezone and convert to UTC
@@ -293,35 +306,16 @@
                 return new Date(datetimeLocal + 'Z').toISOString();
             } else if (timezone === 'Europe/Berlin') {
                 // Parse as Germany time, convert to UTC
-                // Strategy: Use the browser's Date parser with timezone info
                 const parts = datetimeLocal.match(/(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/);
                 if (!parts) return null;
                 
                 const [, year, month, day, hour, minute] = parts;
                 
-                // Create a date string that can be parsed as Germany time
-                // We'll use toLocaleString to understand what UTC time this represents
+                // Create date string that can be parsed as Germany time
                 const dateStr = `${year}-${month}-${day}T${hour}:${minute}:00`;
                 
                 // Create temporary date object (this will be in local browser timezone)
                 const tempDate = new Date(dateStr);
-                
-                // Format it as if it's in Europe/Berlin timezone
-                const berlinStr = tempDate.toLocaleString('en-US', {
-                    timeZone: 'Europe/Berlin',
-                    year: 'numeric',
-                    month: '2-digit',
-                    day: '2-digit',
-                    hour: '2-digit',
-                    minute: '2-digit',
-                    second: '2-digit',
-                    hour12: false
-                });
-                
-                // Now we know what time it would be in Berlin if tempDate was that time locally
-                // We need to find the UTC time that would display as our input in Berlin
-                // Simpler approach: manually calculate offset for Berlin
-                // Germany is UTC+1 (winter) or UTC+2 (summer)
                 
                 // Better approach: Use Intl to get the offset
                 const formatter = new Intl.DateTimeFormat('en-US', {
@@ -349,7 +343,6 @@
                 }
                 
                 // Now convert: Germany time - offset = UTC
-                // If input is 23:22 Germany time (CET, UTC+1), UTC should be 22:22
                 const utcDate = new Date(Date.UTC(year, month - 1, day, hour, minute, 0));
                 const correctedUTC = new Date(utcDate.getTime() - offsetHours * 60 * 60 * 1000);
                 
@@ -358,21 +351,70 @@
             return null;
         }
         
-        function formatTimestampInTimezone(isoString, timezone) {
-            // Ensure the ISO string has a Z or timezone indicator
+        // Format timestamp for global refresh bar (YYYY-MM-DD HH:MM (Local) · HH:MM UTC)
+        function formatGlobalRefreshTime(isoString) {
+            if (!isoString) return 'Never';
+            
+            const date = new Date(isoString);
+            
+            // Local time in 24-hour format
+            const localDate = date.toLocaleString('sv-SE', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: false
+            }).replace(' ', ' ');
+            
+            // UTC time in 24-hour format
+            const utcHours = String(date.getUTCHours()).padStart(2, '0');
+            const utcMinutes = String(date.getUTCMinutes()).padStart(2, '0');
+            
+            return `${localDate} (Local) · ${utcHours}:${utcMinutes} UTC`;
+        }
+        
+        // Format timestamp for transaction table (Local 24-hour, UTC in tooltip)
+        function formatTransactionTimestamp(isoString) {
+            if (!isoString) return '--';
+            
             let dateStr = isoString;
             if (!dateStr.endsWith('Z') && !dateStr.includes('+') && !dateStr.includes('T')) {
-                // If it's just a datetime without timezone, assume UTC
                 dateStr = dateStr.replace(' ', 'T') + 'Z';
             } else if (!dateStr.endsWith('Z') && dateStr.includes('T') && !dateStr.includes('+')) {
-                // If it has T but no timezone, add Z
+                dateStr = dateStr + 'Z';
+            }
+            
+            const date = new Date(dateStr);
+            
+            // Local time in 24-hour format
+            const localTime = date.toLocaleString('sv-SE', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: false
+            });
+            
+            // UTC time for tooltip
+            const utcTime = date.toISOString().replace('T', ' ').substring(0, 16);
+            
+            return { display: localTime, utcTooltip: `UTC: ${utcTime}` };
+        }
+        
+        function formatTimestampInTimezone(isoString, timezone) {
+            // Legacy function for manual entry modal
+            let dateStr = isoString;
+            if (!dateStr.endsWith('Z') && !dateStr.includes('+') && !dateStr.includes('T')) {
+                dateStr = dateStr.replace(' ', 'T') + 'Z';
+            } else if (!dateStr.endsWith('Z') && dateStr.includes('T') && !dateStr.includes('+')) {
                 dateStr = dateStr + 'Z';
             }
             
             const date = new Date(dateStr);
             
             if (timezone === 'UTC') {
-                // For UTC, use toISOString() which always returns UTC
                 return date.toISOString().replace('T', ' ').substring(0, 19) + ' UTC';
             } else if (timezone === 'Europe/Berlin') {
                 return date.toLocaleString('de-DE', {
@@ -389,61 +431,104 @@
             return isoString;
         }
         
+        // Pagination state
+        let allTransactions = [];
+        let currentPage = 1;
+        const rowsPerPage = 20;
+        
         async function loadTransactions() {
             try {
-                const response = await fetch('/api/transactions?limit=50');
-                const transactions = await response.json();
-                const tbody = document.getElementById('transactionsTable');
-                tbody.innerHTML = '';
-
-                transactions.forEach(tx => {
-                    const row = document.createElement('tr');
-                    // Always display in UTC
-                    const date = formatTimestampInTimezone(tx.timestamp, 'UTC');
-                    const statusClass = tx.status === 'SUCCESS' ? 'bg-success' : 
-                                      tx.status === 'FAILED' ? 'bg-danger' : 'bg-secondary';
-                    
-                    // Source badge
-                    const source = tx.source || 'SIMULATED';
-                    let sourceBadge = '';
-                    if (source === 'SIMULATED') {
-                        sourceBadge = '<span class="badge bg-secondary status-badge">SIM</span>';
-                    } else if (source === 'BINANCE') {
-                        sourceBadge = '<span class="badge bg-primary status-badge">BIN</span>';
-                    } else if (source === 'LEDGER') {
-                        sourceBadge = '<span class="badge bg-info text-dark status-badge">LEDGER</span>';
-                    } else if (source === 'MANUAL') {
-                        sourceBadge = '<span class="badge bg-secondary status-badge">MANUAL</span>';
-                    } else {
-                        sourceBadge = `<span class="badge bg-secondary status-badge">${source}</span>`;
-                    }
-                    
-                    // Fee display
-                    let feeDisplay = '—';
-                    if (tx.fee_amount !== null && tx.fee_amount !== undefined && tx.fee_amount > 0) {
-                        const feeAsset = tx.fee_asset || 'USDC';
-                        feeDisplay = `${tx.fee_amount.toFixed(2)} ${feeAsset}`;
-                    }
-                    // For 0 or null/undefined fees, show "—" (already set above)
-                    
-                    row.innerHTML = `
-                        <td>${tx.id}</td>
-                        <td>${date}</td>
-                        <td><span class="badge ${statusClass} status-badge">${tx.status}</span></td>
-                        <td>${sourceBadge}</td>
-                        <td>${tx.fiat_amount ? '$' + tx.fiat_amount.toFixed(2) : '-'}</td>
-                        <td>${feeDisplay}</td>
-                        <td>${tx.btc_amount ? tx.btc_amount.toFixed(8) : '-'}</td>
-                        <td>${tx.price ? '$' + tx.price.toFixed(2) : '-'}</td>
-                        <td>${tx.ahr999 ? tx.ahr999.toFixed(2) : '-'}</td>
-                        <td>${tx.notes || '—'}</td>
-                    `;
-                    tbody.appendChild(row);
-                });
+                const response = await fetch('/api/transactions?limit=100');
+                allTransactions = await response.json();
+                
+                // Reset to page 1
+                currentPage = 1;
+                renderTransactionPage();
             } catch (error) {
                 console.error('Error loading transactions:', error);
             }
         }
+        
+        function renderTransactionPage() {
+            const tbody = document.getElementById('transactionsTable');
+            tbody.innerHTML = '';
+            
+            const totalPages = Math.ceil(allTransactions.length / rowsPerPage);
+            const startIdx = (currentPage - 1) * rowsPerPage;
+            const endIdx = startIdx + rowsPerPage;
+            const pageTransactions = allTransactions.slice(startIdx, endIdx);
+            
+            pageTransactions.forEach(tx => {
+                const row = document.createElement('tr');
+                
+                // Format timestamp with tooltip
+                const timestampData = formatTransactionTimestamp(tx.timestamp);
+                
+                const statusClass = tx.status === 'SUCCESS' ? 'bg-success' : 
+                                  tx.status === 'FAILED' ? 'bg-danger' : 'bg-secondary';
+                
+                // Source badge
+                const source = tx.source || 'SIMULATED';
+                let sourceBadge = '';
+                if (source === 'SIMULATED') {
+                    sourceBadge = '<span class="badge bg-secondary status-badge">SIM</span>';
+                } else if (source === 'BINANCE') {
+                    sourceBadge = '<span class="badge bg-primary status-badge">BIN</span>';
+                } else if (source === 'LEDGER') {
+                    sourceBadge = '<span class="badge bg-info text-dark status-badge">LEDGER</span>';
+                } else if (source === 'MANUAL') {
+                    sourceBadge = '<span class="badge bg-secondary status-badge">MANUAL</span>';
+                } else {
+                    sourceBadge = `<span class="badge bg-secondary status-badge">${source}</span>`;
+                }
+                
+                // Fee display
+                let feeDisplay = '—';
+                if (tx.fee_amount !== null && tx.fee_amount !== undefined && tx.fee_amount > 0) {
+                    const feeAsset = tx.fee_asset || 'USDC';
+                    feeDisplay = `${tx.fee_amount.toFixed(2)} ${feeAsset}`;
+                }
+                
+                row.innerHTML = `
+                    <td>${tx.id}</td>
+                    <td title="${timestampData.utcTooltip}">${timestampData.display}</td>
+                    <td><span class="badge ${statusClass} status-badge">${tx.status}</span></td>
+                    <td>${sourceBadge}</td>
+                    <td>${tx.fiat_amount ? '$' + tx.fiat_amount.toFixed(2) : '-'}</td>
+                    <td>${feeDisplay}</td>
+                    <td>${tx.btc_amount ? tx.btc_amount.toFixed(8) : '-'}</td>
+                    <td>${tx.price ? '$' + tx.price.toFixed(2) : '-'}</td>
+                    <td>${tx.ahr999 ? tx.ahr999.toFixed(2) : '-'}</td>
+                    <td>${tx.notes || '—'}</td>
+                `;
+                tbody.appendChild(row);
+            });
+            
+            // Update pagination controls
+            document.getElementById('pageInfo').textContent = 
+                `Page ${currentPage} of ${Math.max(1, totalPages)}`;
+            
+            document.getElementById('prevPageBtn').disabled = currentPage <= 1;
+            document.getElementById('nextPageBtn').disabled = currentPage >= totalPages || totalPages === 0;
+        }
+        
+        // Pagination button handlers
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('prevPageBtn').addEventListener('click', () => {
+                if (currentPage > 1) {
+                    currentPage--;
+                    renderTransactionPage();
+                }
+            });
+            
+            document.getElementById('nextPageBtn').addEventListener('click', () => {
+                const totalPages = Math.ceil(allTransactions.length / rowsPerPage);
+                if (currentPage < totalPages) {
+                    currentPage++;
+                    renderTransactionPage();
+                }
+            });
+        });
 
         document.getElementById('simulateBtn').addEventListener('click', async () => {
             try {
@@ -502,7 +587,9 @@
                 
                 // Update status
                 document.getElementById('previewReason').textContent = decision.reason;
-                document.getElementById('previewTimestamp').textContent = 'Last updated: ' + new Date(decision.timestamp).toLocaleTimeString();
+                
+                // Update global refresh timestamp
+                updateGlobalRefreshTime(decision.timestamp);
                 
                 // Update remaining budget
                 const remainingBudgetElem = document.getElementById('remainingBudget');
@@ -598,24 +685,36 @@
                 notyf.error('Failed to load metrics');
             }
         }
+        
+        // Helper to update global refresh timestamp
+        function updateGlobalRefreshTime(timestamp) {
+            const elem = document.getElementById('globalRefreshTime');
+            if (elem && timestamp) {
+                elem.textContent = formatGlobalRefreshTime(timestamp);
+            }
+        }
 
-        // Refresh button handler (Phase 6)
-        document.getElementById('refreshBtn').addEventListener('click', async () => {
-            const btn = document.getElementById('refreshBtn');
-            btn.disabled = true;
-            btn.textContent = '🔄 Refreshing...';
-            
-            try {
-                await Promise.all([
-                    loadPreview(),
-                    loadHoldings()
-                ]);
-                notyf.success('Metrics & Holdings refreshed');
-            } catch (error) {
-                notyf.error('Failed to refresh data');
-            } finally {
-                btn.disabled = false;
-                btn.textContent = '🔄 Refresh';
+        // Global refresh button handler
+        document.addEventListener('DOMContentLoaded', function() {
+            const globalBtn = document.getElementById('globalRefreshBtn');
+            if (globalBtn) {
+                globalBtn.addEventListener('click', async () => {
+                    globalBtn.disabled = true;
+                    globalBtn.textContent = '🔄 Refreshing...';
+                    
+                    try {
+                        await Promise.all([
+                            loadPreview(),
+                            loadHoldings()
+                        ]);
+                        notyf.success('Dashboard refreshed');
+                    } catch (error) {
+                        notyf.error('Failed to refresh dashboard');
+                    } finally {
+                        globalBtn.disabled = false;
+                        globalBtn.textContent = '🔄 Refresh Dashboard';
+                    }
+                });
             }
         });
 
@@ -696,10 +795,9 @@
                     document.getElementById('targetAmount').textContent = `Target: ${data.target_btc_amount} BTC`;
                     document.getElementById('progressBar').style.width = progress + '%';
                     
-                    // Update timestamp if available
+                    // Update global refresh timestamp
                     if (data.holdings_last_updated) {
-                        const date = new Date(data.holdings_last_updated);
-                        document.getElementById('holdingsUpdated').textContent = date.toLocaleTimeString();
+                        updateGlobalRefreshTime(data.holdings_last_updated);
                     }
                 } else {
                     contentBox.classList.add('d-none');
