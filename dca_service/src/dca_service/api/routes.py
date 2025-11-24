@@ -11,7 +11,7 @@ router = APIRouter()
 @router.get("/transactions", response_model=List[UnifiedTransaction])
 def read_transactions(
     offset: int = 0,
-    limit: int = Query(default=100, le=100),
+    limit: int = Query(default=1000, le=5000),  # Default 1000, max 5000 for safety
     session: Session = Depends(get_session)
 ):
     # Fetch DCA transactions

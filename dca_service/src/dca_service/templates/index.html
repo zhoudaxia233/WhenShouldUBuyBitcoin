@@ -375,7 +375,7 @@
         
         async function loadTransactions() {
             try {
-                const response = await fetch('/api/transactions?limit=100');
+                const response = await fetch('/api/transactions');
                 allTransactions = await response.json();
                 
                 // Reset to page 1
@@ -892,11 +892,49 @@
         }
 
         
-        // Load on start (Phase 6: auto-refresh on page load)
-        loadExecutionMode();  // Phase 9: Load execution mode
+        // Server-Sent Events for real-time updates
+        let eventSource = null;
+        
+        function connectSSE() {
+            // Close existing connection if any
+            if (eventSource) {
+                eventSource.close();
+            }
+            
+            // Connect to SSE endpoint
+            eventSource = new EventSource('/api/events');
+            
+            eventSource.addEventListener('transaction_created', (event) => {
+                console.log('New transaction event received:', event.data);
+                notyf.success('New DCA transaction executed!');
+                
+                // Refresh all data immediately
+                loadTransactions();
+                loadPreview();
+                loadHoldings();
+            });
+            
+            eventSource.addEventListener('ping', () => {
+                // Keepalive ping, do nothing
+            });
+            
+            eventSource.onerror = (error) => {
+                console.error('SSE connection error:', error);
+                eventSource.close();
+                
+                // Reconnect after 5 seconds
+                setTimeout(connectSSE, 5000);
+            };
+            
+            console.log('✓ Connected to real-time updates');
+        }
+        
+        // Load on start
+        loadExecutionMode();
         loadTransactions();
         loadPreview();
         loadHoldings();
+        connectSSE();  // Connect to server-sent events for real-time updates
     </script>
 </body>
 </html>

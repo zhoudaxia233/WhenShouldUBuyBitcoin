@@ -15,9 +15,13 @@ from dca_service.database import engine
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     create_db_and_tables()
+    print("Starting DCA Scheduler...")
     scheduler.start()
+    print("DCA Scheduler startup complete")
     yield
+    print("Stopping DCA Scheduler...")
     scheduler.stop()
+    print("DCA Scheduler shutdown complete")
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
@@ -35,6 +39,14 @@ app.include_router(strategy_api.router, prefix=settings.API_V1_STR)
 app.include_router(dca_api.router, prefix=settings.API_V1_STR)
 app.include_router(binance_api.router, prefix=settings.API_V1_STR)
 app.include_router(cold_wallet_api.router, prefix=settings.API_V1_STR)
+
+# SSE endpoint for real-time updates
+from dca_service.sse import sse_manager
+
+@app.get("/api/events")
+async def events(request: Request):
+    """Server-Sent Events endpoint for real-time updates"""
+    return await sse_manager.connect(request)
 
 async def run_dca_cycle():
     """
