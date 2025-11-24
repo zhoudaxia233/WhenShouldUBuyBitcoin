@@ -1839,13 +1839,35 @@ def create_futures_oi_timeseries_chart(
         col=1,
     )
 
+    # Set Y-axis range based on actual data range to show fluctuations clearly
+    # This is best practice: don't start from 0 when data has small relative changes
+    if not oi_plot.empty:
+        oi_values = oi_plot["oi_usd"].dropna()
+        if not oi_values.empty:
+            oi_min = oi_values.min()
+            oi_max = oi_values.max()
+            oi_range = oi_max - oi_min
+            # Add 5% padding above and below for better visualization
+            y_min = max(0, oi_min - oi_range * 0.05)
+            y_max = oi_max + oi_range * 0.05
+        else:
+            y_min = None
+            y_max = None
+    else:
+        y_min = None
+        y_max = None
+
+
+    # Y-axis configuration: let Plotly auto-handle ticks to prevent duplicates
     fig.update_yaxes(
         title_text=None,
-        tickformat="$,.0s",
+        tickformat="$,.2s",  # Use 2 decimal places for better precision (e.g., $750M, $775M, $800M)
+        range=[y_min, y_max] if y_min is not None and y_max is not None else None,
         row=2,
         col=1,
         showgrid=True,
         gridcolor="#f0f0f0",
+        tickmode="auto",  # Let Plotly automatically space ticks
     )
 
     # Risk Zones
