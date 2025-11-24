@@ -17,7 +17,18 @@ dependencies = [
     "cryptography (>=46.0.3,<47.0.0)",
     "httpx (>=0.28.1,<0.29.0)",
     "apscheduler (>=3.11.1,<4.0.0)",
-    "sse-starlette (>=3.0.3,<4.0.0)"
+    "sse-starlette (>=3.0.3,<4.0.0)",
+    "fastapi (>=0.121.3,<0.122.0)",
+    "sqlmodel (>=0.0.27,<0.0.28)",
+    "uvicorn[standard] (>=0.38.0,<0.39.0)",
+    "jinja2 (>=3.1.6,<4.0.0)",
+    "pydantic-settings (>=2.12.0,<3.0.0)"
+]
+
+[tool.poetry]
+packages = [
+    {include = "whenshouldubuybitcoin", from = "src"},
+    {include = "dca_service", from = "dca_service/src"}
 ]
 
 
