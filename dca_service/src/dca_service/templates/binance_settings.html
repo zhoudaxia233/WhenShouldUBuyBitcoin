@@ -7,7 +7,11 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/notyf@3.10.0/notyf.min.css">
     <style>
-        body { padding-top: 20px; background-color: #f8f9fa; }
+        body { 
+            padding-top: 20px; 
+            padding-bottom: 60px;  /* Add bottom margin */
+            background-color: #f8f9fa; 
+        }
         .container { max-width: 900px; }
         .masked-key { font-family: monospace; letter-spacing: 2px; }
     </style>
@@ -102,6 +106,141 @@
                             </ol>
                             <div class="alert alert-warning small mt-3 mb-0">
                                 <strong>Security Note:</strong> Your keys are encrypted before storage. The Secret Key is never displayed again.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Email Notifications Section -->
+        <div class="card shadow-sm mt-4">
+            <div class="card-header bg-white">
+                <h5 class="mb-0">📧 Email Notifications</h5>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-info mb-4">
+                    <strong>ℹ️ About Email Notifications:</strong>
+                    <ul class="mb-0 mt-2 small">
+                        <li>Configure SMTP settings to receive automatic notifications when DCA transactions execute.</li>
+                        <li>Your password is <strong>encrypted</strong> before storage (similar to Binance credentials).</li>
+                        <li>Gmail users: You'll need to create an "App Password" (see help section below).</li>
+                    </ul>
+                </div>
+
+                <div class="row">
+                    <!-- Left: Configuration Form -->
+                    <div class="col-md-6">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h6 class="mb-0">SMTP Configuration</h6>
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="emailEnabled">
+                                <label class="form-check-label" for="emailEnabled">Enable Notifications</label>
+                            </div>
+                        </div>
+                        <form id="emailForm">
+
+                            <div class="mb-3">
+                                <label class="form-label">SMTP Host</label>
+                                <input type="text" class="form-control" id="smtpHost" list="smtpHostSuggestions" placeholder="smtp.gmail.com" required>
+                                <datalist id="smtpHostSuggestions">
+                                    <option value="smtp.gmail.com">
+                                    <option value="smtp.office365.com">
+                                    <option value="smtp.mail.yahoo.com">
+                                    <option value="smtp.sendgrid.net">
+                                </datalist>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">SMTP Port</label>
+                                <input type="number" class="form-control" id="smtpPort" value="587" placeholder="587" required>
+                                <small class="form-text text-muted">Default: 587 (TLS)</small>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Email Address (Login)</label>
+                                <input type="email" class="form-control" id="smtpUser" placeholder="your-email@gmail.com" required>
+                                <div id="currentEmailDisplay" class="form-text text-muted mt-1"></div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Password / App Password</label>
+                                <input type="password" class="form-control" id="smtpPassword" placeholder="Leave empty to keep current password">
+                                <small class="form-text text-muted">For Gmail: use App Password, not your account password</small>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Send To (Recipient)</label>
+                                <input type="email" class="form-control" id="emailTo" placeholder="recipient@example.com" required>
+                                <small class="form-text text-muted">Emails will be sent FROM your login email address</small>
+                            </div>
+
+                            <button type="submit" class="btn btn-primary w-100">
+                                <span id="saveEmailButtonText">Save Email Settings</span>
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- Right: Status & Test -->
+                    <div class="col-md-6">
+                        <div class="card bg-light h-100">
+                            <div class="card-body">
+                                <h6>Configuration Status</h6>
+                                
+                                <div class="mb-3">
+                                    <strong>Status:</strong>
+                                    <p id="emailStatus" class="mb-1 small">Checking...</p>
+                                </div>
+
+                                <div class="mb-3">
+                                    <strong>Configured Email:</strong>
+                                    <p id="emailConfigured" class="mb-1 small text-muted">Not configured</p>
+                                </div>
+
+                                <button id="testEmailBtn" class="btn btn-outline-secondary w-100 mb-2" disabled>
+                                    <span id="testEmailText">📧 Send Test Email</span>
+                                </button>
+                                <div id="emailTestResult" class="small"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Gmail Help Section -->
+                <div class="mt-4">
+                    <button class="btn btn-sm btn-info text-white" type="button" data-bs-toggle="collapse" data-bs-target="#gmailHelpSection">
+                        ℹ️ How to get Gmail App Password
+                    </button>
+                    
+                    <div class="collapse mt-3" id="gmailHelpSection">
+                        <div class="card card-body bg-light">
+                            <div class="alert alert-info small mb-3">
+                                <strong>📝 Note:</strong> While App Passwords still work and are simpler to set up, Google recommends OAuth for new integrations. For a personal DCA service, App Passwords are perfectly fine and much easier to configure. OAuth support may be added in a future update.
+                            </div>
+                            
+                            <h6>Creating a Gmail App Password (November 2025):</h6>
+                            <ol class="mb-2 small">
+                                <li><strong>Enable 2-Step Verification first</strong> (required):
+                                    <ul class="small">
+                                        <li>Go to: <a href="https://myaccount.google.com/security" target="_blank">myaccount.google.com/security</a></li>
+                                        <li>Under "How you sign in to Google", click <strong>2-Step Verification</strong></li>
+                                        <li>Follow the prompts to enable it (you'll need your phone)</li>
+                                    </ul>
+                                </li>
+                                <li><strong>Create App Password</strong>:
+                                    <ul class="small">
+                                        <li>Go directly to: <a href="https://myaccount.google.com/apppasswords" target="_blank">myaccount.google.com/apppasswords</a></li>
+                                        <li>You may be asked to sign in again</li>
+                                        <li>Enter a name for the app (e.g., "DCA Service")</li>
+                                        <li>Click <strong>Create</strong></li>
+                                        <li>Copy the <strong>16-character password</strong> shown (it won't be shown again!)</li>
+                                    </ul>
+                                </li>
+                                <li><strong>Paste the password</strong> into the "Password / App Password" field above</li>
+                                <li>Use your regular Gmail address for both "Email Address" and "Send From" fields</li>
+                            </ol>
+                            <div class="alert alert-warning small mt-2 mb-0">
+                                <strong>⚠️ Important:</strong> App Passwords only work if 2-Step Verification is enabled. Never share your App Password. If you don't see the App Passwords page, make sure 2-Step Verification is turned on first.
                             </div>
                         </div>
                     </div>
@@ -241,8 +380,214 @@
             }
         });
 
-        // Load status on page load
+        // ============= EMAIL SETTINGS =============
+        
+        // Load email settings status
+        async function loadEmailStatus() {
+            try {
+                const response = await fetch('/api/email/settings/status');
+                const data = await response.json();
+                
+                const statusEl = document.getElementById('emailStatus');
+                const configuredEl = document.getElementById('emailConfigured');
+                const testBtn = document.getElementById('testEmailBtn');
+                
+                if (data.has_settings) {
+                    statusEl.textContent = data.is_enabled ? '✔ Enabled' : '⚠ Disabled';
+                    statusEl.className = data.is_enabled ? 'mb-1 small text-success fw-bold' : 'mb-1 small text-warning fw-bold';
+                    
+                    configuredEl.textContent = data.smtp_user_masked || 'Configured';
+                    configuredEl.className = 'mb-1 small text-success';
+                    
+                    // Enable test button
+                    testBtn.disabled = false;
+                    
+                    // Fill form with existing config
+                    document.getElementById('emailEnabled').checked = data.is_enabled;
+                    document.getElementById('smtpHost').value = data.smtp_host || '';
+                    document.getElementById('smtpPort').value = data.smtp_port || 587;
+                    
+                    // Show masked email
+                    if (data.smtp_user_masked) {
+                        document.getElementById('currentEmailDisplay').textContent = `Current: ${data.smtp_user_masked}`;
+                        document.getElementById('currentEmailDisplay').className = 'form-text text-success';
+                    }
+                } else {
+                    statusEl.textContent = '⚠ Not configured';
+                    statusEl.className = 'mb-1 small text-warning fw-bold';
+                    configuredEl.textContent = 'Not configured';
+                    testBtn.disabled = true;
+                }
+            } catch (error) {
+                console.error('Error loading email status:', error);
+                document.getElementById('emailStatus').textContent = '❌ Error checking status';
+            }
+        }
+
+        // Save email settings
+        document.getElementById('emailForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            // Note: is_enabled is handled separately by the toggle switch
+            const smtpHost = document.getElementById('smtpHost').value.trim();
+            const smtpPort = parseInt(document.getElementById('smtpPort').value);
+            const smtpUser = document.getElementById('smtpUser').value.trim();
+            const smtpPassword = document.getElementById('smtpPassword').value.trim();
+            const emailTo = document.getElementById('emailTo').value.trim();
+            
+            // Clear previous validation states
+            ['smtpHost', 'smtpUser', 'smtpPassword', 'emailTo'].forEach(id => {
+                document.getElementById(id).classList.remove('is-invalid');
+            });
+            
+            // Check if this is an update (status already loaded)
+            const statusEl = document.getElementById('emailStatus');
+            const isUpdate = statusEl.textContent !== 'Checking...' && statusEl.textContent !== '⚠ Not configured';
+            
+            // Validate required fields
+            const missingFields = [];
+            if (!smtpHost) {
+                document.getElementById('smtpHost').classList.add('is-invalid');
+                missingFields.push('SMTP Host');
+            }
+            if (!smtpUser) {
+                document.getElementById('smtpUser').classList.add('is-invalid');
+                missingFields.push('Email Address');
+            }
+            // Password is only required for new configs
+            if (!isUpdate && !smtpPassword) {
+                document.getElementById('smtpPassword').classList.add('is-invalid');
+                missingFields.push('Password');
+            }
+            if (!emailTo) {
+                document.getElementById('emailTo').classList.add('is-invalid');
+                missingFields.push('Send To');
+            }
+            
+            if (missingFields.length > 0) {
+                notyf.error(`Please fill in: ${missingFields.join(', ')}`);
+                return;
+            }
+            
+            const saveBtn = document.querySelector('#emailForm button[type="submit"]');
+            const saveText = document.getElementById('saveEmailButtonText');
+            const originalText = saveText.textContent;
+            
+            saveBtn.disabled = true;
+            saveText.textContent = 'Saving...';
+            
+            try {
+                const payload = {
+                    // We include current enabled state to prevent accidental disabling if backend requires it
+                    // But typically this endpoint updates config, while toggle updates status
+                    is_enabled: document.getElementById('emailEnabled').checked,
+                    smtp_host: smtpHost,
+                    smtp_port: smtpPort,
+                    smtp_user: smtpUser,
+                    email_to: emailTo
+                };
+                
+                // Only include password if it's provided
+                if (smtpPassword) {
+                    payload.smtp_password = smtpPassword;
+                }
+                
+                const response = await fetch('/api/email/settings', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                
+                if (response.ok) {
+                    notyf.success('Email settings saved successfully');
+                    // Clear password field
+                    document.getElementById('smtpPassword').value = '';
+                    // Reload status
+                    await loadEmailStatus();
+                } else {
+                    const error = await response.json();
+                    notyf.error('Error saving settings: ' + (error.detail || 'Unknown error'));
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                notyf.error('Network error or backend unreachable');
+            } finally {
+                saveBtn.disabled = false;
+                saveText.textContent = originalText;
+            }
+        });
+
+        // Independent Toggle Handler
+        document.getElementById('emailEnabled').addEventListener('change', async (e) => {
+            const isEnabled = e.target.checked;
+            const originalState = !isEnabled; // To revert if failed
+            
+            try {
+                const response = await fetch('/api/email/settings/toggle', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ is_enabled: isEnabled })
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    notyf.success(data.message);
+                    await loadEmailStatus(); // Refresh status display
+                } else {
+                    const error = await response.json();
+                    // Revert toggle
+                    e.target.checked = originalState;
+                    
+                    if (response.status === 404) {
+                        notyf.error('Please configure and save SMTP settings first');
+                    } else {
+                        notyf.error('Error: ' + (error.detail || 'Unknown error'));
+                    }
+                }
+            } catch (error) {
+                console.error('Toggle error:', error);
+                e.target.checked = originalState;
+                notyf.error('Network error or backend unreachable');
+            }
+        });
+
+        // Test Email
+        document.getElementById('testEmailBtn').addEventListener('click', async () => {
+            const btn = document.getElementById('testEmailBtn');
+            const btnText = document.getElementById('testEmailText');
+            const resultDiv = document.getElementById('emailTestResult');
+            const originalText = btnText.textContent;
+            
+            btn.disabled = true;
+            btnText.textContent = 'Sending...';
+            resultDiv.innerHTML = '';
+            
+            try {
+                const response = await fetch('/api/email/test', {
+                    method: 'POST'
+                });
+                const result = await response.json();
+                
+                if (result.success) {
+                    resultDiv.innerHTML = '<div class="alert alert-success small mb-0">✔ Test email sent successfully! Check your inbox.</div>';
+                    notyf.success('Test email sent successfully!');
+                } else {
+                    const errorMsg = result.error || 'Unknown error';
+                    resultDiv.innerHTML = `<div class="alert alert-danger small mb-0">❌ Email test failed: ${errorMsg}</div>`;
+                    notyf.error('Email test failed: ' + errorMsg);
+                }
+            } catch (error) {
+                resultDiv.innerHTML = '<div class="alert alert-danger small mb-0">❌ Network error or backend unreachable</div>';
+                notyf.error('Network error or backend unreachable');
+            } finally {
+                btn.disabled = false;
+                btnText.textContent = originalText;
+            }
+        });
+
+        // Load statuses on page load
         loadCredentialsStatus();
+        loadEmailStatus();
     </script>
 </body>
 </html>
