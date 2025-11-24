@@ -12,22 +12,34 @@ from sqlmodel import Session, select
 from dca_service.models import DCAStrategy
 from dca_service.database import engine
 
+from dca_service.core.logging import logger
+import time
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     create_db_and_tables()
-    print("Starting DCA Scheduler...")
+    logger.info("Starting DCA Scheduler...")
     scheduler.start()
-    print("DCA Scheduler startup complete")
+    logger.info("DCA Scheduler startup complete")
     yield
-    print("Stopping DCA Scheduler...")
+    logger.info("Stopping DCA Scheduler...")
     scheduler.stop()
-    print("DCA Scheduler shutdown complete")
+    logger.info("DCA Scheduler shutdown complete")
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
     openapi_url=f"{settings.API_V1_STR}/openapi.json",
     lifespan=lifespan
 )
+
+@app.middleware("http")
+async def log_requests(request: Request, call_next):
+    start_time = time.time()
+    response = await call_next(request)
+    duration = (time.time() - start_time) * 1000
+    # Filter out health checks or noise if needed, but for now log all
+    logger.info(f"{request.method} {request.url.path} -> {response.status_code} ({duration:.2f} ms)")
+    return response
 
 # Setup templates
 BASE_DIR = Path(__file__).resolve().parent
@@ -56,10 +68,10 @@ async def run_dca_cycle():
     with Session(engine) as session:
         strategy = session.exec(select(DCAStrategy)).first()
         if not strategy or not strategy.is_active:
-            print("DCA cycle skipped: Strategy inactive or not found")
+            logger.info("DCA cycle skipped: Strategy inactive or not found")
             return
         
-        print("DCA cycle executed (placeholder)")
+        logger.info("DCA cycle executed (placeholder)")
 
 @app.get("/")
 def read_root(request: Request):

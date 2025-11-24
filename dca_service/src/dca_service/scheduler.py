@@ -6,7 +6,6 @@ based on the strategy configuration (execution_time_utc, execution_frequency).
 """
 from datetime import datetime, timezone
 from typing import Optional
-import logging
 import sys
 
 from apscheduler.schedulers.background import BackgroundScheduler
@@ -16,14 +15,7 @@ from sqlmodel import Session, select
 from dca_service.database import engine
 from dca_service.models import DCAStrategy, DCATransaction
 from dca_service.services.dca_engine import calculate_dca_decision
-
-# Configure logging for scheduler
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    stream=sys.stdout
-)
-logger = logging.getLogger(__name__)
+from dca_service.core.logging import logger
 
 
 class DCAScheduler:
@@ -44,8 +36,7 @@ class DCAScheduler:
     def start(self):
         """Start the background scheduler"""
         if self.is_running:
-            print("⚠ DCA Scheduler already running")
-            logger.warning("Scheduler already running")
+            logger.warning("DCA Scheduler already running")
             return
         
         # Schedule job to run every minute
@@ -59,7 +50,6 @@ class DCAScheduler:
         
         self.scheduler.start()
         self.is_running = True
-        print("✓ DCA Scheduler started - checking every minute")
         logger.info("DCA Scheduler started - checking every minute")
     
     def stop(self):
@@ -69,7 +59,6 @@ class DCAScheduler:
         
         self.scheduler.shutdown(wait=True)
         self.is_running = False
-        print("✓ DCA Scheduler stopped")
         logger.info("DCA Scheduler stopped")
     
     def _check_and_execute_dca(self):
@@ -98,8 +87,10 @@ class DCAScheduler:
                 self._execute_dca(strategy, session)
                 
         except Exception as e:
-            logger.error(f"Error in DCA scheduler: {e}", exc_info=True)
+            logger.exception(f"Error in DCA scheduler: {e}")
     
+    # ... (skipping _should_execute_now and helpers as they use logger.debug/error which is fine) ...
+
     def _should_execute_now(self, strategy: DCAStrategy, session: Session) -> bool:
         """
         Check if DCA should be executed at the current time.
@@ -220,8 +211,15 @@ class DCAScheduler:
             # Calculate DCA decision
             decision = calculate_dca_decision(session)
             
+            logger.info(
+                f"DCA Decision: AHR999={decision.ahr999_value:.4f}, "
+                f"Price=${decision.price_usd:.2f}, "
+                f"Band={decision.ahr_band}, Multiplier={decision.multiplier:.2f}x, "
+                f"Suggested=${decision.suggested_amount_usd:.2f}, "
+                f"CanExecute={decision.can_execute} ({decision.reason})"
+            )
+            
             if not decision.can_execute:
-                logger.info(f"DCA execution skipped: {decision.reason}")
                 return
             
             # Calculate BTC amount
@@ -251,9 +249,10 @@ class DCAScheduler:
             session.refresh(transaction)
             
             logger.info(
-                f"DCA transaction executed: ${decision.suggested_amount_usd:.2f} USD "
-                f"for {btc_amount:.8f} BTC at ${decision.price_usd:.2f} "
-                f"(mode: {strategy.execution_mode})"
+                f"Transaction Created: ID={transaction.id}, "
+                f"Intended=${transaction.intended_amount_usd:.2f}, "
+                f"Executed=${transaction.executed_amount_usd:.2f} ({transaction.executed_amount_btc:.8f} BTC), "
+                f"Source={transaction.source}, StrategyID={strategy.id}"
             )
             
             # Broadcast event to connected clients for immediate UI update
@@ -278,7 +277,7 @@ class DCAScheduler:
             
         except Exception as e:
             session.rollback()
-            logger.error(f"Failed to execute DCA transaction: {e}", exc_info=True)
+            logger.exception(f"Failed to execute DCA transaction: {e}")
 
 
 # Global scheduler instance

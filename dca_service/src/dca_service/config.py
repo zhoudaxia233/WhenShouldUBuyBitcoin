@@ -22,6 +22,10 @@ class Settings(BaseSettings):
     EMAIL_FROM: str = ""
     EMAIL_TO: str = ""
 
+    # Logging Settings
+    LOG_LEVEL: str = "INFO"
+    LOG_FILE_PATH: str = "logs/dca_service.log"
+
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
 

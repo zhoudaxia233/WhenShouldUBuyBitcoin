@@ -1,5 +1,6 @@
 from sqlmodel import SQLModel, create_engine, Session, text
 from .config import settings
+from dca_service.core.logging import logger
 
 # check_same_thread=False is needed for SQLite with FastAPI
 engine = create_engine(
@@ -42,7 +43,7 @@ def _migrate_transaction_table():
             
             # Check and add source column
             if 'source' not in existing_column_names:
-                print("Adding 'source' column to dca_transactions table...")
+                logger.info("Adding 'source' column to dca_transactions table...")
                 session.exec(text("""
                     ALTER TABLE dca_transactions 
                     ADD COLUMN source TEXT
@@ -56,7 +57,7 @@ def _migrate_transaction_table():
             
             # Check and add fee_amount column
             if 'fee_amount' not in existing_column_names:
-                print("Adding 'fee_amount' column to dca_transactions table...")
+                logger.info("Adding 'fee_amount' column to dca_transactions table...")
                 session.exec(text("""
                     ALTER TABLE dca_transactions 
                     ADD COLUMN fee_amount REAL
@@ -64,17 +65,17 @@ def _migrate_transaction_table():
             
             # Check and add fee_asset column
             if 'fee_asset' not in existing_column_names:
-                print("Adding 'fee_asset' column to dca_transactions table...")
+                logger.info("Adding 'fee_asset' column to dca_transactions table...")
                 session.exec(text("""
                     ALTER TABLE dca_transactions 
                     ADD COLUMN fee_asset TEXT
                 """))
             
             session.commit()
-            print("Migration completed successfully")
+            logger.info("Migration completed successfully")
     except Exception as e:
         # Log error and re-raise to ensure we know about the issue
-        print(f"ERROR: Migration failed: {e}")
+        logger.error(f"Migration failed: {e}")
         import traceback
         traceback.print_exc()
         raise
@@ -124,7 +125,7 @@ def _migrate_strategy_table():
             # Check and add each column
             for column_name, column_type, default_value in new_columns:
                 if column_name not in existing_column_names:
-                    print(f"Adding '{column_name}' column to dca_strategy table...")
+                    logger.info(f"Adding '{column_name}' column to dca_strategy table...")
                     alter_sql = f"""
                         ALTER TABLE dca_strategy 
                         ADD COLUMN {column_name} {column_type}
@@ -132,13 +133,13 @@ def _migrate_strategy_table():
                     if default_value is not None:
                         alter_sql = alter_sql.rstrip() + f" DEFAULT {default_value}"
                     session.exec(text(alter_sql))
-                    print(f"  ✓ Added {column_name}")
+                    logger.info(f"  ✓ Added {column_name}")
             
             session.commit()
-            print("Strategy table migration completed successfully")
+            logger.info("Strategy table migration completed successfully")
     except Exception as e:
         # Log error and re-raise to ensure we know about the issue
-        print(f"ERROR: Strategy table migration failed: {e}")
+        logger.error(f"Strategy table migration failed: {e}")
         import traceback
         traceback.print_exc()
         raise

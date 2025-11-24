@@ -3,6 +3,7 @@ import hmac
 import hashlib
 import httpx
 from typing import Dict, Any, Optional
+from dca_service.core.logging import logger
 
 
 class BinanceClient:
@@ -66,8 +67,10 @@ class BinanceClient:
         try:
             # /api/v3/account requires signed access, good for verifying keys
             await self._request("GET", "/api/v3/account", signed=True)
+            logger.info("Binance connection test succeeded")
             return True
         except Exception as e:
+            logger.warning(f"Binance connection test failed: {e}")
             raise e
 
     async def get_spot_balances(self, assets: list[str]) -> Dict[str, float]:
@@ -93,6 +96,9 @@ class BinanceClient:
                 if asset not in balances:
                     balances[asset] = 0.0
 
+            holdings_str = ", ".join([f"{k}={v}" for k, v in balances.items()])
+            logger.info(f"Fetched Binance holdings: {holdings_str}")
             return balances
         except Exception as e:
+            logger.error(f"Failed to fetch Binance holdings: {e}")
             raise e

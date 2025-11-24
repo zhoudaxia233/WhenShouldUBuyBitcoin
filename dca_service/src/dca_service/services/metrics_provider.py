@@ -183,11 +183,11 @@ def get_latest_metrics() -> Optional[Dict[str, Any]]:
             "source_label": metrics.source.label
         }
     except Exception as e:
-        print(f"Error fetching metrics from {settings.METRICS_BACKEND}: {e}")
+        logger.warning(f"Error fetching metrics from {settings.METRICS_BACKEND}: {e}")
         
         # Fallback logic
         if settings.METRICS_BACKEND == "realtime" and settings.METRICS_FALLBACK_TO_CSV:
-            print("Attempting fallback to CSV backend...")
+            logger.info("Attempting fallback to CSV backend...")
             try:
                 csv_backend = CsvMetricsBackend()
                 metrics = csv_backend.get_latest_metrics()
@@ -200,7 +200,7 @@ def get_latest_metrics() -> Optional[Dict[str, Any]]:
                     "source_label": "Historical CSV [fallback]"
                 }
             except Exception as csv_e:
-                print(f"Fallback CSV backend also failed: {csv_e}")
+                logger.warning(f"Fallback CSV backend also failed: {csv_e}")
                 return None
         
         return None
