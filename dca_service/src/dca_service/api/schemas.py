@@ -92,6 +92,7 @@ class StrategyBase(BaseModel):
     
     # Dynamic Strategy Config
     strategy_type: str = "legacy_band" # "legacy_band" or "dynamic_ahr999"
+    execution_mode: str = "DRY_RUN"  # "DRY_RUN" or "LIVE"
     dynamic_min_multiplier: Optional[float] = None
     dynamic_max_multiplier: Optional[float] = None
     dynamic_gamma: Optional[float] = None
