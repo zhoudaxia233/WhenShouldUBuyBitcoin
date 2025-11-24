@@ -266,6 +266,13 @@ class DCAScheduler:
             except Exception as e:
                 logger.warning(f"Failed to broadcast SSE event: {e}")
             
+            # Send email notification
+            try:
+                from dca_service.services.mailer import send_dca_notification
+                send_dca_notification(transaction, decision)
+            except Exception as e:
+                logger.error(f"Failed to send DCA notification email: {e}")
+            
         except Exception as e:
             session.rollback()
             logger.error(f"Failed to execute DCA transaction: {e}", exc_info=True)

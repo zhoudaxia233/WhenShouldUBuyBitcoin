@@ -120,3 +120,50 @@ def send_email(subject: str, body: str) -> None:
         logger.error(f"SMTP error sending email to {config['email_to']}: {e}")
     except Exception as e:
         logger.error(f"Unexpected error sending email: {e}", exc_info=True)
+    except Exception as e:
+        logger.error(f"Unexpected error sending email: {e}", exc_info=True)
+
+
+def send_dca_notification(transaction, decision=None):
+    """
+    Send a standardized email notification for a DCA execution.
+    
+    Args:
+        transaction: The DCATransaction object
+        decision: Optional DCADecision object (for extra context)
+    """
+    # Build email subject
+    subject = f"DCA Executed: ${transaction.fiat_amount:.2f} USDC for BTC"
+    if transaction.source == "SIMULATED":
+        subject = f"DCA Simulation: ${transaction.fiat_amount:.2f} USDC for BTC"
+    
+    # Format timestamp
+    exec_time = transaction.timestamp.strftime("%Y-%m-%d %H:%M:%S UTC")
+    
+    # Get band info if available
+    band_info = "N/A"
+    if decision and hasattr(decision, 'band'):
+        band_info = decision.band
+    
+    body = f"""DCA Transaction Executed Successfully
+
+Execution Time: {exec_time}
+AHR999 Value: {transaction.ahr999:.4f}
+Decision Band: {band_info}
+
+Amount (USDC): ${transaction.fiat_amount:.2f}
+Amount (BTC): {transaction.btc_amount:.8f}
+Price (USD/BTC): ${transaction.price:.2f}
+
+Transaction Details:
+- Transaction ID: {transaction.id}
+- Source: {transaction.source}
+- Status: {transaction.status}
+
+Notes: {transaction.notes or 'None'}
+
+---
+This is an automated notification from your DCA Service.
+"""
+    
+    send_email(subject, body)

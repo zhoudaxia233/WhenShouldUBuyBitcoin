@@ -67,7 +67,7 @@ def execute_simulated_dca(
     
     # Schedule email notification in background (non-blocking)
     background_tasks.add_task(
-        _send_dca_email,
+        _send_dca_email_task,
         transaction=transaction,
         decision=decision
     )
@@ -79,41 +79,9 @@ def execute_simulated_dca(
     }
 
 
-def _send_dca_email(transaction: DCATransaction, decision: any):
+def _send_dca_email_task(transaction: DCATransaction, decision: any):
     """
-    Send email notification for DCA execution.
-    
-    This runs in the background and does not block the HTTP response.
+    Background task wrapper for sending email.
     """
-    from dca_service.services.mailer import send_email
-    from datetime import datetime, timezone
-    
-    # Build email subject
-    subject = f"DCA Simulation Executed: ${transaction.fiat_amount:.2f} USDC for BTC"
-    
-    # Build email body
-    exec_time = transaction.timestamp.strftime("%Y-%m-% d %H:%M:%S UTC")
-    
-    body = f"""DCA Simulation Executed Successfully
-
-Execution Time: {exec_time}
-AHR999 Value: {transaction.ahr999:.4f}
-Decision Band: {decision.band if hasattr(decision, 'band') else 'N/A'}
-
-Amount (USDC): ${transaction.fiat_amount:.2f}
-Amount (BTC): {transaction.btc_amount:.8f}
-Price (USD/BTC): ${transaction.price:.2f}
-
-Transaction Details:
-- Transaction ID: {transaction.id}
-- Source: {transaction.source}
-- Status: {transaction.status}
-
-Notes: {transaction.notes or 'None'}
-
----
-This is an automated notification from your DCA Service.
-"""
-    
-    # Send email (failures are logged, not raised)
-    send_email(subject, body)
+    from dca_service.services.mailer import send_dca_notification
+    send_dca_notification(transaction, decision)
