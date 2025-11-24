@@ -113,6 +113,9 @@ class DCAScheduler:
         """
         now = datetime.now(timezone.utc)
         
+        if not strategy.is_active:
+            return False
+        
         # Parse execution time (format: "HH:MM")
         try:
             exec_hour, exec_minute = map(int, strategy.execution_time_utc.split(':'))

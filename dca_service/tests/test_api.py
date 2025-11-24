@@ -108,7 +108,7 @@ def test_dca_execute_simulated(mock_metrics, client: TestClient, session: Sessio
     
     assert data["transaction"] is not None
     assert data["transaction"]["status"] == "SUCCESS"
-    assert data["transaction"]["notes"] == "SIMULATED"
+    assert data["transaction"]["notes"] == "Manual DCA simulation"
     
     # Verify DB
     tx = session.exec(select(DCATransaction)).first()

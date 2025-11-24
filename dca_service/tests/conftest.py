@@ -26,3 +26,14 @@ def client_fixture(session: Session):
     client = TestClient(app)
     yield client
     app.dependency_overrides.clear()
+
+
+@pytest.fixture(autouse=True)
+def mock_send_email():
+    """
+    Global mock to prevent any real emails from being sent during tests.
+    This fixture is automatically used for all tests.
+    """
+    from unittest.mock import patch
+    with patch("dca_service.services.mailer.send_email") as mock:
+        yield mock

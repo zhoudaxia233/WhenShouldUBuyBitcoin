@@ -13,12 +13,23 @@ import smtplib
 from dca_service.services.mailer import send_email
 
 
+@pytest.fixture
+def mock_db_session():
+    """Mock database session to prevent reading real settings"""
+    with patch('dca_service.services.mailer.Session') as mock_session_cls:
+        mock_session = MagicMock()
+        mock_session_cls.return_value.__enter__.return_value = mock_session
+        # Default: no settings in DB
+        mock_session.exec.return_value.first.return_value = None
+        yield mock_session
+
+
 class TestMailerDisabled:
     """Tests when EMAIL_ENABLED=False"""
     
     @patch('dca_service.services.mailer.settings')
     @patch('dca_service.services.mailer.smtplib.SMTP')
-    def test_email_disabled_no_smtp_connection(self, mock_smtp, mock_settings):
+    def test_email_disabled_no_smtp_connection(self, mock_smtp, mock_settings, mock_db_session):
         """When EMAIL_ENABLED=False, no SMTP connection should be attempted"""
         mock_settings.EMAIL_ENABLED = False
         
@@ -28,7 +39,7 @@ class TestMailerDisabled:
         mock_smtp.assert_not_called()
     
     @patch('dca_service.services.mailer.settings')
-    def test_email_disabled_returns_immediately(self, mock_settings):
+    def test_email_disabled_returns_immediately(self, mock_settings, mock_db_session):
         """When EMAIL_ENABLED=False, function should return immediately"""
         mock_settings.EMAIL_ENABLED = False
         
@@ -43,8 +54,8 @@ class TestMailerMissingConfig:
     """Tests when email is enabled but configuration is incomplete"""
     
     @patch('dca_service.services.mailer.settings')
-    @ patch('dca_service.services.mailer.smtplib.SMTP')
-    def test_missing_smtp_host(self, mock_smtp, mock_settings):
+    @patch('dca_service.services.mailer.smtplib.SMTP')
+    def test_missing_smtp_host(self, mock_smtp, mock_settings, mock_db_session):
         """Missing SMTP host should prevent email sending"""
         mock_settings.EMAIL_ENABLED = True
         mock_settings.EMAIL_SMTP_HOST = ""  # Missing
@@ -60,7 +71,7 @@ class TestMailerMissingConfig:
     
     @patch('dca_service.services.mailer.settings')
     @patch('dca_service.services.mailer.smtplib.SMTP')
-    def test_missing_email_addresses(self, mock_smtp, mock_settings):
+    def test_missing_email_addresses(self, mock_smtp, mock_settings, mock_db_session):
         """Missing FROM or TO email should prevent sending"""
         mock_settings.EMAIL_ENABLED = True
         mock_settings.EMAIL_SMTP_HOST = "smtp.example.com"
@@ -79,7 +90,7 @@ class TestMailerSuccess:
     
     @patch('dca_service.services.mailer.settings')
     @patch('dca_service.services.mailer.smtplib.SMTP')
-    def test_successful_email_send(self, mock_smtp, mock_settings):
+    def test_successful_email_send(self, mock_smtp, mock_settings, mock_db_session):
         """Test successful email sending with proper SMTP flow"""
         # Configure settings
         mock_settings.EMAIL_ENABLED = True
@@ -118,7 +129,7 @@ class TestMailerErrorHandling:
     
     @patch('dca_service.services.mailer.settings')
     @patch('dca_service.services.mailer.smtplib.SMTP')
-    def test_smtp_authentication_error(self, mock_smtp, mock_settings):
+    def test_smtp_authentication_error(self, mock_smtp, mock_settings, mock_db_session):
         """SMTP authentication errors should be caught and logged"""
         mock_settings.EMAIL_ENABLED = True
         mock_settings.EMAIL_SMTP_HOST = "smtp.gmail.com"
@@ -141,7 +152,7 @@ class TestMailerErrorHandling:
     
     @patch('dca_service.services.mailer.settings')
     @patch('dca_service.services.mailer.smtplib.SMTP')
-    def test_smtp_connection_error(self, mock_smtp, mock_settings):
+    def test_smtp_connection_error(self, mock_smtp, mock_settings, mock_db_session):
         """SMTP connection errors should be caught"""
         mock_settings.EMAIL_ENABLED = True
         mock_settings.EMAIL_SMTP_HOST = "invalid.smtp.com"
@@ -159,7 +170,7 @@ class TestMailerErrorHandling:
     
     @patch('dca_service.services.mailer.settings')
     @patch('dca_service.services.mailer.smtplib.SMTP')
-    def test_unexpected_error(self, mock_smtp, mock_settings):
+    def test_unexpected_error(self, mock_smtp, mock_settings, mock_db_session):
         """Unexpected errors should be caught and logged"""
         mock_settings.EMAIL_ENABLED = True
         mock_settings.EMAIL_SMTP_HOST = "smtp.gmail.com"
