@@ -90,3 +90,50 @@ def simulate_transaction(
     session.commit()
     session.refresh(transaction)
     return transaction
+
+@router.post("/transactions/clear-simulated")
+def clear_simulated_transactions(session: Session = Depends(get_session)):
+    """
+    Clear all simulated transactions while preserving manual/ledger entries.
+    Only works in DRY_RUN mode.
+    
+    Returns:
+        dict: Success status, number of deleted transactions, and message
+    """
+    # Import here to avoid circular dependency
+    from dca_service.api.strategy_api import get_execution_mode
+    
+    # Check execution mode
+    execution_mode = get_execution_mode(session)
+    if execution_mode != "DRY_RUN":
+        raise HTTPException(
+            status_code=400,
+            detail="Cannot clear simulated history in LIVE mode. Switch to DRY_RUN mode first."
+        )
+    
+    # Delete only SIMULATED transactions (and any with NULL source that aren't manual entries)
+    # We need to be careful to preserve LEDGER (manual) entries only
+    # Delete transactions where:
+    # 1. source == "SIMULATED" explicitly
+    # 2. source is NULL or empty (legacy transactions that should be treated as simulated)
+    # But NEVER delete source == "LEDGER" or "BINANCE"
+    simulated_txs = session.exec(
+        select(DCATransaction).where(
+            (DCATransaction.source == "SIMULATED") | 
+            (DCATransaction.source == None) |
+            (DCATransaction.source == "")
+        )
+    ).all()
+    
+    deleted_count = len(simulated_txs)
+    
+    for tx in simulated_txs:
+        session.delete(tx)
+    
+    session.commit()
+    
+    return {
+        "success": True,
+        "deleted_count": deleted_count,
+        "message": f"Cleared {deleted_count} simulated transaction(s). Manual entries preserved."
+    }

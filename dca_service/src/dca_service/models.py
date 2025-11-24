@@ -62,6 +62,9 @@ class DCAStrategy(SQLModel, table=True):
     # Strategy Configuration
     strategy_type: str = Field(default="legacy_band") # "legacy_band" or "dynamic_ahr999"
     
+    # Execution Mode (Phase 9: Execution Mode Plumbing)
+    execution_mode: str = Field(default="DRY_RUN")  # "DRY_RUN" or "LIVE"
+    
     # Dynamic Strategy Config (Nullable, used if strategy_type="dynamic_ahr999")
     dynamic_min_multiplier: Optional[float] = None
     dynamic_max_multiplier: Optional[float] = None
