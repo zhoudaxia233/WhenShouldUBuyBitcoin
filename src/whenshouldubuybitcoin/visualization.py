@@ -9,7 +9,9 @@ This module provides interactive charts using Plotly to visualize:
 
 from pathlib import Path
 from typing import Optional, Tuple
+import json
 
+import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
@@ -1729,11 +1731,6 @@ def create_futures_oi_timeseries_chart(
         oi_df: DataFrame with 'oi_usd' and date index.
         output_path: HTML output file path.
     """
-    import plotly.graph_objects as go
-    from plotly.subplots import make_subplots
-    from pathlib import Path
-    import numpy as np
-
     # Ensure indices are datetime
     if not isinstance(btc_df.index, pd.DatetimeIndex):
         btc_df.index = pd.to_datetime(btc_df.index)
@@ -1983,9 +1980,6 @@ def create_oi_quadrant_chart(
         output_path: HTML output file path.
         lookback_days: Window for calculating percentage change.
     """
-    import plotly.graph_objects as go
-    from pathlib import Path
-
     # Ensure indices are datetime
     if not isinstance(btc_df.index, pd.DatetimeIndex):
         btc_df.index = pd.to_datetime(btc_df.index)
@@ -2230,4 +2224,27 @@ def create_oi_quadrant_chart(
         config={"displayModeBar": False},
     )
 
+    # Also save current quadrant info to a JSON file for HTML to read
+    quadrant_info = {
+        "current_quadrant": mode_label,
+        "price_change": float(p_chg),
+        "oi_change": float(o_chg),
+        "quadrant_id": None,  # Will be set based on conditions
+    }
+
+    # Determine quadrant ID for HTML highlighting
+    if p_chg > 0 and o_chg > 0:
+        quadrant_info["quadrant_id"] = "q1"  # Top-right
+    elif p_chg > 0 and o_chg < 0:
+        quadrant_info["quadrant_id"] = "q2"  # Bottom-right
+    elif p_chg < 0 and o_chg > 0:
+        quadrant_info["quadrant_id"] = "q3"  # Top-left
+    elif p_chg < 0 and o_chg < 0:
+        quadrant_info["quadrant_id"] = "q4"  # Bottom-left
+
+    info_file = output_file.parent / "oi_quadrant_info.json"
+    with open(info_file, "w") as f:
+        json.dump(quadrant_info, f, indent=2)
+
     print(f"✓ Saved OI Quadrant chart to: {output_file.resolve()}")
+    print(f"✓ Saved quadrant info to: {info_file.resolve()}")
