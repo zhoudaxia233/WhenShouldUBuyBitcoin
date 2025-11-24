@@ -7,7 +7,7 @@ Email failures do not affect DCA execution.
 Reads settings from database first, falls back to environment variables.
 """
 import smtplib
-import logging
+import smtplib
 from email.message import EmailMessage
 from typing import Optional
 from sqlmodel import Session, select
@@ -15,8 +15,7 @@ from sqlmodel import Session, select
 from dca_service.config import settings
 from dca_service.database import engine
 from dca_service.models import EmailSettings
-
-logger = logging.getLogger(__name__)
+from dca_service.core.logging import logger
 
 
 def _get_email_config() -> Optional[dict]:
