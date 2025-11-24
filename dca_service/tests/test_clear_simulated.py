@@ -9,12 +9,37 @@ Tests for the /api/transactions/clear-simulated endpoint to ensure:
 """
 import pytest
 from fastapi.testclient import TestClient
-from sqlmodel import Session, select
+from sqlmodel import Session, select, create_engine, SQLModel
+from sqlmodel.pool import StaticPool
 from datetime import datetime, timezone
 
 from dca_service.main import app
 from dca_service.models import DCATransaction, DCAStrategy, ColdWalletEntry
 from dca_service.database import get_session
+
+
+@pytest.fixture(name="session")
+def session_fixture():
+    """Create a test database session"""
+    engine = create_engine(
+        "sqlite:///:memory:",
+        connect_args={"check_same_thread": False},
+        poolclass=StaticPool,
+    )
+    SQLModel.metadata.create_all(engine)
+    with Session(engine) as session:
+        yield session
+
+
+@pytest.fixture(autouse=True)
+def override_get_session(session):
+    """Override the database session dependency"""
+    def get_session_override():
+        return session
+    
+    app.dependency_overrides[get_session] = get_session_override
+    yield
+    app.dependency_overrides.clear()
 
 
 @pytest.fixture
@@ -60,16 +85,7 @@ def setup_test_data(session: Session):
     
     session.commit()
     yield
-    
-    # Cleanup
-    session.exec(select(DCATransaction)).all()
-    for tx in session.exec(select(DCATransaction)).all():
-        session.delete(tx)
-    for entry in session.exec(select(ColdWalletEntry)).all():
-        session.delete(entry)
-    for strat in session.exec(select(DCAStrategy)).all():
-        session.delete(strat)
-    session.commit()
+
 
 
 def test_clear_simulated_in_dry_run_mode(client, setup_test_data, session: Session):

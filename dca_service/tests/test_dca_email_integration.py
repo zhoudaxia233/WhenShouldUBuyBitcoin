@@ -15,7 +15,7 @@ client = TestClient(app)
 class TestDCAEmailIntegration:
     """Tests DCA execution email integration"""
     
-    @patch('dca_service.api.dca_api._send_dca_email')
+    @patch('dca_service.api.dca_api._send_dca_email_task')
     def test_successful_dca_triggers_email(self, mock_send_email):
         """Successful DCA execution should trigger email in background"""
         response = client.post("/api/dca/execute-simulated")
@@ -32,7 +32,7 @@ class TestDCAEmailIntegration:
             call_args = mock_send_email.call_args
             assert call_args is not None
     
-    @patch('dca_service.api.dca_api._send_dca_email')
+    @patch('dca_service.api.dca_api._send_dca_email_task')
     def test_skipped_dca_no_email(self, mock_send_email):
         """Skipped DCA should not send email"""
         # This test would need strategy configured to skip
@@ -50,7 +50,7 @@ class TestDCAEmailIntegration:
     @patch('dca_service.services.mailer.settings')
     def test_email_content_format(self, mock_settings, mock_send_email):
         """Email should contain proper transaction details"""
-        from dca_service.api.dca_api import _send_dca_email
+        from dca_service.api.dca_api import _send_dca_email_task
         from dca_service.models import DCATransaction
         from dca_service.services.dca_engine import DCADecision
         from datetime import datetime, timezone
@@ -82,7 +82,10 @@ class TestDCAEmailIntegration:
         decision.price_usd = 83333.33
         
         # Call email function
-        _send_dca_email(transaction, decision)
+        with patch('dca_service.services.mailer.Session') as mock_session:
+             # Mock DB lookup to return None so it falls back to settings
+             mock_session.return_value.__enter__.return_value.exec.return_value.first.return_value = None
+             _send_dca_email_task(transaction, decision)
         
         # Verify send_email was called
         mock_send_email.assert_called_once()
