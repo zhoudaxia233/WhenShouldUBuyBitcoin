@@ -1418,11 +1418,11 @@
                         <div style="flex: 0 0 auto; min-width: 300px; max-width: 460px; width: 100%;">
                             <iframe src="charts/oi_quadrant.html" style="width: 100%; height: 480px; border: none;"></iframe>
                             <!-- Quadrant Legend (below chart) - exact width match with reduced padding -->
-                            <div style="background: white; padding: 4px 8px; border-radius: 4px; margin: 6px auto 0 auto; width: calc(100% - 80px); font-size: 0.85em; border: 1px solid #e5e5e5; box-shadow: 0 1px 2px rgba(0,0,0,0.04); word-wrap: break-word; overflow-wrap: break-word; line-height: 1.4;">
-                                <div style="color: #FF6347; margin-bottom: 1px;"><b>↗ Price ↑ & OI ↑</b> — Risky Up (leveraged)</div>
-                                <div style="color: #28a745; margin-bottom: 1px;"><b>↘ Price ↑ & OI ↓</b> — Healthy Up (spot-led)</div>
-                                <div style="color: #FFC107; margin-bottom: 1px;"><b>↖ Price ↓ & OI ↑</b> — Squeeze Setup (crowded) <span style="background: #FFC107; color: #333; padding: 1px 5px; border-radius: 6px; font-size: 0.95em; margin-left: 2px; white-space: nowrap;">Current</span></div>
-                                <div style="color: #6c757d;"><b>↙ Price ↓ & OI ↓</b> — Flush-Out (deleveraging)</div>
+                            <div id="oi-quadrant-legend" style="background: white; padding: 4px 8px; border-radius: 4px; margin: 6px auto 0 auto; width: calc(100% - 80px); font-size: 0.85em; border: 1px solid #e5e5e5; box-shadow: 0 1px 2px rgba(0,0,0,0.04); word-wrap: break-word; overflow-wrap: break-word; line-height: 1.4;">
+                                <div id="q1-legend" style="color: #FF6347; margin-bottom: 1px;"><b>↗ Price ↑ & OI ↑</b> — Risky Up (leveraged)</div>
+                                <div id="q2-legend" style="color: #28a745; margin-bottom: 1px;"><b>↘ Price ↑ & OI ↓</b> — Healthy Up (spot-led)</div>
+                                <div id="q3-legend" style="color: #FFC107; margin-bottom: 1px;"><b>↖ Price ↓ & OI ↑</b> — Squeeze Setup (crowded)</div>
+                                <div id="q4-legend" style="color: #6c757d;"><b>↙ Price ↓ & OI ↓</b> — Flush-Out (deleveraging)</div>
                             </div>
                         </div>
                     </div>
@@ -2474,6 +2474,62 @@
             dateInput.max = fiveYearsFromNow.toISOString().split('T')[0];
         });
         
+        // Load and update OI quadrant legend with current quadrant info
+        function updateOIQuadrantLegend() {
+            fetch('charts/oi_quadrant_info.json')
+                .then(r => {
+                    if (!r.ok) {
+                        console.warn('OI quadrant info not found, using default');
+                        return null;
+                    }
+                    return r.json();
+                })
+                .then(data => {
+                    if (!data || !data.quadrant_id) return;
+                    
+                    // Remove Current badge from all quadrants
+                    const legends = ['q1-legend', 'q2-legend', 'q3-legend', 'q4-legend'];
+                    legends.forEach(id => {
+                        const el = document.getElementById(id);
+                        if (el) {
+                            // Remove existing Current badge
+                            const currentBadge = el.querySelector('.current-badge');
+                            if (currentBadge) {
+                                currentBadge.remove();
+                            }
+                        }
+                    });
+                    
+                    // Add Current badge to the active quadrant
+                    const activeLegend = document.getElementById(data.quadrant_id + '-legend');
+                    if (activeLegend) {
+                        const badge = document.createElement('span');
+                        badge.className = 'current-badge';
+                        // Set background and text color based on quadrant for better contrast
+                        let bgColor, textColor;
+                        if (data.quadrant_id === 'q1') {
+                            bgColor = '#FF6347';  // Red/Orange
+                            textColor = '#ffffff';  // White for contrast
+                        } else if (data.quadrant_id === 'q2') {
+                            bgColor = '#28a745';  // Green
+                            textColor = '#ffffff';  // White for contrast
+                        } else if (data.quadrant_id === 'q3') {
+                            bgColor = '#FFC107';  // Yellow
+                            textColor = '#000000';  // Black for contrast on yellow
+                        } else {  // q4
+                            bgColor = '#6c757d';  // Gray
+                            textColor = '#ffffff';  // White for contrast
+                        }
+                        badge.style.cssText = `background: ${bgColor}; color: ${textColor}; padding: 1px 5px; border-radius: 6px; font-size: 0.95em; margin-left: 2px; white-space: nowrap; font-weight: 600;`;
+                        badge.textContent = 'Current';
+                        activeLegend.appendChild(badge);
+                    }
+                })
+                .catch(err => {
+                    console.warn('Failed to load OI quadrant info:', err);
+                });
+        }
+        
         // Load last update time from metadata
         fetch('data/btc_metadata.json')
             .then(r => r.json())
@@ -2497,6 +2553,9 @@
             .catch(() => {
                 document.getElementById('lastUpdate').textContent = 'Unknown';
             });
+        
+        // Update OI quadrant legend on page load
+        updateOIQuadrantLegend();
     </script>
 </body>
 </html>
