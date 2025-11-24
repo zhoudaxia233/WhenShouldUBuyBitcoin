@@ -9,14 +9,11 @@ from fastapi.testclient import TestClient
 
 from dca_service.main import app
 
-client = TestClient(app)
-
-
 class TestDCAEmailIntegration:
     """Tests DCA execution email integration"""
     
     @patch('dca_service.api.dca_api._send_dca_email_task')
-    def test_successful_dca_triggers_email(self, mock_send_email):
+    def test_successful_dca_triggers_email(self, mock_send_email, client):
         """Successful DCA execution should trigger email in background"""
         response = client.post("/api/dca/execute-simulated")
         
@@ -33,7 +30,7 @@ class TestDCAEmailIntegration:
             assert call_args is not None
     
     @patch('dca_service.api.dca_api._send_dca_email_task')
-    def test_skipped_dca_no_email(self, mock_send_email):
+    def test_skipped_dca_no_email(self, mock_send_email, client):
         """Skipped DCA should not send email"""
         # This test would need strategy configured to skip
         # For now, just verify the endpoint doesn't crash

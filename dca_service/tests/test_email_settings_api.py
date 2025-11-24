@@ -13,37 +13,11 @@ from dca_service.main import app
 from dca_service.database import get_session
 from dca_service.models import EmailSettings
 
-client = TestClient(app)
-
-
-@pytest.fixture(name="session")
-def session_fixture():
-    """Create a test database session"""
-    engine = create_engine(
-        "sqlite:///:memory:",
-        connect_args={"check_same_thread": False},
-        poolclass=StaticPool,
-    )
-    SQLModel.metadata.create_all(engine)
-    with Session(engine) as session:
-        yield session
-
-
-@pytest.fixture(autouse=True)
-def override_get_session(session):
-    """Override the database session dependency"""
-    def get_session_override():
-        return session
-    
-    app.dependency_overrides[get_session] = get_session_override
-    yield
-    app.dependency_overrides.clear()
-
 
 class TestEmailSettingsAPI:
     """Tests for email settings API endpoints"""
     
-    def test_save_email_settings_new(self, session):
+    def test_save_email_settings_new(self, session, client):
         """Test saving new email settings"""
         payload = {
             "is_enabled": True,
@@ -73,7 +47,7 @@ class TestEmailSettingsAPI:
         # Password should be encrypted
         assert settings.smtp_password_encrypted != "test_password"
     
-    def test_save_email_settings_update(self, session):
+    def test_save_email_settings_update(self, session, client):
         """Test updating existing email settings"""
         # Create initial settings
         from dca_service.services.security import encrypt_text
@@ -114,7 +88,7 @@ class TestEmailSettingsAPI:
         assert settings.smtp_user == "new@gmail.com"
         assert settings.email_from == "new@gmail.com"  # Should match smtp_user
     
-    def test_save_email_settings_update_without_password(self, session):
+    def test_save_email_settings_update_without_password(self, session, client):
         """Test updating settings without changing password"""
         from dca_service.services.security import encrypt_text, decrypt_text
         
@@ -152,7 +126,7 @@ class TestEmailSettingsAPI:
         decrypted = decrypt_text(settings.smtp_password_encrypted)
         assert decrypted == original_password
     
-    def test_save_email_settings_new_without_password_fails(self, session):
+    def test_save_email_settings_new_without_password_fails(self, session, client):
         """Test that new config requires password"""
         payload = {
             "is_enabled": True,
@@ -168,7 +142,7 @@ class TestEmailSettingsAPI:
         assert response.status_code == 400
         assert "Password is required" in response.json()["detail"]
     
-    def test_get_email_settings_status_not_configured(self, session):
+    def test_get_email_settings_status_not_configured(self, session, client):
         """Test status endpoint when no settings exist"""
         response = client.get("/api/email/settings/status")
         
@@ -177,7 +151,7 @@ class TestEmailSettingsAPI:
         assert data["has_settings"] is False
         assert data["is_enabled"] is False
     
-    def test_get_email_settings_status_configured(self, session):
+    def test_get_email_settings_status_configured(self, session, client):
         """Test status endpoint with configured settings"""
         from dca_service.services.security import encrypt_text
         
@@ -207,7 +181,7 @@ class TestEmailSettingsAPI:
         # Password should NOT be in response
         assert "password" not in str(data)
     
-    def test_encryption_decryption_roundtrip(self, session):
+    def test_encryption_decryption_roundtrip(self, session, client):
         """Test that password encryption/decryption works correctly"""
         from dca_service.services.security import encrypt_text, decrypt_text
         
@@ -232,7 +206,7 @@ class TestEmailSettingsAPI:
         
         assert decrypted == original_password
 
-    def test_toggle_email_settings(self, session):
+    def test_toggle_email_settings(self, session, client):
         """Test toggling email enabled status"""
         # Setup initial settings
         from dca_service.services.security import encrypt_text
@@ -263,7 +237,7 @@ class TestEmailSettingsAPI:
         updated = session.exec(select(EmailSettings)).first()
         assert updated.is_enabled is False
 
-    def test_toggle_email_settings_not_found(self, session):
+    def test_toggle_email_settings_not_found(self, session, client):
         """Test toggling when no settings exist"""
         response = client.post("/api/email/settings/toggle", json={"is_enabled": True})
         

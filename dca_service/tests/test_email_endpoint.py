@@ -9,15 +9,12 @@ from unittest.mock import patch, MagicMock
 
 from dca_service.main import app
 
-client = TestClient(app)
-
-
 class TestEmailTestEndpoint:
     """Tests for POST /api/email/test"""
     
     @patch('dca_service.services.mailer._get_email_config')
     @patch('dca_service.services.mailer.send_email')
-    def test_email_disabled(self, mock_send_email, mock_get_config):
+    def test_email_disabled(self, mock_send_email, mock_get_config, client):
         """When email is disabled (config returns None), endpoint should return error"""
         # Mock config to return None (disabled/not configured)
         mock_get_config.return_value = None
@@ -34,7 +31,7 @@ class TestEmailTestEndpoint:
     
     @patch('dca_service.services.mailer._get_email_config')
     @patch('dca_service.services.mailer.send_email')
-    def test_email_enabled_success(self, mock_send_email, mock_get_config):
+    def test_email_enabled_success(self, mock_send_email, mock_get_config, client):
         """When email is enabled and sending succeeds, return success"""
         # Mock valid config
         mock_get_config.return_value = {
@@ -64,7 +61,7 @@ class TestEmailTestEndpoint:
     
     @patch('dca_service.services.mailer._get_email_config')
     @patch('dca_service.services.mailer.send_email')
-    def test_email_send_exception(self, mock_send_email, mock_get_config):
+    def test_email_send_exception(self, mock_send_email, mock_get_config, client):
         """When send_email raises exception, endpoint should catch it"""
         # Mock valid config
         mock_get_config.return_value = {
