@@ -1816,7 +1816,7 @@ def create_futures_oi_timeseries_chart(
         type="log",
         title_text=None,  # Remove axis title for cleaner look
         tickformat="$,.0f",
-        dtick=1,
+        nticks=8,  # Request more ticks on log scale
         row=1,
         col=1,
         showgrid=True,
