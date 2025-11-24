@@ -137,3 +137,48 @@ def clear_simulated_transactions(session: Session = Depends(get_session)):
         "deleted_count": deleted_count,
         "message": f"Cleared {deleted_count} simulated transaction(s). Manual entries preserved."
     }
+
+
+@router.post("/email/test")
+def test_email():
+    """
+    Test email configuration by sending a test message.
+    Checks database settings first, then environment variables.
+    
+    Returns:
+        dict: {"success": true} on success, {"success": false, "error": "..."} on failure
+    """
+    from dca_service.services.mailer import send_email, _get_email_config
+    from dca_service.config import settings
+    
+    # Check if email is configured (DB or env)
+    config = _get_email_config()
+    
+    if not config:
+        return {
+            "success": False,
+            "error": "Email is not configured. Please fill in SMTP settings and enable email notifications."
+        }
+    
+    try:
+        # Send test email
+        subject = "DCA Service Email Test"
+        body = f"""If you received this, email configuration works!
+
+Configuration Details:
+- SMTP Host: {config['smtp_host']}
+- SMTP Port: {config['smtp_port']}
+- From: {config['email_from']}
+- To: {config['email_to']}
+- Source: {config['source']}
+
+This is a test message from your DCA Service."""
+        
+        send_email(subject, body)
+        
+        return {"success": True}
+    except Exception as e:
+        return {
+            "success": False,
+            "error": str(e)
+        }
