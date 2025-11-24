@@ -69,3 +69,15 @@ def get_percentile_thresholds():
         return percentiles
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error calculating percentiles: {str(e)}")
+
+def get_execution_mode(session: Session) -> str:
+    """
+    Get the current execution mode from the strategy configuration.
+    
+    Returns:
+        str: "DRY_RUN" or "LIVE"
+    """
+    strategy = session.exec(select(DCAStrategy)).first()
+    if not strategy:
+        return "DRY_RUN"  # Default to dry run if no strategy exists
+    return strategy.execution_mode

@@ -62,6 +62,9 @@ class DCAStrategy(SQLModel, table=True):
     # Strategy Configuration
     strategy_type: str = Field(default="legacy_band") # "legacy_band" or "dynamic_ahr999"
     
+    # Execution Mode (Phase 9: Execution Mode Plumbing)
+    execution_mode: str = Field(default="DRY_RUN")  # "DRY_RUN" or "LIVE"
+    
     # Dynamic Strategy Config (Nullable, used if strategy_type="dynamic_ahr999")
     dynamic_min_multiplier: Optional[float] = None
     dynamic_max_multiplier: Optional[float] = None
@@ -87,8 +90,28 @@ class ColdWalletEntry(SQLModel, table=True):
     
     id: Optional[int] = Field(default=None, primary_key=True)
     timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-    btc_amount: float
+    btc_amount: float  # Amount of BTC added to cold storage
     fee_btc: Optional[float] = None
-    notes: Optional[str] = None
+    notes: Optional[str] = None  # Optional notes (e.g., "Hardware wallet transfer")
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    
+    # Treat as a "negative transaction" in total budget calculations
+    # (spending to move BTC to cold storage)
 
+
+class EmailSettings(SQLModel, table=True):
+    """
+    Email SMTP configuration with encrypted password storage.
+    Similar to BinanceCredentials pattern.
+    """
+    __tablename__ = "email_settings"
+    
+    id: Optional[int] = Field(default=None, primary_key=True)
+    is_enabled: bool = Field(default=False)
+    smtp_host: str
+    smtp_port: int = Field(default=587)
+    smtp_user: str
+    smtp_password_encrypted: str  # Encrypted password
+    email_from: str
+    email_to: str
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
