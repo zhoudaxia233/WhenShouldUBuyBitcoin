@@ -159,7 +159,32 @@
                         </div>
                     </div>
 
+                    <!-- Execution Mode Section (Phase 9) -->
+                    <h5 class="mt-4 mb-3">Execution Mode</h5>
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="execution_mode" id="execution_mode_dry_run" value="DRY_RUN" checked>
+                            <label class="form-check-label" for="execution_mode_dry_run">
+                                <strong>Dry run only (recommended for now)</strong>
+                            </label>
+                        </div>
+                        <div class="form-text text-muted ps-4">
+                            Dry run mode records "virtual" buys only and never sends orders to Binance.
+                        </div>
+                       
+                        <div class="form-check mt-2">
+                            <input class="form-check-input" type="radio" name="execution_mode" id="execution_mode_live" value="LIVE" disabled>
+                            <label class="form-check-label text-muted" for="execution_mode_live">
+                                <strong>Live trading (Binance) <span class="badge bg-secondary">Not implemented yet</span></strong>
+                            </label>
+                        </div>
+                        <div class="form-text text-muted ps-4">
+                            Live trading will place real orders on Binance (not implemented yet).
+                        </div>
+                    </div>
+
                     <!-- Strategy Logic Section -->
+
                     <h5 class="mt-4 mb-3">Strategy Logic</h5>
                     
                     <div class="row">
@@ -343,6 +368,14 @@
                     // Strategy Type
                     document.getElementById('strategy_type').value = strategy.strategy_type || 'legacy_band';
 
+                    // Execution Mode (Phase 9)
+                    const executionMode = strategy.execution_mode || 'DRY_RUN';
+                    if (executionMode === 'LIVE') {
+                        document.getElementById('execution_mode_live').checked = true;
+                    } else {
+                        document.getElementById('execution_mode_dry_run').checked = true;
+                    }
+
                     // Legacy Fields
                     // Load percentile multipliers (6 tiers)
                     // Use existing fields as fallback for backward compatibility
@@ -386,6 +419,9 @@
                 
                 // Strategy Type
                 strategy_type: document.getElementById('strategy_type').value,
+                
+                // Execution Mode (Phase 9)
+                execution_mode: document.querySelector('input[name="execution_mode"]:checked').value,
                 
                 // Legacy Fields
                 // Save percentile multipliers (6 tiers)

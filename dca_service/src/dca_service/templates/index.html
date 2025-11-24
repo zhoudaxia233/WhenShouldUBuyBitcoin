@@ -90,6 +90,7 @@
             <div class="card-header bg-white d-flex justify-content-between align-items-center">
                 <h5 class="mb-0">DCA Preview & Control</h5>
                 <div>
+                    <span id="execModeBadge" class="badge bg-secondary me-2">Mode: Loading...</span>
                     <span id="dataSourceBadge" class="badge bg-secondary me-2">Source: --</span>
                     <span id="scheduleDisplay" class="badge bg-info text-dark">Loading Schedule...</span>
                 </div>
@@ -136,8 +137,11 @@
         </div>
 
         <div class="card shadow-sm mb-5">
-            <div class="card-header bg-white">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center">
                 <h5 class="mb-0">Transaction History</h5>
+                <button id="clearSimulatedBtn" class="btn btn-sm btn-outline-danger" style="display: none;">
+                    Clear Simulated (Keep Manual)
+                </button>
             </div>
             <div class="card-body p-0">
                 <div class="table-responsive">
@@ -371,7 +375,7 @@
         
         async function loadTransactions() {
             try {
-                const response = await fetch('/api/transactions?limit=100');
+                const response = await fetch('/api/transactions');
                 allTransactions = await response.json();
                 
                 // Reset to page 1
@@ -777,11 +781,160 @@
             }
         });
 
+        // Execution Mode Management (Phase 9)
+        let currentExecutionMode = 'DRY_RUN';  // Global variable to track mode
+        let clearConfirmationActive = false;
+        let clearConfirmationTimeout = null;
+
+        async function loadExecutionMode() {
+            try {
+                const response = await fetch('/api/strategy');
+                const strategy = await response.json();
+                if (strategy) {
+                    currentExecutionMode = strategy.execution_mode || 'DRY_RUN';
+                    updateModeIndicator(currentExecutionMode);
+                    updateClearButtonVisibility(currentExecutionMode);
+                }
+            } catch (error) {
+                console.error('Error loading execution mode:', error);
+                // Default to DRY_RUN on error
+                currentExecutionMode = 'DRY_RUN';
+                updateModeIndicator('DRY_RUN');
+            }
+        }
+
+        function updateModeIndicator(mode) {
+            const badge = document.getElementById('execModeBadge');
+            if (!badge) return;
+            
+            if (mode === 'LIVE') {
+                badge.className = 'badge bg-danger me-2';
+                badge.textContent = 'Mode: LIVE (danger)';
+            } else {
+                badge.className = 'badge bg-secondary me-2';
+                badge.textContent = 'Mode: Dry Run';
+            }
+        }
+
+        function updateClearButtonVisibility(mode) {
+            const clearBtn = document.getElementById('clearSimulatedBtn');
+            if (!clearBtn) return;
+            
+            if (mode === 'DRY_RUN') {
+                clearBtn.style.display = 'inline-block';
+            } else {
+                clearBtn.style.display = 'none';
+            }
+        }
+
+        // Clear Simulated Transactions with Two-Click Confirmation
+        document.addEventListener('DOMContentLoaded', function() {
+            const clearBtn = document.getElementById('clearSimulatedBtn');
+            if (clearBtn) {
+                clearBtn.addEventListener('click', async () => {
+                    // Check if in dry run mode
+                    if (currentExecutionMode !== 'DRY_RUN') {
+                        notyf.error('Clear simulated history is only available in DRY_RUN mode');
+                        return;
+                    }
+                    
+                    if (!clearConfirmationActive) {
+                        // First click: activate confirmation
+                        clearConfirmationActive = true;
+                        clearBtn.textContent = 'Click again to confirm';
+                        clearBtn.classList.remove('btn-outline-danger');
+                        clearBtn.classList.add('btn-danger');
+                        
+                        // Reset after 3 seconds
+                        clearConfirmationTimeout = setTimeout(() => {
+                            resetClearButton();
+                        }, 3000);
+                    } else {
+                        // Second click: execute clear
+                        clearTimeout(clearConfirmationTimeout);
+                        clearBtn.disabled = true;
+                        clearBtn.textContent = 'Clearing...';
+                        
+                        try {
+                            const response = await fetch('/api/transactions/clear-simulated', {
+                                method: 'POST'
+                            });
+                            
+                            const result = await response.json();
+                            
+                            if (response.ok && result.success) {
+                                notyf.success(result.message || 'Simulated transactions cleared');
+                                loadTransactions();  // Refresh the transaction list
+                                loadPreview();  // Refresh the preview (budget might have changed)
+                            } else {
+                                notyf.error(result.detail || result.message || 'Failed to clear transactions');
+                            }
+                        } catch (error) {
+                            console.error('Error clearing simulated transactions:', error);
+                            notyf.error('Network error or backend unreachable');
+                        } finally {
+                            resetClearButton();
+                        }
+                    }
+                });
+            }
+        });
+
+        function resetClearButton() {
+            const clearBtn = document.getElementById('clearSimulatedBtn');
+            if (clearBtn) {
+                clearConfirmationActive = false;
+                clearBtn.disabled = false;
+                clearBtn.textContent = 'Clear Simulated (Keep Manual)';
+                clearBtn.classList.remove('btn-danger');
+                clearBtn.classList.add('btn-outline-danger');
+            }
+        }
+
         
-        // Load on start (Phase 6: auto-refresh on page load)
+        // Server-Sent Events for real-time updates
+        let eventSource = null;
+        
+        function connectSSE() {
+            // Close existing connection if any
+            if (eventSource) {
+                eventSource.close();
+            }
+            
+            // Connect to SSE endpoint
+            eventSource = new EventSource('/api/events');
+            
+            eventSource.addEventListener('transaction_created', (event) => {
+                console.log('New transaction event received:', event.data);
+                notyf.success('New DCA transaction executed!');
+                
+                // Refresh all data immediately
+                loadTransactions();
+                loadPreview();
+                loadHoldings();
+            });
+            
+            eventSource.addEventListener('ping', () => {
+                // Keepalive ping, do nothing
+            });
+            
+            eventSource.onerror = (error) => {
+                console.error('SSE connection error:', error);
+                eventSource.close();
+                
+                // Reconnect after 5 seconds
+                setTimeout(connectSSE, 5000);
+            };
+            
+            console.log('✓ Connected to real-time updates');
+        }
+        
+        // Load on start
+        loadExecutionMode();
         loadTransactions();
         loadPreview();
         loadHoldings();
+        connectSSE();  // Connect to server-sent events for real-time updates
     </script>
 </body>
 </html>
