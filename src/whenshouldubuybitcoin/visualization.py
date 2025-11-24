@@ -1308,15 +1308,15 @@ def plot_ma_cross_analysis(
     auto_open: bool = False,
 ) -> str:
     """
-    Create an interactive plot of BTC price with 50D/200D/2100D MAs, cross signals, and spread.
+    Create an interactive plot of BTC price with 50D/200D MAs and weekly MAs, cross signals, and spread.
 
     Features:
-    - Top subplot: BTC Price (log), 50D MA, 200D MA, 2100D MA (300 weeks), Golden/Death Cross markers.
+    - Top subplot: BTC Price (log), 50D MA, 200D MA, 50W MA, 100W MA, 200W MA, Golden/Death Cross markers.
     - Bottom subplot: MA Spread with structural shading (Bullish/Bearish).
     - Post-Death Cross risk window highlighting.
 
     Args:
-        df: DataFrame with 'date', 'close_price', 'ma_50', 'ma_200', 'ma_2100', 'ma_spread', 'golden_cross', 'death_cross'.
+        df: DataFrame with 'date', 'close_price', 'ma_50', 'ma_200', 'ma_350', 'ma_700', 'ma_1400', 'ma_spread', 'golden_cross', 'death_cross'.
         output_filename: Name of the output HTML file (default: "ma_cross_analysis.html")
         auto_open: Whether to automatically open the chart in browser (default: False)
 
@@ -1407,22 +1407,54 @@ def plot_ma_cross_analysis(
         col=1,
     )
 
-    # 4a. 2100D MA (300 weeks)
-    if "ma_2100" in plot_df.columns:
+    # 5. 50W MA (350 days)
+    if "ma_350" in plot_df.columns:
         fig.add_trace(
             go.Scatter(
                 x=plot_df["date"],
-                y=plot_df["ma_2100"],
+                y=plot_df["ma_350"],
                 mode="lines",
-                name="2100D MA (300W)",
-                line=dict(color="#9C27B0", width=1.5),  # Purple
-                hovertemplate="<b>2100D MA (300W):</b> $%{y:,.2f}<extra></extra>",
+                name="50W MA",
+                line=dict(color="#00C853", width=1.5, dash="dot"),  # Green, dotted
+                hovertemplate="<b>50W MA:</b> $%{y:,.2f}<extra></extra>",
             ),
             row=1,
             col=1,
         )
 
-    # 5. Golden Cross Markers
+    # 6. 100W MA (700 days)
+    if "ma_700" in plot_df.columns:
+        fig.add_trace(
+            go.Scatter(
+                x=plot_df["date"],
+                y=plot_df["ma_700"],
+                mode="lines",
+                name="100W MA",
+                line=dict(color="#FF6F00", width=1.5, dash="dash"),  # Orange, dashed
+                hovertemplate="<b>100W MA:</b> $%{y:,.2f}<extra></extra>",
+            ),
+            row=1,
+            col=1,
+        )
+
+    # 7. 200W MA (1400 days)
+    if "ma_1400" in plot_df.columns:
+        fig.add_trace(
+            go.Scatter(
+                x=plot_df["date"],
+                y=plot_df["ma_1400"],
+                mode="lines",
+                name="200W MA",
+                line=dict(
+                    color="#9C27B0", width=1.5, dash="dashdot"
+                ),  # Purple, dash-dot
+                hovertemplate="<b>200W MA:</b> $%{y:,.2f}<extra></extra>",
+            ),
+            row=1,
+            col=1,
+        )
+
+    # 8. Golden Cross Markers
     if "golden_cross" in plot_df.columns:
         golden_crosses = plot_df[plot_df["golden_cross"]]
         if not golden_crosses.empty:
@@ -1545,8 +1577,10 @@ def plot_ma_cross_analysis(
         text=(
             "<span style='color:black; font-size:18px'><b>—</b></span> <span style='font-size:13px'>BTC Price</span>   "
             "<span style='color:#2962FF; font-size:18px'><b>—</b></span> <span style='font-size:13px'>50D MA</span>   "
-            "<span style='color:#D50000; font-size:18px'><b>—</b></span> <span style='font-size:13px'>200D MA</span>   "
-            "<span style='color:#9C27B0; font-size:18px'><b>—</b></span> <span style='font-size:13px'>2100D MA (300W)</span><br>"
+            "<span style='color:#D50000; font-size:18px'><b>—</b></span> <span style='font-size:13px'>200D MA</span><br>"
+            "<span style='color:#00C853; font-size:18px'><b>· ·</b></span> <span style='font-size:13px'>50W MA</span>   "
+            "<span style='color:#FF6F00; font-size:18px'><b>- -</b></span> <span style='font-size:13px'>100W MA</span>   "
+            "<span style='color:#9C27B0; font-size:18px'><b>- · -</b></span> <span style='font-size:13px'>200W MA</span><br>"
             "<span style='color:#00C853; font-size:16px'>▲</span> <span style='font-size:12px'>Golden Cross</span>   "
             "<span style='color:#D50000; font-size:16px'>▼</span> <span style='font-size:12px'>Death Cross</span>"
         ),
@@ -1856,7 +1890,6 @@ def create_futures_oi_timeseries_chart(
     else:
         y_min = None
         y_max = None
-
 
     # Y-axis configuration: let Plotly auto-handle ticks to prevent duplicates
     fig.update_yaxes(
