@@ -113,6 +113,114 @@
             </div>
         </div>
 
+        <!-- Trading (Write) Credentials Section -->
+        <div class="card shadow-sm mt-4">
+            <div class="card-header bg-danger text-white">
+                <h5 class="mb-0">⚠ Trading Credentials (LIVE Trading)</h5>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-danger mb-4">
+                    <strong>⛔ DANGER - Real Money Trading:</strong>
+                    <ul class="mb-0 mt-2">
+                        <li>These credentials enable <strong>REAL market buy orders</strong> on Binance.</li>
+                        <li>Only configure if you want to enable LIVE trading mode.</li>
+                        <li>Use a <strong>separate API key</strong> from your read-only key above.</li>
+                        <li>Enable <strong>"Spot & Margin Trading"</strong> permission on Binance.</li>
+                        <li><strong>DO NOT</strong> enable withdrawal permissions (not needed).</li>
+                    </ul>
+                </div>
+
+                <div class="row">
+                    <!-- Left: Credentials Form -->
+                    <div class="col-md-6">
+                        <h6 class="mb-3">Trading API Credentials</h6>
+                        <form id="tradingForm">
+                            <div class="mb-3">
+                                <label class="form-label">Trading API Key</label>
+                                <input type="text" class="form-control" id="tradingApiKey" placeholder="Enter new key to update">
+                                <div id="currentTradingKeyDisplay" class="form-text text-muted mt-1"></div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Trading API Secret</label>
+                                <input type="password" class="form-control" id="tradingApiSecret" placeholder="Enter new secret to update">
+                                <small class="form-text text-muted">Secret is never displayed for security</small>
+                            </div>
+                            <button type="submit" class="btn btn-danger w-100">
+                                <span id="saveTradingButtonText">Save Trading Credentials</span>
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- Right: Status Panel -->
+                    <div class="col-md-6">
+                        <div class="card bg-light h-100">
+                            <div class="card-body">
+                                <h6>Trading Status</h6>
+                                
+                                <div class="mb-3">
+                                    <strong>Credentials:</strong>
+                                    <p id="tradingCredStatus" class="mb-1 small">Checking...</p>
+                                </div>
+
+                                <div class="mb-3">
+                                    <strong>Trading Enabled:</strong>
+                                    <p id="tradingPermStatus" class="mb-1 small text-muted">Not verified</p>
+                                </div>
+
+                                <button id="testTradingBtn" class="btn btn-outline-danger w-100">
+                                    <span id="testTradingText">Verify Trading Permissions</span>
+                                </button>
+                                <div id="tradingTestResult" class="mt-2 small"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Trading Help Section -->
+                <div class="mt-4">
+                    <button class="btn btn-sm btn-danger" type="button" data-bs-toggle="collapse" data-bs-target="#tradingHelpSection">
+                        ⚠ How to create Trading API Key
+                    </button>
+                    
+                    <div class="collapse mt-3" id="tradingHelpSection">
+                        <div class="card card-body bg-light">
+                            <h6>Creating a Trading API Key on Binance:</h6>
+                            <ol class="mb-0 small">
+                                <li>Log into your <strong>Binance</strong> account.</li>
+                                <li>Go to <strong>API Management</strong> (under Account section).</li>
+                                <li>Click <strong>Create API</strong> button.</li>
+                                <li>Select <strong>System generated</strong> (HMAC symmetric encryption).</li>
+                                <li>Give it a label (e.g. "DCA Trading").</li>
+                                <li>Complete security verification.</li>
+                                <li><strong>IMPORTANT:</strong> Under "API Restrictions":
+                                    <ul class="small mt-2">
+                                        <li>✅ Check <strong>"Enable Reading"</strong> - Required to read order execution details</li>
+                                        <li>✅ Check <strong>"Enable Spot & Margin Trading"</strong> - Required to place orders</li>
+                                        <li>❌ Leave <strong>"Enable Withdrawals"</strong> UNCHECKED</li>
+                                        <li class="text-muted mt-1"><em>Note: Both Reading and Trading are needed because order responses contain data that requires read permissions.</em></li>
+                                    </ul>
+                                </li>
+                                <li>Set IP restriction if desired (recommended for security).</li>
+                                <li>Copy the <strong>API Key</strong> and <strong>Secret Key</strong> immediately.</li>
+                                <li>Paste them into the form above and click <strong>Save Trading Credentials</strong>.</li>
+                                <li>Click <strong>"Verify Trading Permissions"</strong> to test.</li>
+                            </ol>
+                            <div class="alert alert-danger small mt-3 mb-0">
+                                <strong>🔒 Security Best Practices:</strong>
+                                <ul class="mb-0 small">
+                                    <li>Use a SEPARATE API key for trading (don't reuse your read-only key)</li>
+                                    <li>Never enable withdrawal permissions</li>
+                                    <li>Consider setting IP restrictions to your server's IP</li>
+                                    <li>Start with small test amounts before trusting the system</li>
+                                    <li>Regularly monitor your Binance account for unexpected activity</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Email Notifications Section -->
         <div class="card shadow-sm mt-4">
             <div class="card-header bg-white">
@@ -310,7 +418,7 @@
                 const response = await fetch('/api/binance/credentials', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ api_key: apiKey, api_secret: apiSecret })
+                    body: JSON.stringify({ api_key: apiKey, api_secret: apiSecret, credential_type: 'READ_ONLY' })
                 });
                 
                 if (response.ok) {
@@ -345,7 +453,7 @@
             resultDiv.textContent = '';
             
             try {
-                const response = await fetch('/api/binance/test-connection', {
+                const response = await fetch('/api/binance/test-connection?credential_type=READ_ONLY', {
                     method: 'POST'
                 });
                 const result = await response.json();
@@ -585,8 +693,189 @@
             }
         });
 
-        // Load statuses on page load
+        // ============= TRADING CREDENTIALS =============
+        
+        // Note: Trading credentials use the SAME backend endpoint as read-only
+        // The UI just provides separate sections for clarity
+
+        // Save trading credentials (uses same endpoint)
+        document.getElementById('tradingForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const apiKey = document.getElementById('tradingApiKey').value.trim();
+            const apiSecret = document.getElementById('tradingApiSecret').value.trim();
+            
+            if (!apiKey || !apiSecret) {
+                notyf.error('Both Trading API Key and Secret are required');
+                return;
+            }
+            
+            const saveBtn = document.querySelector('#tradingForm button[type="submit"]');
+            const saveText = document.getElementById('saveTradingButtonText');
+            const originalText = saveText.textContent;
+            
+            saveBtn.disabled = true;
+            saveText.textContent = 'Saving...';
+            
+            try {
+                const response = await fetch('/api/binance/credentials', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ api_key: apiKey, api_secret: apiSecret, credential_type: 'TRADING' })
+                });
+                
+                if (response.ok) {
+                    notyf.success('Trading credentials saved successfully');
+                    // Clear the form
+                    document.getElementById('tradingApiKey').value = '';
+                    document.getElementById('tradingApiSecret').value = '';
+                    // Reload both statuses
+                    await loadCredentialsStatus();
+                    await loadTradingStatus();
+                } else {
+                    const error = await response.json();
+                    notyf.error('Error saving credentials: ' + (error.detail || 'Unknown error'));
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                notyf.error('Network error or backend unreachable');
+            } finally {
+                saveBtn.disabled = false;
+                saveText.textContent = originalText;
+            }
+        });
+
+        // Load trading status
+        async function loadTradingStatus() {
+            try {
+                const response = await fetch('/api/binance/trading-status');
+                const data = await response.json();
+                
+                const credStatusEl = document.getElementById('tradingCredStatus');
+                const permStatusEl = document.getElementById('tradingPermStatus');
+                const keyDisplayEl = document.getElementById('currentTradingKeyDisplay');
+                
+                // Only show as configured if trading permissions are verified
+                if (data.can_enable_live) {
+                    credStatusEl.textContent = '✔ Trading credentials configured';
+                    credStatusEl.className = 'mb-1 small text-success fw-bold';
+                    
+                    // Get masked key for TRADING credentials
+                    const statusResp = await fetch('/api/binance/credentials/status?credential_type=TRADING');
+                    const statusData = await statusResp.json();
+                    if (statusData.masked_api_key) {
+                        keyDisplayEl.textContent = `Current: ${statusData.masked_api_key}`;
+                        keyDisplayEl.className = 'form-text text-success masked-key';
+                    }
+                    
+                    permStatusEl.textContent = '✅ Trading enabled & verified';
+                    permStatusEl.className = 'mb-1 small text-success fw-bold';
+                } else if (data.has_credentials) {
+                    // Has credentials but not trading permissions
+                    credStatusEl.textContent = '⚠ Credentials found but trading NOT enabled';
+                    credStatusEl.className = 'mb-1 small text-warning fw-bold';
+                    keyDisplayEl.textContent = 'These credentials do not have trading permissions';
+                    keyDisplayEl.className = 'form-text text-warning';
+                    
+                    permStatusEl.textContent = '❌ ' + (data.error_message || 'Trading not enabled');
+                    permStatusEl.className = 'mb-1 small text-danger fw-bold';
+                } else {
+                    // No credentials at all
+                    credStatusEl.textContent = '⚠ No trading credentials configured';
+                    credStatusEl.className = 'mb-1 small text-warning fw-bold';
+                    keyDisplayEl.textContent = '';
+                    
+                    permStatusEl.textContent = '❌ Not configured';
+                    permStatusEl.className = 'mb-1 small text-danger fw-bold';
+                }
+            } catch (error) {
+                console.error('Error loading trading status:', error);
+                document.getElementById('tradingCredStatus').textContent = '❌ Error checking status';
+            }
+        }
+
+        // Test trading permissions
+        document.getElementById('testTradingBtn').addEventListener('click', async () => {
+            const btn = document.getElementById('testTradingBtn');
+            const btnText = document.getElementById('testTradingText');
+            const resultDiv = document.getElementById('tradingTestResult');
+            const originalText = btnText.textContent;
+            
+            btn.disabled = true;
+            btnText.textContent = 'Verifying...';
+            resultDiv.textContent = '';
+            
+            try {
+                const response = await fetch('/api/binance/trading-status');
+                const result = await response.json();
+                
+                if (result.can_enable_live) {
+                    resultDiv.textContent = '✅ Trading permissions verified! You can enable LIVE mode.';
+                    resultDiv.className = 'mt-2 small text-success fw-bold';
+                    notyf.success('Trading permissions verified');
+                    await loadTradingStatus();
+                } else {
+                    resultDiv.textContent = '❌ ' + result.error_message;
+                    resultDiv.className = 'mt-2 small text-danger fw-bold';
+                    notyf.error(result.error_message || 'Trading verification failed');
+                }
+            } catch (error) {
+                resultDiv.textContent = '❌ Error verifying permissions';
+                resultDiv.className = 'mt-2 small text-danger';
+                notyf.error('Network error or backend unreachable');
+            } finally {
+                btn.disabled = false;
+                btnText.textContent = originalText;
+            }
+        });
+
+        // ============= EMAIL SETTINGS =============
+        
+        // Load email settings status (rest of function continues from aut original code)
+        async function loadEmailStatus() {
+            try {
+                const response = await fetch('/api/email/settings/status');
+                const data = await response.json();
+                
+                const statusEl = document.getElementById('emailStatus');
+                const configuredEl = document.getElementById('emailConfigured');
+                const testBtn = document.getElementById('testEmailBtn');
+                
+                if (data.has_settings) {
+                    statusEl.textContent = data.is_enabled ? '✔ Enabled' : '⚠ Disabled';
+                    statusEl.className = data.is_enabled ? 'mb-1 small text-success fw-bold' : 'mb-1 small text-warning fw-bold';
+                    
+                    configuredEl.textContent = data.smtp_user_masked || 'Configured';
+                    configuredEl.className = 'mb-1 small text-success';
+                    
+                    // Enable test button
+                    testBtn.disabled = false;
+                    
+                    // Fill form with existing config
+                    document.getElementById('emailEnabled').checked = data.is_enabled;
+                    document.getElementById('smtpHost').value = data.smtp_host || '';
+                    document.getElementById('smtpPort').value = data.smtp_port || 587;
+                    
+                    // Show masked email
+                    if (data.smtp_user_masked) {
+                        document.getElementById('currentEmailDisplay').textContent = `Current: ${data.smtp_user_masked}`;
+                        document.getElementById('currentEmailDisplay').className = 'form-text text-success';
+                    }
+                } else {
+                    statusEl.textContent = '⚠ Not configured';
+                    statusEl.className = 'mb-1 small text-warning fw-bold';
+                    configuredEl.textContent = 'Not configured';
+                    testBtn.disabled = true;
+                }
+            } catch (error) {
+                console.error('Error loading email status:', error);
+                document.getElementById('emailStatus').textContent = '❌ Error checking status';
+            }
+        }
+
+        // Load all statuses on page load
         loadCredentialsStatus();
+        loadTradingStatus();
         loadEmailStatus();
     </script>
 </body>

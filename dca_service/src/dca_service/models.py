@@ -79,7 +79,8 @@ class DCAStrategy(SQLModel, table=True):
 class BinanceCredentials(SQLModel, table=True):
     __tablename__ = "binance_credentials"
     
-    id: Optional[int] = Field(default=None, primary_key=True)
+    id: int | None = Field(default=None, primary_key=True)
+    credential_type: str = Field(default="READ_ONLY", index=True)  # "READ_ONLY" or "TRADING"
     api_key_encrypted: str
     api_secret_encrypted: str
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))

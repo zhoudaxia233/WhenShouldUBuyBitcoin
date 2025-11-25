@@ -15,6 +15,7 @@ router = APIRouter(prefix="/binance", tags=["binance"])
 class CredentialsSchema(BaseModel):
     api_key: str
     api_secret: str
+    credential_type: str = "READ_ONLY"  # "READ_ONLY" or "TRADING"
 
 class CredentialsStatus(BaseModel):
     has_credentials: bool
@@ -40,6 +41,7 @@ class HoldingsSummary(BaseModel):
 
 @router.post("/credentials")
 def save_credentials(creds: CredentialsSchema, session: Session = Depends(get_session)):
+    """Save credentials - supports both READ_ONLY and TRADING types"""
     if not creds.api_key or not creds.api_secret:
         raise HTTPException(status_code=400, detail="API Key and Secret are required")
     
@@ -50,8 +52,11 @@ def save_credentials(creds: CredentialsSchema, session: Session = Depends(get_se
     except ValueError as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-    # Check if exists
-    existing = session.exec(select(BinanceCredentials)).first()
+    # Check if credentials of this type exist
+    existing = session.exec(
+        select(BinanceCredentials).where(BinanceCredentials.credential_type == creds.credential_type)
+    ).first()
+    
     if existing:
         existing.api_key_encrypted = key_enc
         existing.api_secret_encrypted = secret_enc
@@ -59,17 +64,23 @@ def save_credentials(creds: CredentialsSchema, session: Session = Depends(get_se
         session.add(existing)
     else:
         new_creds = BinanceCredentials(
+            credential_type=creds.credential_type,
             api_key_encrypted=key_enc,
             api_secret_encrypted=secret_enc
         )
         session.add(new_creds)
     
     session.commit()
-    return {"success": True, "message": "Credentials saved."}
+    cred_label = "Read-only" if creds.credential_type == "READ_ONLY" else "Trading"
+    return {"success": True, "message": f"{cred_label} credentials saved."}
 
 @router.get("/credentials/status", response_model=CredentialsStatus)
-def get_credentials_status(session: Session = Depends(get_session)):
-    creds = session.exec(select(BinanceCredentials)).first()
+def get_credentials_status(credential_type: str = "READ_ONLY", session: Session = Depends(get_session)):
+    """Get status of credentials by type (READ_ONLY or TRADING)"""
+    creds = session.exec(
+        select(BinanceCredentials).where(BinanceCredentials.credential_type == credential_type)
+    ).first()
+    
     if not creds:
         return CredentialsStatus(has_credentials=False)
     
@@ -86,8 +97,12 @@ def get_credentials_status(session: Session = Depends(get_session)):
         return CredentialsStatus(has_credentials=True, masked_api_key="ERROR", last_updated=creds.updated_at)
 
 @router.post("/test-connection", response_model=ConnectionTestResult)
-async def test_connection(session: Session = Depends(get_session)):
-    creds = session.exec(select(BinanceCredentials)).first()
+async def test_connection(credential_type: str = "READ_ONLY", session: Session = Depends(get_session)):
+    """Test connection using specified credential type"""
+    creds = session.exec(
+        select(BinanceCredentials).where(BinanceCredentials.credential_type == credential_type)
+    ).first()
+    
     if not creds:
         return ConnectionTestResult(success=False, error_message="No credentials found")
     
@@ -108,13 +123,18 @@ async def test_connection(session: Session = Depends(get_session)):
 
 @router.get("/holdings", response_model=HoldingsSummary)
 async def get_holdings(session: Session = Depends(get_session)):
+    """Get holdings using READ_ONLY credentials"""
     quote_asset = settings.DCA_QUOTE_ASSET
     
     # Get strategy for target
     strategy = session.exec(select(DCAStrategy)).first()
     target_btc = strategy.target_btc_amount if strategy else 1.0 # Default to 1.0 if no strategy
     
-    creds = session.exec(select(BinanceCredentials)).first()
+    # Use READ_ONLY credentials for holdings
+    creds = session.exec(
+        select(BinanceCredentials).where(BinanceCredentials.credential_type == "READ_ONLY")
+    ).first()
+    
     if not creds:
         return HoldingsSummary(
             connected=False, 
@@ -180,12 +200,16 @@ class TradingStatus(BaseModel):
 @router.get("/trading-status", response_model=TradingStatus)
 async def get_trading_status(session: Session = Depends(get_session)):
     """
-    Check if LIVE trading can be enabled by validating:
-    1. Credentials exist
-    2. Credentials can decrypt
+    Check if LIVE trading can be enabled by validating TRADING credentials:
+    1. TRADING credentials exist
+    2. TRADING credentials can decrypt
     3. API has Spot Trading permissions
     """
-    creds = session.exec(select(BinanceCredentials)).first()
+    # Look for TRADING credentials only
+    creds = session.exec(
+        select(BinanceCredentials).where(BinanceCredentials.credential_type == "TRADING")
+    ).first()
+    
     if not creds:
         return TradingStatus(
             has_credentials=False,
@@ -229,7 +253,7 @@ async def get_trading_status(session: Session = Depends(get_session)):
                 has_credentials=True,
                 has_trading_permission=False,
                 can_enable_live=False,
-                error_message="Invalid API key or insufficient permissions. Enable 'Spot & Margin Trading' in Binance."
+                error_message="Auth failed: Check API permissions, trading enabled, and IP restrictions"
             )
         return TradingStatus(
             has_credentials=True,

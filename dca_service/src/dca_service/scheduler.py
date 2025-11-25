@@ -239,10 +239,12 @@ class DCAScheduler:
                     from dca_service.services.binance_client import BinanceClient
                     import asyncio
                     
-                    # 1. Get credentials
-                    creds = session.exec(select(BinanceCredentials)).first()
+                    # 1. Get TRADING credentials (not read-only)
+                    creds = session.exec(
+                        select(BinanceCredentials).where(BinanceCredentials.credential_type == "TRADING")
+                    ).first()
                     if not creds or not creds.api_key_encrypted:
-                        raise ValueError("Binance credentials not configured for LIVE trading")
+                        raise ValueError("Trading credentials not configured. Please add trading API keys in settings.")
                     
                     # 2. Decrypt both api_key and api_secret
                     api_key = decrypt_text(creds.api_key_encrypted)
