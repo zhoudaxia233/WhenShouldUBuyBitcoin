@@ -145,3 +145,77 @@ class BinanceClient:
         except Exception as e:
             logger.error(f"Failed to place market buy order: {e}")
             raise e
+
+    async def get_current_price(self, symbol: str) -> float:
+        """
+        Fetch current market price for a trading pair.
+        
+        Args:
+            symbol: Trading pair (e.g., "BTCUSDC")
+            
+        Returns:
+            Current price as float
+        """
+        try:
+            response = await self._request("GET", "/api/v3/ticker/price", params={"symbol": symbol})
+            price = float(response["price"])
+            logger.debug(f"Current {symbol} price: {price}")
+            return price
+        except Exception as e:
+            logger.error(f"Failed to fetch current price for {symbol}: {e}")
+            raise e
+
+    async def calculate_avg_buy_price(self, symbol: str) -> float:
+        """
+        Calculate estimated average buy price (cost basis) from trade history.
+        
+        IMPORTANT LIMITATIONS:
+        - Only considers last 1000 trades (Binance API limit)
+        - Does NOT account for deposits/withdrawals
+        - Does NOT account for transfers between accounts
+        - This is an ESTIMATION for portfolio tracking, not tax/accounting
+        
+        Args:
+            symbol: Trading pair (e.g., "BTCUSDC")
+            
+        Returns:
+            Average buy price as float, or 0.0 if no buy trades found
+        """
+        try:
+            # Fetch recent trades (max 1000 per API limitations)
+            params = {
+                "symbol": symbol,
+                "limit": 1000  # Maximum allowed by Binance
+            }
+            response = await self._request("GET", "/api/v3/myTrades", params=params, signed=True)
+            
+            total_cost = 0.0
+            total_quantity = 0.0
+            buy_count = 0
+            
+            for trade in response:
+                # Only consider buy trades
+                if trade.get("isBuyer", False):
+                    qty = float(trade.get("qty", 0))
+                    price = float(trade.get("price", 0))
+                    commission = float(trade.get("commission", 0))
+                    
+                    # Add to totals
+                    total_quantity += qty
+                    total_cost += (qty * price)
+                    buy_count += 1
+            
+            if total_quantity > 0:
+                avg_price = total_cost / total_quantity
+                logger.info(
+                    f"Calculated avg buy price for {symbol}: ${avg_price:.2f} "
+                    f"(based on {buy_count} buy trades, {total_quantity:.8f} BTC)"
+                )
+                return avg_price
+            else:
+                logger.warning(f"No buy trades found for {symbol}")
+                return 0.0
+                
+        except Exception as e:
+            logger.error(f"Failed to calculate average buy price for {symbol}: {e}")
+            raise e

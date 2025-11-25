@@ -36,37 +36,40 @@ class SimulationRequest(BaseModel):
     price: float
     notes: Optional[str] = None
 
-class ColdWalletEntryCreate(BaseModel):
-    btc_amount: float
-    fee_btc: Optional[float] = None
-    notes: Optional[str] = None
-    timestamp: datetime
-
-class ColdWalletEntryRead(BaseModel):
-    id: int
-    timestamp: datetime
-    btc_amount: float
-    fee_btc: Optional[float] = None
-    notes: Optional[str] = None
-    created_at: datetime
 
 # Unified schema for list display
 class UnifiedTransaction(BaseModel):
-    id: str # Changed from int to str to support prefixes (e.g. "DCA-1", "MAN-1")
+    """Simplified transaction schema - only DCA transactions"""
+    id: int
     timestamp: datetime
-    type: str # BUY, SELL, TRANSFER_IN, TRANSFER_OUT, OTHER, DCA, MANUAL
-    status: str # SUCCESS, FAILED, SKIPPED, COMPLETED (for manual)
+    type: str  # Only "DCA" now (kept for backwards compatibility)
+    status: str  # SUCCESS, FAILED, SKIPPED
     btc_amount: Optional[float] = None
     fiat_amount: Optional[float] = None
     price: Optional[float] = None
     notes: Optional[str] = None
-    source: str # SIMULATED, BINANCE, LEDGER (MANUAL)
-    
-    # Extra fields for DCA
+    source: str  # SIMULATED or BINANCE
     ahr999: Optional[float] = None
-    
-    # Extra fields for Manual (Legacy/Optional)
-    fee_usdc: Optional[float] = None
+
+
+
+# Wallet Management Schemas
+class WalletSummary(BaseModel):
+    """Comprehensive wallet information including both hot and cold storage"""
+    cold_wallet_balance: float
+    hot_wallet_balance: float
+    hot_wallet_avg_price: float  # Average buy price from Binance trade history
+    total_btc: float
+    current_price: float  # Current BTC market price
+    cold_wallet_value_usd: float
+    hot_wallet_value_usd: float
+    total_value_usd: float
+
+
+class ColdWalletBalanceUpdate(BaseModel):
+    """Request schema for updating cold wallet balance"""
+    balance: float = Field(ge=0, description="Total BTC currently in cold storage")
+
 
 # Strategy Schemas (Merged from schemas_strategy.py)
 class StrategyBase(BaseModel):

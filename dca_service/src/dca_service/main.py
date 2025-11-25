@@ -6,7 +6,7 @@ from contextlib import asynccontextmanager
 
 from dca_service.config import settings
 from dca_service.database import create_db_and_tables
-from dca_service.api import routes, strategy_api, dca_api, binance_api, cold_wallet_api, email_settings_api
+from dca_service.api import routes, strategy_api, dca_api, binance_api, email_settings_api, wallet_api
 from dca_service.scheduler import scheduler
 from sqlmodel import Session, select
 from dca_service.models import DCAStrategy
@@ -50,7 +50,7 @@ app.include_router(routes.router, prefix=settings.API_V1_STR)
 app.include_router(strategy_api.router, prefix=settings.API_V1_STR)
 app.include_router(dca_api.router, prefix=settings.API_V1_STR)
 app.include_router(binance_api.router, prefix=settings.API_V1_STR)
-app.include_router(cold_wallet_api.router, prefix=settings.API_V1_STR)
+app.include_router(wallet_api.router, prefix=settings.API_V1_STR)
 app.include_router(email_settings_api.router, prefix=settings.API_V1_STR)
 
 # SSE endpoint for real-time updates

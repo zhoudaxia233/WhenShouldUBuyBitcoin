@@ -161,24 +161,24 @@ async def get_holdings(session: Session = Depends(get_session)):
         btc_bal = balances.get("BTC", 0.0)
         quote_bal = balances.get(quote_asset, 0.0)
         
-        # Add manual holdings (Cold Wallet)
-        from dca_service.models import ColdWalletEntry
-        manual_txs = session.exec(select(ColdWalletEntry)).all()
-        manual_btc = sum(tx.btc_amount for tx in manual_txs)
+        # Add cold wallet balance from GlobalSettings
+        from dca_service.models import GlobalSettings
+        settings_record = session.get(GlobalSettings, 1)
+        cold_wallet_btc = settings_record.cold_wallet_balance if settings_record else 0.0
         
-        total_btc = btc_bal + manual_btc
+        total_btc = btc_bal + cold_wallet_btc
         
         progress = min(total_btc / target_btc, 1.0) if target_btc > 0 else 0.0
         
         return HoldingsSummary(
             connected=True,
-            btc_balance=total_btc, # Return total (Binance + Manual)
+            btc_balance=total_btc,  # Return total (Binance + Cold Wallet)
             quote_balance=quote_bal,
             quote_asset=quote_asset,
             target_btc_amount=target_btc,
             progress_ratio=progress,
             binance_btc_balance=btc_bal,
-            cold_wallet_btc_balance=manual_btc,
+            cold_wallet_btc_balance=cold_wallet_btc,
             holdings_last_updated=datetime.now(timezone.utc)
         )
     except Exception as e:

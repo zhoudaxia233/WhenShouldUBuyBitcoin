@@ -86,18 +86,18 @@ class BinanceCredentials(SQLModel, table=True):
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
-class ColdWalletEntry(SQLModel, table=True):
-    __tablename__ = "cold_wallet_entries"
+
+
+class GlobalSettings(SQLModel, table=True):
+    """
+    Application-wide settings stored as a singleton record.
+    Always uses id=1 to ensure single instance.
+    """
+    __tablename__ = "global_settings"
     
-    id: Optional[int] = Field(default=None, primary_key=True)
-    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-    btc_amount: float  # Amount of BTC added to cold storage
-    fee_btc: Optional[float] = None
-    notes: Optional[str] = None  # Optional notes (e.g., "Hardware wallet transfer")
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-    
-    # Treat as a "negative transaction" in total budget calculations
-    # (spending to move BTC to cold storage)
+    id: int = Field(default=1, primary_key=True)
+    cold_wallet_balance: float = Field(default=0.0)  # Current BTC in cold storage
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
 class EmailSettings(SQLModel, table=True):

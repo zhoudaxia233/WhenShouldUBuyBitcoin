@@ -150,6 +150,25 @@ def create_db_and_tables():
     # Then run migration to add columns to existing tables that might be missing them
     _migrate_transaction_table()
     _migrate_strategy_table()
+    # Initialize global settings singleton
+    _init_global_settings()
+
+
+def _init_global_settings():
+    """
+    Ensure GlobalSettings singleton exists with sane defaults.
+    This pattern guarantees exactly one settings record (id=1).
+    """
+    from dca_service.models import GlobalSettings
+    
+    with Session(engine) as session:
+        settings = session.get(GlobalSettings, 1)
+        if not settings:
+            logger.info("Initializing GlobalSettings with defaults")
+            settings = GlobalSettings(id=1, cold_wallet_balance=0.0)
+            session.add(settings)
+            session.commit()
+            logger.info("GlobalSettings initialized successfully")
 
 def get_session():
     with Session(engine) as session:
