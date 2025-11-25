@@ -71,7 +71,7 @@
                         </div>
                         
                         <!-- Average Buy Price -->
-                        <div class="col-md-4">
+                        <div class="col-md-3">
                             <div class="text-muted small">Binance Avg Buy Price</div>
                             <div class="h3 text-primary" id="avgBuyPrice">--</div>
                             <div class="small text-muted">Cost Basis</div>
@@ -164,7 +164,6 @@
                                 <th>BTC Amount</th>
                                 <th>Price</th>
                                 <th>AHR999</th>
-                                <th>Notes</th>
                             </tr>
                         </thead>
                         <tbody id="transactionsTable">
@@ -389,20 +388,20 @@
                 const statusClass = tx.status === 'SUCCESS' ? 'bg-success' : 
                                   tx.status === 'FAILED' ? 'bg-danger' : 'bg-secondary';
                 
-                // Source badge
+                // Source badge - SIMULATED (gray), DCA (green), MANUAL (blue)
                 const source = tx.source || 'SIMULATED';
                 let sourceBadge = '';
                 if (source === 'SIMULATED') {
-                    sourceBadge = '<span class="badge bg-secondary status-badge">SIM</span>';
-                } else if (source === 'BINANCE') {
-                    sourceBadge = '<span class="badge bg-primary status-badge">BIN</span>';
-                } else if (source === 'LEDGER') {
-                    sourceBadge = '<span class="badge bg-info text-dark status-badge">LEDGER</span>';
+                    sourceBadge = '<span class="badge bg-secondary status-badge">SIMULATED</span>';
+                } else if (source === 'DCA') {
+                    sourceBadge = '<span class="badge bg-success status-badge">DCA</span>';
                 } else if (source === 'MANUAL') {
-                    sourceBadge = '<span class="badge bg-secondary status-badge">MANUAL</span>';
+                    sourceBadge = '<span class="badge bg-info status-badge">MANUAL</span>';
                 } else {
+                    // Fallback for any other sources
                     sourceBadge = `<span class="badge bg-secondary status-badge">${source}</span>`;
                 }
+
                 
                 // Fee display
                 let feeDisplay = '—';
@@ -421,7 +420,6 @@
                     <td>${tx.btc_amount ? tx.btc_amount.toFixed(8) : '-'}</td>
                     <td>${tx.price ? '$' + tx.price.toFixed(2) : '-'}</td>
                     <td>${tx.ahr999 ? tx.ahr999.toFixed(2) : '-'}</td>
-                    <td>${tx.notes || '—'}</td>
                 `;
                 tbody.appendChild(row);
             });
@@ -707,10 +705,22 @@
                 const strategy = await stratResponse.json();
                 if (strategy) {
                     const target = strategy.target_btc_amount || 1.0;
-                    const progress = Math.min((data.total_btc / target) * 100, 100).toFixed(2);
+                    const progress = Math.min((data.total_btc / target) * 100, 100).toFixed(4);
                     document.getElementById('progressPercent').textContent = progress + '%';
                     document.getElementById('targetAmount').textContent = `Target: ${target} BTC`;
                     document.getElementById('progressBar').style.width = progress + '%';
+                }
+                
+                // Fetch quote balance (USDC) from binance API
+                try {
+                    const binanceResponse = await fetch('/api/binance/holdings');
+                    const binanceData = await binanceResponse.json();
+                    if (binanceData.connected && binanceData.quote_balance !== null) {
+                        document.getElementById('quoteBalance').textContent = binanceData.quote_balance.toFixed(2);
+                        document.getElementById('quoteAsset').textContent = binanceData.quote_asset;
+                    }
+                } catch (err) {
+                    console.log('Could not fetch quote balance:', err);
                 }
                 
                 // Show warning if no Binance credentials (hot wallet will be 0)

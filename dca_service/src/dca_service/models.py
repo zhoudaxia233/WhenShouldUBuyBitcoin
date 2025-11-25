@@ -31,6 +31,9 @@ class DCATransaction(SQLModel, table=True):
     
     # Source field - where the transaction came from
     source: Optional[str] = Field(default="SIMULATED")  # SIMULATED, BINANCE, LEDGER
+    
+    # Binance order ID (for LIVE trades executed by the bot)
+    binance_order_id: Optional[int] = None  # Binance order ID to match trades
 
     # Pydantic v2 config to allow population by alias
     model_config = {"populate_by_name": True}

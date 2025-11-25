@@ -219,3 +219,23 @@ class BinanceClient:
         except Exception as e:
             logger.error(f"Failed to calculate average buy price for {symbol}: {e}")
             raise e
+
+    async def get_all_btc_trades(self, symbol: str = "BTCUSDC", limit: int = 1000):
+        """
+        Fetch all BTC trades from Binance (last 1000 max).
+        
+        Args:
+            symbol: Trading pair (default: "BTCUSDC")
+            limit: Number of trades to fetch (max 1000 per Binance limit)
+            
+        Returns:
+            List of trade dictionaries from Binance
+        """
+        try:
+            params = {"symbol": symbol, "limit": limit}
+            trades = await self._request("GET", "/api/v3/myTrades", params=params, signed=True)
+            logger.info(f"Fetched {len(trades)} trades for {symbol}")
+            return trades
+        except Exception as e:
+            logger.error(f"Failed to fetch trades for {symbol}: {e}")
+            raise e

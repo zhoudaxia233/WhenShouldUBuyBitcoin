@@ -230,6 +230,7 @@ class DCAScheduler:
             executed_price = decision.price_usd
             executed_btc = btc_amount
             executed_usd = decision.suggested_amount_usd
+            binance_order_id = None  # Will be set for LIVE trades
             
             # Execute Real Trade if LIVE mode
             if strategy.execution_mode == "LIVE":
@@ -264,8 +265,10 @@ class DCAScheduler:
                     order_response = asyncio.run(execute_live_trade())
                     
                     # 5. Parse Response
+                    # orderId = Binance order ID (for tracking)
                     # cummulativeQuoteQty = Total USD spent
                     # executedQty = Total BTC bought
+                    binance_order_id = order_response.get("orderId")  # Save order ID
                     executed_usd = float(order_response.get("cummulativeQuoteQty", 0.0))
                     executed_btc = float(order_response.get("executedQty", 0.0))
                     
@@ -273,7 +276,7 @@ class DCAScheduler:
                         executed_price = executed_usd / executed_btc
                     
                     source = "BINANCE"
-                    logger.info(f"LIVE TRADE SUCCESSFUL: Bought {executed_btc:.8f} BTC for ${executed_usd:.2f}")
+                    logger.info(f"LIVE TRADE SUCCESSFUL: Order#{binance_order_id} - Bought {executed_btc:.8f} BTC for ${executed_usd:.2f}")
                     
                 except Exception as e:
                     logger.error(f"LIVE Trading failed: {e}")
@@ -303,7 +306,8 @@ class DCAScheduler:
                     avg_execution_price_usd=0.0,
                     fee_amount=0.0,
                     fee_asset="USDC",
-                    source=source
+                    source=source,
+                    binance_order_id=None  # Failed trades have no order ID
                 )
             else:
                 transaction = DCATransaction(
@@ -319,7 +323,8 @@ class DCAScheduler:
                     avg_execution_price_usd=executed_price,
                     fee_amount=0.0,
                     fee_asset="USDC",
-                    source=source
+                    source=source,
+                    binance_order_id=binance_order_id  # Save Binance order ID
                 )
             
             session.add(transaction)
