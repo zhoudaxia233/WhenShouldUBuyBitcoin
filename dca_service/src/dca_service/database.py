@@ -71,6 +71,14 @@ def _migrate_transaction_table():
                     ADD COLUMN fee_asset TEXT
                 """))
             
+            # Check and add binance_order_id column
+            if 'binance_order_id' not in existing_column_names:
+                logger.info("Adding 'binance_order_id' column to dca_transactions table...")
+                session.exec(text("""
+                    ALTER TABLE dca_transactions 
+                    ADD COLUMN binance_order_id INTEGER
+                """))
+            
             session.commit()
             logger.info("Migration completed successfully")
     except Exception as e:

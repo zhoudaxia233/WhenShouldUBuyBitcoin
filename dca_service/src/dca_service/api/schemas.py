@@ -39,17 +39,19 @@ class SimulationRequest(BaseModel):
 
 # Unified schema for list display
 class UnifiedTransaction(BaseModel):
-    """Simplified transaction schema - only DCA transactions"""
+    """Unified transaction schema for DCA and manual trades"""
     id: int
     timestamp: datetime
-    type: str  # Only "DCA" now (kept for backwards compatibility)
+    type: str  # "DCA" or "MANUAL"
     status: str  # SUCCESS, FAILED, SKIPPED
     btc_amount: Optional[float] = None
     fiat_amount: Optional[float] = None
     price: Optional[float] = None
     notes: Optional[str] = None
-    source: str  # SIMULATED or BINANCE
+    source: str  # SIMULATED, DCA, MANUAL
     ahr999: Optional[float] = None
+    fee_amount: Optional[float] = None  # Trading fee amount
+    fee_asset: Optional[str] = None  # Asset used for fee (BNB, USDC, BTC, etc.)
 
 
 
