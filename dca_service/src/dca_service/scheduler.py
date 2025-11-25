@@ -222,62 +222,151 @@ class DCAScheduler:
             if not decision.can_execute:
                 return
             
-            # Calculate BTC amount
+            # Calculate BTC amount (Simulated default)
             btc_amount = decision.suggested_amount_usd / decision.price_usd if decision.price_usd > 0 else 0
             
-            # Create transaction based on execution mode
-            source = "SIMULATED" if strategy.execution_mode == "DRY_RUN" else "BINANCE"
+            # Default values for simulated trade
+            source = "SIMULATED"
+            executed_price = decision.price_usd
+            executed_btc = btc_amount
+            executed_usd = decision.suggested_amount_usd
             
-            transaction = DCATransaction(
-                status="SUCCESS",
-                fiat_amount=decision.suggested_amount_usd,
-                btc_amount=btc_amount,
-                price=decision.price_usd,
-                ahr999=decision.ahr999_value,
-                notes=f"Automated {strategy.execution_frequency} DCA",
-                intended_amount_usd=decision.suggested_amount_usd,
-                executed_amount_usd=decision.suggested_amount_usd,
-                executed_amount_btc=btc_amount,
-                avg_execution_price_usd=decision.price_usd,
-                fee_amount=0.0,
-                fee_asset="USDC",
-                source=source
-            )
+            # Execute Real Trade if LIVE mode
+            if strategy.execution_mode == "LIVE":
+                try:
+                    from dca_service.models import BinanceCredentials
+                    from dca_service.services.security import decrypt_text
+                    from dca_service.services.binance_client import BinanceClient
+                    import asyncio
+                    
+                    # 1. Get credentials
+                    creds = session.exec(select(BinanceCredentials)).first()
+                    if not creds or not creds.api_key_encrypted:
+                        raise ValueError("Binance credentials not configured for LIVE trading")
+                    
+                    # 2. Decrypt both api_key and api_secret
+                    api_key = decrypt_text(creds.api_key_encrypted)
+                    api_secret = decrypt_text(creds.api_secret_encrypted)
+                    
+                    # 3. Define async execution wrapper
+                    async def execute_live_trade():
+                        client = BinanceClient(api_key, api_secret)
+                        try:
+                            # Use BTCUSDC as default symbol
+                            return await client.create_market_buy_order("BTCUSDC", decision.suggested_amount_usd)
+                        finally:
+                            await client.close()
+                    
+                    # 4. Run async code synchronously
+                    logger.info(f"LIVE MODE: Attempting to buy ${decision.suggested_amount_usd:.2f} of BTC on Binance...")
+                    order_response = asyncio.run(execute_live_trade())
+                    
+                    # 5. Parse Response
+                    # cummulativeQuoteQty = Total USD spent
+                    # executedQty = Total BTC bought
+                    executed_usd = float(order_response.get("cummulativeQuoteQty", 0.0))
+                    executed_btc = float(order_response.get("executedQty", 0.0))
+                    
+                    if executed_btc > 0:
+                        executed_price = executed_usd / executed_btc
+                    
+                    source = "BINANCE"
+                    logger.info(f"LIVE TRADE SUCCESSFUL: Bought {executed_btc:.8f} BTC for ${executed_usd:.2f}")
+                    
+                except Exception as e:
+                    logger.error(f"LIVE Trading failed: {e}")
+                    # Don't re-raise - we'll record as FAILED transaction instead
+                    source = "BINANCE_FAILED"
+                    error_msg = str(e)
+                    # Check for specific error types
+                    if "401" in error_msg or "permissions" in error_msg.lower():
+                        error_msg = "Invalid API key or insufficient trading permissions"
+                    elif "network" in error_msg.lower() or "timeout" in error_msg.lower():
+                        error_msg = f"Network error: {error_msg[:100]}"
+                    else:
+                        error_msg = f"Trade failed: {error_msg[:100]}"
+            
+            # Create transaction record (SUCCESS or FAILED)
+            if source.endswith("_FAILED"):
+                transaction = DCATransaction(
+                    status="FAILED",
+                    fiat_amount=decision.suggested_amount_usd,
+                    btc_amount=0.0,  # No BTC received
+                    price=decision.price_usd,
+                    ahr999=decision.ahr999_value,
+                    notes=error_msg,
+                    intended_amount_usd=decision.suggested_amount_usd,
+                    executed_amount_usd=0.0,  # Nothing executed
+                    executed_amount_btc=0.0,
+                    avg_execution_price_usd=0.0,
+                    fee_amount=0.0,
+                    fee_asset="USDC",
+                    source=source
+                )
+            else:
+                transaction = DCATransaction(
+                    status="SUCCESS",
+                    fiat_amount=decision.suggested_amount_usd,
+                    btc_amount=executed_btc,
+                    price=executed_price,
+                    ahr999=decision.ahr999_value,
+                    notes=f"Automated {strategy.execution_frequency} DCA ({strategy.execution_mode})",
+                    intended_amount_usd=decision.suggested_amount_usd,
+                    executed_amount_usd=executed_usd,
+                    executed_amount_btc=executed_btc,
+                    avg_execution_price_usd=executed_price,
+                    fee_amount=0.0,
+                    fee_asset="USDC",
+                    source=source
+                )
             
             session.add(transaction)
             session.commit()
             session.refresh(transaction)
             
-            logger.info(
-                f"Transaction Created: ID={transaction.id}, "
-                f"Intended=${transaction.intended_amount_usd:.2f}, "
-                f"Executed=${transaction.executed_amount_usd:.2f} ({transaction.executed_amount_btc:.8f} BTC), "
-                f"Source={transaction.source}, StrategyID={strategy.id}"
-            )
+            if transaction.status == "FAILED":
+                logger.error(
+                    f"FAILED Transaction Created: ID={transaction.id}, "
+                    f"Intended=${transaction.intended_amount_usd:.2f}, "
+                    f"Error={error_msg}"
+                )
+                # Send failure email
+                try:
+                    from dca_service.services.mailer import send_trade_failure_notification
+                    send_trade_failure_notification(transaction, decision, error_msg)
+                except Exception as email_err:
+                    logger.error(f"Failed to send failure notification email: {email_err}")
+            else:
+                logger.info(
+                    f"Transaction Created: ID={transaction.id}, "
+                    f"Intended=${transaction.intended_amount_usd:.2f}, "
+                    f"Executed=${transaction.executed_amount_usd:.2f} ({transaction.executed_amount_btc:.8f} BTC), "
+                    f"Source={transaction.source}, StrategyID={strategy.id}"
+                )
+                # Send success email
+                try:
+                    from dca_service.services.mailer import send_dca_notification
+                    send_dca_notification(transaction, decision)
+                except Exception as e:
+                    logger.error(f"Failed to send DCA notification email: {e}")
             
             # Broadcast event to connected clients for immediate UI update
             try:
                 from dca_service.sse import sse_manager
                 sse_manager.broadcast("transaction_created", {
                     "id": transaction.id,
-                    "amount_usd": decision.suggested_amount_usd,
-                    "amount_btc": btc_amount,
-                    "price": decision.price_usd,
-                    "source": source
+                    "amount_usd": executed_usd if transaction.status == "SUCCESS" else 0.0,
+                    "amount_btc": executed_btc if transaction.status == "SUCCESS" else 0.0,
+                    "price": executed_price if transaction.status == "SUCCESS" else decision.price_usd,
+                    "source": source,
+                    "status": transaction.status
                 })
             except Exception as e:
                 logger.warning(f"Failed to broadcast SSE event: {e}")
             
-            # Send email notification
-            try:
-                from dca_service.services.mailer import send_dca_notification
-                send_dca_notification(transaction, decision)
-            except Exception as e:
-                logger.error(f"Failed to send DCA notification email: {e}")
-            
         except Exception as e:
             session.rollback()
-            logger.exception(f"Failed to execute DCA transaction: {e}")
+            logger.exception(f"Fatal error in DCA execution: {e}")
 
 
 # Global scheduler instance

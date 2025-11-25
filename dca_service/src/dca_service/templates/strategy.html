@@ -165,21 +165,21 @@
                         <div class="form-check">
                             <input class="form-check-input" type="radio" name="execution_mode" id="execution_mode_dry_run" value="DRY_RUN" checked>
                             <label class="form-check-label" for="execution_mode_dry_run">
-                                <strong>Dry run only (recommended for now)</strong>
+                                <strong>Dry run (Simulation)</strong>
                             </label>
                         </div>
                         <div class="form-text text-muted ps-4">
-                            Dry run mode records "virtual" buys only and never sends orders to Binance.
+                            Records "virtual" buys only. No real orders are sent to Binance. Safe for testing.
                         </div>
                        
                         <div class="form-check mt-2">
-                            <input class="form-check-input" type="radio" name="execution_mode" id="execution_mode_live" value="LIVE" disabled>
-                            <label class="form-check-label text-muted" for="execution_mode_live">
-                                <strong>Live trading (Binance) <span class="badge bg-secondary">Not implemented yet</span></strong>
+                            <input class="form-check-input" type="radio" name="execution_mode" id="execution_mode_live" value="LIVE">
+                            <label class="form-check-label text-danger fw-bold" for="execution_mode_live">
+                                Live Trading (Real Money)
                             </label>
                         </div>
-                        <div class="form-text text-muted ps-4">
-                            Live trading will place real orders on Binance (not implemented yet).
+                        <div class="form-text text-muted ps-4" id="live_mode_warning">
+                            <span class="text-danger">⚠ WARNING:</span> This will place <strong>REAL MARKET BUY ORDERS</strong> on your Binance account.
                         </div>
                     </div>
 
@@ -341,6 +341,32 @@
         </div>
     </div>
 
+    <!-- Live Trading Warning Modal -->
+    <div class="modal fade" id="liveTradingModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-danger">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title">⚠ Enable Live Trading?</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="fw-bold">You are about to enable LIVE trading.</p>
+                    <p>This means the system will place <strong>REAL MARKET BUY ORDERS</strong> on your Binance account using your configured API keys.</p>
+                    <p>Please confirm that:</p>
+                    <ul>
+                        <li>You have sufficient USDT/USDC in your Binance Spot wallet.</li>
+                        <li>You accept the risk of automated trading.</li>
+                        <li>Your API keys have "Enable Spot & Margin Trading" permission.</li>
+                    </ul>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" id="cancelLiveMode">Cancel</button>
+                    <button type="button" class="btn btn-danger" id="confirmLiveMode">I Understand, Enable Live Trading</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/notyf@3.10.0/notyf.min.js"></script>
     <script>
@@ -353,6 +379,22 @@
     <script>
         async function loadStrategy() {
             try {
+                // First check trading status
+                const tradingStatusResp = await fetch('/api/binance/trading-status');
+                const tradingStatus = await tradingStatusResp.json();
+                
+                const liveRadio = document.getElementById('execution_mode_live');
+                const liveWarning = document.getElementById('live_mode_warning');
+                
+                if (!tradingStatus.can_enable_live) {
+                   // Disable LIVE mode
+                    liveRadio.disabled = true;
+                    liveWarning.innerHTML = `
+                        <span class="text-warning">⚠ LIVE MODE DISABLED:</span> ${tradingStatus.error_message}<br>
+                        <a href="/settings/binance" class="text-primary">Configure Binance credentials</a> to enable live trading.
+                    `;
+                }
+                
                 const response = await fetch('/api/strategy');
                 const strategy = await response.json();
                 
@@ -404,69 +446,6 @@
                 console.error('Error loading strategy:', error);
             }
         }
-
-        document.getElementById('strategyForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            
-            const data = {
-                is_active: document.getElementById('is_active').checked,
-                total_budget_usd: parseFloat(document.getElementById('total_budget_usd').value),
-                enforce_monthly_cap: document.getElementById('enforce_monthly_cap').checked,
-                target_btc_amount: parseFloat(document.getElementById('target_btc_amount').value),
-                execution_frequency: document.getElementById('execution_frequency').value,
-                execution_day_of_week: document.getElementById('execution_frequency').value === 'weekly' ? document.getElementById('execution_day_of_week').value : null,
-                execution_time_utc: document.getElementById('execution_time_utc').value,
-                
-                // Strategy Type
-                strategy_type: document.getElementById('strategy_type').value,
-                
-                // Execution Mode (Phase 9)
-                execution_mode: document.querySelector('input[name="execution_mode"]:checked').value,
-                
-                // Legacy Fields
-                // Save percentile multipliers (6 tiers)
-                // For backward compatibility, also save to old fields
-                ahr999_multiplier_p10: parseFloat(document.getElementById('ahr999_multiplier_p10').value) || 5.0,
-                ahr999_multiplier_p25: parseFloat(document.getElementById('ahr999_multiplier_p25').value) || 2.0,
-                ahr999_multiplier_p50: parseFloat(document.getElementById('ahr999_multiplier_p50').value) || 1.0,
-                ahr999_multiplier_p75: parseFloat(document.getElementById('ahr999_multiplier_p75').value) || 0.0,
-                ahr999_multiplier_p90: parseFloat(document.getElementById('ahr999_multiplier_p90').value) || 0.0,
-                ahr999_multiplier_p100: parseFloat(document.getElementById('ahr999_multiplier_p100').value) || 0.0,
-                // Backward compatibility: map to old fields
-                ahr999_multiplier_low: parseFloat(document.getElementById('ahr999_multiplier_p10').value) || 5.0,
-                ahr999_multiplier_mid: parseFloat(document.getElementById('ahr999_multiplier_p25').value) || 2.0,
-                ahr999_multiplier_high: parseFloat(document.getElementById('ahr999_multiplier_p100').value) || 0.0,
-                
-                // Dynamic Fields
-                dynamic_min_multiplier: parseFloat(document.getElementById('dynamic_min_multiplier').value),
-                dynamic_max_multiplier: parseFloat(document.getElementById('dynamic_max_multiplier').value),
-                dynamic_gamma: parseFloat(document.getElementById('dynamic_gamma').value),
-                dynamic_a_low: parseFloat(document.getElementById('dynamic_a_low').value),
-                dynamic_a_high: parseFloat(document.getElementById('dynamic_a_high').value),
-                dynamic_enable_drawdown_boost: document.getElementById('dynamic_enable_drawdown_boost').checked
-            };
-
-            try {
-                const response = await fetch('/api/strategy', {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(data)
-                });
-                
-                if (response.ok) {
-                    notyf.success('Strategy updated');
-                    setTimeout(() => {
-                        window.location.href = '/';
-                    }, 1000);
-                } else {
-                    notyf.error('Error saving strategy');
-                }
-            } catch (error) {
-                console.error('Error saving strategy:', error);
-                notyf.error('Network error or backend unreachable');
-            }
-        });
-
 
 
         // UX Enhancements
@@ -569,6 +548,103 @@
         // Load strategy and percentile thresholds on page load
         loadStrategy();
         loadPercentileThresholds();
+
+        // Execution Mode Confirmation Logic - Only on form submit
+        document.getElementById('strategyForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const executionMode = document.querySelector('input[name="execution_mode"]:checked').value;
+            
+            // If LIVE mode is selected, show confirmation modal first
+            if (executionMode === 'LIVE') {
+                const liveModal = new bootstrap.Modal(document.getElementById('liveTradingModal'));
+                
+                // Set up one-time confirm handler
+                const confirmHandler = async () => {
+                    document.getElementById('confirmLiveMode').removeEventListener('click', confirmHandler);
+                    liveModal.hide();
+                    await saveStrategy();
+                };
+                
+                document.getElementById('confirmLiveMode').addEventListener('click', confirmHandler);
+                
+                // Handle cancel
+                document.getElementById('cancelLiveMode').onclick = () => {
+                    liveModal.hide();
+                };
+                
+                liveModal.show();
+                return; // Don't proceed with save until confirmed
+            }
+            
+            // For DRY_RUN mode, save directly
+            await saveStrategy();
+        });
+        
+        async function saveStrategy() {
+            const data = {
+                is_active: document.getElementById('is_active').checked,
+                total_budget_usd: parseFloat(document.getElementById('total_budget_usd').value),
+                enforce_monthly_cap: document.getElementById('enforce_monthly_cap').checked,
+                target_btc_amount: parseFloat(document.getElementById('target_btc_amount').value),
+                execution_frequency: document.getElementById('execution_frequency').value,
+                execution_day_of_week: document.getElementById('execution_frequency').value === 'weekly' ? document.getElementById('execution_day_of_week').value : null,
+                execution_time_utc: document.getElementById('execution_time_utc').value,
+                
+                // Strategy Type
+                strategy_type: document.getElementById('strategy_type').value,
+                
+                // Execution Mode (Phase 9)
+                execution_mode: document.querySelector('input[name="execution_mode"]:checked').value,
+                
+                // Legacy Fields
+                // Save percentile multipliers (6 tiers)
+                // For backward compatibility, also save to old fields
+                ahr999_multiplier_p10: parseFloat(document.getElementById('ahr999_multiplier_p10').value) || 5.0,
+                ahr999_multiplier_p25: parseFloat(document.getElementById('ahr999_multiplier_p25').value) || 2.0,
+                ahr999_multiplier_p50: parseFloat(document.getElementById('ahr999_multiplier_p50').value) || 1.0,
+                ahr999_multiplier_p75: parseFloat(document.getElementById('ahr999_multiplier_p75').value) || 0.0,
+                ahr999_multiplier_p90: parseFloat(document.getElementById('ahr999_multiplier_p90').value) || 0.0,
+                ahr999_multiplier_p100: parseFloat(document.getElementById('ahr999_multiplier_p100').value) || 0.0,
+                // Backward compatibility: map to old fields
+                ahr999_multiplier_low: parseFloat(document.getElementById('ahr999_multiplier_p10').value) || 5.0,
+                ahr999_multiplier_mid: parseFloat(document.getElementById('ahr999_multiplier_p25').value) || 2.0,
+                ahr999_multiplier_high: parseFloat(document.getElementById('ahr999_multiplier_p100').value) || 0.0,
+                
+                // Dynamic Fields
+                dynamic_min_multiplier: parseFloat(document.getElementById('dynamic_min_multiplier').value),
+                dynamic_max_multiplier: parseFloat(document.getElementById('dynamic_max_multiplier').value),
+                dynamic_gamma: parseFloat(document.getElementById('dynamic_gamma').value),
+                dynamic_a_low: parseFloat(document.getElementById('dynamic_a_low').value),
+                dynamic_a_high: parseFloat(document.getElementById('dynamic_a_high').value),
+                dynamic_enable_drawdown_boost: document.getElementById('dynamic_enable_drawdown_boost').checked
+            };
+
+            try {
+                const response = await fetch('/api/strategy', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                
+                if (response.ok) {
+                    if (data.execution_mode === 'LIVE') {
+                        notyf.success('⚠ LIVE Trading Mode Activated!');
+                    } else {
+                        notyf.success('Strategy updated');
+                    }
+                    setTimeout(() => {
+                        window.location.href = '/';
+                    }, 1000);
+                } else {
+                    notyf.error('Error saving strategy');
+                }
+            } catch (error) {
+                console.error('Error saving strategy:', error);
+                notyf.error('Network error or backend unreachable');
+            }
+        }
+
     </script>
 </body>
 </html>

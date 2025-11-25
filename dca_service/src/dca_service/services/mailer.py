@@ -119,8 +119,59 @@ def send_email(subject: str, body: str) -> None:
         logger.error(f"SMTP error sending email to {config['email_to']}: {e}")
     except Exception as e:
         logger.error(f"Unexpected error sending email: {e}", exc_info=True)
-    except Exception as e:
-        logger.error(f"Unexpected error sending email: {e}", exc_info=True)
+
+
+def send_trade_failure_notification(transaction, decision, error_msg: str):
+    """
+    Send email notification for a failed LIVE trade.
+    
+    Args:
+        transaction: The failed DCATransaction record
+        decision: The DCADecision that was attempted
+        error_msg: User-friendly error message
+    """
+    config = _get_email_config()
+    if not config:
+        logger.debug("Email not configured, skipping failure notification")
+        return
+    
+    subject = f"⚠ DCA Trade FAILED - {error_msg[:50]}"
+    
+    body = f"""
+LIVE DCA Trade Failed
+
+An attempt to execute a LIVE trade on Binance has failed.
+
+===== TRADE DETAILS =====
+Status: FAILED
+Attempted Amount: ${transaction.intended_amount_usd:.2f}
+Expected BTC: ~{decision.suggested_amount_usd / decision.price_usd:.8f}
+BTC Price: ${decision.price_usd:.2f}
+AHR999: {decision.ahr999_value:.4f}
+Time: {transaction.timestamp}
+
+===== ERROR =====
+{error_msg}
+
+===== TROUBLESHOOTING =====
+Common issues:
+1. Invalid API Key or Secret - Check Binance settings
+2. Insufficient trading permissions - Enable "Spot & Margin Trading" in Binance API settings
+3. Insufficient funds - Ensure you have USDC/USDT in Spot wallet
+4. Network issues - Temporary connectivity problem
+
+===== NEXT STEPS =====
+1. Review the error message above
+2. Check your Binance settings at: http://localhost:8000/settings/binance
+3. The system will retry on the next scheduled run
+4. No funds were spent in this failed attempt
+
+---
+Bitcoin DCA Service
+Trade safely and HODL wisely!
+"""
+    
+    send_email(subject, body)
 
 
 def send_dca_notification(transaction, decision=None):
