@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlmodel import Session, select
 
 from dca_service.database import get_session
-from dca_service.models import DCATransaction, ColdWalletEntry
+from dca_service.models import DCATransaction
 from dca_service.api.schemas import TransactionRead, SimulationRequest, UnifiedTransaction
 
 router = APIRouter()
@@ -14,17 +14,14 @@ def read_transactions(
     limit: int = Query(default=1000, le=5000),  # Default 1000, max 5000 for safety
     session: Session = Depends(get_session)
 ):
-    # Fetch DCA transactions
+    # Fetch DCA transactions only (manual cold wallet tracking removed)
     dca_txs = session.exec(select(DCATransaction)).all()
-    
-    # Fetch Manual transactions (Cold Wallet)
-    manual_txs = session.exec(select(ColdWalletEntry)).all()
     
     unified_list = []
     
     for tx in dca_txs:
         unified_list.append(UnifiedTransaction(
-            id=f"DCA-{tx.id}",
+            id=tx.id,  # Simple integer ID
             timestamp=tx.timestamp,
             type="DCA",
             status=tx.status,
@@ -34,20 +31,6 @@ def read_transactions(
             notes=tx.notes,
             source=tx.source or "SIMULATED",
             ahr999=tx.ahr999
-        ))
-        
-    for tx in manual_txs:
-        unified_list.append(UnifiedTransaction(
-            id=f"MAN-{tx.id}",
-            timestamp=tx.timestamp,
-            type="MANUAL",
-            status="COMPLETED",
-            btc_amount=tx.btc_amount,
-            fiat_amount=None,
-            price=None,
-            notes=tx.notes,
-            source="LEDGER",
-            fee_usdc=None
         ))
     
     # Sort by timestamp desc
