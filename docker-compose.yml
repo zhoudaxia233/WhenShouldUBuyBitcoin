@@ -1,0 +1,33 @@
+version: '3.8'
+
+services:
+  dca-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: bitcoin-dca-service
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8000:8000"
+    volumes:
+      - ./data:/app/data
+      - ./docs/data:/app/docs/data
+      - ./.env:/app/.env:ro
+    environment:
+      - DATABASE_URL=sqlite:////app/data/dca.db
+      - METRICS_CSV_PATH=/app/data/btc_metrics.csv
+      - METRICS_BACKEND=realtime
+      - LOG_LEVEL=INFO
+      - LOG_FILE_PATH=/app/data/dca_service.log
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/strategy').read()"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - dca-network
+
+networks:
+  dca-network:
+    driver: bridge
