@@ -102,3 +102,46 @@ class BinanceClient:
         except Exception as e:
             logger.error(f"Failed to fetch Binance holdings: {e}")
             raise e
+
+    async def create_market_buy_order(self, symbol: str, quantity_usd: float) -> Dict[str, Any]:
+        """
+        Places a market buy order for the specified amount in USD (quote asset).
+        
+        Args:
+            symbol: Trading pair (e.g., "BTCUSDC")
+            quantity_usd: Amount of quote asset to spend
+            
+        Returns:
+            Binance API response dict
+        """
+        try:
+            # Basic validation
+            if quantity_usd <= 0:
+                raise ValueError("Order amount must be positive")
+            
+            # Binance requires string for decimal precision
+            # Round to 2 decimals for USDC/USDT to be safe, though quoteOrderQty handles precision well
+            qty_str = f"{quantity_usd:.2f}"
+            
+            params = {
+                "symbol": symbol,
+                "side": "BUY",
+                "type": "MARKET",
+                "quoteOrderQty": qty_str
+            }
+            
+            logger.info(f"Placing LIVE MARKET BUY order: {symbol} for {qty_str} USD")
+            
+            response = await self._request("POST", "/api/v3/order", params=params, signed=True)
+            
+            logger.info(
+                f"Order placed successfully! "
+                f"ID: {response.get('orderId')}, "
+                f"Status: {response.get('status')}, "
+                f"Executed: {response.get('cummulativeQuoteQty')} {symbol[-4:]}"
+            )
+            return response
+            
+        except Exception as e:
+            logger.error(f"Failed to place market buy order: {e}")
+            raise e
