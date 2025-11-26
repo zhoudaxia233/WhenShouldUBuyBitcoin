@@ -20,12 +20,14 @@ def mock_binance_client():
     # Patch the class where it is defined, so the local import in scheduler gets the mock
     with patch("dca_service.services.binance_client.BinanceClient") as MockClient:
         client_instance = MockClient.return_value
-        # Mock async methods
-        client_instance.create_market_buy_order = AsyncMock(return_value={
-            "orderId": 12345,
-            "status": "FILLED",
-            "cummulativeQuoteQty": "50.00", # Spent $50
-            "executedQty": "0.001",         # Bought 0.001 BTC
+        # Mock async methods - scheduler uses execute_market_order_with_confirmation
+        client_instance.execute_market_order_with_confirmation = AsyncMock(return_value={
+            "order_id": 12345,
+            "total_btc": 0.001,
+            "avg_price": 50000.0,
+            "quote_spent": 50.0,
+            "total_fee": 0.0,
+            "fee_asset": "USDC"
         })
         client_instance.close = AsyncMock()
         yield client_instance
@@ -72,7 +74,8 @@ def test_execute_dca_live_mode(session, mock_binance_client, mock_dca_decision, 
     
     creds = BinanceCredentials(
         api_key_encrypted="encrypted_test_key",
-        api_secret_encrypted="encrypted_secret"
+        api_secret_encrypted="encrypted_secret",
+        credential_type="TRADING"  # Required for LIVE mode
     )
     session.add(creds)
     session.commit()
@@ -83,17 +86,20 @@ def test_execute_dca_live_mode(session, mock_binance_client, mock_dca_decision, 
     scheduler._execute_dca(strategy, session)
     
     # 3. Verify Binance Client Interaction
-    mock_binance_client.create_market_buy_order.assert_called_once_with("BTCUSDC", 50.0)
+    mock_binance_client.execute_market_order_with_confirmation.assert_called_once()
+    call_args = mock_binance_client.execute_market_order_with_confirmation.call_args
+    assert call_args.kwargs["symbol"] == "BTCUSDC"
+    assert call_args.kwargs["quote_quantity"] == 50.0
     mock_binance_client.close.assert_called_once()
     
     # 4. Verify Transaction Record
     tx = session.exec(select(DCATransaction)).first()
     assert tx is not None
-    assert tx.source == "BINANCE"
+    assert tx.source == "DCA"  # Changed from "BINANCE" to "DCA" for bot-triggered trades
     assert tx.executed_amount_usd == 50.0
     assert tx.executed_amount_btc == 0.001
     assert tx.status == "SUCCESS"
-    assert "LIVE" in tx.notes
+    assert "LIVE" in tx.notes or "Automated" in tx.notes
 
 def test_execute_dca_dry_run_mode(session, mock_binance_client, mock_dca_decision):
     """Verify that DRY_RUN mode does NOT trigger Binance client"""

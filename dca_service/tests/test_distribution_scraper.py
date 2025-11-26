@@ -10,11 +10,13 @@ from dca_service.services.distribution_scraper import (
 def test_parse_percentile():
     """Test parsing percentile from '% Addresses (Total)' column values."""
     # '6.06% (7.77%)' means addresses with balance >= 0.1 BTC = Top 7.77% of holders
-    assert _parse_percentile("6.06% (7.77%)") == "Top 7.8%"
+    # Preserves original decimal precision (7.77% not 7.8%)
+    assert _parse_percentile("6.06% (7.77%)") == "Top 7.77%"
     # '1.44% (1.71%)' means addresses with balance >= 1 BTC = Top 1.71% of holders
-    assert _parse_percentile("1.44% (1.71%)") == "Top 1.7%"
-    # '0% (100%)' means everyone = Top 100.0% (1 decimal)
-    assert _parse_percentile("0% (100%)") == "Top 100.0%"
+    # Preserves original decimal precision (1.71% not 1.7%)
+    assert _parse_percentile("1.44% (1.71%)") == "Top 1.71%"
+    # '0% (100%)' means everyone = Top 100% (no decimal)
+    assert _parse_percentile("0% (100%)") == "Top 100%"
     assert _parse_percentile("invalid") == "Unknown"
 
 

@@ -50,4 +50,7 @@ testpaths = ["tests", "dca_service/tests"]
 python_files = ["test_*.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
+filterwarnings = [
+    "ignore::urllib3.exceptions.SystemTimeWarning",
+]
 
