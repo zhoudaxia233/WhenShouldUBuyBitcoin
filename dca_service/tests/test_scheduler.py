@@ -10,6 +10,7 @@ Tests automatic DCA execution logic including:
 import pytest
 from datetime import datetime, timezone, timedelta
 from freezegun import freeze_time
+from unittest.mock import patch
 from sqlmodel import Session, select
 
 from dca_service.scheduler import DCAScheduler
@@ -229,8 +230,34 @@ class TestExecutionModes:
         assert "Automated daily DCA" in tx.notes
     
     @freeze_time("2024-01-15 14:30:00")
-    def test_live_mode_creates_binance_transaction(self, scheduler, daily_strategy, session):
-        """Test that LIVE mode creates BINANCE transactions"""
+    @patch("dca_service.services.binance_client.BinanceClient")
+    @patch("dca_service.services.security.decrypt_text")
+    def test_live_mode_creates_binance_transaction(self, mock_decrypt, mock_client_class, scheduler, daily_strategy, session):
+        """Test that LIVE mode creates DCA transactions (source changed from BINANCE to DCA)"""
+        from unittest.mock import AsyncMock
+        
+        # Setup mocks
+        mock_decrypt.return_value = "secret_key"
+        mock_client = mock_client_class.return_value
+        mock_client.execute_market_order_with_confirmation = AsyncMock(return_value={
+            "order_id": 12345,
+            "total_btc": 0.001,
+            "avg_price": 50000.0,
+            "quote_spent": 50.0,
+            "total_fee": 0.0,
+            "fee_asset": "USDC"
+        })
+        mock_client.close = AsyncMock()
+        
+        # Add BinanceCredentials for LIVE mode
+        from dca_service.models import BinanceCredentials
+        creds = BinanceCredentials(
+            api_key_encrypted="encrypted_key",
+            api_secret_encrypted="encrypted_secret",
+            credential_type="TRADING"  # Required for LIVE mode
+        )
+        session.add(creds)
+        
         # Change to LIVE mode
         daily_strategy.execution_mode = "LIVE"
         session.add(daily_strategy)
@@ -239,10 +266,10 @@ class TestExecutionModes:
         # Execute DCA
         scheduler._execute_dca(daily_strategy, session)
         
-        # Check transaction was created with BINANCE source
+        # Check transaction was created with DCA source (changed from BINANCE)
         tx = session.exec(select(DCATransaction)).first()
         assert tx is not None
-        assert tx.source == "BINANCE"
+        assert tx.source == "DCA"  # Changed from "BINANCE" to "DCA" for bot-triggered trades
 
 
 class TestSchedulerLifecycle:

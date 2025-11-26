@@ -13,6 +13,7 @@ from dca_service.api.schemas import WalletSummary, ColdWalletBalanceUpdate
 from dca_service.services.binance_client import BinanceClient
 from dca_service.services.security import decrypt_text
 from dca_service.core.logging import logger
+from sqlmodel import select
 
 router = APIRouter(prefix="/wallet", tags=["wallet"])
 
@@ -26,14 +27,14 @@ def _get_binance_client(session: Session) -> Optional[BinanceClient]:
         BinanceClient instance or None if credentials not configured
     """
     # Try READ_ONLY credentials first
-    creds = session.query(BinanceCredentials).filter(
-        BinanceCredentials.credential_type == "READ_ONLY"
+    creds = session.exec(
+        select(BinanceCredentials).where(BinanceCredentials.credential_type == "READ_ONLY")
     ).first()
     
     # Fallback to TRADING credentials if READ_ONLY not found
     if not creds:
-        creds = session.query(BinanceCredentials).filter(
-            BinanceCredentials.credential_type == "TRADING"
+        creds = session.exec(
+            select(BinanceCredentials).where(BinanceCredentials.credential_type == "TRADING")
         ).first()
     
     if not creds:

@@ -11,6 +11,7 @@ import os
 sys.path.append(str(Path(__file__).resolve().parents[4] / "src"))
 
 from dca_service.config import settings
+from dca_service.core.logging import logger
 
 # CSV Column Constants
 COL_DATE = "date"
