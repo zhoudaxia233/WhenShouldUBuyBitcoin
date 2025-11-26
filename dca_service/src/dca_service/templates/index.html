@@ -26,7 +26,7 @@
             <div>
                 <a href="/settings/binance" class="btn btn-outline-secondary me-2">Binance Settings</a>
                 <a href="/strategy" class="btn btn-outline-secondary me-2">Strategy Config</a>
-                <a href="/stats" class="btn btn-outline-primary">Stats & Analytics</a>
+                <a href="/stats" class="btn btn-outline-secondary">Stats & Analytics</a>
             </div>
         </header>
 
@@ -357,10 +357,46 @@
         let currentPage = 1;
         const rowsPerPage = 20;
         
+        // Cache Helpers
+        function saveToCache(key, data) {
+            try {
+                const cacheItem = {
+                    timestamp: Date.now(),
+                    data: data
+                };
+                localStorage.setItem(key, JSON.stringify(cacheItem));
+            } catch (e) {
+                console.error('Error saving to cache', e);
+            }
+        }
+
+        function loadFromCache(key) {
+            try {
+                const item = localStorage.getItem(key);
+                if (!item) return null;
+                
+                const cacheItem = JSON.parse(item);
+                // Optional: Expiry check (e.g. 24 hours), but for dashboard we want instant load
+                // even if old, then replace with fresh.
+                return cacheItem.data;
+            } catch (e) {
+                console.error('Error loading from cache', e);
+                return null;
+            }
+        }
+
         async function loadTransactions() {
             try {
+                // Load from cache first
+                const cached = loadFromCache('transactions_list');
+                if (cached) {
+                    allTransactions = cached;
+                    renderTransactionPage();
+                }
+
                 const response = await fetch('/api/transactions');
                 allTransactions = await response.json();
+                saveToCache('transactions_list', allTransactions);
                 
                 // Reset to page 1
                 currentPage = 1;
@@ -452,115 +488,130 @@
 
 
 
+        function updateStrategyUI(strategy) {
+            if (strategy) {
+                const freq = strategy.execution_frequency.charAt(0).toUpperCase() + strategy.execution_frequency.slice(1);
+                document.getElementById('scheduleDisplay').textContent = `Schedule: ${freq} at ${strategy.execution_time_utc} UTC`;
+            }
+        }
+
+        function updatePreviewUI(decision) {
+            // Update metrics display
+            document.getElementById('previewAhr').textContent = decision.ahr999_value.toFixed(2);
+            document.getElementById('previewPrice').textContent = '$' + decision.price_usd.toLocaleString();
+            document.getElementById('previewBand').textContent = decision.ahr_band.toUpperCase();
+            document.getElementById('previewAction').textContent = decision.can_execute 
+                ? `BUY $${decision.suggested_amount_usd.toFixed(2)}` 
+                : 'WAIT';
+            
+            // Update data source (Phase 6)
+            const metricsSource = decision.metrics_source || {backend: 'unknown', label: 'Unknown'};
+            const sourceBadge = document.getElementById('dataSourceBadge');
+            if (sourceBadge) {
+                sourceBadge.textContent = `Source: ${metricsSource.label}`;
+                sourceBadge.title = metricsSource.label; // Tooltip for full label
+            }
+            
+            // Update status (support line breaks)
+            const reasonElem = document.getElementById('previewReason');
+            if (reasonElem) {
+                // Replace " | " with newlines for better readability
+                reasonElem.textContent = decision.reason.replace(/\s*\|\s*/g, '\n');
+            }
+            
+            // Update global refresh timestamp
+            updateGlobalRefreshTime(decision.timestamp);
+            
+            // Update remaining budget
+            const remainingBudgetElem = document.getElementById('remainingBudget');
+            if (!remainingBudgetElem) {
+                console.error('remainingBudget element not found');
+                return;
+            }
+            
+            if (decision.remaining_budget !== null && decision.remaining_budget !== undefined) {
+                remainingBudgetElem.textContent = '$' + decision.remaining_budget.toFixed(2);
+                
+                // Set tooltip based on reset behavior
+                // Handle both boolean true and string "true" from JSON
+                const budgetResets = decision.budget_resets === true || decision.budget_resets === 'true';
+                let tooltipText = '';
+                
+                if (budgetResets) {
+                    // When budget resets monthly (allow_over_budget=False), show time until reset
+                    const timeUntilReset = decision.time_until_reset;
+                    if (timeUntilReset && String(timeUntilReset).trim() !== '' && timeUntilReset !== 'null' && timeUntilReset !== null) {
+                        tooltipText = `Budget resets in ${timeUntilReset}`;
+                    } else {
+                        tooltipText = 'Budget resets monthly';
+                    }
+                } else {
+                    // When allow_over_budget=True, budget does not reset
+                    tooltipText = 'Budget does not reset in this mode';
+                }
+                
+                // Set tooltip using Bootstrap tooltip API
+                // Destroy existing tooltip instance if any
+                const existingTooltip = bootstrap.Tooltip.getInstance(remainingBudgetElem);
+                if (existingTooltip) {
+                    existingTooltip.dispose();
+                }
+                
+                // Update title attribute
+                remainingBudgetElem.setAttribute('data-bs-original-title', tooltipText);
+                remainingBudgetElem.setAttribute('title', tooltipText);
+                
+                // Initialize new Bootstrap tooltip
+                new bootstrap.Tooltip(remainingBudgetElem, {
+                    placement: 'top',
+                    trigger: 'hover'
+                });
+                
+                // Debug: log tooltip setting
+                console.log('Budget tooltip set:', {
+                    budget_resets: decision.budget_resets,
+                    time_until_reset: decision.time_until_reset,
+                    tooltip: tooltipText,
+                    element_title: remainingBudgetElem.getAttribute('title')
+                });
+            } else {
+                remainingBudgetElem.textContent = '--';
+                const tooltipText = 'Budget information unavailable';
+                
+                // Update Bootstrap tooltip
+                const existingTooltip = bootstrap.Tooltip.getInstance(remainingBudgetElem);
+                if (existingTooltip) {
+                    existingTooltip.dispose();
+                }
+                remainingBudgetElem.setAttribute('data-bs-original-title', tooltipText);
+                remainingBudgetElem.setAttribute('title', tooltipText);
+                new bootstrap.Tooltip(remainingBudgetElem, {
+                    placement: 'top',
+                    trigger: 'hover'
+                });
+            }
+        }
+
         async function loadPreview() {
             try {
-                // Load Strategy for Schedule
+                // 1. Strategy
+                const cachedStrat = loadFromCache('strategy_config');
+                if (cachedStrat) updateStrategyUI(cachedStrat);
+                
                 const stratResponse = await fetch('/api/strategy');
                 const strategy = await stratResponse.json();
-                if (strategy) {
-                    const freq = strategy.execution_frequency.charAt(0).toUpperCase() + strategy.execution_frequency.slice(1);
-                    document.getElementById('scheduleDisplay').textContent = `Schedule: ${freq} at ${strategy.execution_time_utc} UTC`;
-                }
+                saveToCache('strategy_config', strategy);
+                updateStrategyUI(strategy);
 
-                // Load Preview
+                // 2. Preview
+                const cachedPreview = loadFromCache('dca_preview');
+                if (cachedPreview) updatePreviewUI(cachedPreview);
+
                 const response = await fetch('/api/dca/preview');
                 const decision = await response.json();
+                saveToCache('dca_preview', decision);
+                updatePreviewUI(decision);
                 
-                // Update metrics display
-                document.getElementById('previewAhr').textContent = decision.ahr999_value.toFixed(2);
-                document.getElementById('previewPrice').textContent = '$' + decision.price_usd.toLocaleString();
-                document.getElementById('previewBand').textContent = decision.ahr_band.toUpperCase();
-                document.getElementById('previewAction').textContent = decision.can_execute 
-                    ? `BUY $${decision.suggested_amount_usd.toFixed(2)}` 
-                    : 'WAIT';
-                
-                // Update data source (Phase 6)
-                const metricsSource = decision.metrics_source || {backend: 'unknown', label: 'Unknown'};
-                const sourceBadge = document.getElementById('dataSourceBadge');
-                if (sourceBadge) {
-                    sourceBadge.textContent = `Source: ${metricsSource.label}`;
-                    sourceBadge.title = metricsSource.label; // Tooltip for full label
-                }
-                
-                // Update status (support line breaks)
-                const reasonElem = document.getElementById('previewReason');
-                if (reasonElem) {
-                    // Replace " | " with newlines for better readability
-                    reasonElem.textContent = decision.reason.replace(/\s*\|\s*/g, '\n');
-                }
-                
-                // Update global refresh timestamp
-                updateGlobalRefreshTime(decision.timestamp);
-                
-                // Update remaining budget
-                const remainingBudgetElem = document.getElementById('remainingBudget');
-                if (!remainingBudgetElem) {
-                    console.error('remainingBudget element not found');
-                    return;
-                }
-                
-                if (decision.remaining_budget !== null && decision.remaining_budget !== undefined) {
-                    remainingBudgetElem.textContent = '$' + decision.remaining_budget.toFixed(2);
-                    
-                    // Set tooltip based on reset behavior
-                    // Handle both boolean true and string "true" from JSON
-                    const budgetResets = decision.budget_resets === true || decision.budget_resets === 'true';
-                    let tooltipText = '';
-                    
-                    if (budgetResets) {
-                        // When budget resets monthly (allow_over_budget=False), show time until reset
-                        const timeUntilReset = decision.time_until_reset;
-                        if (timeUntilReset && String(timeUntilReset).trim() !== '' && timeUntilReset !== 'null' && timeUntilReset !== null) {
-                            tooltipText = `Budget resets in ${timeUntilReset}`;
-                        } else {
-                            tooltipText = 'Budget resets monthly';
-                        }
-                    } else {
-                        // When allow_over_budget=True, budget does not reset
-                        tooltipText = 'Budget does not reset in this mode';
-                    }
-                    
-                    // Set tooltip using Bootstrap tooltip API
-                    // Destroy existing tooltip instance if any
-                    const existingTooltip = bootstrap.Tooltip.getInstance(remainingBudgetElem);
-                    if (existingTooltip) {
-                        existingTooltip.dispose();
-                    }
-                    
-                    // Update title attribute
-                    remainingBudgetElem.setAttribute('data-bs-original-title', tooltipText);
-                    remainingBudgetElem.setAttribute('title', tooltipText);
-                    
-                    // Initialize new Bootstrap tooltip
-                    new bootstrap.Tooltip(remainingBudgetElem, {
-                        placement: 'top',
-                        trigger: 'hover'
-                    });
-                    
-                    // Debug: log tooltip setting
-                    console.log('Budget tooltip set:', {
-                        budget_resets: decision.budget_resets,
-                        time_until_reset: decision.time_until_reset,
-                        tooltip: tooltipText,
-                        element_title: remainingBudgetElem.getAttribute('title')
-                    });
-                } else {
-                    remainingBudgetElem.textContent = '--';
-                    const tooltipText = 'Budget information unavailable';
-                    
-                    // Update Bootstrap tooltip
-                    const existingTooltip = bootstrap.Tooltip.getInstance(remainingBudgetElem);
-                    if (existingTooltip) {
-                        existingTooltip.dispose();
-                    }
-                    remainingBudgetElem.setAttribute('data-bs-original-title', tooltipText);
-                    remainingBudgetElem.setAttribute('title', tooltipText);
-                    new bootstrap.Tooltip(remainingBudgetElem, {
-                        placement: 'top',
-                        trigger: 'hover'
-                    });
-                }
-
                 const btn = document.getElementById('executeSimulatedBtn');
                 const warningBox = document.getElementById('metricsWarning');
 
@@ -662,45 +713,65 @@
         });
 
         // Holdings function still needed by dashboard
+        function updateWalletUI(data, strategy) {
+            // Always show content (cold wallet always available)
+            document.getElementById('walletContent').classList.remove('d-none');
+            
+            // Total BTC (main display)
+            document.getElementById('totalBtc').textContent = data.total_btc.toFixed(8) + ' BTC';
+            
+            // Breakdown - Hot and Cold
+            const hotText = data.hot_wallet_balance.toFixed(8);
+            const coldText = data.cold_wallet_balance.toFixed(8);
+            document.getElementById('hotBalance').textContent = `Hot: ${hotText}`;
+            document.getElementById('coldBalance').textContent = `Cold: ${coldText}`;
+            
+            // Average Buy Price (the important one!)
+            if (data.hot_wallet_avg_price > 0) {
+                document.getElementById('avgBuyPrice').textContent = '$' + data.hot_wallet_avg_price.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            } else {
+                document.getElementById('avgBuyPrice').textContent = '--';
+            }
+            
+            // Pre-fill modal with current cold wallet balance
+            document.getElementById('coldWalletInput').value = data.cold_wallet_balance;
+            
+            // Show warning if no Binance credentials (hot wallet will be 0)
+            const errorBox = document.getElementById('walletError');
+            if (data.hot_wallet_balance === 0 && data.hot_wallet_avg_price === 0) {
+                errorBox.classList.remove('d-none');
+            } else {
+                errorBox.classList.add('d-none');
+            }
+            
+            // Update Progress Bar
+            if (strategy) {
+                const target = strategy.target_btc_amount || 1.0;
+                const progress = Math.min((data.total_btc / target) * 100, 100).toFixed(4);
+                document.getElementById('progressPercent').textContent = progress + '%';
+                document.getElementById('targetAmount').textContent = `Target: ${target} BTC`;
+                document.getElementById('progressBar').style.width = progress + '%';
+            }
+        }
+
         async function loadWalletSummary() {
             try {
+                // 1. Wallet Summary
+                const cachedWallet = loadFromCache('wallet_summary');
+                const cachedStrategy = loadFromCache('strategy_config');
+                if (cachedWallet) updateWalletUI(cachedWallet, cachedStrategy);
+                
                 const response = await fetch('/api/wallet/summary');
                 const data = await response.json();
+                saveToCache('wallet_summary', data);
                 
-                // Always show content (cold wallet always available)
-                document.getElementById('walletContent').classList.remove('d-none');
-                
-                // Total BTC (main display)
-                document.getElementById('totalBtc').textContent = data.total_btc.toFixed(8) + ' BTC';
-                
-                // Breakdown - Hot and Cold
-                const hotText = data.hot_wallet_balance.toFixed(8);
-                const coldText = data.cold_wallet_balance.toFixed(8);
-                document.getElementById('hotBalance').textContent = `Hot: ${hotText}`;
-                document.getElementById('coldBalance').textContent = `Cold: ${coldText}`;
-                
-                // Average Buy Price (the important one!)
-                if (data.hot_wallet_avg_price > 0) {
-                    document.getElementById('avgBuyPrice').textContent = '$' + data.hot_wallet_avg_price.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
-                } else {
-                    document.getElementById('avgBuyPrice').textContent = '--';
-                }
-                
-                // Pre-fill modal with current cold wallet balance
-                document.getElementById('coldWalletInput').value = data.cold_wallet_balance;
-                
-                // Get target from strategy for progress bar
+                // 2. Strategy (for progress bar)
                 const stratResponse = await fetch('/api/strategy');
                 const strategy = await stratResponse.json();
-                if (strategy) {
-                    const target = strategy.target_btc_amount || 1.0;
-                    const progress = Math.min((data.total_btc / target) * 100, 100).toFixed(4);
-                    document.getElementById('progressPercent').textContent = progress + '%';
-                    document.getElementById('targetAmount').textContent = `Target: ${target} BTC`;
-                    document.getElementById('progressBar').style.width = progress + '%';
-                }
                 
-                // Fetch quote balance (USDC) from binance API
+                updateWalletUI(data, strategy);
+                
+                // 3. Quote Balance (Binance)
                 try {
                     const binanceResponse = await fetch('/api/binance/holdings');
                     const binanceData = await binanceResponse.json();
@@ -710,14 +781,6 @@
                     }
                 } catch (err) {
                     console.log('Could not fetch quote balance:', err);
-                }
-                
-                // Show warning if no Binance credentials (hot wallet will be 0)
-                const errorBox = document.getElementById('walletError');
-                if (data.hot_wallet_balance === 0 && data.hot_wallet_avg_price === 0) {
-                    errorBox.classList.remove('d-none');
-                } else {
-                    errorBox.classList.add('d-none');
                 }
                 
             } catch (error) {
