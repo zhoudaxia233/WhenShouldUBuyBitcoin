@@ -79,7 +79,7 @@ def _parse_percentile_value(percentile_str: str) -> Optional[float]:
         return None
 
 
-def _build_wealth_distribution_from_live_data() -> List[Tuple[float, float, float]]:
+def _build_wealth_distribution_from_live_data() -> List[Tuple[float, float, float, str]]:
     """
     Build wealth distribution list from live scraped data.
     
@@ -89,7 +89,8 @@ def _build_wealth_distribution_from_live_data() -> List[Tuple[float, float, floa
     - No cache: Raises error (won't show bad data)
     
     Returns:
-        List of (min_btc, max_btc, percentile_top) tuples, sorted by min_btc descending.
+        List of (min_btc, max_btc, percentile_top, percentile_str) tuples, sorted by min_btc descending.
+        percentile_top is float for comparison, percentile_str preserves original formatting.
         
     Raises:
         ValueError: If no distribution data is available (no cache and fetch failed)
@@ -105,7 +106,7 @@ def _build_wealth_distribution_from_live_data() -> List[Tuple[float, float, floa
     if not distribution_data:
         raise ValueError("No distribution data available")
     
-    # Parse distribution data into (min_btc, max_btc, percentile_top) format
+    # Parse distribution data into (min_btc, max_btc, percentile_top, percentile_str) format
     wealth_dist = []
     for item in distribution_data:
         tier_str = item.get("tier", "")
@@ -116,7 +117,7 @@ def _build_wealth_distribution_from_live_data() -> List[Tuple[float, float, floa
         
         if tier_range and percentile_value is not None:
             min_btc, max_btc = tier_range
-            wealth_dist.append((min_btc, max_btc, percentile_value))
+            wealth_dist.append((min_btc, max_btc, percentile_value, percentile_str))
         else:
             logger.warning(f"Skipping invalid distribution item: tier={tier_str}, percentile={percentile_str}")
     
@@ -165,18 +166,21 @@ async def get_user_percentile(session: Session = Depends(get_session)):
     # Determine Percentile
     # Find the first tier where total_btc falls within the range [min_btc, max_btc)
     # Note: For the top tier with max_btc=inf, we only check min_btc
-    percentile = 100.0
-    for min_b, max_b, p_top in wealth_distribution:
+    percentile_value = 100.0
+    percentile_str = "Top 100%"
+    for min_b, max_b, p_top, p_str in wealth_distribution:
         if total_btc >= min_b:
             # Check upper bound (if max_b is not infinity)
             if max_b == float('inf') or total_btc < max_b:
-                percentile = p_top
+                percentile_value = p_top
+                percentile_str = p_str
                 break
     
     return {
         "total_btc": total_btc,
-        "percentile_top": percentile,
-        "message": f"You are in the Top {percentile}% of Bitcoin Holders"
+        "percentile_top": percentile_value,
+        "percentile_display": percentile_str,
+        "message": f"You are in the {percentile_str} of Bitcoin Holders"
     }
 
 @router.get("/stats/fees")
