@@ -26,7 +26,7 @@
             <div>
                 <a href="/settings/binance" class="btn btn-outline-secondary me-2">Binance Settings</a>
                 <a href="/strategy" class="btn btn-outline-secondary me-2">Strategy Config</a>
-                <button id="simulateBtn" class="btn btn-primary">Simulate Transaction</button>
+                <a href="/stats" class="btn btn-outline-primary">Stats & Analytics</a>
             </div>
         </header>
 
@@ -137,7 +137,7 @@
 
                 <div class="d-flex justify-content-end">
                     <button id="executeSimulatedBtn" class="btn btn-success" disabled>
-                        Simulate DCA Now
+                        Test Strategy
                     </button>
                 </div>
             </div>
@@ -450,30 +450,7 @@
             });
         });
 
-        document.getElementById('simulateBtn').addEventListener('click', async () => {
-            try {
-                const response = await fetch('/api/transactions/simulate', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        fiat_amount: 100.0,
-                        ahr999: 0.45,
-                        price: 50000.0,
-                        notes: 'Manual simulation'
-                    })
-                });
-                
-                if (response.ok) {
-                    notyf.success('Simulated transaction created');
-                    loadTransactions();
-                } else {
-                    notyf.error('Simulation failed');
-                }
-            } catch (error) {
-                console.error('Error simulating:', error);
-                notyf.error('Network error or backend unreachable');
-            }
-        });
+
 
         async function loadPreview() {
             try {
@@ -595,7 +572,7 @@
                     warningBox.classList.add('d-none');
                     if (decision.can_execute) {
                         btn.disabled = false;
-                        btn.textContent = `Simulate BUY ($${decision.suggested_amount_usd.toFixed(2)})`;
+                        btn.textContent = `Test Strategy ($${decision.suggested_amount_usd.toFixed(2)})`;
                     } else {
                         btn.disabled = true;
                         btn.textContent = 'Conditions Not Met';
