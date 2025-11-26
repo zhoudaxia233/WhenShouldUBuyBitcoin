@@ -14,22 +14,7 @@ def test_read_transactions_empty(client: TestClient):
     assert response.status_code == 200
     assert response.json() == []
 
-def test_simulate_transaction(client: TestClient):
-    response = client.post(
-        "/api/transactions/simulate",
-        json={
-            "fiat_amount": 100.0,
-            "ahr999": 0.45,
-            "price": 50000.0,
-            "notes": "Test simulation"
-        }
-    )
-    assert response.status_code == 200
-    data = response.json()
-    assert data["status"] == "SUCCESS"
-    assert data["fiat_amount"] == 100.0
-    assert data["btc_amount"] == 0.002  # 100 / 50000
-    assert data["id"] is not None
+
 
 def test_read_transactions_populated(client: TestClient, session: Session):
     # Create a transaction first

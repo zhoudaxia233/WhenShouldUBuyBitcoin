@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ project_name }} - Stats & Analytics</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/notyf@3.10.0/notyf.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { padding-top: 20px; background-color: #f8f9fa; }
+        .container { max-width: 1200px; }
+        .card { margin-bottom: 20px; }
+        .percentile-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .highlight-row {
+            background-color: #e8f4ff;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="d-flex justify-content-between align-items-center mb-4">
+            <h1>Stats & Analytics</h1>
+            <div>
+                <a href="/" class="btn btn-outline-secondary me-2">Dashboard</a>
+                <a href="/settings/binance" class="btn btn-outline-secondary me-2">Binance Settings</a>
+                <a href="/strategy" class="btn btn-outline-secondary">Strategy Config</a>
+            </div>
+        </header>
+
+        <!-- Wealth Percentile Section -->
+        <div class="card shadow-sm percentile-card mb-4">
+            <div class="card-body text-center py-5">
+                <h2 class="display-4 fw-bold" id="percentileText">Loading...</h2>
+                <p class="lead" id="percentileSubtext">Calculating your global rank...</p>
+                <div class="mt-3">
+                    <span class="badge bg-light text-dark fs-6">Total Balance: <span id="totalBtc">--</span> BTC</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Fee Summary Row -->
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <div class="card shadow-sm">
+                    <div class="card-body text-center">
+                        <div class="text-muted small">Total Trading Fees Paid</div>
+                        <div class="h3 text-danger" id="totalFeesUSD">--</div>
+                        <div class="small text-muted"><span id="totalFeesBTC">--</span> BTC</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card shadow-sm">
+                    <div class="card-body text-center">
+                        <div class="text-muted small">Transactions Tracked</div>
+                        <div class="h3 text-primary" id="transactionCount">--</div>
+                        <div class="small text-muted">Successful trades</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <!-- PnL Chart -->
+            <div class="col-lg-8">
+                <div class="card shadow-sm h-100">
+                    <div class="card-header bg-white">
+                        <h5 class="mb-0">Performance Over Time</h5>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="pnlChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Wealth Distribution Table -->
+            <div class="col-lg-4">
+                <div class="card shadow-sm h-100">
+                    <div class="card-header bg-white">
+                        <h5 class="mb-0">Global Wealth Distribution</h5>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0 text-center">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Balance Tier</th>
+                                        <th>Percentile</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="distributionTable">
+                                    <!-- Loaded via JS -->
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="card-footer text-muted small text-center">
+                            Source: BitInfoCharts (Nov 2024)
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/notyf@3.10.0/notyf.min.js"></script>
+    <script>
+        window.notyf = new Notyf({ duration: 3000, position: { x: 'right', y: 'top' } });
+
+        // Load Wealth Percentile
+        async function loadPercentile() {
+            try {
+                const response = await fetch('/api/stats/percentile');
+                const data = await response.json();
+                
+                document.getElementById('percentileText').textContent = `Top ${data.percentile_top}%`;
+                document.getElementById('percentileSubtext').textContent = "of all Bitcoin holders globally";
+                document.getElementById('totalBtc').textContent = data.total_btc.toFixed(8);
+                
+                return data.percentile_top; // Return for highlighting table
+            } catch (error) {
+                console.error('Error loading percentile:', error);
+                document.getElementById('percentileText').textContent = "Error";
+            }
+        }
+
+        // Load Distribution Table
+        async function loadDistribution(userPercentile) {
+            try {
+                const response = await fetch('/api/stats/distribution');
+                const data = await response.json();
+                
+                const tbody = document.getElementById('distributionTable');
+                tbody.innerHTML = '';
+                
+                data.forEach(row => {
+                    const tr = document.createElement('tr');
+                    
+                    // Parse percentile string to float for comparison (e.g. "Top 0.01%" -> 0.01)
+                    const rowPercentile = parseFloat(row.percentile.replace(/[^0-9.]/g, ''));
+                    const isTop = row.percentile.includes("Top");
+                    
+                    // Simple highlighting logic: 
+                    // If user is Top X%, highlight the row that represents that tier.
+                    // Since we don't have the exact tier ranges in the API response easily accessible here without parsing,
+                    // we'll just rely on the backend logic or simple string matching if needed.
+                    // Actually, let's just highlight if the user's percentile is BETTER or EQUAL to this row's percentile (if Top)
+                    
+                    // Better approach: The backend returns the exact tier the user is in.
+                    // But for now, let's just list them.
+                    
+                    tr.innerHTML = `
+                        <td>${row.tier}</td>
+                        <td><span class="badge bg-secondary">${row.percentile}</span></td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            } catch (error) {
+                console.error('Error loading distribution:', error);
+            }
+        }
+
+        // Load Total Fees
+        async function loadFees() {
+            try {
+                const response = await fetch('/api/stats/fees');
+                const data = await response.json();
+                
+                document.getElementById('totalFeesUSD').textContent = `$${data.total_fees_usd.toFixed(2)}`;
+                document.getElementById('totalFeesBTC').textContent = data.total_fees_btc.toFixed(8);
+                document.getElementById('transactionCount').textContent = data.transaction_count.toLocaleString();
+            } catch (error) {
+                console.error('Error loading fees:', error);
+                document.getElementById('totalFeesUSD').textContent = 'Error';
+            }
+        }
+
+        // Load PnL Chart
+        async function loadChart() {
+            try {
+                const response = await fetch('/api/stats/pnl');
+                const data = await response.json();
+                
+                if (data.dates.length === 0) {
+                    // Show empty state
+                    return;
+                }
+                
+                const ctx = document.getElementById('pnlChart').getContext('2d');
+                new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: data.dates.map(d => new Date(d).toLocaleDateString()),
+                        datasets: [
+                            {
+                                label: 'Invested Capital (USD)',
+                                data: data.invested,
+                                borderColor: '#6c757d',
+                                backgroundColor: 'rgba(108, 117, 125, 0.1)',
+                                fill: true,
+                                tension: 0.1
+                            },
+                            {
+                                label: 'Portfolio Value (USD)',
+                                data: data.value,
+                                borderColor: '#28a745',
+                                backgroundColor: 'rgba(40, 167, 69, 0.1)',
+                                fill: true,
+                                tension: 0.1
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        interaction: {
+                            mode: 'index',
+                            intersect: false,
+                        },
+                        plugins: {
+                            title: {
+                                display: true,
+                                text: 'Investment Performance'
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        let label = context.dataset.label || '';
+                                        if (label) {
+                                            label += ': ';
+                                        }
+                                        if (context.parsed.y !== null) {
+                                            label += new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(context.parsed.y);
+                                        }
+                                        return label;
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    callback: function(value) {
+                                        return '$' + value.toLocaleString();
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+                
+            } catch (error) {
+                console.error('Error loading chart:', error);
+            }
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', async () => {
+            const userPercentile = await loadPercentile();
+            loadDistribution(userPercentile);
+            loadFees();
+            loadChart();
+        });
+    </script>
+</body>
+</html>
