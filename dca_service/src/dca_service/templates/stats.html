@@ -140,7 +140,10 @@
 
         // UI Updaters
         function updatePercentileUI(data) {
-            document.getElementById('percentileText').textContent = `Top ${data.percentile_top}%`;
+            // Use percentile_display if available (preserves original decimal precision), 
+            // otherwise fall back to percentile_top
+            const percentileDisplay = data.percentile_display || `Top ${data.percentile_top}%`;
+            document.getElementById('percentileText').textContent = percentileDisplay;
             document.getElementById('percentileSubtext').textContent = "of all Bitcoin holders globally";
             document.getElementById('totalBtc').textContent = data.total_btc.toFixed(8);
         }
