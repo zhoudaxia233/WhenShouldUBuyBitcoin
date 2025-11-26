@@ -28,7 +28,10 @@
             <div>
                 <a href="/" class="btn btn-outline-secondary me-2">Dashboard</a>
                 <a href="/settings/binance" class="btn btn-outline-secondary me-2">Binance Settings</a>
-                <a href="/strategy" class="btn btn-outline-secondary">Strategy Config</a>
+                <a href="/strategy" class="btn btn-outline-secondary me-2">Strategy Config</a>
+                <button id="refreshStatsBtn" class="btn btn-outline-primary" title="Force Refresh Data">
+                    🔄 Refresh
+                </button>
             </div>
         </header>
 
@@ -113,147 +116,210 @@
         window.notyf = new Notyf({ duration: 3000, position: { x: 'right', y: 'top' } });
 
         // Load Wealth Percentile
-        async function loadPercentile() {
+        // Cache Helpers
+        function saveToCache(key, data) {
             try {
+                const cacheItem = { timestamp: Date.now(), data: data };
+                localStorage.setItem(key, JSON.stringify(cacheItem));
+            } catch (e) { console.error('Error saving to cache', e); }
+        }
+
+        function loadFromCache(key) {
+            try {
+                const item = localStorage.getItem(key);
+                if (!item) return null;
+                return JSON.parse(item); // Return full object with timestamp
+            } catch (e) { return null; }
+        }
+
+        function isCacheValid(cacheItem, ttlMinutes) {
+            if (!cacheItem || !cacheItem.timestamp) return false;
+            const ageMinutes = (Date.now() - cacheItem.timestamp) / (1000 * 60);
+            return ageMinutes < ttlMinutes;
+        }
+
+        // UI Updaters
+        function updatePercentileUI(data) {
+            document.getElementById('percentileText').textContent = `Top ${data.percentile_top}%`;
+            document.getElementById('percentileSubtext').textContent = "of all Bitcoin holders globally";
+            document.getElementById('totalBtc').textContent = data.total_btc.toFixed(8);
+        }
+
+        // Load Wealth Percentile (TTL: 24 hours = 1440 mins)
+        async function loadPercentile(forceRefresh = false) {
+            try {
+                const cached = loadFromCache('stats_percentile');
+                
+                // If valid and not forcing refresh, use cache and RETURN (skip fetch)
+                if (!forceRefresh && isCacheValid(cached, 1440)) {
+                    updatePercentileUI(cached.data);
+                    return cached.data.percentile_top;
+                }
+                
+                // If expired or forcing refresh, show cached data first (if exists) then fetch
+                if (cached) updatePercentileUI(cached.data);
+
                 const response = await fetch('/api/stats/percentile');
                 const data = await response.json();
+                saveToCache('stats_percentile', data);
+                updatePercentileUI(data);
                 
-                document.getElementById('percentileText').textContent = `Top ${data.percentile_top}%`;
-                document.getElementById('percentileSubtext').textContent = "of all Bitcoin holders globally";
-                document.getElementById('totalBtc').textContent = data.total_btc.toFixed(8);
-                
-                return data.percentile_top; // Return for highlighting table
+                return data.percentile_top; 
             } catch (error) {
                 console.error('Error loading percentile:', error);
-                document.getElementById('percentileText').textContent = "Error";
+                const cached = loadFromCache('stats_percentile');
+                if (!cached) {
+                    document.getElementById('percentileText').textContent = "Error";
+                }
             }
         }
 
         // Load Distribution Table
-        async function loadDistribution(userPercentile) {
+        function updateDistributionUI(data) {
+            const tbody = document.getElementById('distributionTable');
+            tbody.innerHTML = '';
+            
+            data.forEach(row => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${row.tier}</td>
+                    <td><span class="badge bg-secondary">${row.percentile}</span></td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // Load Distribution Table (TTL: 24 hours = 1440 mins)
+        async function loadDistribution(forceRefresh = false) {
             try {
+                const cached = loadFromCache('stats_distribution');
+                
+                if (!forceRefresh && isCacheValid(cached, 1440)) {
+                    updateDistributionUI(cached.data);
+                    return;
+                }
+
+                if (cached) updateDistributionUI(cached.data);
+
                 const response = await fetch('/api/stats/distribution');
                 const data = await response.json();
-                
-                const tbody = document.getElementById('distributionTable');
-                tbody.innerHTML = '';
-                
-                data.forEach(row => {
-                    const tr = document.createElement('tr');
-                    
-                    // Parse percentile string to float for comparison (e.g. "Top 0.01%" -> 0.01)
-                    const rowPercentile = parseFloat(row.percentile.replace(/[^0-9.]/g, ''));
-                    const isTop = row.percentile.includes("Top");
-                    
-                    // Simple highlighting logic: 
-                    // If user is Top X%, highlight the row that represents that tier.
-                    // Since we don't have the exact tier ranges in the API response easily accessible here without parsing,
-                    // we'll just rely on the backend logic or simple string matching if needed.
-                    // Actually, let's just highlight if the user's percentile is BETTER or EQUAL to this row's percentile (if Top)
-                    
-                    // Better approach: The backend returns the exact tier the user is in.
-                    // But for now, let's just list them.
-                    
-                    tr.innerHTML = `
-                        <td>${row.tier}</td>
-                        <td><span class="badge bg-secondary">${row.percentile}</span></td>
-                    `;
-                    tbody.appendChild(tr);
-                });
+                saveToCache('stats_distribution', data);
+                updateDistributionUI(data);
             } catch (error) {
                 console.error('Error loading distribution:', error);
             }
         }
 
         // Load Total Fees
-        async function loadFees() {
+        function updateFeesUI(data) {
+            document.getElementById('totalFeesUSD').textContent = `$${data.total_fees_usd.toFixed(2)}`;
+            document.getElementById('totalFeesBTC').textContent = data.total_fees_btc.toFixed(8);
+            document.getElementById('transactionCount').textContent = data.transaction_count.toLocaleString();
+        }
+
+        // Load Total Fees (TTL: 5 mins)
+        async function loadFees(forceRefresh = false) {
             try {
+                const cached = loadFromCache('stats_fees');
+                
+                if (!forceRefresh && isCacheValid(cached, 5)) {
+                    updateFeesUI(cached.data);
+                    return;
+                }
+
+                if (cached) updateFeesUI(cached.data);
+
                 const response = await fetch('/api/stats/fees');
                 const data = await response.json();
-                
-                document.getElementById('totalFeesUSD').textContent = `$${data.total_fees_usd.toFixed(2)}`;
-                document.getElementById('totalFeesBTC').textContent = data.total_fees_btc.toFixed(8);
-                document.getElementById('transactionCount').textContent = data.transaction_count.toLocaleString();
+                saveToCache('stats_fees', data);
+                updateFeesUI(data);
             } catch (error) {
                 console.error('Error loading fees:', error);
-                document.getElementById('totalFeesUSD').textContent = 'Error';
+                if (!loadFromCache('stats_fees')) {
+                    document.getElementById('totalFeesUSD').textContent = 'Error';
+                }
             }
         }
 
         // Load PnL Chart
-        async function loadChart() {
-            try {
-                const response = await fetch('/api/stats/pnl');
-                const data = await response.json();
-                
-                if (data.dates.length === 0) {
-                    // Show empty state
-                    return;
-                }
-                
-                const ctx = document.getElementById('pnlChart').getContext('2d');
-                new Chart(ctx, {
-                    type: 'line',
-                    data: {
-                        labels: data.dates.map(d => new Date(d).toLocaleDateString()),
-                        datasets: [
-                            {
-                                label: 'Invested Capital (USD)',
-                                data: data.invested,
-                                borderColor: '#6c757d',
-                                backgroundColor: 'rgba(108, 117, 125, 0.1)',
-                                fill: true,
-                                tension: 0.1
-                            },
-                            {
-                                label: 'Portfolio Value (USD)',
-                                data: data.value,
-                                borderColor: '#28a745',
-                                backgroundColor: 'rgba(40, 167, 69, 0.1)',
-                                fill: true,
-                                tension: 0.1
-                            }
-                        ]
-                    },
-                    options: {
-                        responsive: true,
-                        interaction: {
-                            mode: 'index',
-                            intersect: false,
+        let pnlChartInstance = null;
+
+        function renderChart(data) {
+            if (data.dates.length === 0) return;
+
+            const ctx = document.getElementById('pnlChart').getContext('2d');
+            
+            if (pnlChartInstance) {
+                pnlChartInstance.destroy();
+            }
+
+            pnlChartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: data.dates.map(d => new Date(d).toLocaleDateString()),
+                    datasets: [
+                        {
+                            label: 'Invested Capital (USD)',
+                            data: data.invested,
+                            borderColor: '#6c757d',
+                            backgroundColor: 'rgba(108, 117, 125, 0.1)',
+                            fill: true,
+                            tension: 0.1
                         },
-                        plugins: {
-                            title: {
-                                display: true,
-                                text: 'Investment Performance'
-                            },
-                            tooltip: {
-                                callbacks: {
-                                    label: function(context) {
-                                        let label = context.dataset.label || '';
-                                        if (label) {
-                                            label += ': ';
-                                        }
-                                        if (context.parsed.y !== null) {
-                                            label += new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(context.parsed.y);
-                                        }
-                                        return label;
+                        {
+                            label: 'Portfolio Value (USD)',
+                            data: data.value,
+                            borderColor: '#28a745',
+                            backgroundColor: 'rgba(40, 167, 69, 0.1)',
+                            fill: true,
+                            tension: 0.1
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    interaction: { mode: 'index', intersect: false },
+                    plugins: {
+                        title: { display: true, text: 'Investment Performance' },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) label += ': ';
+                                    if (context.parsed.y !== null) {
+                                        label += new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(context.parsed.y);
                                     }
-                                }
-                            }
-                        },
-                        scales: {
-                            y: {
-                                beginAtZero: true,
-                                ticks: {
-                                    callback: function(value) {
-                                        return '$' + value.toLocaleString();
-                                    }
+                                    return label;
                                 }
                             }
                         }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: { callback: function(value) { return '$' + value.toLocaleString(); } }
+                        }
                     }
-                });
+                }
+            });
+        }
+
+        // Load PnL Chart (TTL: 5 mins)
+        async function loadChart(forceRefresh = false) {
+            try {
+                const cached = loadFromCache('stats_pnl');
                 
+                if (!forceRefresh && isCacheValid(cached, 5)) {
+                    renderChart(cached.data);
+                    return;
+                }
+
+                if (cached) renderChart(cached.data);
+
+                const response = await fetch('/api/stats/pnl');
+                const data = await response.json();
+                saveToCache('stats_pnl', data);
+                renderChart(data);
             } catch (error) {
                 console.error('Error loading chart:', error);
             }
@@ -261,10 +327,29 @@
 
         // Initialize
         document.addEventListener('DOMContentLoaded', async () => {
-            const userPercentile = await loadPercentile();
-            loadDistribution(userPercentile);
+            loadPercentile();
+            loadDistribution();
             loadFees();
             loadChart();
+            
+            // Refresh Button Handler
+            document.getElementById('refreshStatsBtn').addEventListener('click', async () => {
+                const btn = document.getElementById('refreshStatsBtn');
+                const originalText = btn.innerHTML;
+                btn.disabled = true;
+                btn.innerHTML = '🔄 Refreshing...';
+                
+                await Promise.all([
+                    loadPercentile(true),
+                    loadDistribution(true),
+                    loadFees(true),
+                    loadChart(true)
+                ]);
+                
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+                notyf.success('Stats refreshed');
+            });
         });
     </script>
 </body>
