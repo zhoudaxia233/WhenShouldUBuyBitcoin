@@ -146,6 +146,120 @@ class BinanceClient:
             logger.error(f"Failed to place market buy order: {e}")
             raise e
 
+    async def execute_market_order_with_confirmation(
+        self,
+        symbol: str,
+        quote_quantity: float,
+        max_wait_seconds: int = 10,
+        poll_interval: float = 1.0
+    ) -> Dict[str, Any]:
+        """
+        Execute market order and wait for trade confirmation.
+        
+        This method:
+        1. Places a market buy order
+        2. Polls for actual trade fills (retries with configurable timeout)
+        3. Returns aggregated confirmed trade data
+        
+        Args:
+            symbol: Trading pair (e.g., "BTCUSDC")
+            quote_quantity: Amount in quote currency to spend
+            max_wait_seconds: Maximum time to wait for trade confirmation
+            poll_interval: Seconds between polling attempts
+            
+        Returns:
+            Dictionary containing:
+                - order_id: Binance order ID
+                - trades: List of confirmed trades
+                - total_btc: Total BTC purchased
+                - avg_price: Average execution price
+                - total_fee: Total fee amount
+                - fee_asset: Fee currency
+                
+        Raises:
+            TimeoutError: If trades not confirmed within max_wait_seconds
+            ValueError: On API errors or invalid parameters
+        """
+        import asyncio
+        
+        # Step 1: Place the market order
+        logger.info(f"🚀 Executing market order: {symbol} for ${quote_quantity:.2f}")
+        order_response = await self.create_market_buy_order(symbol, quote_quantity)
+        order_id = order_response.get("orderId")
+        
+        if not order_id:
+            raise ValueError("Failed to retrieve order ID from order response")
+        
+        # Step 2: Poll for trade confirmation
+        max_attempts = int(max_wait_seconds / poll_interval)
+        logger.info(f"⏳ Waiting for trade confirmation (max {max_wait_seconds}s)...")
+        
+        for attempt in range(1, max_attempts + 1):
+            logger.debug(f"   Polling attempt {attempt}/{max_attempts}...")
+            
+            try:
+                # Query trades for this specific order ID
+                params = {
+                    "symbol": symbol,
+                    "orderId": order_id
+                }
+                trades = await self._request("GET", "/api/v3/myTrades", params=params, signed=True)
+                
+                if trades:
+                    logger.info(f"✅ Trades confirmed! Found {len(trades)} fill(s)")
+                    break
+                else:
+                    logger.debug(f"   No fills yet (attempt {attempt}/{max_attempts})")
+                    
+            except Exception as e:
+                logger.warning(f"   Error querying trades: {e}")
+            
+            # Wait before next attempt (except on last attempt)
+            if attempt < max_attempts:
+                await asyncio.sleep(poll_interval)
+        else:
+            # Exhausted all attempts without finding trades
+            raise TimeoutError(
+                f"Failed to retrieve trades for order {order_id} after {max_wait_seconds}s. "
+                f"Order may still be processing on Binance."
+            )
+        
+        # Step 3: Aggregate trade data
+        total_btc = 0.0
+        total_quote = 0.0
+        total_fee = 0.0
+        fee_asset = ""
+        
+        for trade in trades:
+            qty = float(trade.get("qty", 0))
+            price = float(trade.get("price", 0))
+            quote_qty = float(trade.get("quoteQty", 0))
+            commission = float(trade.get("commission", 0))
+            commission_asset = trade.get("commissionAsset", "")
+            
+            total_btc += qty
+            total_quote += quote_qty
+            total_fee += commission
+            fee_asset = commission_asset  # Use the last one (usually all the same)
+        
+        avg_price = total_quote / total_btc if total_btc > 0 else 0.0
+        
+        logger.info(
+            f"📊 Order execution summary: "
+            f"{total_btc:.8f} BTC @ ${avg_price:,.2f} avg "
+            f"(Fee: {total_fee:.8f} {fee_asset})"
+        )
+        
+        return {
+            "order_id": order_id,
+            "trades": trades,
+            "total_btc": total_btc,
+            "avg_price": avg_price,
+            "total_fee": total_fee,
+            "fee_asset": fee_asset,
+            "quote_spent": total_quote
+        }
+
     async def get_current_price(self, symbol: str) -> float:
         """
         Fetch current market price for a trading pair.

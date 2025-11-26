@@ -79,6 +79,31 @@ def _migrate_transaction_table():
                     ADD COLUMN binance_order_id INTEGER
                 """))
             
+            # Check and add binance_trade_id column (Phase 7)
+            if 'binance_trade_id' not in existing_column_names:
+                logger.info("Adding 'binance_trade_id' column to dca_transactions table...")
+                session.exec(text("""
+                    ALTER TABLE dca_transactions 
+                    ADD COLUMN binance_trade_id INTEGER
+                """))
+                # Add unique index manually since SQLite ALTER TABLE doesn't support adding constraints easily
+                try:
+                    session.exec(text("""
+                        CREATE UNIQUE INDEX idx_dca_transactions_binance_trade_id 
+                        ON dca_transactions(binance_trade_id)
+                        WHERE binance_trade_id IS NOT NULL
+                    """))
+                except Exception as e:
+                    logger.warning(f"Could not create unique index for binance_trade_id: {e}")
+
+            # Check and add is_manual column (Phase 7)
+            if 'is_manual' not in existing_column_names:
+                logger.info("Adding 'is_manual' column to dca_transactions table...")
+                session.exec(text("""
+                    ALTER TABLE dca_transactions 
+                    ADD COLUMN is_manual BOOLEAN DEFAULT 0
+                """))
+            
             session.commit()
             logger.info("Migration completed successfully")
     except Exception as e:

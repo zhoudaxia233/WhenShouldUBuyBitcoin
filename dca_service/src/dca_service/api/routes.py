@@ -1,6 +1,6 @@
 from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlmodel import Session, select
+from sqlmodel import Session, select, col
 from datetime import datetime, timezone
 
 from dca_service.database import get_session
@@ -44,42 +44,37 @@ async def read_transactions(
     session: Session = Depends(get_session)
 ):
     """
-    Fetch unified list of all transactions:
-    - DCA transactions (SIMULATED or LIVE via bot)
-    - Manual Binance trades (not triggered by bot)
+    Fetch list of all transactions from LOCAL DATABASE only.
+    Includes both DCA transactions and synced manual trades.
     """
-    # 1. Fetch DCA transactions from database
-    dca_txs = session.exec(select(DCATransaction)).all()
-    dca_order_ids = {tx.binance_order_id for tx in dca_txs if tx.binance_order_id}
+    # Fetch all transactions from database (DCA + Manual)
+    # Sort by timestamp descending
+    statement = select(DCATransaction).order_by(col(DCATransaction.timestamp).desc()).offset(offset).limit(limit)
+    transactions = session.exec(statement).all()
     
-    # 2. Fetch all Binance trades
-    binance_trades = []
-    try:
-        client = _get_binance_client(session)
-        if client:
-            trades_response = await client.get_all_btc_trades()
-            await client.close()
-            binance_trades = trades_response
-    except Exception as e:
-        logger.warning(f"Could not fetch Binance trades: {e}")
-    
-    # 3. Convert to unified format
     unified_list = []
     
-    # Add DCA transactions
-    for tx in dca_txs:
-        # Determine badge: SIMULATED or DCA
-        badge = "SIMULATED" if tx.source == "SIMULATED" else "DCA"
-        
+    for tx in transactions:
+        # Determine badge
+        if tx.is_manual:
+            badge = "MANUAL"
+            tx_type = "MANUAL"
+        elif tx.source == "SIMULATED":
+            badge = "SIMULATED"
+            tx_type = "DCA"
+        else:
+            badge = "DCA"
+            tx_type = "DCA"
+            
         # Ensure timestamp is timezone-aware
         tx_timestamp = tx.timestamp
         if tx_timestamp.tzinfo is None:
             tx_timestamp = tx_timestamp.replace(tzinfo=timezone.utc)
-        
+            
         unified_list.append(UnifiedTransaction(
-            id=tx.id,
+            id=tx.binance_order_id or tx.id,  # Use Binance Order ID if available, else DB ID
             timestamp=tx_timestamp,
-            type="DCA",
+            type=tx_type,
             status=tx.status,
             btc_amount=tx.executed_amount_btc or tx.btc_amount or 0.0,
             fiat_amount=tx.executed_amount_usd or tx.fiat_amount or 0.0,
@@ -91,70 +86,21 @@ async def read_transactions(
             fee_asset=tx.fee_asset or "USDC"
         ))
     
-    # Add manual Binance trades (not triggered by DCA bot)
-    for trade in binance_trades:
-        trade_id = trade.get("orderId")
-        
-        # Skip if this trade was executed by the DCA bot
-        if trade_id in dca_order_ids:
-            continue
-        
-        # Only show buy trades
-        if not trade.get("isBuyer"):
-            continue
-        
-        # Convert timestamp (milliseconds to datetime, UTC aware)
-        ts = datetime.fromtimestamp(trade["time"] / 1000, tz=timezone.utc)
-        
-        qty = float(trade["qty"])
-        price = float(trade["price"])
-        total_usd = qty * price
-        
-        # Extract fee information and convert to USD
-        fee_amount_raw = float(trade.get("commission", 0.0))
-        fee_asset = trade.get("commissionAsset", "")
-        
-        # Convert fee to USD value
-        fee_usd = 0.0
-        if fee_asset == "BTC":
-            fee_usd = fee_amount_raw * price  # Use trade price for BTC
-        elif fee_asset in ["USDC", "USDT", "USD"]:
-            fee_usd = fee_amount_raw
-        # For other assets (BNB, etc.), we'd need price data - skip for now
-        
-        unified_list.append(UnifiedTransaction(
-            id=trade_id,
-            timestamp=ts,
-            type="MANUAL",
-            status="SUCCESS",
-            btc_amount=qty,
-            fiat_amount=total_usd,
-            price=price,
-            notes=None,  # No notes needed, badge is sufficient
-            source="MANUAL",
-            ahr999=None,
-            fee_amount=fee_usd,  # Fee in USD
-            fee_asset="USD"  # Always report as USD
-        ))
+    return unified_list
+
+
+@router.post("/transactions/sync")
+async def sync_transactions(session: Session = Depends(get_session)):
+    """
+    Trigger manual synchronization of trades from Binance.
+    Fetches only new trades since the last sync.
+    """
+    from dca_service.services.sync_service import TradeSyncService
     
-    # Sort by timestamp descending (all timestamps are now timezone-aware)
-    unified_list.sort(key=lambda x: x.timestamp, reverse=True)
+    service = TradeSyncService(session)
+    count = await service.sync_trades()
     
-    # Log fee asset summary for debugging
-    manual_trades = [tx for tx in unified_list if tx.source == "MANUAL"]
-    if manual_trades:
-        fee_assets = {}
-        for tx in manual_trades:
-            # Get original fee asset from Binance trade data
-            matching_trade = next((t for t in binance_trades if t.get("orderId") == tx.id), None)
-            if matching_trade:
-                asset = matching_trade.get("commissionAsset", "Unknown")
-                fee_assets[asset] = fee_assets.get(asset, 0) + 1
-        
-        logger.info(f"Manual trades fee assets: {fee_assets}")
-    
-    # Apply offset and limit
-    return unified_list[offset:offset + limit]
+    return {"success": True, "new_trades_count": count}
 
 @router.get("/transactions/{transaction_id}", response_model=TransactionRead)
 def read_transaction(transaction_id: int, session: Session = Depends(get_session)):

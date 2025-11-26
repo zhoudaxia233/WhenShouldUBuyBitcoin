@@ -34,6 +34,10 @@ class DCATransaction(SQLModel, table=True):
     
     # Binance order ID (for LIVE trades executed by the bot)
     binance_order_id: Optional[int] = None  # Binance order ID to match trades
+    
+    # New fields for Incremental Sync (Phase 7)
+    binance_trade_id: Optional[int] = Field(default=None, sa_column_kwargs={"unique": True})  # Unique trade ID from Binance
+    is_manual: bool = Field(default=False)  # True if imported from Binance history, False if created by DCA bot
 
     # Pydantic v2 config to allow population by alias
     model_config = {"populate_by_name": True}
