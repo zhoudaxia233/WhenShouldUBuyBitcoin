@@ -60,7 +60,7 @@ class TradeSyncService:
             logger.error(f"Failed to decrypt credentials: {e}")
             return None
 
-    async def sync_trades(self, symbol: str = "BTCUSDC") -> int:
+    async def sync_trades(self, symbol: str = "BTCUSDC", start_from_scratch: bool = False) -> int:
         """
         Fetch new trades from Binance and store them in the database.
         
@@ -77,7 +77,10 @@ class TradeSyncService:
             
         try:
             # 1. Get last sync timestamp
-            last_ts = self.get_last_synced_timestamp()
+            if start_from_scratch:
+                last_ts = 0
+            else:
+                last_ts = self.get_last_synced_timestamp()
             
             # Add 1ms to avoid fetching the same trade again
             start_time = last_ts + 1 if last_ts > 0 else None

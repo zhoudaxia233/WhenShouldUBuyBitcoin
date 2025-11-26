@@ -146,8 +146,8 @@
         <div class="card shadow-sm mb-5">
             <div class="card-header bg-white d-flex justify-content-between align-items-center">
                 <h5 class="mb-0">Transaction History</h5>
-                <button id="clearSimulatedBtn" class="btn btn-sm btn-outline-danger" style="display: none;">
-                    Clear Simulated (Keep Manual)
+                <button id="clearSimulatedBtn" class="btn btn-sm btn-outline-danger">
+                    Reset & Sync History
                 </button>
             </div>
             <div class="card-body p-0">
@@ -816,11 +816,8 @@
             const clearBtn = document.getElementById('clearSimulatedBtn');
             if (!clearBtn) return;
             
-            if (mode === 'DRY_RUN') {
-                clearBtn.style.display = 'inline-block';
-            } else {
-                clearBtn.style.display = 'none';
-            }
+            // Always show the button now
+            clearBtn.style.display = 'inline-block';
         }
 
         // Clear Simulated Transactions with Two-Click Confirmation
@@ -828,11 +825,8 @@
             const clearBtn = document.getElementById('clearSimulatedBtn');
             if (clearBtn) {
                 clearBtn.addEventListener('click', async () => {
-                    // Check if in dry run mode
-                    if (currentExecutionMode !== 'DRY_RUN') {
-                        notyf.error('Clear simulated history is only available in DRY_RUN mode');
-                        return;
-                    }
+                    // Available in all modes now
+
                     
                     if (!clearConfirmationActive) {
                         // First click: activate confirmation
@@ -881,7 +875,7 @@
             if (clearBtn) {
                 clearConfirmationActive = false;
                 clearBtn.disabled = false;
-                clearBtn.textContent = 'Clear Simulated (Keep Manual)';
+                clearBtn.textContent = 'Reset & Sync History';
                 clearBtn.classList.remove('btn-danger');
                 clearBtn.classList.add('btn-outline-danger');
             }
