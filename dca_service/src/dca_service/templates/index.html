@@ -624,15 +624,27 @@
             if (globalBtn) {
                 globalBtn.addEventListener('click', async () => {
                     globalBtn.disabled = true;
-                    globalBtn.textContent = '🔄 Refreshing...';
+                    globalBtn.textContent = '🔄 Syncing Trades...';
                     
                     try {
+                        // 1. Trigger Sync
+                        const syncResponse = await fetch('/api/transactions/sync', { method: 'POST' });
+                        const syncResult = await syncResponse.json();
+                        
+                        if (syncResult.success && syncResult.new_trades_count > 0) {
+                            notyf.success(`Synced ${syncResult.new_trades_count} new trades`);
+                        }
+                        
+                        // 2. Refresh Dashboard Data
+                        globalBtn.textContent = '🔄 Loading Data...';
                         await Promise.all([
+                            loadTransactions(), // Reload list from DB (fast)
                             loadPreview(),
                             loadWalletSummary()
                         ]);
                         notyf.success('Dashboard refreshed');
                     } catch (error) {
+                        console.error('Refresh failed:', error);
                         notyf.error('Failed to refresh dashboard');
                     } finally {
                         globalBtn.disabled = false;

@@ -48,9 +48,18 @@ class DCAScheduler:
             replace_existing=True
         )
         
+        # Schedule trade sync job to run every 10 minutes
+        self.scheduler.add_job(
+            func=self._sync_trades_job,
+            trigger=CronTrigger(minute='*/10'),  # Every 10 minutes
+            id='trade_sync',
+            name='Binance Trade Sync',
+            replace_existing=True
+        )
+        
         self.scheduler.start()
         self.is_running = True
-        logger.info("DCA Scheduler started - checking every minute")
+        logger.info("DCA Scheduler started - checking every minute, syncing every 10m")
     
     def stop(self):
         """Stop the background scheduler"""
@@ -231,6 +240,8 @@ class DCAScheduler:
             executed_btc = btc_amount
             executed_usd = decision.suggested_amount_usd
             binance_order_id = None  # Will be set for LIVE trades
+            fee_amount = 0.0  # Will be set for LIVE trades
+            fee_asset = "USDC"  # Will be set for LIVE trades
             
             # Execute Real Trade if LIVE mode
             if strategy.execution_mode == "LIVE":
@@ -255,28 +266,34 @@ class DCAScheduler:
                     async def execute_live_trade():
                         client = BinanceClient(api_key, api_secret)
                         try:
-                            # Use BTCUSDC as default symbol
-                            return await client.create_market_buy_order("BTCUSDC", decision.suggested_amount_usd)
+                            # Use new method that waits for trade confirmation
+                            return await client.execute_market_order_with_confirmation(
+                                symbol="BTCUSDC",
+                                quote_quantity=decision.suggested_amount_usd,
+                                max_wait_seconds=10,
+                                poll_interval=1.0
+                            )
                         finally:
                             await client.close()
                     
                     # 4. Run async code synchronously
                     logger.info(f"LIVE MODE: Attempting to buy ${decision.suggested_amount_usd:.2f} of BTC on Binance...")
-                    order_response = asyncio.run(execute_live_trade())
+                    result = asyncio.run(execute_live_trade())
                     
-                    # 5. Parse Response
-                    # orderId = Binance order ID (for tracking)
-                    # cummulativeQuoteQty = Total USD spent
-                    # executedQty = Total BTC bought
-                    binance_order_id = order_response.get("orderId")  # Save order ID
-                    executed_usd = float(order_response.get("cummulativeQuoteQty", 0.0))
-                    executed_btc = float(order_response.get("executedQty", 0.0))
+                    # 5. Parse Response - now we have confirmed trades!
+                    binance_order_id = result["order_id"]
+                    executed_btc = result["total_btc"]
+                    executed_price = result["avg_price"]
+                    executed_usd = result["quote_spent"]
+                    fee_amount = result["total_fee"]
+                    fee_asset = result["fee_asset"]
                     
-                    if executed_btc > 0:
-                        executed_price = executed_usd / executed_btc
-                    
-                    source = "BINANCE"
-                    logger.info(f"LIVE TRADE SUCCESSFUL: Order#{binance_order_id} - Bought {executed_btc:.8f} BTC for ${executed_usd:.2f}")
+                    source = "DCA"  # Changed from "BINANCE" to "DCA" for bot-triggered trades
+                    logger.info(
+                        f"LIVE TRADE SUCCESSFUL: Order#{binance_order_id} - "
+                        f"Bought {executed_btc:.8f} BTC @ ${executed_price:,.2f} avg "
+                        f"(Fee: {fee_amount:.8f} {fee_asset})"
+                    )
                     
                 except Exception as e:
                     logger.error(f"LIVE Trading failed: {e}")
@@ -321,8 +338,8 @@ class DCAScheduler:
                     executed_amount_usd=executed_usd,
                     executed_amount_btc=executed_btc,
                     avg_execution_price_usd=executed_price,
-                    fee_amount=0.0,
-                    fee_asset="USDC",
+                    fee_amount=fee_amount,  # Now using actual fee from confirmed trades
+                    fee_asset=fee_asset,  # Now using actual fee asset
                     source=source,
                     binance_order_id=binance_order_id  # Save Binance order ID
                 )
@@ -374,6 +391,25 @@ class DCAScheduler:
         except Exception as e:
             session.rollback()
             logger.exception(f"Fatal error in DCA execution: {e}")
+
+    def _sync_trades_job(self):
+        """
+        Background job to sync trades from Binance.
+        """
+        try:
+            # We need to run the async sync service synchronously here
+            import asyncio
+            from dca_service.services.sync_service import TradeSyncService
+            
+            async def run_sync():
+                with Session(engine) as session:
+                    service = TradeSyncService(session)
+                    await service.sync_trades()
+            
+            asyncio.run(run_sync())
+            
+        except Exception as e:
+            logger.error(f"Error in background trade sync: {e}")
 
 
 # Global scheduler instance

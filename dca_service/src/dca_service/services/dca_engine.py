@@ -132,6 +132,7 @@ def calculate_dca_decision(session: Session) -> DCADecision:
             select(DCATransaction.fiat_amount).where(
                 DCATransaction.status == "SUCCESS",
                 DCATransaction.timestamp >= month_start,
+                DCATransaction.is_manual == False,  # Exclude manual trades
             )
         ).all()
         month_spent = sum(month_spent_txs) if month_spent_txs else 0.0
@@ -325,12 +326,16 @@ def calculate_dca_decision(session: Session) -> DCADecision:
             select(DCATransaction.fiat_amount).where(
                 DCATransaction.status == "SUCCESS",
                 DCATransaction.timestamp >= month_start,
+                DCATransaction.is_manual == False,  # Exclude manual trades
             )
         ).all()
     else:
         # Count all transactions (no reset)
         total_spent = session.exec(
-            select(DCATransaction.fiat_amount).where(DCATransaction.status == "SUCCESS")
+            select(DCATransaction.fiat_amount).where(
+                DCATransaction.status == "SUCCESS",
+                DCATransaction.is_manual == False,  # Exclude manual trades
+            )
         ).all()
 
     # Calculate total spent (handle empty list)
