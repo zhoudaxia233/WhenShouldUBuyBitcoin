@@ -1,64 +1,178 @@
 from fastapi import APIRouter, Depends
 from sqlmodel import Session, select
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Tuple, Optional
 from datetime import datetime, timezone
 import pandas as pd
+import re
+import logging
 
 from dca_service.database import get_session
 from dca_service.models import DCATransaction, GlobalSettings
 
 router = APIRouter()
+logger = logging.getLogger(__name__)
 
-# Hardcoded Bitcoin Wealth Distribution (Source: BitInfoCharts, Nov 2024)
-# Format: (min_btc, max_btc, percentile_top)
-# percentile_top means "if you have this much, you are in the top X%"
-WEALTH_DISTRIBUTION = [
-    (1000000, float('inf'), 0.00002), # Top 4 addresses
-    (100000, 1000000, 0.0004),        # Top ~90 addresses
-    (10000, 100000, 0.01),            # Top ~2000 addresses
-    (1000, 10000, 0.04),              # Top ~16k addresses
-    (100, 1000, 0.28),                # Top ~150k addresses
-    (10, 100, 2.04),                  # Top ~1.3M addresses
-    (1, 10, 12.65),                   # Top ~8M addresses
-    (0.1, 1, 27.38),                  # Top ~17M addresses
-    (0.01, 0.1, 48.66),               # Top ~30M addresses
-    (0.001, 0.01, 69.94),             # Top ~43M addresses
-    (0, 0.001, 100.0)                 # Everyone else
-]
+
+def _parse_tier_range(tier_str: str) -> Optional[Tuple[float, float]]:
+    """
+    Parse tier string from distribution scraper to extract min_btc and max_btc.
+    
+    Examples:
+        "1000000+" -> (1000000, float('inf'))
+        "100000-1000000" -> (100000, 1000000)
+        "[0.1 - 1 BTC)" -> (0.1, 1)
+        "[0.001-0.01 BTC)" -> (0.001, 0.01)
+    """
+    try:
+        tier_str = tier_str.strip()
+        
+        # Handle format like '[0.1 - 1 BTC)' or '[0.1-1 BTC)'
+        # Remove brackets and 'BTC)' suffix
+        tier_str = tier_str.replace('[', '').replace(']', '').replace('(', '').replace(')', '')
+        if 'BTC' in tier_str:
+            tier_str = tier_str.split('BTC')[0].strip()
+        
+        # Handle "X+" format (e.g., "1000000+")
+        if tier_str.endswith('+'):
+            min_btc = float(tier_str[:-1].replace(',', '').strip())
+            return (min_btc, float('inf'))
+        
+        # Handle "X-Y" format (e.g., "100000-1000000" or "0.1 - 1")
+        if '-' in tier_str:
+            parts = tier_str.split('-')
+            if len(parts) == 2:
+                min_btc = float(parts[0].strip().replace(',', ''))
+                max_btc = float(parts[1].strip().replace(',', ''))
+                return (min_btc, max_btc)
+        
+        # Try to parse as a single number
+        try:
+            value = float(tier_str.replace(',', '').strip())
+            return (value, float('inf'))
+        except ValueError:
+            pass
+        
+        logger.warning(f"Could not parse tier string: '{tier_str}'")
+        return None
+    except Exception as e:
+        logger.warning(f"Error parsing tier string '{tier_str}': {e}")
+        return None
+
+
+def _parse_percentile_value(percentile_str: str) -> Optional[float]:
+    """
+    Parse percentile string to extract numeric value.
+    
+    Examples:
+        "Top 27.38%" -> 27.38
+        "Top 0.00002%" -> 0.00002
+        "Top 100.0%" -> 100.0
+    """
+    try:
+        # Extract number from strings like "Top 27.38%" or "Top 0.00002%"
+        match = re.search(r'([\d.]+)', percentile_str)
+        if match:
+            return float(match.group(1))
+        return None
+    except Exception as e:
+        logger.warning(f"Error parsing percentile string '{percentile_str}': {e}")
+        return None
+
+
+def _build_wealth_distribution_from_live_data() -> List[Tuple[float, float, float]]:
+    """
+    Build wealth distribution list from live scraped data.
+    
+    Behavior:
+    - Fresh cache (< 24h): Returns cached data instantly
+    - Expired cache (> 24h): Fetches new data, falls back to stale cache if fetch fails
+    - No cache: Raises error (won't show bad data)
+    
+    Returns:
+        List of (min_btc, max_btc, percentile_top) tuples, sorted by min_btc descending.
+        
+    Raises:
+        ValueError: If no distribution data is available (no cache and fetch failed)
+    """
+    from dca_service.services.distribution_scraper import fetch_distribution
+    
+    # fetch_distribution handles:
+    # - Fresh cache: returns immediately
+    # - Expired cache + fetch fails: returns stale cache
+    # - No cache + fetch fails: raises ValueError
+    distribution_data = fetch_distribution(use_cache=True)
+    
+    if not distribution_data:
+        raise ValueError("No distribution data available")
+    
+    # Parse distribution data into (min_btc, max_btc, percentile_top) format
+    wealth_dist = []
+    for item in distribution_data:
+        tier_str = item.get("tier", "")
+        percentile_str = item.get("percentile", "")
+        
+        tier_range = _parse_tier_range(tier_str)
+        percentile_value = _parse_percentile_value(percentile_str)
+        
+        if tier_range and percentile_value is not None:
+            min_btc, max_btc = tier_range
+            wealth_dist.append((min_btc, max_btc, percentile_value))
+        else:
+            logger.warning(f"Skipping invalid distribution item: tier={tier_str}, percentile={percentile_str}")
+    
+    if not wealth_dist:
+        raise ValueError("Failed to parse any valid distribution data")
+    
+    # Sort by min_btc descending (largest first)
+    wealth_dist.sort(key=lambda x: x[0], reverse=True)
+    
+    logger.info(f"Built wealth distribution from live data: {len(wealth_dist)} tiers")
+    return wealth_dist
 
 @router.get("/stats/distribution")
 def get_wealth_distribution():
-    """Return the hardcoded wealth distribution table."""
-    return [
-        {"tier": "> 1,000,000 BTC", "percentile": "Top 0.00002%"},
-        {"tier": "100,000 - 1,000,000 BTC", "percentile": "Top 0.0004%"},
-        {"tier": "10,000 - 100,000 BTC", "percentile": "Top 0.01%"},
-        {"tier": "1,000 - 10,000 BTC", "percentile": "Top 0.04%"},
-        {"tier": "100 - 1,000 BTC", "percentile": "Top 0.28%"},
-        {"tier": "10 - 100 BTC", "percentile": "Top 2.04%"},
-        {"tier": "1 - 10 BTC", "percentile": "Top 12.65%"},
-        {"tier": "0.1 - 1 BTC", "percentile": "Top 27.38%"},
-        {"tier": "0.01 - 0.1 BTC", "percentile": "Top 48.66%"},
-        {"tier": "0.001 - 0.01 BTC", "percentile": "Top 69.94%"},
-        {"tier": "< 0.001 BTC", "percentile": "Bottom 30%"}
-    ]
+    """Return the live wealth distribution table from BitInfoCharts."""
+    from dca_service.services.distribution_scraper import fetch_distribution
+    return fetch_distribution()
 
 @router.get("/stats/percentile")
 async def get_user_percentile(session: Session = Depends(get_session)):
-    """Calculate the user's wealth percentile based on total BTC holdings."""
-    # Use the same logic as wallet summary to ensure consistency
+    """
+    Calculate the user's wealth percentile based on total BTC holdings.
+    
+    Uses live distribution data from BitInfoCharts:
+    - Fresh cache (< 24h): Returns cached data instantly
+    - Expired cache (> 24h): Fetches new data, falls back to stale cache if fetch fails
+    - No cache: Raises HTTP 503 error (won't show bad data)
+    """
+    from fastapi import HTTPException
     from dca_service.api.wallet_api import get_wallet_summary
     
+    # Use the same logic as wallet summary to ensure consistency
     wallet_summary = await get_wallet_summary(session)
     total_btc = wallet_summary.total_btc
     
+    try:
+        # Get wealth distribution (raises ValueError if no data available)
+        wealth_distribution = _build_wealth_distribution_from_live_data()
+    except ValueError as e:
+        logger.error(f"Failed to get wealth distribution: {e}")
+        raise HTTPException(
+            status_code=503,
+            detail="Distribution data is currently unavailable. Please try again later."
+        )
+    
     # Determine Percentile
+    # Find the first tier where total_btc falls within the range [min_btc, max_btc)
+    # Note: For the top tier with max_btc=inf, we only check min_btc
     percentile = 100.0
-    for min_b, max_b, p_top in WEALTH_DISTRIBUTION:
+    for min_b, max_b, p_top in wealth_distribution:
         if total_btc >= min_b:
-            percentile = p_top
-            break
-            
+            # Check upper bound (if max_b is not infinity)
+            if max_b == float('inf') or total_btc < max_b:
+                percentile = p_top
+                break
+    
     return {
         "total_btc": total_btc,
         "percentile_top": percentile,
