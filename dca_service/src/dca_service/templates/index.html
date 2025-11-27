@@ -70,11 +70,11 @@
                             </div>
                         </div>
                         
-                        <!-- Average Buy Price -->
+                        <!-- Available USDC (Binance) -->
                         <div class="col-md-3">
-                            <div class="text-muted small">Binance Avg Buy Price</div>
-                            <div class="h3 text-primary" id="avgBuyPrice">--</div>
-                            <div class="small text-muted">Cost Basis</div>
+                            <div class="text-muted small">Available USDC</div>
+                            <div class="h3" id="quoteBalance">--</div>
+                            <div class="small text-muted">Binance Balance</div>
                         </div>
                         
                         <!-- Target Progress -->
@@ -443,7 +443,23 @@
                 let feeDisplay = '—';
                 if (tx.fee_amount !== null && tx.fee_amount !== undefined && tx.fee_amount > 0) {
                     const feeAsset = tx.fee_asset || 'USDC';
-                    feeDisplay = `${tx.fee_amount.toFixed(2)} ${feeAsset}`;
+                    
+                    if (feeAsset === 'BTC') {
+                        // Convert BTC fee to USD using the transaction price
+                        // Use avg_execution_price_usd if available, otherwise fallback to price
+                        const price = tx.avg_execution_price_usd || tx.price || 0;
+                        if (price > 0) {
+                            const feeUSD = tx.fee_amount * price;
+                            feeDisplay = `$${feeUSD.toFixed(2)}`;
+                        } else {
+                            feeDisplay = `${tx.fee_amount.toFixed(8)} BTC`;
+                        }
+                    } else if (['USDC', 'USDT', 'USD', 'BUSD', 'FDUSD'].includes(feeAsset)) {
+                        feeDisplay = `$${tx.fee_amount.toFixed(2)}`;
+                    } else {
+                        // Other assets (e.g. BNB), display as is
+                        feeDisplay = `${tx.fee_amount.toFixed(4)} ${feeAsset}`;
+                    }
                 }
                 
                 row.innerHTML = `
@@ -590,6 +606,24 @@
                     trigger: 'hover'
                 });
             }
+                // Update Test Strategy Button State
+                const btn = document.getElementById('executeSimulatedBtn');
+                const warningBox = document.getElementById('metricsWarning');
+
+                if (decision.reason.includes("Metrics unavailable") || decision.reason.includes("stale")) {
+                    warningBox.classList.remove('d-none');
+                    btn.disabled = true;
+                    btn.textContent = 'Metrics Error';
+                } else {
+                    warningBox.classList.add('d-none');
+                    if (decision.can_execute) {
+                        btn.disabled = false;
+                        btn.textContent = `Test Strategy ($${decision.suggested_amount_usd.toFixed(2)})`;
+                    } else {
+                        btn.disabled = true;
+                        btn.textContent = 'Conditions Not Met';
+                    }
+                }
         }
 
         async function loadPreview() {
@@ -612,24 +646,6 @@
                 saveToCache('dca_preview', decision);
                 updatePreviewUI(decision);
                 
-                const btn = document.getElementById('executeSimulatedBtn');
-                const warningBox = document.getElementById('metricsWarning');
-
-                if (decision.reason.includes("Metrics unavailable") || decision.reason.includes("stale")) {
-                    warningBox.classList.remove('d-none');
-                    btn.disabled = true;
-                    btn.textContent = 'Metrics Error';
-                } else {
-                    warningBox.classList.add('d-none');
-                    if (decision.can_execute) {
-                        btn.disabled = false;
-                        btn.textContent = `Test Strategy ($${decision.suggested_amount_usd.toFixed(2)})`;
-                    } else {
-                        btn.disabled = true;
-                        btn.textContent = 'Conditions Not Met';
-                    }
-                }
-
             } catch (error) {
                 console.error('Error loading preview:', error);
                 const reasonElem = document.getElementById('previewReason');
@@ -726,13 +742,6 @@
             document.getElementById('hotBalance').textContent = `Hot: ${hotText}`;
             document.getElementById('coldBalance').textContent = `Cold: ${coldText}`;
             
-            // Average Buy Price (the important one!)
-            if (data.hot_wallet_avg_price > 0) {
-                document.getElementById('avgBuyPrice').textContent = '$' + data.hot_wallet_avg_price.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
-            } else {
-                document.getElementById('avgBuyPrice').textContent = '--';
-            }
-            
             // Pre-fill modal with current cold wallet balance
             document.getElementById('coldWalletInput').value = data.cold_wallet_balance;
             
@@ -756,28 +765,37 @@
 
         async function loadWalletSummary() {
             try {
-                // 1. Wallet Summary
+                // 1. Load all cached data FIRST for instant display
                 const cachedWallet = loadFromCache('wallet_summary');
                 const cachedStrategy = loadFromCache('strategy_config');
+                const cachedBinance = loadFromCache('binance_holdings');
+                
                 if (cachedWallet) updateWalletUI(cachedWallet, cachedStrategy);
                 
+                // Show cached USDC immediately
+                if (cachedBinance && cachedBinance.quote_balance !== null && cachedBinance.quote_balance !== undefined) {
+                    document.getElementById('quoteBalance').textContent = '$' + cachedBinance.quote_balance.toFixed(2);
+                }
+                
+                // 2. Fetch fresh wallet data
                 const response = await fetch('/api/wallet/summary');
                 const data = await response.json();
                 saveToCache('wallet_summary', data);
                 
-                // 2. Strategy (for progress bar)
+                // 3. Fetch strategy (for progress bar)
                 const stratResponse = await fetch('/api/strategy');
                 const strategy = await stratResponse.json();
                 
                 updateWalletUI(data, strategy);
                 
-                // 3. Quote Balance (Binance)
+                // 4. Fetch fresh Binance holdings
                 try {
                     const binanceResponse = await fetch('/api/binance/holdings');
                     const binanceData = await binanceResponse.json();
+                    saveToCache('binance_holdings', binanceData);
+                    
                     if (binanceData.connected && binanceData.quote_balance !== null) {
-                        document.getElementById('quoteBalance').textContent = binanceData.quote_balance.toFixed(2);
-                        document.getElementById('quoteAsset').textContent = binanceData.quote_asset;
+                        document.getElementById('quoteBalance').textContent = '$' + binanceData.quote_balance.toFixed(2);
                     }
                 } catch (err) {
                     console.log('Could not fetch quote balance:', err);

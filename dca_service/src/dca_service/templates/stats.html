@@ -46,23 +46,50 @@
             </div>
         </div>
 
-        <!-- Fee Summary Row -->
+        <!-- Summary Stats Row -->
         <div class="row mb-4">
-            <div class="col-md-6">
+            <div class="col">
                 <div class="card shadow-sm">
                     <div class="card-body text-center">
-                        <div class="text-muted small">Total Trading Fees Paid</div>
+                        <div class="text-muted small">Portfolio Value</div>
+                        <div class="h3 text-success" id="portfolioValueUSD">--</div>
+                        <div class="small text-muted"><span id="totalBtcBalance">--</span> BTC</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col">
+                <div class="card shadow-sm">
+                    <div class="card-body text-center">
+                        <div class="text-muted small">Avg Buy Price</div>
+                        <div class="h3 text-primary" id="avgBuyPrice">--</div>
+                        <div class="small text-muted">Cost Basis</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col">
+                <div class="card shadow-sm">
+                    <div class="card-body text-center">
+                        <div class="text-muted small">Profit & Loss</div>
+                        <div class="h3" id="pnlAmount">--</div>
+                        <div class="small text-muted"><span id="pnlPercent">--</span></div>
+                    </div>
+                </div>
+            </div>
+            <div class="col">
+                <div class="card shadow-sm">
+                    <div class="card-body text-center">
+                        <div class="text-muted small">Total Trading Fees</div>
                         <div class="h3 text-danger" id="totalFeesUSD">--</div>
                         <div class="small text-muted"><span id="totalFeesBTC">--</span> BTC</div>
                     </div>
                 </div>
             </div>
-            <div class="col-md-6">
+            <div class="col">
                 <div class="card shadow-sm">
                     <div class="card-body text-center">
-                        <div class="text-muted small">Transactions Tracked</div>
+                        <div class="text-muted small">Transactions</div>
                         <div class="h3 text-primary" id="transactionCount">--</div>
-                        <div class="small text-muted">Successful trades</div>
+                        <div class="small text-muted">Tracked</div>
                     </div>
                 </div>
             </div>
@@ -329,10 +356,72 @@
         }
 
         // Initialize
+        // Load Wallet Balance & Avg Buy Price
+        function updateWalletBalanceUI(walletData, binanceData) {
+            // Portfolio value (BTC * current price)
+            if (walletData && walletData.total_btc && walletData.current_price) {
+                const portfolioValue = walletData.total_btc * walletData.current_price;
+                document.getElementById('portfolioValueUSD').textContent = `$${portfolioValue.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+                document.getElementById('totalBtcBalance').textContent = walletData.total_btc.toFixed(8);
+                
+                // Calculate PnL (Profit & Loss)
+                // Use hot wallet avg price as cost basis for all BTC (simplification)
+                if (walletData.hot_wallet_avg_price && walletData.hot_wallet_avg_price > 0) {
+                    const costBasis = walletData.total_btc * walletData.hot_wallet_avg_price;
+                    const pnl = portfolioValue - costBasis;
+                    const pnlPercent = ((pnl / costBasis) * 100);
+                    
+                    // Set color based on positive/negative
+                    const pnlElement = document.getElementById('pnlAmount');
+                    if (pnl >= 0) {
+                        pnlElement.className = 'h3 text-success';
+                        pnlElement.textContent = `+$${pnl.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+                    } else {
+                        pnlElement.className = 'h3 text-danger';
+                        pnlElement.textContent = `-$${Math.abs(pnl).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+                    }
+                    
+                    document.getElementById('pnlPercent').textContent = `${pnlPercent >= 0 ? '+' : ''}${pnlPercent.toFixed(2)}%`;
+                }
+            }
+            
+            // Average Buy Price (Cost Basis)
+            if (walletData && walletData.hot_wallet_avg_price > 0) {
+                document.getElementById('avgBuyPrice').textContent = `$${walletData.hot_wallet_avg_price.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+            }
+        }
+
+        async function loadWalletBalance(forceRefresh = false) {
+            try {
+                const cachedWallet = loadFromCache('stats_wallet');
+                
+                // Use cache if valid (5 mins TTL like fees)
+                if (!forceRefresh && isCacheValid(cachedWallet, 5)) {
+                    updateWalletBalanceUI(cachedWallet.data);
+                    return;
+                }
+
+                if (cachedWallet) {
+                    updateWalletBalanceUI(cachedWallet.data);
+                }
+
+                // Fetch wallet summary
+                const walletResponse = await fetch('/api/wallet/summary');
+                const walletData = await walletResponse.json();
+                saveToCache('stats_wallet', walletData);
+
+                updateWalletBalanceUI(walletData);
+            } catch (error) {
+                console.error('Error loading wallet balance:', error);
+            }
+        }
+
+        // Initialize
         document.addEventListener('DOMContentLoaded', async () => {
             loadPercentile();
             loadDistribution();
             loadFees();
+            loadWalletBalance();
             loadChart();
             
             // Refresh Button Handler
@@ -346,6 +435,7 @@
                     loadPercentile(true),
                     loadDistribution(true),
                     loadFees(true),
+                    loadWalletBalance(true),
                     loadChart(true)
                 ]);
                 
