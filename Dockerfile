@@ -9,23 +9,23 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Install poetry
-RUN pip install --no-cache-dir poetry==1.7.1
+RUN pip install --no-cache-dir poetry==2.1.2
 
 # Set working directory
 WORKDIR /app
 
-# Copy poetry files
-COPY pyproject.toml poetry.lock* ./
+# Copy poetry files (README.md is needed for poetry)
+COPY pyproject.toml poetry.lock* README.md ./
 
 # Copy source code
 COPY src ./src
 COPY dca_service/src ./dca_service/src
 
-# Configure poetry to not create virtual env (we're in a container)
-RUN poetry config virtualenvs.create false
+# Configure poetry to create venv in project directory
+RUN poetry config virtualenvs.in-project true
 
 # Install dependencies
-RUN poetry install --no-dev --no-interaction --no-ansi
+RUN poetry install --only main --no-interaction --no-ansi
 
 # Stage 2: Runtime
 FROM python:3.12-slim
@@ -41,9 +41,11 @@ RUN useradd -m -u 1000 dcauser
 # Set working directory
 WORKDIR /app
 
-# Copy installed packages from builder
-COPY --from=builder /usr/local/lib/python3.12/site-packages /usr/local/lib/python3.12/site-packages
-COPY --from=builder /usr/local/bin /usr/local/bin
+# Copy venv from builder stage
+COPY --from=builder /app/.venv /app/.venv
+
+# Add venv bin to PATH
+ENV PATH="/app/.venv/bin:$PATH"
 
 # Copy application code
 COPY --chown=dcauser:dcauser . .

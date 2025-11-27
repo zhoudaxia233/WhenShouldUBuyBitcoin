@@ -28,18 +28,10 @@ dependencies = [
 ]
 
 [tool.poetry]
-# IMPORTANT: Duplicate core metadata fields (name, version) 
-# to ensure compatibility with older Poetry commands like 'poetry config' 
-# during the Docker build process. This is a common workaround.
-name = "whenshouldubuybitcoin"
-version = "0.1.1"
-description = ""
-authors = ["Your Name <you@example.com>"]
 packages = [
     {include = "whenshouldubuybitcoin", from = "src"},
     {include = "dca_service", from = "dca_service/src"}
 ]
-
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
