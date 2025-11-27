@@ -14,7 +14,7 @@ This guide explains how to deploy the Bitcoin DCA Service on a VPS (Virtual Priv
 Login to your VPS and clone the code:
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/YOUR_REPO.git dca-service
+git clone https://github.com/zhoudaxia233/WhenShouldUBuyBitcoin.git dca-service
 cd dca-service
 ```
 
