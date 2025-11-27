@@ -28,30 +28,11 @@ dependencies = [
 ]
 
 [tool.poetry]
-# IMPORTANT: Duplicate core metadata fields (name, version, dependencies) 
+# IMPORTANT: Duplicate core metadata fields (name, version) 
 # to ensure compatibility with older Poetry commands like 'poetry config' 
 # during the Docker build process. This is a common workaround.
 name = "whenshouldubuybitcoin"
 version = "0.1.0"
-dependencies = [
-    "numpy (>=2.3.4,<3.0.0)",
-    "pandas (>=2.3.3,<3.0.0)",
-    "yfinance (>=0.2.66,<0.3.0)",
-    "plotly (>=6.4.0,<7.0.0)",
-    "requests (>=2.31.0,<3.0.0)",
-    "python-dotenv (>=1.0.0,<2.0.0)",
-    "cryptography (>=46.0.3,<47.0.0)",
-    "httpx (>=0.28.1,<0.29.0)",
-    "apscheduler (>=3.11.1,<4.0.0)",
-    "sse-starlette (>=3.0.3,<4.0.0)",
-    "fastapi (>=0.121.3,<0.122.0)",
-    "sqlmodel (>=0.0.27,<0.0.28)",
-    "uvicorn[standard] (>=0.38.0,<0.39.0)",
-    "jinja2 (>=3.1.6,<4.0.0)",
-    "pydantic-settings (>=2.12.0,<3.0.0)",
-    "loguru (>=0.7.3,<0.8.0)",
-    "lxml (>=6.0.2,<7.0.0)"
-]
 packages = [
     {include = "whenshouldubuybitcoin", from = "src"},
     {include = "dca_service", from = "dca_service/src"}
