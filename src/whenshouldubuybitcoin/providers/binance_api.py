@@ -3,6 +3,7 @@ Provider for Binance market data.
 """
 
 import requests
+import time
 from typing import Optional
 
 
@@ -32,15 +33,19 @@ def fetch_btc_funding_rate() -> Optional[float]:
 
 
 def fetch_open_interest_history(
-    symbol: str = "BTCUSDC", period: str = "1d", limit: int = 500
+    symbol: str = "BTCUSDC", period: str = "1d", limit: int = 500, max_retries: int = 4
 ) -> Optional[list]:
     """
     Fetch historical Open Interest data from Binance Futures.
+    
+    Implements retry logic with exponential backoff to handle transient failures,
+    rate limiting, and network issues common in CI environments.
 
     Args:
         symbol: Trading pair (default: BTCUSDC)
         period: Timeframe (default: 1d)
         limit: Number of data points (default: 500, max 500)
+        max_retries: Maximum number of retry attempts (default: 4)
 
     Returns:
         List of dictionaries containing OI data, or None if failed.
@@ -49,13 +54,36 @@ def fetch_open_interest_history(
     url = "https://fapi.binance.com/futures/data/openInterestHist"
     params = {"symbol": symbol, "period": period, "limit": limit}
 
-    try:
-        response = requests.get(url, params=params, timeout=10)
-        response.raise_for_status()
-        data = response.json()
-        return data
+    for attempt in range(max_retries):
+        try:
+            # Increased timeout for CI environments
+            response = requests.get(url, params=params, timeout=30)
+            response.raise_for_status()
+            data = response.json()
+            
+            if attempt > 0:
+                print(f"✓ Successfully fetched OI data on attempt {attempt + 1}")
+            
+            return data
 
-    except Exception as e:
-        print(f"⚠ Warning: Failed to fetch Binance Open Interest history: {e}")
+        except requests.exceptions.Timeout as e:
+            wait_time = 2 ** attempt  # Exponential backoff: 1s, 2s, 4s, 8s
+            if attempt < max_retries - 1:
+                print(f"⚠ Timeout fetching OI data (attempt {attempt + 1}/{max_retries}). Retrying in {wait_time}s...")
+                time.sleep(wait_time)
+            else:
+                print(f"✗ Failed to fetch Binance OI data after {max_retries} attempts (timeout): {e}")
+        
+        except requests.exceptions.RequestException as e:
+            wait_time = 2 ** attempt
+            if attempt < max_retries - 1:
+                print(f"⚠ Error fetching OI data (attempt {attempt + 1}/{max_retries}): {e}. Retrying in {wait_time}s...")
+                time.sleep(wait_time)
+            else:
+                print(f"✗ Failed to fetch Binance OI data after {max_retries} attempts: {e}")
+        
+        except Exception as e:
+            print(f"✗ Unexpected error fetching Binance Open Interest history: {e}")
+            break
 
     return None

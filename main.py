@@ -13,6 +13,8 @@ Usage:
 import sys
 from pathlib import Path
 import pandas as pd
+import json
+from datetime import datetime
 
 # Add src to path
 sys.path.insert(0, str(Path(__file__).parent / "src"))
@@ -43,6 +45,50 @@ from whenshouldubuybitcoin.visualization import (
     create_futures_oi_timeseries_chart,
 )
 from whenshouldubuybitcoin.realtime_check import check_realtime_status
+
+
+def save_oi_cache(oi_data: list, cache_path: Path) -> None:
+    """Save OI data to cache file with timestamp."""
+    try:
+        cache_obj = {
+            "timestamp": datetime.now().isoformat(),
+            "data": oi_data
+        }
+        with open(cache_path, 'w') as f:
+            json.dump(cache_obj, f, indent=2)
+        print(f"✓ Saved OI data to cache: {cache_path}")
+    except Exception as e:
+        print(f"⚠ Warning: Failed to save OI cache: {e}")
+
+
+def load_oi_cache(cache_path: Path) -> tuple[list | None, str | None]:
+    """Load OI data from cache file.
+    
+    Returns:
+        Tuple of (data, timestamp_str) or (None, None) if cache doesn't exist or is invalid
+    """
+    try:
+        if not cache_path.exists():
+            return None, None
+        
+        with open(cache_path, 'r') as f:
+            cache_obj = json.load(f)
+        
+        data = cache_obj.get('data')
+        timestamp = cache_obj.get('timestamp')
+        
+        if data and timestamp:
+            # Parse timestamp to check age
+            cache_time = datetime.fromisoformat(timestamp)
+            age_hours = (datetime.now() - cache_time).total_seconds() / 3600
+            print(f"✓ Loaded OI data from cache (age: {age_hours:.1f} hours)")
+            return data, timestamp
+        
+        return None, None
+    
+    except Exception as e:
+        print(f"⚠ Warning: Failed to load OI cache: {e}")
+        return None, None
 
 
 def main():
@@ -313,14 +359,31 @@ def main():
         print("STEP 6: Futures Data Analysis")
         print("=" * 80)
         
+        oi_cache_path = Path("docs/data/oi_cache.json")
+        oi_cache_path.parent.mkdir(parents=True, exist_ok=True)
+        
         try:
             print("Fetching Binance Open Interest History...")
-            oi_data = fetch_open_interest_history(limit=500) # Max limit per request is 500
+            oi_data = fetch_open_interest_history(limit=500)
             
             output_dir = Path("docs/charts")
+            data_source = "fresh"
+            
+            # If fetch failed, try to load from cache
+            if not oi_data:
+                print("⚠ Failed to fetch fresh OI data. Attempting to load from cache...")
+                oi_data, cache_timestamp = load_oi_cache(oi_cache_path)
+                if oi_data:
+                    data_source = "cached"
+                    print(f"✓ Using cached OI data from {cache_timestamp}")
+                else:
+                    print("✗ No cached OI data available. Skipping Futures OI charts.")
+            else:
+                # Save successful fetch to cache
+                save_oi_cache(oi_data, oi_cache_path)
             
             if oi_data:
-                print(f"✓ Fetched {len(oi_data)} data points for Open Interest")
+                print(f"✓ Using {data_source} OI data ({len(oi_data)} data points)")
                 
                 # Convert to DataFrame
                 oi_df = pd.DataFrame(oi_data)
@@ -331,8 +394,6 @@ def main():
                     oi_df.set_index('timestamp', inplace=True)
                     
                     # Prepare BTC data for the chart
-                    # Use history_df (calculated from df) or just df
-                    # Since we removed calculate_historical_scores, we'll use df directly
                     btc_df = df.copy()
                     if 'date' in btc_df.columns:
                         btc_df['date'] = pd.to_datetime(btc_df['date'])
@@ -351,17 +412,16 @@ def main():
                         btc_df=btc_df,
                         oi_df=oi_df,
                         output_path=str(output_dir / "oi_quadrant.html"),
-                        lookback_days=5 # 5-day lookback as default
+                        lookback_days=5
                     )
+                    
+                    print(f"✓ Generated Futures OI charts using {data_source} data")
                 else:
-                     print("⚠ OI Data is empty or missing columns.")
-                
-            else:
-                print("⚠ Failed to fetch Open Interest data.")
-
-            print("\n================================================================================")
+                    print("⚠ OI Data is empty or missing columns.")
+            
+            print("\n" + "=" * 80)
             print("✓ All steps complete!")
-            print("================================================================================")
+            print("=" * 80)
             
         except Exception as e:
             print(f"⚠ Warning: Failed to generate futures analysis: {e}")
