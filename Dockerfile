@@ -1,6 +1,6 @@
 # Multi-stage build for Bitcoin DCA Service
 # Stage 1: Builder
-FROM python:3.12-slim as builder
+FROM python:3.12-slim AS builder
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
@@ -16,6 +16,10 @@ WORKDIR /app
 
 # Copy poetry files
 COPY pyproject.toml poetry.lock* ./
+
+# Copy source code
+COPY src ./src
+COPY dca_service/src ./dca_service/src
 
 # Configure poetry to not create virtual env (we're in a container)
 RUN poetry config virtualenvs.create false
