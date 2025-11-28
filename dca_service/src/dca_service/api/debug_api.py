@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-import requests
+import cloudscraper
 import logging
 
 router = APIRouter(prefix="/debug", tags=["debug"])
@@ -13,19 +13,14 @@ def debug_scraper():
     """
     url = "https://bitinfocharts.com/top-100-richest-bitcoin-addresses.html"
     
-    headers = {
-        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
-        "Accept-Language": "en-US,en;q=0.9",
-    }
-    
     try:
-        response = requests.get(url, headers=headers, timeout=15)
+        scraper = cloudscraper.create_scraper()
+        response = scraper.get(url, timeout=15)
         
         return {
             "status_code": response.status_code,
             "url": url,
-            "headers_sent": headers,
+            "headers_sent": dict(response.request.headers),
             "headers_received": dict(response.headers),
             "content_length": len(response.text),
             "content_preview": response.text[:1000],  # First 1000 chars
