@@ -7,6 +7,8 @@ import pandas as pd
 from typing import List, Dict, Optional
 from datetime import datetime, timedelta
 import logging
+import requests
+import io
 
 logger = logging.getLogger(__name__)
 
@@ -76,7 +78,18 @@ def fetch_distribution(use_cache: bool = True) -> List[Dict[str, str]]:
 
         # Fetch tables from the page
         url = "https://bitinfocharts.com/top-100-richest-bitcoin-addresses.html"
-        tables = pd.read_html(url)
+        
+        # Use requests with headers to mimic a browser
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
+            "Accept-Language": "en-US,en;q=0.9",
+        }
+        
+        response = requests.get(url, headers=headers, timeout=15)
+        response.raise_for_status()
+        
+        tables = pd.read_html(io.StringIO(response.text))
 
         if not tables:
             raise ValueError("No tables found on page")

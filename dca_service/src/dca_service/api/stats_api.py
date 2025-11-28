@@ -156,32 +156,37 @@ async def get_user_percentile(session: Session = Depends(get_session)):
     try:
         # Get wealth distribution (raises ValueError if no data available)
         wealth_distribution = _build_wealth_distribution_from_live_data()
+        
+        # Determine Percentile
+        # Find the first tier where total_btc falls within the range [min_btc, max_btc)
+        # Note: For the top tier with max_btc=inf, we only check min_btc
+        percentile_value = 100.0
+        percentile_str = "Top 100%"
+        for min_b, max_b, p_top, p_str in wealth_distribution:
+            if total_btc >= min_b:
+                # Check upper bound (if max_b is not infinity)
+                if max_b == float('inf') or total_btc < max_b:
+                    percentile_value = p_top
+                    percentile_str = p_str
+                    break
+                    
+        return {
+            "total_btc": total_btc,
+            "percentile_top": percentile_value,
+            "percentile_display": percentile_str,
+            "message": f"You are in the {percentile_str} of Bitcoin Holders"
+        }
+        
     except ValueError as e:
         logger.error(f"Failed to get wealth distribution: {e}")
-        raise HTTPException(
-            status_code=503,
-            detail="Distribution data is currently unavailable. Please try again later."
-        )
-    
-    # Determine Percentile
-    # Find the first tier where total_btc falls within the range [min_btc, max_btc)
-    # Note: For the top tier with max_btc=inf, we only check min_btc
-    percentile_value = 100.0
-    percentile_str = "Top 100%"
-    for min_b, max_b, p_top, p_str in wealth_distribution:
-        if total_btc >= min_b:
-            # Check upper bound (if max_b is not infinity)
-            if max_b == float('inf') or total_btc < max_b:
-                percentile_value = p_top
-                percentile_str = p_str
-                break
-    
-    return {
-        "total_btc": total_btc,
-        "percentile_top": percentile_value,
-        "percentile_display": percentile_str,
-        "message": f"You are in the {percentile_str} of Bitcoin Holders"
-    }
+        # Return partial data instead of failing completely
+        # This ensures the user at least sees their BTC total
+        return {
+            "total_btc": total_btc,
+            "percentile_top": None,
+            "percentile_display": "Data Unavailable",
+            "message": "Wealth distribution data is currently unavailable"
+        }
 
 @router.get("/stats/fees")
 def get_total_fees(session: Session = Depends(get_session)):
