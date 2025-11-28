@@ -25,7 +25,6 @@ dependencies = [
     "pydantic-settings (>=2.12.0,<3.0.0)",
     "loguru (>=0.7.3,<0.8.0)",
     "lxml (>=6.0.2,<7.0.0)",
-    "curl-cffi (>=0.13.0,<0.14.0)",
 ]
 
 [tool.poetry]
@@ -33,6 +32,7 @@ packages = [
     {include = "whenshouldubuybitcoin", from = "src"},
     {include = "dca_service", from = "dca_service/src"}
 ]
+include = ["dca_service/src/dca_service/data/*.json"]
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]

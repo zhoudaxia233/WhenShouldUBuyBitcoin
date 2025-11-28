@@ -7,8 +7,12 @@ import pandas as pd
 from typing import List, Dict, Optional
 from datetime import datetime, timedelta
 import logging
-from curl_cffi import requests
+import requests
 import io
+import json
+import pkgutil
+from pathlib import Path
+
 
 logger = logging.getLogger(__name__)
 
@@ -79,16 +83,36 @@ def fetch_distribution(use_cache: bool = True) -> List[Dict[str, str]]:
         # Fetch tables from the page
         url = "https://bitinfocharts.com/top-100-richest-bitcoin-addresses.html"
         
-        # Use curl_cffi to impersonate a real browser (TLS fingerprinting)
-        # This is more effective than cloudscraper for modern Cloudflare protection
-        response = requests.get(url, impersonate="chrome", timeout=15)
-        
-        if response.status_code != 200:
-            logger.error(f"Scraper failed with status {response.status_code}")
-            logger.error(f"Response preview: {response.text[:500]}")
+        # Try to fetch live data with a short timeout
+        try:
+            headers = {
+                "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+                "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
+            }
+            response = requests.get(url, headers=headers, timeout=5)
             response.raise_for_status()
-        
-        tables = pd.read_html(io.StringIO(response.text))
+            tables = pd.read_html(io.StringIO(response.text))
+        except Exception as e:
+            logger.warning(f"Failed to scrape live distribution data: {e}. Using static fallback.")
+            
+            # Load static data from JSON file
+            try:
+                # Try pkgutil first (for installed package)
+                data = pkgutil.get_data("dca_service", "data/wealth_distribution.json")
+                if data:
+                    return json.loads(data.decode("utf-8"))
+                
+                # Fallback to relative path (for local dev/test)
+                json_path = Path(__file__).parent.parent / "data" / "wealth_distribution.json"
+                if json_path.exists():
+                    with open(json_path, "r") as f:
+                        return json.load(f)
+                
+                logger.error(f"Failed to load static distribution data: File not found via pkgutil or at {json_path}")
+                raise ValueError("Static distribution data missing")
+            except Exception as load_err:
+                logger.error(f"Error loading static data: {load_err}")
+                raise ValueError("Failed to load fallback distribution data")
 
         if not tables:
             raise ValueError("No tables found on page")

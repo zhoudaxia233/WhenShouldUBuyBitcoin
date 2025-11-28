@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from curl_cffi import requests
+import requests
 import logging
 
 router = APIRouter(prefix="/debug", tags=["debug"])
@@ -14,8 +14,10 @@ def debug_scraper():
     url = "https://bitinfocharts.com/top-100-richest-bitcoin-addresses.html"
     
     try:
-        # Use curl_cffi to impersonate a real browser
-        response = requests.get(url, impersonate="chrome", timeout=15)
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        }
+        response = requests.get(url, headers=headers, timeout=5)
         
         return {
             "status_code": response.status_code,
