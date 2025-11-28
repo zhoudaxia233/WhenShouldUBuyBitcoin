@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-import cloudscraper
+from curl_cffi import requests
 import logging
 
 router = APIRouter(prefix="/debug", tags=["debug"])
@@ -14,8 +14,8 @@ def debug_scraper():
     url = "https://bitinfocharts.com/top-100-richest-bitcoin-addresses.html"
     
     try:
-        scraper = cloudscraper.create_scraper()
-        response = scraper.get(url, timeout=15)
+        # Use curl_cffi to impersonate a real browser
+        response = requests.get(url, impersonate="chrome", timeout=15)
         
         return {
             "status_code": response.status_code,
