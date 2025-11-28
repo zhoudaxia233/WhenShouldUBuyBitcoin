@@ -7,7 +7,7 @@ import pandas as pd
 from typing import List, Dict, Optional
 from datetime import datetime, timedelta
 import logging
-import cloudscraper
+from curl_cffi import requests
 import io
 
 logger = logging.getLogger(__name__)
@@ -79,10 +79,14 @@ def fetch_distribution(use_cache: bool = True) -> List[Dict[str, str]]:
         # Fetch tables from the page
         url = "https://bitinfocharts.com/top-100-richest-bitcoin-addresses.html"
         
-        # Use cloudscraper to bypass Cloudflare protection
-        scraper = cloudscraper.create_scraper()
-        response = scraper.get(url, timeout=15)
-        response.raise_for_status()
+        # Use curl_cffi to impersonate a real browser (TLS fingerprinting)
+        # This is more effective than cloudscraper for modern Cloudflare protection
+        response = requests.get(url, impersonate="chrome", timeout=15)
+        
+        if response.status_code != 200:
+            logger.error(f"Scraper failed with status {response.status_code}")
+            logger.error(f"Response preview: {response.text[:500]}")
+            response.raise_for_status()
         
         tables = pd.read_html(io.StringIO(response.text))
 
