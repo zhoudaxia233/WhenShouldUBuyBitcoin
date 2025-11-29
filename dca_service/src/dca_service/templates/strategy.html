@@ -97,9 +97,23 @@
 </head>
 <body>
     <div class="container">
-        <header class="d-flex justify-content-between align-items-center mb-4">
-            <h1>{{ project_name }}</h1>
-            <a href="/" class="btn btn-outline-secondary">Back to Dashboard</a>
+        <header class="mb-4">
+            <div class="d-flex justify-content-between align-items-center">
+                <h1>{{ project_name }} - Strategy Configuration</h1>
+                <div class="d-flex align-items-center gap-3">
+                    <!-- Navigation button - always in same position -->
+                    <a href="/" class="btn btn-outline-secondary">Dashboard</a>
+                    <!-- User section - separate from navigation -->
+                    {% if user %}
+                    <div class="d-flex align-items-center gap-2 border-start ps-3">
+                        <span class="text-muted small">{{ user.email }}</span>
+                        <form method="POST" action="/api/auth/logout" class="d-inline">
+                            <button type="submit" class="btn btn-sm btn-outline-danger">Logout</button>
+                        </form>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
         </header>
 
         <div class="card shadow-sm">

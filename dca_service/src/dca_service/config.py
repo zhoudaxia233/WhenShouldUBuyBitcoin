@@ -25,6 +25,15 @@ class Settings(BaseSettings):
     # Logging Settings
     LOG_LEVEL: str = "INFO"
     LOG_FILE_PATH: str = "logs/dca_service.log"
+    
+    # Session Settings (for authentication)
+    # WARNING: In production, MUST set a strong random SESSION_SECRET
+    # Generate with: python -c "import secrets; print(secrets.token_urlsafe(32))"
+    SESSION_SECRET: str = "dev-secret-change-in-production-12345678901234567890"  # Insecure default for dev/test
+    SESSION_COOKIE_NAME: str = "dca_session"
+    SESSION_COOKIE_HTTPS_ONLY: bool = False  # Must be True in production with HTTPS. False for local HTTP development.
+    SESSION_COOKIE_SAMESITE: str = "lax"  # "lax" or "strict" for CSRF protection
+    SESSION_MAX_AGE: int = 86400  # 24 hours in seconds
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 

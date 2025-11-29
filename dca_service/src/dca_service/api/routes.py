@@ -4,11 +4,12 @@ from sqlmodel import Session, select, col, delete
 from datetime import datetime, timezone
 
 from dca_service.database import get_session
-from dca_service.models import DCATransaction, BinanceCredentials
+from dca_service.models import DCATransaction, BinanceCredentials, User
 from dca_service.api.schemas import TransactionRead, SimulationRequest, UnifiedTransaction
 from dca_service.services.binance_client import BinanceClient
 from dca_service.services.security import decrypt_text
 from dca_service.core.logging import logger
+from dca_service.auth.dependencies import get_current_user
 
 router = APIRouter()
 
@@ -41,7 +42,8 @@ def _get_binance_client(session: Session) -> Optional[BinanceClient]:
 async def read_transactions(
     offset: int = 0,
     limit: int = Query(default=1000, le=5000),
-    session: Session = Depends(get_session)
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user)  # 认证保护
 ):
     """
     Fetch list of all transactions from LOCAL DATABASE only.
@@ -90,7 +92,10 @@ async def read_transactions(
 
 
 @router.post("/transactions/sync")
-async def sync_transactions(session: Session = Depends(get_session)):
+async def sync_transactions(
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user)  # 认证保护
+):
     """
     Trigger manual synchronization of trades from Binance.
     Fetches only new trades since the last sync.
@@ -103,7 +108,11 @@ async def sync_transactions(session: Session = Depends(get_session)):
     return {"success": True, "new_trades_count": count}
 
 @router.get("/transactions/{transaction_id}", response_model=TransactionRead)
-def read_transaction(transaction_id: int, session: Session = Depends(get_session)):
+def read_transaction(
+    transaction_id: int,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user)  # 认证保护
+):
     transaction = session.get(DCATransaction, transaction_id)
     if not transaction:
         raise HTTPException(status_code=404, detail="Transaction not found")
@@ -112,7 +121,10 @@ def read_transaction(transaction_id: int, session: Session = Depends(get_session
 
 
 @router.post("/transactions/clear-simulated")
-async def clear_simulated_transactions(session: Session = Depends(get_session)):
+async def clear_simulated_transactions(
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user)  # 认证保护
+):
     """
     Reset transaction history and re-sync from Binance.
     Deletes ALL local transactions and fetches fresh data from Binance.
@@ -142,7 +154,7 @@ async def clear_simulated_transactions(session: Session = Depends(get_session)):
 
 
 @router.post("/email/test")
-def test_email():
+def test_email(current_user: User = Depends(get_current_user)):  # Authentication required
     """
     Test email configuration by sending a test message.
     Checks database settings first, then environment variables.
