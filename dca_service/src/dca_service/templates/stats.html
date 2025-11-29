@@ -23,15 +23,29 @@
 </head>
 <body>
     <div class="container">
-        <header class="d-flex justify-content-between align-items-center mb-4">
-            <h1>Stats & Analytics</h1>
-            <div>
-                <a href="/" class="btn btn-outline-secondary me-2">Dashboard</a>
-                <a href="/settings/binance" class="btn btn-outline-secondary me-2">Binance Settings</a>
-                <a href="/strategy" class="btn btn-outline-secondary me-2">Strategy Config</a>
-                <button id="refreshStatsBtn" class="btn btn-outline-primary" title="Force Refresh Data">
-                    🔄 Refresh
-                </button>
+        <header class="mb-4">
+            <div class="d-flex justify-content-between align-items-center">
+                <h1>{{ project_name }} - Stats & Analytics</h1>
+                <div class="d-flex align-items-center gap-3">
+                    <!-- Navigation buttons - always in same position -->
+                    <div class="d-flex gap-2">
+                        <a href="/" class="btn btn-outline-secondary">Dashboard</a>
+                        <a href="/settings/binance" class="btn btn-outline-secondary">Binance Settings</a>
+                        <a href="/strategy" class="btn btn-outline-secondary">Strategy Config</a>
+                        <button id="refreshStatsBtn" class="btn btn-outline-primary" title="Force Refresh Data">
+                            🔄 Refresh
+                        </button>
+                    </div>
+                    <!-- User section - separate from navigation -->
+                    {% if user %}
+                    <div class="d-flex align-items-center gap-2 border-start ps-3">
+                        <span class="text-muted small">{{ user.email }}</span>
+                        <form method="POST" action="/api/auth/logout" class="d-inline">
+                            <button type="submit" class="btn btn-sm btn-outline-danger">Logout</button>
+                        </form>
+                    </div>
+                    {% endif %}
+                </div>
             </div>
         </header>
 
