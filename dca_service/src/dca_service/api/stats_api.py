@@ -7,7 +7,8 @@ import re
 import logging
 
 from dca_service.database import get_session
-from dca_service.models import DCATransaction, GlobalSettings
+from dca_service.models import DCATransaction, GlobalSettings, User
+from dca_service.auth.dependencies import get_current_user
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -131,13 +132,16 @@ def _build_wealth_distribution_from_live_data() -> List[Tuple[float, float, floa
     return wealth_dist
 
 @router.get("/stats/distribution")
-def get_wealth_distribution():
+def get_wealth_distribution(current_user: User = Depends(get_current_user)):
     """Return the live wealth distribution table from BitInfoCharts."""
     from dca_service.services.distribution_scraper import fetch_distribution
     return fetch_distribution()
 
 @router.get("/stats/percentile")
-async def get_user_percentile(session: Session = Depends(get_session)):
+async def get_user_percentile(
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user)
+):
     """
     Calculate the user's wealth percentile based on total BTC holdings.
     
@@ -189,7 +193,10 @@ async def get_user_percentile(session: Session = Depends(get_session)):
         }
 
 @router.get("/stats/fees")
-def get_total_fees(session: Session = Depends(get_session)):
+def get_total_fees(
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user)
+):
     """Get total fees paid across all transactions."""
     txs = session.exec(
         select(DCATransaction)
@@ -217,7 +224,10 @@ def get_total_fees(session: Session = Depends(get_session)):
     }
 
 @router.get("/stats/pnl")
-def get_pnl_data(session: Session = Depends(get_session)):
+def get_pnl_data(
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user)
+):
     """
     Get PnL time-series data.
     Returns:
