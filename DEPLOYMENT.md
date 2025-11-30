@@ -244,7 +244,29 @@ sudo systemctl enable nginx
 sudo systemctl status nginx
 ```
 
-### 11. Obtain SSL Certificate
+### 11. Configure Firewall
+
+> **Important**: You must allow HTTP (port 80) traffic BEFORE running Certbot, otherwise domain verification will fail.
+
+```bash
+# Install UFW
+sudo apt install ufw
+
+# Allow SSH (IMPORTANT - don't lock yourself out!)
+sudo ufw allow 22/tcp
+
+# Allow HTTP and HTTPS
+sudo ufw allow 80/tcp
+sudo ufw allow 443/tcp
+
+# Enable firewall
+sudo ufw enable
+
+# Check status
+sudo ufw status
+```
+
+### 12. Obtain SSL Certificate
 
 > **What Certbot does**: Certbot will verify domain ownership via HTTP, obtain an SSL certificate from Let's Encrypt, and **automatically modify** your nginx configuration to add:
 > - HTTPS (port 443) server block
@@ -284,26 +306,6 @@ You should now see:
 - SSL certificate paths
 - HTTP to HTTPS redirect
 - Additional security headers
-
-### 12. Configure Firewall
-
-```bash
-# Install UFW
-sudo apt install ufw
-
-# Allow SSH (IMPORTANT - don't lock yourself out!)
-sudo ufw allow 22/tcp
-
-# Allow HTTP and HTTPS
-sudo ufw allow 80/tcp
-sudo ufw allow 443/tcp
-
-# Enable firewall
-sudo ufw enable
-
-# Check status
-sudo ufw status
-```
 
 ### 13. Verify Deployment
 

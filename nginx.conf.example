@@ -6,7 +6,7 @@
 # Deployment Steps:
 #   1. Copy this file: sudo cp nginx.conf.example /etc/nginx/sites-available/dca-service
 #   2. Edit domain: sudo nano /etc/nginx/sites-available/dca-service
-#   3. Replace 'yourdomain.com' with your actual domain (e.g., btc.daxia.io)
+#   3. Replace 'yourdomain.com' with your actual domain (e.g., btc.example.com)
 #   4. Enable site: sudo ln -s /etc/nginx/sites-available/dca-service /etc/nginx/sites-enabled/
 #   5. Remove default: sudo rm /etc/nginx/sites-enabled/default
 #   6. Test config: sudo nginx -t
@@ -31,7 +31,7 @@ upstream dca_backend {
 server {
     listen 80;
     listen [::]:80;
-    server_name yourdomain.com;  # REPLACE: Change to your domain (e.g., btc.daxia.io)
+    server_name yourdomain.com;  # REPLACE: Change to your domain (e.g., btc.example.com)
     
     # Rate limiting for login endpoint (prevent brute force attacks)
     location /api/auth/login {
