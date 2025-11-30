@@ -98,19 +98,19 @@ async def run_dca_cycle():
 
 @app.get("/")
 def read_root(request: Request, user: User = Depends(get_current_user)):
-    return templates.TemplateResponse("index.html", {"request": request, "user": user, "project_name": settings.PROJECT_NAME})
+    return templates.TemplateResponse(request=request, name="index.html", context={"user": user, "project_name": settings.PROJECT_NAME})
 
 @app.get("/strategy")
 def read_strategy_page(request: Request, user: User = Depends(get_current_user)):
-    return templates.TemplateResponse("strategy.html", {"request": request, "user": user, "project_name": settings.PROJECT_NAME})
+    return templates.TemplateResponse(request=request, name="strategy.html", context={"user": user, "project_name": settings.PROJECT_NAME})
 
 @app.get("/settings/binance")
 def read_binance_settings_page(request: Request, user: User = Depends(get_current_user)):
-    return templates.TemplateResponse("binance_settings.html", {"request": request, "user": user, "project_name": settings.PROJECT_NAME})
+    return templates.TemplateResponse(request=request, name="binance_settings.html", context={"user": user, "project_name": settings.PROJECT_NAME})
 
 @app.get("/stats")
 def read_stats_page(request: Request, user: User = Depends(get_current_user)):
-    return templates.TemplateResponse("stats.html", {"request": request, "user": user, "project_name": settings.PROJECT_NAME})
+    return templates.TemplateResponse(request=request, name="stats.html", context={"user": user, "project_name": settings.PROJECT_NAME})
 
 if __name__ == "__main__":
     import uvicorn

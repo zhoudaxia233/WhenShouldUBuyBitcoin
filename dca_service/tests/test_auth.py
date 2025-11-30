@@ -11,23 +11,21 @@ Covers:
 """
 import pytest
 from fastapi.testclient import TestClient
-from sqlmodel import Session, create_engine, SQLModel
-from dca_service.main import app
-from dca_service.database import get_session
+from sqlmodel import Session
 from dca_service.models import User
 from dca_service.auth.password import hash_password, verify_password
 from dca_service.auth.csrf import get_csrf_token, validate_csrf
 from fastapi import Request, HTTPException
 
 
-# Test database setup
-@pytest.fixture(name="session")
-def session_fixture():
-    """Create a fresh test database for each test."""
-    engine = create_engine("sqlite:///:memory:")
-    SQLModel.metadata.create_all(engine)
+@pytest.fixture(autouse=True)
+def setup_auth_users(session: Session):
+    """Add auth-specific test users to the session."""
+    # Check if test users already exist
+    from sqlmodel import select
+    existing_test_user = session.exec(select(User).where(User.email == "test@example.com")).first()
     
-    with Session(engine) as session:
+    if not existing_test_user:
         # Create a test user
         test_user = User(
             email="test@example.com",
@@ -36,7 +34,10 @@ def session_fixture():
             is_admin=False
         )
         session.add(test_user)
-        
+    
+    # Check if admin user exists
+    existing_admin = session.exec(select(User).where(User.email == "admin@example.com")).first()
+    if not existing_admin:
         # Create an admin user
         admin_user = User(
             email="admin@example.com",
@@ -45,21 +46,9 @@ def session_fixture():
             is_admin=True
         )
         session.add(admin_user)
-        
-        session.commit()
-        yield session
-
-
-@pytest.fixture(name="client")
-def client_fixture(session: Session):
-    """Create a test client with database override."""
-    def get_session_override():
-        yield session
     
-    app.dependency_overrides[get_session] = get_session_override
-    client = TestClient(app)
-    yield client
-    app.dependency_overrides.clear()
+    session.commit()
+    yield
 
 
 # Password hashing tests
@@ -131,8 +120,8 @@ def test_login_with_valid_credentials(client):
     assert response.status_code == 303
     assert response.headers["location"] == "/"
     
-    # Session should contain user_id
-    assert "user_id" in client.cookies
+    # Session cookie should be present
+    assert "dca_session" in client.cookies
 
 
 def test_login_with_invalid_password(client):
