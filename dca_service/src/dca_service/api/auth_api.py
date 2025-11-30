@@ -39,9 +39,9 @@ async def login_page(request: Request):
     
     csrf_token = get_csrf_token(request)
     return templates.TemplateResponse(
-        "login.html",
-        {
-            "request": request,
+        request=request,
+        name="login.html",
+        context={
             "csrf_token": csrf_token,
             "error": None
         }
@@ -76,9 +76,9 @@ async def login(
         logger.warning(f"CSRF validation failed: {e}")
         csrf_token = get_csrf_token(request)
         return templates.TemplateResponse(
-            "login.html",
-            {
-                "request": request,
+            request=request,
+            name="login.html",
+            context={
                 "csrf_token": csrf_token,
                 "error": "Security check failed. Please try again."
             },
@@ -94,9 +94,9 @@ async def login(
         logger.warning(f"Failed login attempt for email: {email}")
         csrf_token = get_csrf_token(request)
         return templates.TemplateResponse(
-            "login.html",
-            {
-                "request": request,
+            request=request,
+            name="login.html",
+            context={
                 "csrf_token": csrf_token,
                 "error": "Invalid email or password"
             },
@@ -108,9 +108,9 @@ async def login(
         logger.warning(f"Login attempt for inactive user: {email}")
         csrf_token = get_csrf_token(request)
         return templates.TemplateResponse(
-            "login.html",
-            {
-                "request": request,
+            request=request,
+            name="login.html",
+            context={
                 "csrf_token": csrf_token,
                 "error": "Account is disabled"
             },

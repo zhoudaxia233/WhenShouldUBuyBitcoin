@@ -17,7 +17,8 @@ def test_stats_distribution(client: TestClient):
 def test_stats_percentile(client: TestClient, session: Session):
     # Setup: Set cold wallet balance (since hot wallet requires Binance API)
     from dca_service.models import GlobalSettings
-    settings = GlobalSettings(id=1, cold_wallet_balance=0.15)
+    settings = session.get(GlobalSettings, 1)
+    settings.cold_wallet_balance = 0.15
     session.add(settings)
     session.commit()
     

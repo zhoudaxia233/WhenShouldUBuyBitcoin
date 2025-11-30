@@ -9,41 +9,9 @@ Tests for the /api/transactions/clear-simulated endpoint to ensure:
 import pytest
 from unittest.mock import patch, AsyncMock
 from fastapi.testclient import TestClient
-from sqlmodel import Session, select, create_engine, SQLModel
-from sqlmodel.pool import StaticPool
+from sqlmodel import Session, select
 
-from dca_service.main import app
 from dca_service.models import DCATransaction, DCAStrategy
-from dca_service.database import get_session
-
-
-@pytest.fixture(name="session")
-def session_fixture():
-    """Create a test database session"""
-    engine = create_engine(
-        "sqlite:///:memory:",
-        connect_args={"check_same_thread": False},
-        poolclass=StaticPool,
-    )
-    SQLModel.metadata.create_all(engine)
-    with Session(engine) as session:
-        yield session
-
-
-@pytest.fixture(autouse=True)
-def override_get_session(session):
-    """Override the database session dependency"""
-    def get_session_override():
-        return session
-    
-    app.dependency_overrides[get_session] = get_session_override
-    yield
-    app.dependency_overrides.clear()
-
-
-@pytest.fixture
-def client():
-    return TestClient(app)
 
 
 @pytest.fixture
