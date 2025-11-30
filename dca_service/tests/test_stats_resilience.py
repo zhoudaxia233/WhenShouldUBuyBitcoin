@@ -4,7 +4,8 @@ from fastapi.testclient import TestClient
 from sqlmodel import Session, SQLModel, create_engine
 from dca_service.main import app
 from dca_service.database import get_session
-from dca_service.models import GlobalSettings
+from dca_service.models import GlobalSettings, User
+from dca_service.auth.dependencies import get_current_user
 
 @pytest.fixture(name="client")
 def client_fixture():
@@ -18,11 +19,36 @@ def client_fixture():
 
     app.dependency_overrides[get_session] = get_session_override
     
-    # Seed DB with settings
+    # Seed DB with settings and test user
     with Session(engine) as session:
         settings = GlobalSettings(id=1, cold_wallet_balance=1.5)
         session.add(settings)
+        
+        # Create test user for authentication bypass
+        from dca_service.auth.password import hash_password
+        test_user = User(
+            id=1,
+            email="test@example.com",
+            password_hash=hash_password("testpassword123"),
+            is_active=True,
+            is_admin=True
+        )
+        session.add(test_user)
         session.commit()
+        
+    # Override authentication to bypass login
+    test_user_obj = User(
+        id=1,
+        email="test@example.com", 
+        password_hash="test_hash",
+        is_active=True,
+        is_admin=True
+    )
+    
+    def get_current_user_override():
+        return test_user_obj
+    
+    app.dependency_overrides[get_current_user] = get_current_user_override
         
     yield TestClient(app)
     
