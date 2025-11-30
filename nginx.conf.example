@@ -1,12 +1,22 @@
-# Nginx Configuration for DCA Service
+# Nginx Configuration for DCA Service (Initial Setup)
 # 
-# Usage:
-#   1. Copy this file to your server: /etc/nginx/sites-available/dca-service
-#   2. Replace 'yourdomain.com' with your actual domain
-#   3. Enable the site: sudo ln -s /etc/nginx/sites-available/dca-service /etc/nginx/sites-enabled/
-#   4. Test: sudo nginx -t
-#   5. Reload: sudo systemctl reload nginx
-#   6. Run Certbot to get SSL: sudo certbot --nginx -d yourdomain.com
+# This configuration contains only HTTP (port 80) to allow Certbot to verify domain ownership.
+# After running Certbot, it will automatically add HTTPS configuration and SSL certificates.
+#
+# Deployment Steps:
+#   1. Copy this file: sudo cp nginx.conf.example /etc/nginx/sites-available/dca-service
+#   2. Edit domain: sudo nano /etc/nginx/sites-available/dca-service
+#   3. Replace 'yourdomain.com' with your actual domain (e.g., btc.daxia.io)
+#   4. Enable site: sudo ln -s /etc/nginx/sites-available/dca-service /etc/nginx/sites-enabled/
+#   5. Remove default: sudo rm /etc/nginx/sites-enabled/default
+#   6. Test config: sudo nginx -t
+#   7. Start nginx: sudo systemctl start nginx && sudo systemctl enable nginx
+#   8. Get SSL: sudo certbot --nginx -d yourdomain.com
+#
+# After Certbot runs, this file will be automatically updated with:
+#   - HTTPS (port 443) configuration
+#   - SSL certificate paths
+#   - HTTP to HTTPS redirect
 
 # Rate limiting zone - prevent brute force login attempts
 # 5r/m = 5 requests per minute per IP address
@@ -17,47 +27,11 @@ upstream dca_backend {
     server 127.0.0.1:8000;
 }
 
-# HTTP server - redirect all traffic to HTTPS
+# HTTP server
 server {
     listen 80;
     listen [::]:80;
-    server_name yourdomain.com www.yourdomain.com;  # REPLACE with your domain
-    
-    # Let's Encrypt ACME challenge (needed for certificate issuance)
-    location /.well-known/acme-challenge/ {
-        root /var/www/html;
-    }
-    
-    # Redirect all other HTTP traffic to HTTPS
-    location / {
-        return 301 https://$host$request_uri;
-    }
-}
-
-# HTTPS server
-server {
-    listen 443 ssl http2;
-    listen [::]:443 ssl http2;
-    server_name yourdomain.com www.yourdomain.com;  # REPLACE with your domain
-    
-    # SSL certificates (will be automatically added by Certbot)
-    # After running 'sudo certbot --nginx', these lines will be uncommented:
-    # ssl_certificate /etc/letsencrypt/live/yourdomain.com/fullchain.pem;
-    # ssl_certificate_key /etc/letsencrypt/live/yourdomain.com/privkey.pem;
-    # include /etc/letsencrypt/options-ssl-nginx.conf;
-    # ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;
-    
-    # Modern SSL configuration
-    ssl_protocols TLSv1.2 TLSv1.3;
-    ssl_prefer_server_ciphers off;
-    ssl_ciphers 'ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384';
-    
-    # Security headers
-    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
-    add_header X-Frame-Options "SAMEORIGIN" always;
-    add_header X-Content-Type-Options "nosniff" always;
-    add_header X-XSS-Protection "1; mode=block" always;
-    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+    server_name yourdomain.com;  # REPLACE: Change to your domain (e.g., btc.daxia.io)
     
     # Rate limiting for login endpoint (prevent brute force attacks)
     location /api/auth/login {
@@ -81,7 +55,7 @@ server {
         proxy_set_header X-Forwarded-Proto $scheme;
         proxy_redirect off;
         
-        # WebSocket support (if needed in the future)
+        # WebSocket support (for SSE - Server-Sent Events)
         proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection "upgrade";

@@ -114,22 +114,68 @@ docker compose ps
 docker compose logs -f
 ```
 
-### 7. Install Nginx and Certbot
+### 7. Configure Domain Name (DNS)
+
+Before installing Nginx and SSL, you need to point your domain to your server.
+
+**Step 1: Get your server's public IP address**
+
+```bash
+# On your VPS, run:
+curl ifconfig.me
+# or
+hostname -I | awk '{print $1}'
+```
+
+**Step 2: Configure DNS records at your domain registrar**
+
+Log in to your domain registrar (Namecheap, GoDaddy, Cloudflare, etc.) and add these DNS records:
+
+| Type | Name | Value | TTL |
+|------|------|-------|-----|
+| A | @ | `YOUR_SERVER_IP` | 3600 |
+| A | www | `YOUR_SERVER_IP` | 3600 |
+
+Example:
+- If your domain is `example.com` and server IP is `203.0.113.10`:
+  - `A` record: `@` → `203.0.113.10` (for example.com)
+  - `A` record: `www` → `203.0.113.10` (for www.example.com)
+
+**Step 3: Verify DNS propagation**
+
+```bash
+# From your local machine (not the server):
+# Check if DNS is pointing to your server
+dig yourdomain.com +short
+dig www.yourdomain.com +short
+
+# Both should return your server's IP address
+```
+
+DNS propagation can take 5 minutes to 48 hours. Wait until both commands return your server IP before proceeding.
+
+**Alternative: Use online DNS checker**
+- https://dnschecker.org/
+
+---
+
+### 8. Install Nginx and Certbot
 
 ```bash
 # Install packages
 sudo apt update
 sudo apt install -y nginx certbot python3-certbot-nginx
 
-# Start Nginx
-sudo systemctl start nginx
-sudo systemctl enable nginx
-
-# Verify Nginx is running
-sudo systemctl status nginx
+# Verify installation (but don't start yet)
+nginx -v
+certbot --version
 ```
 
-### 8. Configure Nginx
+> **Note**: We'll start Nginx after configuring it to avoid running with default settings.
+
+### 9. Configure Nginx (HTTP Only)
+
+> **Important**: The initial configuration contains only HTTP (port 80). This allows Certbot to verify domain ownership. After running Certbot in the next steps, it will automatically add HTTPS configuration.
 
 **Option 1: Copy from template file (recommended)**
 
@@ -153,38 +199,93 @@ sudo nano /etc/nginx/sites-available/dca-service
 ```
 
 **What to change:**
-- Replace all instances of `yourdomain.com` with your actual domain
 
-**Enable the site:**
-
-```bash
-# Create symbolic link
-sudo ln -s /etc/nginx/sites-available/dca-service /etc/nginx/sites-enabled/
-
-# Test configuration
-sudo nginx -t
-
-# Restart Nginx
-sudo systemctl restart nginx
+Find this line (around line 24):
+```nginx
+server_name yourdomain.com;  # REPLACE: Change to your domain
 ```
 
-### 9. Obtain SSL Certificate
+Replace with your actual domain:
+```nginx
+server_name btc.example.com;  # Example for subdomain
+# OR
+server_name example.com;  # Example for main domain
+```
+
+> **Note for subdomains**: If using a subdomain like `btc.example.com`, you only need the subdomain. No need for `www` prefix.
+
+**Enable the site and disable default:**
 
 ```bash
-# Run Certbot (will modify Nginx config automatically)
-sudo certbot --nginx -d yourdomain.com -d www.yourdomain.com
+# Remove default Nginx welcome page
+sudo rm /etc/nginx/sites-enabled/default
+
+# Create symbolic link to enable your site
+sudo ln -s /etc/nginx/sites-available/dca-service /etc/nginx/sites-enabled/
+
+# Test configuration (IMPORTANT: must pass before starting)
+sudo nginx -t
+
+# Expected output: "syntax is ok" and "test is successful"
+```
+
+> **Important**: Do not proceed if `nginx -t` reports errors. Fix the configuration first.
+
+### 10. Start Nginx
+
+```bash
+# Start Nginx with your configuration
+sudo systemctl start nginx
+
+# Enable Nginx to start on boot
+sudo systemctl enable nginx
+
+# Verify Nginx is running
+sudo systemctl status nginx
+```
+
+### 11. Obtain SSL Certificate
+
+> **What Certbot does**: Certbot will verify domain ownership via HTTP, obtain an SSL certificate from Let's Encrypt, and **automatically modify** your nginx configuration to add:
+> - HTTPS (port 443) server block
+> - SSL certificate paths
+> - HTTP to HTTPS redirect
+> - Security headers
+
+```bash
+# Run Certbot (replace with your actual domain)
+sudo certbot --nginx -d btc.example.com
+
+# For main domains with www subdomain, use:
+# sudo certbot --nginx -d example.com -d www.example.com
 
 # Follow prompts:
-# 1. Enter email address
+# 1. Enter email address (for renewal notifications)
 # 2. Agree to Terms of Service: A
-# 3. Share email: N
-# 4. Redirect HTTP to HTTPS: 2 (recommended)
+# 3. Share email with EFF: N (optional)
+# 4. Certbot will automatically configure nginx and reload it
+
+# Verify certificate installation
+sudo certbot certificates
 
 # Test automatic renewal
 sudo certbot renew --dry-run
 ```
 
-### 10. Configure Firewall
+**What changed after Certbot:**
+
+Check the modified nginx config:
+```bash
+sudo cat /etc/nginx/sites-available/dca-service
+```
+
+You should now see:
+- New HTTPS `server` block listening on port 443
+- SSL certificate paths
+- HTTP to HTTPS redirect
+- Additional security headers
+
+### 12. Configure Firewall
 
 ```bash
 # Install UFW
@@ -204,7 +305,7 @@ sudo ufw enable
 sudo ufw status
 ```
 
-### 11. Verify Deployment
+### 13. Verify Deployment
 
 **Access your application:**
 ```
