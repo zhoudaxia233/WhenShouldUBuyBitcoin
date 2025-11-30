@@ -22,18 +22,18 @@
 <body>
     <div class="container">
         <header class="mb-3">
-            <div class="d-flex justify-content-between align-items-center">
-                <h1>{{ project_name }}</h1>
-                <div class="d-flex align-items-center gap-3">
-                    <!-- Navigation buttons - always in same position -->
-                    <div class="d-flex gap-2">
+            <div class="d-flex flex-column flex-md-row justify-content-between align-items-center gap-3">
+                <h1 class="mb-0">{{ project_name }}</h1>
+                <div class="d-flex flex-column flex-md-row align-items-center gap-3">
+                    <!-- Navigation buttons -->
+                    <div class="d-flex flex-wrap justify-content-center gap-2">
                         <a href="/settings/binance" class="btn btn-outline-secondary">Binance Settings</a>
                         <a href="/strategy" class="btn btn-outline-secondary">Strategy Config</a>
                         <a href="/stats" class="btn btn-outline-secondary">Stats & Analytics</a>
                     </div>
-                    <!-- User section - separate from navigation -->
+                    <!-- User section -->
                     {% if user %}
-                    <div class="d-flex align-items-center gap-2 border-start ps-3">
+                    <div class="d-flex align-items-center gap-2 border-start-md ps-md-3 mt-2 mt-md-0 pt-2 pt-md-0 border-top border-top-md-0">
                         <span class="text-muted small">{{ user.email }}</span>
                         <form method="POST" action="/api/auth/logout" class="d-inline">
                             <button type="submit" class="btn btn-sm btn-outline-danger">Logout</button>
