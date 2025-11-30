@@ -19,26 +19,31 @@
             background-color: #e8f4ff;
             font-weight: bold;
         }
+        @media (max-width: 576px) {
+            .display-4 {
+                font-size: 2.5rem;
+            }
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <header class="mb-4">
-            <div class="d-flex justify-content-between align-items-center">
-                <h1>{{ project_name }} - Stats & Analytics</h1>
-                <div class="d-flex align-items-center gap-3">
-                    <!-- Navigation buttons - always in same position -->
-                    <div class="d-flex gap-2">
-                        <a href="/" class="btn btn-outline-secondary">Dashboard</a>
-                        <a href="/settings/binance" class="btn btn-outline-secondary">Binance Settings</a>
-                        <a href="/strategy" class="btn btn-outline-secondary">Strategy Config</a>
-                        <button id="refreshStatsBtn" class="btn btn-outline-primary" title="Force Refresh Data">
+            <div class="d-flex flex-column flex-md-row justify-content-between align-items-center gap-3">
+                <h1 class="mb-0 text-center text-md-start">{{ project_name }} - Stats & Analytics</h1>
+                <div class="d-flex flex-column flex-md-row align-items-center gap-3">
+                    <!-- Navigation buttons -->
+                    <div class="d-flex flex-wrap flex-md-nowrap justify-content-center gap-2">
+                        <a href="/" class="btn btn-outline-secondary text-nowrap">Dashboard</a>
+                        <a href="/settings/binance" class="btn btn-outline-secondary text-nowrap">Binance Settings</a>
+                        <a href="/strategy" class="btn btn-outline-secondary text-nowrap">Strategy Config</a>
+                        <button id="refreshStatsBtn" class="btn btn-outline-primary text-nowrap" title="Force Refresh Data">
                             🔄 Refresh
                         </button>
                     </div>
-                    <!-- User section - separate from navigation -->
+                    <!-- User section -->
                     {% if user %}
-                    <div class="d-flex align-items-center gap-2 border-start ps-3">
+                    <div class="d-flex align-items-center gap-2 border-start-md ps-md-3 mt-2 mt-md-0 pt-2 pt-md-0 border-top border-top-md-0">
                         <span class="text-muted small">{{ user.email }}</span>
                         <form method="POST" action="/api/auth/logout" class="d-inline">
                             <button type="submit" class="btn btn-sm btn-outline-danger">Logout</button>
@@ -52,7 +57,7 @@
         <!-- Wealth Percentile Section -->
         <div class="card shadow-sm percentile-card mb-4">
             <div class="card-body text-center py-5">
-                <h2 class="display-4 fw-bold" id="percentileText">Loading...</h2>
+                <h2 class="display-4 fw-bold text-break" id="percentileText">Loading...</h2>
                 <p class="lead" id="percentileSubtext">Calculating your global rank...</p>
                 <div class="mt-3">
                     <span class="badge bg-light text-dark fs-6">Total Balance: <span id="totalBtc">--</span> BTC</span>
@@ -61,48 +66,48 @@
         </div>
 
         <!-- Summary Stats Row -->
-        <div class="row mb-4">
+        <div class="row row-cols-2 row-cols-md-3 row-cols-xl-5 g-3 mb-4">
             <div class="col">
-                <div class="card shadow-sm">
+                <div class="card shadow-sm h-100">
                     <div class="card-body text-center">
                         <div class="text-muted small">Portfolio Value</div>
-                        <div class="h3 text-success" id="portfolioValueUSD">--</div>
+                        <div class="h3 text-success mb-0" id="portfolioValueUSD">--</div>
                         <div class="small text-muted"><span id="totalBtcBalance">--</span> BTC</div>
                     </div>
                 </div>
             </div>
             <div class="col">
-                <div class="card shadow-sm">
+                <div class="card shadow-sm h-100">
                     <div class="card-body text-center">
                         <div class="text-muted small">Avg Buy Price</div>
-                        <div class="h3 text-primary" id="avgBuyPrice">--</div>
+                        <div class="h3 text-primary mb-0" id="avgBuyPrice">--</div>
                         <div class="small text-muted">Cost Basis</div>
                     </div>
                 </div>
             </div>
             <div class="col">
-                <div class="card shadow-sm">
+                <div class="card shadow-sm h-100">
                     <div class="card-body text-center">
                         <div class="text-muted small">Profit & Loss</div>
-                        <div class="h3" id="pnlAmount">--</div>
+                        <div class="h3 mb-0" id="pnlAmount">--</div>
                         <div class="small text-muted"><span id="pnlPercent">--</span></div>
                     </div>
                 </div>
             </div>
             <div class="col">
-                <div class="card shadow-sm">
+                <div class="card shadow-sm h-100">
                     <div class="card-body text-center">
-                        <div class="text-muted small">Total Trading Fees</div>
-                        <div class="h3 text-danger" id="totalFeesUSD">--</div>
+                        <div class="text-muted small">Total Fees</div>
+                        <div class="h3 text-danger mb-0" id="totalFeesUSD">--</div>
                         <div class="small text-muted"><span id="totalFeesBTC">--</span> BTC</div>
                     </div>
                 </div>
             </div>
             <div class="col">
-                <div class="card shadow-sm">
+                <div class="card shadow-sm h-100">
                     <div class="card-body text-center">
                         <div class="text-muted small">Transactions</div>
-                        <div class="h3 text-primary" id="transactionCount">--</div>
+                        <div class="h3 text-secondary mb-0" id="transactionCount">--</div>
                         <div class="small text-muted">Tracked</div>
                     </div>
                 </div>
@@ -117,7 +122,9 @@
                         <h5 class="mb-0">Performance Over Time</h5>
                     </div>
                     <div class="card-body">
-                        <canvas id="pnlChart"></canvas>
+                        <div style="height: 400px; position: relative;">
+                            <canvas id="pnlChart"></canvas>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -183,10 +190,18 @@
         function updatePercentileUI(data) {
             // Use percentile_display if available (preserves original decimal precision), 
             // otherwise fall back to percentile_top
-            const percentileDisplay = data.percentile_display || `Top ${data.percentile_top}%`;
+            let percentileDisplay;
+            if (data.percentile_display) {
+                percentileDisplay = data.percentile_display;
+            } else if (data.percentile_top !== undefined && data.percentile_top !== null) {
+                percentileDisplay = `Top ${data.percentile_top}%`;
+            } else {
+                percentileDisplay = 'N/A';
+            }
+            
             document.getElementById('percentileText').textContent = percentileDisplay;
             document.getElementById('percentileSubtext').textContent = "of all Bitcoin holders globally";
-            document.getElementById('totalBtc').textContent = data.total_btc.toFixed(8);
+            document.getElementById('totalBtc').textContent = data.total_btc ? data.total_btc.toFixed(8) : '--';
         }
 
         // Load Wealth Percentile (TTL: 24 hours = 1440 mins)
@@ -303,35 +318,44 @@
                     labels: data.dates.map(d => new Date(d).toLocaleDateString()),
                     datasets: [
                         {
-                            label: 'Invested Capital (USD)',
+                            label: 'Invested Capital',
                             data: data.invested,
                             borderColor: '#6c757d',
                             backgroundColor: 'rgba(108, 117, 125, 0.1)',
                             fill: true,
-                            tension: 0.1
+                            tension: 0.1,
+                            pointRadius: 0, // Hide points for cleaner look
+                            pointHoverRadius: 4
                         },
                         {
-                            label: 'Portfolio Value (USD)',
+                            label: 'Portfolio Value',
                             data: data.value,
                             borderColor: '#28a745',
                             backgroundColor: 'rgba(40, 167, 69, 0.1)',
                             fill: true,
-                            tension: 0.1
+                            tension: 0.1,
+                            pointRadius: 0,
+                            pointHoverRadius: 4
                         }
                     ]
                 },
                 options: {
                     responsive: true,
+                    maintainAspectRatio: false, // Allow custom height
                     interaction: { mode: 'index', intersect: false },
                     plugins: {
-                        title: { display: true, text: 'Investment Performance' },
+                        title: { display: false }, // Remove title to save space
+                        legend: {
+                            position: 'top',
+                            labels: { boxWidth: 12, font: { size: 11 } }
+                        },
                         tooltip: {
                             callbacks: {
                                 label: function(context) {
                                     let label = context.dataset.label || '';
                                     if (label) label += ': ';
                                     if (context.parsed.y !== null) {
-                                        label += new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(context.parsed.y);
+                                        label += new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(context.parsed.y);
                                     }
                                     return label;
                                 }
@@ -339,9 +363,23 @@
                         }
                     },
                     scales: {
+                        x: {
+                            ticks: {
+                                maxTicksLimit: 6, // Limit x-axis labels
+                                maxRotation: 0,   // Prevent rotation
+                                minRotation: 0
+                            },
+                            grid: { display: false } // Cleaner look
+                        },
                         y: {
                             beginAtZero: true,
-                            ticks: { callback: function(value) { return '$' + value.toLocaleString(); } }
+                            ticks: { 
+                                callback: function(value) { 
+                                    if (value >= 1000) return '$' + (value/1000).toFixed(0) + 'k';
+                                    return '$' + value; 
+                                },
+                                maxTicksLimit: 6
+                            }
                         }
                     }
                 }
