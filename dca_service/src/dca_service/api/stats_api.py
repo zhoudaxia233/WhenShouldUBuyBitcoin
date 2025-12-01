@@ -14,70 +14,7 @@ router = APIRouter()
 logger = logging.getLogger(__name__)
 
 
-def _parse_tier_range(tier_str: str) -> Optional[Tuple[float, float]]:
-    """
-    Parse tier string from distribution scraper to extract min_btc and max_btc.
-    
-    Examples:
-        "1000000+" -> (1000000, float('inf'))
-        "100000-1000000" -> (100000, 1000000)
-        "[0.1 - 1 BTC)" -> (0.1, 1)
-        "[0.001-0.01 BTC)" -> (0.001, 0.01)
-    """
-    try:
-        tier_str = tier_str.strip()
-        
-        # Handle format like '[0.1 - 1 BTC)' or '[0.1-1 BTC)'
-        # Remove brackets and 'BTC)' suffix
-        tier_str = tier_str.replace('[', '').replace(']', '').replace('(', '').replace(')', '')
-        if 'BTC' in tier_str:
-            tier_str = tier_str.split('BTC')[0].strip()
-        
-        # Handle "X+" format (e.g., "1000000+")
-        if tier_str.endswith('+'):
-            min_btc = float(tier_str[:-1].replace(',', '').strip())
-            return (min_btc, float('inf'))
-        
-        # Handle "X-Y" format (e.g., "100000-1000000" or "0.1 - 1")
-        if '-' in tier_str:
-            parts = tier_str.split('-')
-            if len(parts) == 2:
-                min_btc = float(parts[0].strip().replace(',', ''))
-                max_btc = float(parts[1].strip().replace(',', ''))
-                return (min_btc, max_btc)
-        
-        # Try to parse as a single number
-        try:
-            value = float(tier_str.replace(',', '').strip())
-            return (value, float('inf'))
-        except ValueError:
-            pass
-        
-        logger.warning(f"Could not parse tier string: '{tier_str}'")
-        return None
-    except Exception as e:
-        logger.warning(f"Error parsing tier string '{tier_str}': {e}")
-        return None
 
-
-def _parse_percentile_value(percentile_str: str) -> Optional[float]:
-    """
-    Parse percentile string to extract numeric value.
-    
-    Examples:
-        "Top 27.38%" -> 27.38
-        "Top 0.00002%" -> 0.00002
-        "Top 100.0%" -> 100.0
-    """
-    try:
-        # Extract number from strings like "Top 27.38%" or "Top 0.00002%"
-        match = re.search(r'([\d.]+)', percentile_str)
-        if match:
-            return float(match.group(1))
-        return None
-    except Exception as e:
-        logger.warning(f"Error parsing percentile string '{percentile_str}': {e}")
-        return None
 
 
 def _build_wealth_distribution_from_live_data() -> List[Tuple[float, float, float, str]]:
@@ -96,7 +33,7 @@ def _build_wealth_distribution_from_live_data() -> List[Tuple[float, float, floa
     Raises:
         ValueError: If no distribution data is available (no cache and fetch failed)
     """
-    from dca_service.services.distribution_scraper import fetch_distribution
+    from dca_service.services.distribution_scraper import fetch_distribution, parse_tier_range, parse_percentile_value
     
     # fetch_distribution handles:
     # - Fresh cache: returns immediately
@@ -113,8 +50,8 @@ def _build_wealth_distribution_from_live_data() -> List[Tuple[float, float, floa
         tier_str = item.get("tier", "")
         percentile_str = item.get("percentile", "")
         
-        tier_range = _parse_tier_range(tier_str)
-        percentile_value = _parse_percentile_value(percentile_str)
+        tier_range = parse_tier_range(tier_str)
+        percentile_value = parse_percentile_value(percentile_str)
         
         if tier_range and percentile_value is not None:
             min_btc, max_btc = tier_range

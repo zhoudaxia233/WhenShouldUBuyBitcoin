@@ -50,15 +50,10 @@ def _get_binance_client(session: Session) -> Optional[BinanceClient]:
         return None
 
 
-@router.get("/summary", response_model=WalletSummary)
-async def get_wallet_summary(session: Session = Depends(get_session)):
+async def fetch_wallet_summary(session: Session) -> WalletSummary:
     """
-    Get comprehensive wallet information including:
-    - Cold wallet balance (from database)
-    - Hot wallet balance (from Binance)
-    - Average buy price (calculated from Binance trade history)
-    - Current BTC price
-    - USD values for all holdings
+    Fetch comprehensive wallet information.
+    Reusable function for both API and internal services.
     """
     # Get cold wallet balance from singleton settings
     settings = session.get(GlobalSettings, 1)
@@ -120,6 +115,19 @@ async def get_wallet_summary(session: Session = Depends(get_session)):
         hot_wallet_value_usd=hot_wallet_value,
         total_value_usd=total_value
     )
+
+
+@router.get("/summary", response_model=WalletSummary)
+async def get_wallet_summary(session: Session = Depends(get_session)):
+    """
+    Get comprehensive wallet information including:
+    - Cold wallet balance (from database)
+    - Hot wallet balance (from Binance)
+    - Average buy price (calculated from Binance trade history)
+    - Current BTC price
+    - USD values for all holdings
+    """
+    return await fetch_wallet_summary(session)
 
 
 @router.post("/cold-balance", response_model=WalletSummary)

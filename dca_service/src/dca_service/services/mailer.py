@@ -7,14 +7,13 @@ Email failures do not affect DCA execution.
 Reads settings from database first, falls back to environment variables.
 """
 import smtplib
-import smtplib
 from email.message import EmailMessage
 from typing import Optional
 from sqlmodel import Session, select
 
 from dca_service.config import settings
 from dca_service.database import engine
-from dca_service.models import EmailSettings
+from dca_service.models import EmailSettings, GlobalSettings, DCATransaction, DCAStrategy
 from dca_service.core.logging import logger
 
 
@@ -174,13 +173,72 @@ Trade safely and HODL wisely!
     send_email(subject, body)
 
 
-def send_dca_notification(transaction, decision=None):
+def _get_total_btc_balance(session: Session) -> float:
+    """
+    Calculate total BTC balance (Cold + Hot).
+    Reuses logic from wallet_api but adapted for synchronous execution.
+    """
+    try:
+        # 1. Get Cold Wallet Balance
+        settings_obj = session.get(GlobalSettings, 1)
+        cold_balance = settings_obj.cold_wallet_balance if settings_obj else 0.0
+        
+        # 2. Get Hot Wallet Balance (Binance)
+        # Note: This is a synchronous call, so we can't easily use the async BinanceClient
+        # For now, we will just use the cold wallet balance + sum of all successful DCA transactions as an approximation
+        # OR we could try to fetch from Binance if we had a sync client.
+        # Given the constraints, let's use the database record of transactions as a proxy for "Hot Wallet" 
+        # if we can't reach Binance synchronously.
+        # BETTER APPROACH: Just use the cold wallet balance + all successful buys in DB.
+        
+        txs = session.exec(
+            select(DCATransaction)
+            .where(
+                DCATransaction.status == "SUCCESS",
+                DCATransaction.source != "SIMULATED"
+            )
+        ).all()
+        
+        hot_balance_approx = sum(tx.btc_amount or 0.0 for tx in txs)
+        
+        # Note: This approximation doesn't account for withdrawals or manual trades not in DB.
+        # But it's better than blocking on async calls or adding complex sync dependencies.
+        # If the user has "Incremental Trade Sync" enabled (Phase 7), the DB should be accurate!
+        
+        return cold_balance + hot_balance_approx
+        
+    except Exception as e:
+        logger.warning(f"Error calculating total BTC balance: {e}")
+        return 0.0
+
+
+def _get_goal_progress(session: Session, total_btc: float) -> str:
+    """
+    Calculate progress towards BTC goal (e.g., "1.5000 / 2.0000 BTC (75.00%)").
+    """
+    try:
+        strategy = session.exec(select(DCAStrategy)).first()
+        if not strategy or not strategy.target_btc_amount:
+            return "N/A (No target set)"
+            
+        target = strategy.target_btc_amount
+        percentage = (total_btc / target) * 100.0
+        
+        return f"{total_btc:.4f} / {target:.4f} BTC ({percentage:.2f}%)"
+        
+    except Exception as e:
+        logger.warning(f"Error calculating goal progress: {e}")
+        return "N/A"
+
+
+def send_dca_notification(transaction, decision=None, total_btc: Optional[float] = None):
     """
     Send a standardized email notification for a DCA execution.
     
     Args:
         transaction: The DCATransaction object
         decision: Optional DCADecision object (for extra context)
+        total_btc: Optional total BTC balance (if already fetched from Binance)
     """
     # Build email subject
     subject = f"DCA Executed: ${transaction.fiat_amount:.2f} USDC for BTC"
@@ -190,10 +248,26 @@ def send_dca_notification(transaction, decision=None):
     # Format timestamp
     exec_time = transaction.timestamp.strftime("%Y-%m-%d %H:%M:%S UTC")
     
-    # Get band info if available
+    # Get band info
     band_info = "N/A"
-    if decision and hasattr(decision, 'band'):
+    if decision and hasattr(decision, 'ahr_band'):
+        band_info = decision.ahr_band
+    elif decision and hasattr(decision, 'band'): # Fallback
         band_info = decision.band
+        
+    # Calculate Stats
+    try:
+        with Session(engine) as session:
+            # Use provided total_btc or calculate from DB (fallback)
+            if total_btc is None:
+                total_btc = _get_total_btc_balance(session)
+            
+            progress_str = _get_goal_progress(session, total_btc)
+    except Exception as e:
+        logger.error(f"Error fetching stats for email: {e}")
+        if total_btc is None:
+            total_btc = 0.0
+        progress_str = "N/A"
     
     body = f"""DCA Transaction Executed Successfully
 
@@ -205,10 +279,9 @@ Amount (USDC): ${transaction.fiat_amount:.2f}
 Amount (BTC): {transaction.btc_amount:.8f}
 Price (USD/BTC): ${transaction.price:.2f}
 
-Transaction Details:
-- Transaction ID: {transaction.id}
-- Source: {transaction.source}
-- Status: {transaction.status}
+Portfolio Stats:
+- Total BTC Balance: {total_btc:.8f} BTC
+- Goal Progress: {progress_str}
 
 Notes: {transaction.notes or 'None'}
 

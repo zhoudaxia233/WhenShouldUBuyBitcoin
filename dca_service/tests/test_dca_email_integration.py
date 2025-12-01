@@ -77,12 +77,18 @@ class TestDCAEmailIntegration:
         decision.suggested_amount_usd = 50.0
         decision.ahr999_value = 0.52
         decision.price_usd = 83333.33
+        decision.ahr_band = "p25 (Very Cheap)"
         
-        # Call email function
+        # Call email function with explicit total_btc
+        # This avoids needing to mock complex DB queries
         with patch('dca_service.services.mailer.Session') as mock_session:
-             # Mock DB lookup to return None so it falls back to settings
-             mock_session.return_value.__enter__.return_value.exec.return_value.first.return_value = None
-             _send_dca_email_task(transaction, decision)
+             # Mock _get_goal_progress to return a simple string
+             mock_strategy = MagicMock()
+             mock_strategy.target_btc_amount = 2.0
+             mock_session.return_value.__enter__.return_value.exec.return_value.first.return_value = mock_strategy
+             
+             # Pass explicit total_btc to avoid DB lookup
+             _send_dca_email_task(transaction, decision, total_btc=1.5)
         
         # Verify send_email was called
         mock_send_email.assert_called_once()
@@ -94,4 +100,6 @@ class TestDCAEmailIntegration:
         assert "0.0006" in body or "0.00060000" in body
         assert "83333.33" in body
         assert "0.52" in body
-        assert "SIMULATED" in body
+        # Verify new fields are present
+        assert "Total BTC Balance:" in body
+        assert "Goal Progress:" in body
