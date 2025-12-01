@@ -19,7 +19,7 @@ def preview_dca(session: Session = Depends(get_session)):
     return decision
 
 @router.post("/dca/execute-simulated", response_model=dict)
-def execute_simulated_dca(
+async def execute_simulated_dca(
     background_tasks: BackgroundTasks,
     session: Session = Depends(get_session)
 ):
@@ -65,11 +65,22 @@ def execute_simulated_dca(
     session.commit()
     session.refresh(transaction)
     
+    # Fetch current wallet stats for email (async)
+    # This ensures we get the real Binance balance + Cold Wallet
+    from dca_service.api.wallet_api import fetch_wallet_summary
+    try:
+        wallet_summary = await fetch_wallet_summary(session)
+        total_btc = wallet_summary.total_btc
+    except Exception as e:
+        logger.error(f"Failed to fetch wallet summary for email: {e}")
+        total_btc = None
+    
     # Schedule email notification in background (non-blocking)
     background_tasks.add_task(
         _send_dca_email_task,
         transaction=transaction,
-        decision=decision
+        decision=decision,
+        total_btc=total_btc
     )
     
     return {
@@ -79,9 +90,9 @@ def execute_simulated_dca(
     }
 
 
-def _send_dca_email_task(transaction: DCATransaction, decision: any):
+def _send_dca_email_task(transaction: DCATransaction, decision: any, total_btc: float = None):
     """
     Background task wrapper for sending email.
     """
     from dca_service.services.mailer import send_dca_notification
-    send_dca_notification(transaction, decision)
+    send_dca_notification(transaction, decision, total_btc)

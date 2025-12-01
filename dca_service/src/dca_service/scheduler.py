@@ -370,7 +370,22 @@ class DCAScheduler:
                 # Send success email
                 try:
                     from dca_service.services.mailer import send_dca_notification
-                    send_dca_notification(transaction, decision)
+                    from dca_service.api.wallet_api import fetch_wallet_summary
+                    import asyncio
+                    
+                    # Fetch real wallet stats for email
+                    # We need to run this async function synchronously
+                    async def get_stats():
+                        return await fetch_wallet_summary(session)
+                    
+                    try:
+                        wallet_summary = asyncio.run(get_stats())
+                        total_btc = wallet_summary.total_btc
+                    except Exception as stats_err:
+                        logger.error(f"Failed to fetch wallet stats for email: {stats_err}")
+                        total_btc = None
+                    
+                    send_dca_notification(transaction, decision, total_btc)
                 except Exception as e:
                     logger.error(f"Failed to send DCA notification email: {e}")
             
