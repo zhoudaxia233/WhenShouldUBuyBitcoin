@@ -104,11 +104,14 @@ class TradeSyncService:
             # 3. Store new trades
             added_count = 0
             
-            # Get existing order IDs to avoid duplicating DCA transactions that might not have trade_id set yet
+            # Get existing DCA order IDs to avoid duplicating bot-created transactions
+            # IMPORTANT: Only include orders created by the DCA bot, not previously synced MANUAL trades
+            # This prevents circular logic where a MANUAL trade's order_id blocks future sync
             existing_dca_orders = set(
                 self.session.exec(
                     select(DCATransaction.binance_order_id)
                     .where(DCATransaction.binance_order_id.is_not(None))
+                    .where(DCATransaction.source.in_(["DCA", "BINANCE"]))  # Only bot-created trades
                 ).all()
             )
             
@@ -123,29 +126,14 @@ class TradeSyncService:
                 ).first()
                 
                 if exists:
+                    logger.debug(f"Trade {trade_id} already exists in database, skipping")
                     continue
                 
-                # Check if this corresponds to a known DCA order
-                # If so, we might want to update the existing record with the trade ID
-                # But DCA orders might have multiple fills (trades), so we can't just 1:1 map easily
-                # Strategy: 
-                # - If it's a DCA order, we assume the DCA bot already created a record
-                # - BUT, the DCA bot record doesn't have trade_id. 
-                # - AND one order can have multiple trades.
-                # - SIMPLIFICATION: For now, we only import MANUAL trades (not in existing_dca_orders)
-                #   OR we import everything but mark is_manual=False if it matches a DCA order.
-                
-                # Better approach:
-                # If order_id matches a known DCA transaction:
-                #   - If that transaction has NO trade_id, update it with this trade_id (first fill)
-                #   - If it already has a trade_id (or this is a second fill), create a new record?
-                #   - Actually, for simplicity and to avoid "double counting" in the UI:
-                #     We should probably ONLY import trades that are NOT from our DCA bot.
-                #     DCA bot trades are already recorded when they happen.
-                
+                # Check if this order belongs to our DCA bot
+                # If so, update the existing DCA record or skip if already linked
                 if order_id in existing_dca_orders:
-                    # This is a trade from our own bot.
-                    # We could update the existing record to add the trade_id if missing
+                    # This is a trade from our own bot
+                    # Try to link trade_id to existing DCA record if not yet linked
                     dca_tx = self.session.exec(
                         select(DCATransaction)
                         .where(DCATransaction.binance_order_id == order_id)
@@ -156,14 +144,30 @@ class TradeSyncService:
                         # Link this trade to the existing DCA record
                         dca_tx.binance_trade_id = trade_id
                         self.session.add(dca_tx)
-                        # If there are multiple fills, subsequent ones will be skipped or treated as new?
-                        # For now, let's just link the first one.
+                        logger.debug(f"Linked trade {trade_id} to existing DCA transaction {dca_tx.id}")
+                        # If there are multiple fills, subsequent ones will be skipped by the continue below
                         continue
                     else:
-                        # Already linked, or multiple fills. 
+                        # Already linked, or this is a subsequent fill
                         # To avoid duplicates in the UI, we skip additional fills for now
-                        # (unless we want to show every partial fill as a separate row)
+                        logger.debug(f"Trade {trade_id} from DCA order {order_id} already linked, skipping")
                         continue
+                
+                # ADDITIONAL CHECK: Even if order_id is not in existing_dca_orders,
+                # verify that no DCA/BINANCE transaction with this order_id exists
+                # This handles edge cases where existing_dca_orders might be stale
+                existing_bot_tx = self.session.exec(
+                    select(DCATransaction)
+                    .where(DCATransaction.binance_order_id == order_id)
+                    .where(DCATransaction.source.in_(["DCA", "BINANCE"]))
+                ).first()
+                
+                if existing_bot_tx:
+                    logger.warning(
+                        f"Order {order_id} already exists as {existing_bot_tx.source} transaction "
+                        f"but was not in existing_dca_orders cache. Skipping to prevent duplicate."
+                    )
+                    continue
                 
                 # Only import BUY trades for now (DCA context)
                 if not trade["isBuyer"]:
