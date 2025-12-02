@@ -606,8 +606,8 @@
             
             const executionMode = document.querySelector('input[name="execution_mode"]:checked').value;
             
-            // If LIVE mode is selected, show confirmation modal first
-            if (executionMode === 'LIVE') {
+            // Only show confirmation modal when switching FROM DRY_RUN/SIMULATED TO LIVE
+            if (executionMode === 'LIVE' && originalExecutionMode !== 'LIVE') {
                 const liveModal = new bootstrap.Modal(document.getElementById('liveTradingModal'));
                 
                 // Set up one-time confirm handler
