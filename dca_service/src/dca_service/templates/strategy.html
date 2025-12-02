@@ -423,6 +423,9 @@
         });
     </script>
     <script>
+        // Store original execution mode to detect changes
+        let originalExecutionMode = null;
+
         async function loadStrategy() {
             try {
                 // First check trading status
@@ -463,16 +466,18 @@
                     } else {
                         document.getElementById('execution_mode_dry_run').checked = true;
                     }
+                    // Store the original execution mode
+                    originalExecutionMode = executionMode;
 
                     // Legacy Fields
                     // Load percentile multipliers (6 tiers)
                     // Use existing fields as fallback for backward compatibility
-                    document.getElementById('ahr999_multiplier_p10').value = strategy.ahr999_multiplier_p10 || strategy.ahr999_multiplier_low || 5.0;
-                    document.getElementById('ahr999_multiplier_p25').value = strategy.ahr999_multiplier_p25 || strategy.ahr999_multiplier_mid || 2.0;
-                    document.getElementById('ahr999_multiplier_p50').value = strategy.ahr999_multiplier_p50 || 1.0;
-                    document.getElementById('ahr999_multiplier_p75').value = strategy.ahr999_multiplier_p75 || 0.0;
-                    document.getElementById('ahr999_multiplier_p90').value = strategy.ahr999_multiplier_p90 || 0.0;
-                    document.getElementById('ahr999_multiplier_p100').value = strategy.ahr999_multiplier_p100 || strategy.ahr999_multiplier_high || 0.0;
+                    document.getElementById('ahr999_multiplier_p10').value = strategy.ahr999_multiplier_p10 ?? strategy.ahr999_multiplier_low ?? 5.0;
+                    document.getElementById('ahr999_multiplier_p25').value = strategy.ahr999_multiplier_p25 ?? strategy.ahr999_multiplier_mid ?? 2.0;
+                    document.getElementById('ahr999_multiplier_p50').value = strategy.ahr999_multiplier_p50 ?? 1.0;
+                    document.getElementById('ahr999_multiplier_p75').value = strategy.ahr999_multiplier_p75 ?? 0.0;
+                    document.getElementById('ahr999_multiplier_p90').value = strategy.ahr999_multiplier_p90 ?? 0.0;
+                    document.getElementById('ahr999_multiplier_p100').value = strategy.ahr999_multiplier_p100 ?? strategy.ahr999_multiplier_high ?? 0.0;
                     
                     // Dynamic Fields
                     document.getElementById('dynamic_min_multiplier').value = strategy.dynamic_min_multiplier !== null ? strategy.dynamic_min_multiplier : 0.0;
@@ -646,16 +651,17 @@
                 // Legacy Fields
                 // Save percentile multipliers (6 tiers)
                 // For backward compatibility, also save to old fields
-                ahr999_multiplier_p10: parseFloat(document.getElementById('ahr999_multiplier_p10').value) || 5.0,
-                ahr999_multiplier_p25: parseFloat(document.getElementById('ahr999_multiplier_p25').value) || 2.0,
-                ahr999_multiplier_p50: parseFloat(document.getElementById('ahr999_multiplier_p50').value) || 1.0,
-                ahr999_multiplier_p75: parseFloat(document.getElementById('ahr999_multiplier_p75').value) || 0.0,
-                ahr999_multiplier_p90: parseFloat(document.getElementById('ahr999_multiplier_p90').value) || 0.0,
-                ahr999_multiplier_p100: parseFloat(document.getElementById('ahr999_multiplier_p100').value) || 0.0,
+                // Use nullish coalescing (??) instead of || to preserve 0 values
+                ahr999_multiplier_p10: parseFloat(document.getElementById('ahr999_multiplier_p10').value) ?? 5.0,
+                ahr999_multiplier_p25: parseFloat(document.getElementById('ahr999_multiplier_p25').value) ?? 2.0,
+                ahr999_multiplier_p50: parseFloat(document.getElementById('ahr999_multiplier_p50').value) ?? 1.0,
+                ahr999_multiplier_p75: parseFloat(document.getElementById('ahr999_multiplier_p75').value) ?? 0.0,
+                ahr999_multiplier_p90: parseFloat(document.getElementById('ahr999_multiplier_p90').value) ?? 0.0,
+                ahr999_multiplier_p100: parseFloat(document.getElementById('ahr999_multiplier_p100').value) ?? 0.0,
                 // Backward compatibility: map to old fields
-                ahr999_multiplier_low: parseFloat(document.getElementById('ahr999_multiplier_p10').value) || 5.0,
-                ahr999_multiplier_mid: parseFloat(document.getElementById('ahr999_multiplier_p25').value) || 2.0,
-                ahr999_multiplier_high: parseFloat(document.getElementById('ahr999_multiplier_p100').value) || 0.0,
+                ahr999_multiplier_low: parseFloat(document.getElementById('ahr999_multiplier_p10').value) ?? 5.0,
+                ahr999_multiplier_mid: parseFloat(document.getElementById('ahr999_multiplier_p25').value) ?? 2.0,
+                ahr999_multiplier_high: parseFloat(document.getElementById('ahr999_multiplier_p100').value) ?? 0.0,
                 
                 // Dynamic Fields
                 dynamic_min_multiplier: parseFloat(document.getElementById('dynamic_min_multiplier').value),
@@ -674,7 +680,8 @@
                 });
                 
                 if (response.ok) {
-                    if (data.execution_mode === 'LIVE') {
+                    // Only show LIVE warning when switching FROM DRY_RUN TO LIVE
+                    if (data.execution_mode === 'LIVE' && originalExecutionMode !== 'LIVE') {
                         notyf.success('⚠ LIVE Trading Mode Activated!');
                     } else {
                         notyf.success('Strategy updated');

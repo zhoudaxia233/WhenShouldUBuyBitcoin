@@ -126,7 +126,7 @@ def test_weekly_frequency_with_no_cap(mock_metrics, session: Session, weekly_str
     session.commit()
     
     mock_metrics.return_value = {
-        "ahr999": 1.5,  # High band
+        "ahr999": 1.0,  # Mid band (multiplier=1.0, not 0)
         "price_usd": 50000.0,
         "timestamp": datetime.now(timezone.utc),
         "source": "csv",

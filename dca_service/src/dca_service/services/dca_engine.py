@@ -422,6 +422,28 @@ def calculate_dca_decision(session: Session) -> DCADecision:
                 }
             )
             return DCADecision(**decision_data)
+    
+    # Check if multiplier is 0 or negative (no purchase needed)
+    # This handles cases where user sets multiplier to 0 for a specific tier
+    if multiplier <= 0:
+        decision_data = base_decision.copy()
+        decision_data.update(
+            {
+                "can_execute": False,
+                "reason": f"Multiplier is 0 for {band}, no purchase needed",
+                "ahr999_value": ahr999,
+                "ahr_band": band,
+                "multiplier": multiplier,
+                "base_amount_usd": base_amount,
+                "suggested_amount_usd": suggested_amount,
+                "price_usd": price,
+                "metrics_source": {"backend": source_backend, "label": source_label},
+                "remaining_budget": remaining_budget,
+                "budget_resets": budget_resets,
+                "time_until_reset": time_until_reset,
+            }
+        )
+        return DCADecision(**decision_data)
 
     return DCADecision(
         can_execute=True,
@@ -438,3 +460,4 @@ def calculate_dca_decision(session: Session) -> DCADecision:
         budget_resets=budget_resets,
         time_until_reset=time_until_reset,
     )
+
