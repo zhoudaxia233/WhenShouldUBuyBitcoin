@@ -66,6 +66,12 @@ app.add_middleware(
 BASE_DIR = Path(__file__).resolve().parent
 templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
 
+# Mount docs folder for analysis charts and data
+# This serves the btc_metrics.csv analysis HTML files
+DOCS_DIR = Path(__file__).resolve().parent.parent.parent.parent / "docs"
+if DOCS_DIR.exists():
+    app.mount("/analysis", StaticFiles(directory=str(DOCS_DIR), html=True), name="analysis")
+
 # Include API routers
 app.include_router(routes.router, prefix=settings.API_V1_STR)
 app.include_router(strategy_api.router, prefix=settings.API_V1_STR)
