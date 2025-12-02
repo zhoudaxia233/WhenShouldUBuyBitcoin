@@ -43,7 +43,6 @@ docker-compose*.yml
 # Documentation
 *.md
 !README.md
-docs/
 !docs/data/
 
 # Tests
