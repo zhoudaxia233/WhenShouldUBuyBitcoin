@@ -18,6 +18,8 @@ from datetime import datetime
 
 # Add src to path
 sys.path.insert(0, str(Path(__file__).parent / "src"))
+# Add dca_service/src to path for shared logic
+sys.path.insert(0, str(Path(__file__).parent / "dca_service/src"))
 
 from whenshouldubuybitcoin.data_fetcher import (
     fetch_btc_history,
@@ -419,6 +421,40 @@ def main():
                 else:
                     print("⚠ OI Data is empty or missing columns.")
             
+            print("\n" + "=" * 80)
+            print("STEP 7: Update Wealth Distribution Data")
+            print("=" * 80)
+            
+            try:
+                # Import here to avoid issues if dca_service dependencies aren't fully met in all envs
+                from dca_service.services.distribution_scraper import fetch_distribution
+                
+                print("Fetching latest wealth distribution data...")
+                # Force fetch (use_cache=False) to get fresh data
+                distribution_data = fetch_distribution(use_cache=False)
+                
+                if distribution_data:
+                    # Define path to save
+                    json_path = Path("dca_service/src/dca_service/data/wealth_distribution.json")
+                    json_path.parent.mkdir(parents=True, exist_ok=True)
+                    
+                    with open(json_path, 'w') as f:
+                        json.dump(distribution_data, f, indent=2)
+                    
+                    print(f"✓ Updated wealth distribution data: {json_path}")
+                    
+                    # Verify one data point
+                    if len(distribution_data) > 6:
+                        # [0.1 - 1) tier is usually around index 6
+                        tier_data = distribution_data[6]
+                        print(f"  Sample check: {tier_data.get('tier')} -> {tier_data.get('percentile')}")
+                else:
+                    print("⚠ Warning: No distribution data returned")
+                    
+            except Exception as e:
+                print(f"⚠ Warning: Failed to update wealth distribution: {e}")
+                print("  Skipping this step (non-critical).")
+
             print("\n" + "=" * 80)
             print("✓ All steps complete!")
             print("=" * 80)

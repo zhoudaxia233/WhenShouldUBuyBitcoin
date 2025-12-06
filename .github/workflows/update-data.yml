@@ -39,6 +39,6 @@ jobs:
         run: |
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
-          git add docs/data/*.csv docs/data/*.json docs/charts/*.html
+          git add docs/data/*.csv docs/data/*.json docs/charts/*.html dca_service/src/dca_service/data/wealth_distribution.json
           git diff --quiet && git diff --staged --quiet || (git commit -m "chore: update BTC data and charts [skip ci]" && git push)
 
