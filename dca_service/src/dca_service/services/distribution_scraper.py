@@ -207,7 +207,15 @@ def fetch_distribution(use_cache: bool = True) -> List[Dict[str, str]]:
             # The value in parentheses is the cumulative % of addresses with balance >= this tier
             percentile = _parse_percentile(str(addresses_total))
 
-            result.append({"tier": str(tier), "percentile": percentile})
+            result.append({
+                "tier": str(tier),
+                "balance": str(tier),
+                "addresses": str(row.get("Addresses", "")),
+                "coins": str(row.get("BTC", "")),
+                "usd": str(row.get("USD", "")),
+                "percent_coins": str(row.get("% BTC (Total)", "")),
+                "percentile": percentile
+            })
 
         if not result:
             raise ValueError("Failed to parse any distribution data")
