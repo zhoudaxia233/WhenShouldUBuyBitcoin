@@ -343,6 +343,12 @@ class DCAScheduler:
                     source=source,
                     binance_order_id=binance_order_id  # Save Binance order ID
                 )
+
+                # Deduct executed amount from accumulated savings
+                # Safe to deduct because we checked budget availability in calculate_dca_decision
+                if strategy.accumulated_savings > 0:
+                     strategy.accumulated_savings = max(0.0, strategy.accumulated_savings - executed_usd)
+                     session.add(strategy)
             
             session.add(transaction)
             session.commit()

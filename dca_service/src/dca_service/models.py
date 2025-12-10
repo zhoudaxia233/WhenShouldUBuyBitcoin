@@ -49,6 +49,9 @@ class DCAStrategy(SQLModel, table=True):
     is_active: bool = Field(default=False)
     total_budget_usd: float
     enforce_monthly_cap: bool = Field(default=True)  # Enforce monthly budget limit
+    unlimited_monthly_budget: bool = Field(default=False)  # If True, can spend accumulated savings
+    accumulated_savings: float = Field(default=0.0)  # Savings from previous months
+    last_monthly_inflow: Optional[datetime] = Field(default=None)  # When we last added monthly budget to savings
     ahr999_multiplier_low: float  # Legacy field, kept for backward compatibility
     ahr999_multiplier_mid: float  # Legacy field, kept for backward compatibility
     ahr999_multiplier_high: float  # Legacy field, kept for backward compatibility
