@@ -238,10 +238,11 @@
                             <label for="strategy_type" class="form-label">Strategy Type</label>
                             <select class="form-select" id="strategy_type">
                                 <option value="legacy_band">AHR999 Percentile Strategy</option>
+                                <option value="ahr999_fixed_range">AHR999 Fixed Range Strategy</option>
                                 <option value="dynamic_ahr999">Dynamic AHR999 Strategy (Advanced)</option>
                             </select>
                             <div class="form-text text-muted">
-                                Choose between the percentile-based approach (uses historical AHR999 distribution) or the new continuous curve strategy.
+                                Choose between percentile-based (uses historical distribution), fixed range (deterministic thresholds), or continuous curve strategy.
                             </div>
                         </div>
                     </div>
@@ -323,6 +324,100 @@
                         </div>
                         <div class="alert alert-info mt-3">
                             <strong>Note:</strong> Percentile thresholds (p10, p25, p50, p75, p90) are calculated from historical AHR999 data and update automatically.
+                        </div>
+                    </div>
+
+                    <!-- AHR999 Fixed Range Config Section (8 ranges) -->
+                    <div id="fixedRangeConfigSection" class="d-none">
+                        <div class="percentile-tiers">
+                            <div class="tier-row tier-header">
+                                <div class="tier-label">AHR999 Range</div>
+                                <div class="tier-multiplier">Multiplier</div>
+                                <div class="tier-daily">Daily Amount</div>
+                            </div>
+                            
+                            <div class="tier-row">
+                                <div class="tier-label">
+                                    0 - 0.45 (EXTREMELY CHEAP)
+                                </div>
+                                <div class="tier-multiplier">
+                                    <input type="number" class="tier-input" id="ahr999_multiplier_r045" value="5" min="0" max="10" step="0.5" placeholder="5.0" oninput="updateFixedRangeTiers()" />
+                                </div>
+                                <div class="tier-daily" id="tier-r045-amount">-</div>
+                            </div>
+                            
+                            <div class="tier-row">
+                                <div class="tier-label">
+                                    0.45 - 0.5 (Very Cheap)
+                                </div>
+                                <div class="tier-multiplier">
+                                    <input type="number" class="tier-input" id="ahr999_multiplier_r050" value="3" min="0" max="10" step="0.5" placeholder="3.0" oninput="updateFixedRangeTiers()" />
+                                </div>
+                                <div class="tier-daily" id="tier-r050-amount">-</div>
+                            </div>
+                            
+                            <div class="tier-row">
+                                <div class="tier-label">
+                                    0.5 - 0.6 (Cheap)
+                                </div>
+                                <div class="tier-multiplier">
+                                    <input type="number" class="tier-input" id="ahr999_multiplier_r060" value="2" min="0" max="10" step="0.5" placeholder="2.0" oninput="updateFixedRangeTiers()" />
+                                </div>
+                                <div class="tier-daily" id="tier-r060-amount">-</div>
+                            </div>
+                            
+                            <div class="tier-row">
+                                <div class="tier-label">
+                                    0.6 - 0.7 (Fair)
+                                </div>
+                                <div class="tier-multiplier">
+                                    <input type="number" class="tier-input" id="ahr999_multiplier_r070" value="1" min="0" max="10" step="0.5" placeholder="1.0" oninput="updateFixedRangeTiers()" />
+                                </div>
+                                <div class="tier-daily" id="tier-r070-amount">-</div>
+                            </div>
+                            
+                            <div class="tier-row">
+                                <div class="tier-label">
+                                    0.7 - 0.8 (Getting Expensive)
+                                </div>
+                                <div class="tier-multiplier">
+                                    <input type="number" class="tier-input" id="ahr999_multiplier_r080" value="0.5" min="0" max="10" step="0.5" placeholder="0.5" oninput="updateFixedRangeTiers()" />
+                                </div>
+                                <div class="tier-daily" id="tier-r080-amount">-</div>
+                            </div>
+                            
+                            <div class="tier-row">
+                                <div class="tier-label">
+                                    0.8 - 0.9 (Expensive)
+                                </div>
+                                <div class="tier-multiplier">
+                                    <input type="number" class="tier-input" id="ahr999_multiplier_r090" value="0" min="0" max="10" step="0.5" placeholder="0" oninput="updateFixedRangeTiers()" />
+                                </div>
+                                <div class="tier-daily" id="tier-r090-amount">-</div>
+                            </div>
+                            
+                            <div class="tier-row">
+                                <div class="tier-label">
+                                    0.9 - 1.0 (Very Expensive)
+                                </div>
+                                <div class="tier-multiplier">
+                                    <input type="number" class="tier-input" id="ahr999_multiplier_r100" value="0" min="0" max="10" step="0.5" placeholder="0" oninput="updateFixedRangeTiers()" />
+                                </div>
+                                <div class="tier-daily" id="tier-r100-amount">-</div>
+                            </div>
+                            
+                            <div class="tier-row">
+                                <div class="tier-label">
+                                    &gt; 1.0 (EXTREMELY EXPENSIVE)
+                                </div>
+                                <div class="tier-multiplier">
+                                    <input type="number" class="tier-input" id="ahr999_multiplier_r999" value="0" min="0" max="10" step="0.5" placeholder="0" oninput="updateFixedRangeTiers()" />
+                                </div>
+                                <div class="tier-daily" id="tier-r999-amount">-</div>
+                            </div>
+                        </div>
+                        <div class="alert alert-info mt-3">
+                            <strong>Note:</strong> Fixed Range Strategy uses absolute AHR999 value thresholds (not percentiles). This provides deterministic behavior regardless of historical data.
                         </div>
                     </div>
 
@@ -487,11 +582,22 @@
                     document.getElementById('dynamic_a_high').value = strategy.dynamic_a_high !== null ? strategy.dynamic_a_high : 1.0;
                     document.getElementById('dynamic_enable_drawdown_boost').checked = strategy.dynamic_enable_drawdown_boost !== null ? strategy.dynamic_enable_drawdown_boost : true;
                     
+                    // Load Fixed Range multipliers (8 ranges)
+                    document.getElementById('ahr999_multiplier_r045').value = strategy.ahr999_multiplier_r045 ?? 5.0;
+                    document.getElementById('ahr999_multiplier_r050').value = strategy.ahr999_multiplier_r050 ?? 3.0;
+                    document.getElementById('ahr999_multiplier_r060').value = strategy.ahr999_multiplier_r060 ?? 2.0;
+                    document.getElementById('ahr999_multiplier_r070').value = strategy.ahr999_multiplier_r070 ?? 1.0;
+                    document.getElementById('ahr999_multiplier_r080').value = strategy.ahr999_multiplier_r080 ?? 0.5;
+                    document.getElementById('ahr999_multiplier_r090').value = strategy.ahr999_multiplier_r090 ?? 0.0;
+                    document.getElementById('ahr999_multiplier_r100').value = strategy.ahr999_multiplier_r100 ?? 0.0;
+                    document.getElementById('ahr999_multiplier_r999').value = strategy.ahr999_multiplier_r999 ?? 0.0;
+                    
                     // Trigger updates
                     updateDailyCalc();
                     toggleDayOfWeek();
                     toggleStrategyType();
                     loadPercentileThresholds();
+                    updateFixedRangeTiers();
                 }
             } catch (error) {
                 console.error('Error loading strategy:', error);
@@ -511,6 +617,7 @@
                 helpText.textContent = '';
             }
             updatePercentileTiers();
+            updateFixedRangeTiers();
         }
 
         function updatePercentileTiers() {
@@ -524,6 +631,31 @@
                 { id: 'p75', multiplierId: 'ahr999_multiplier_p75', amountId: 'tier-p75-amount' },
                 { id: 'p90', multiplierId: 'ahr999_multiplier_p90', amountId: 'tier-p90-amount' },
                 { id: 'p100', multiplierId: 'ahr999_multiplier_p100', amountId: 'tier-p100-amount' },
+            ];
+            
+            tiers.forEach(tier => {
+                const multiplier = parseFloat(document.getElementById(tier.multiplierId).value) || 0;
+                const amount = dailyBudget * multiplier;
+                const amountElement = document.getElementById(tier.amountId);
+                if (amountElement) {
+                    amountElement.textContent = `$${amount.toFixed(2)}/day`;
+                }
+            });
+        }
+
+        function updateFixedRangeTiers() {
+            const monthlyBudget = parseFloat(document.getElementById('total_budget_usd').value) || 0;
+            const dailyBudget = monthlyBudget / 30.44; // Days per month
+            
+            const tiers = [
+                { id: 'r045', multiplierId: 'ahr999_multiplier_r045', amountId: 'tier-r045-amount' },
+                { id: 'r050', multiplierId: 'ahr999_multiplier_r050', amountId: 'tier-r050-amount' },
+                { id: 'r060', multiplierId: 'ahr999_multiplier_r060', amountId: 'tier-r060-amount' },
+                { id: 'r070', multiplierId: 'ahr999_multiplier_r070', amountId: 'tier-r070-amount' },
+                { id: 'r080', multiplierId: 'ahr999_multiplier_r080', amountId: 'tier-r080-amount' },
+                { id: 'r090', multiplierId: 'ahr999_multiplier_r090', amountId: 'tier-r090-amount' },
+                { id: 'r100', multiplierId: 'ahr999_multiplier_r100', amountId: 'tier-r100-amount' },
+                { id: 'r999', multiplierId: 'ahr999_multiplier_r999', amountId: 'tier-r999-amount' },
             ];
             
             tiers.forEach(tier => {
@@ -579,14 +711,21 @@
         function toggleStrategyType() {
             const type = document.getElementById('strategy_type').value;
             const legacySection = document.getElementById('legacyConfigSection');
+            const fixedRangeSection = document.getElementById('fixedRangeConfigSection');
             const dynamicSection = document.getElementById('dynamicConfigSection');
             
+            // Hide all sections first
+            legacySection.classList.add('d-none');
+            fixedRangeSection.classList.add('d-none');
+            dynamicSection.classList.add('d-none');
+            
+            // Show the selected section
             if (type === 'dynamic_ahr999') {
-                legacySection.classList.add('d-none');
                 dynamicSection.classList.remove('d-none');
+            } else if (type === 'ahr999_fixed_range') {
+                fixedRangeSection.classList.remove('d-none');
             } else {
                 legacySection.classList.remove('d-none');
-                dynamicSection.classList.add('d-none');
             }
         }
         
@@ -662,6 +801,16 @@
                 ahr999_multiplier_low: parseFloat(document.getElementById('ahr999_multiplier_p10').value) ?? 5.0,
                 ahr999_multiplier_mid: parseFloat(document.getElementById('ahr999_multiplier_p25').value) ?? 2.0,
                 ahr999_multiplier_high: parseFloat(document.getElementById('ahr999_multiplier_p100').value) ?? 0.0,
+                
+                // AHR999 Fixed Range Fields (8 ranges)
+                ahr999_multiplier_r045: parseFloat(document.getElementById('ahr999_multiplier_r045').value) ?? 5.0,
+                ahr999_multiplier_r050: parseFloat(document.getElementById('ahr999_multiplier_r050').value) ?? 3.0,
+                ahr999_multiplier_r060: parseFloat(document.getElementById('ahr999_multiplier_r060').value) ?? 2.0,
+                ahr999_multiplier_r070: parseFloat(document.getElementById('ahr999_multiplier_r070').value) ?? 1.0,
+                ahr999_multiplier_r080: parseFloat(document.getElementById('ahr999_multiplier_r080').value) ?? 0.5,
+                ahr999_multiplier_r090: parseFloat(document.getElementById('ahr999_multiplier_r090').value) ?? 0.0,
+                ahr999_multiplier_r100: parseFloat(document.getElementById('ahr999_multiplier_r100').value) ?? 0.0,
+                ahr999_multiplier_r999: parseFloat(document.getElementById('ahr999_multiplier_r999').value) ?? 0.0,
                 
                 // Dynamic Fields
                 dynamic_min_multiplier: parseFloat(document.getElementById('dynamic_min_multiplier').value),
