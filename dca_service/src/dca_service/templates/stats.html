@@ -40,6 +40,9 @@
                         <button id="refreshStatsBtn" class="btn btn-outline-primary text-nowrap" title="Force Refresh Data">
                             🔄 Refresh
                         </button>
+                        <button id="regenerateStaticBtn" class="btn btn-outline-success text-nowrap" title="Regenerate static files (charts, data)">
+                            📊 Update Charts
+                        </button>
                     </div>
                     <!-- User section -->
                     {% if user %}
@@ -494,6 +497,36 @@
                 btn.disabled = false;
                 btn.innerHTML = originalText;
                 notyf.success('Stats refreshed');
+            });
+            
+            // Regenerate Static Files Button Handler
+            document.getElementById('regenerateStaticBtn').addEventListener('click', async (event) => {
+                event.preventDefault(); // Prevent any default behavior
+                
+                const btn = document.getElementById('regenerateStaticBtn');
+                const originalText = btn.innerHTML;
+                btn.disabled = true;
+                btn.innerHTML = '📊 Updating...';
+                
+                try {
+                    const response = await fetch('/api/static/regenerate', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' }
+                    });
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        notyf.success(data.message || 'Static files are being regenerated');
+                    } else {
+                        notyf.error(data.error || 'Failed to trigger static file generation');
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    notyf.error('Failed to trigger static file generation');
+                } finally {
+                    btn.disabled = false;
+                    btn.innerHTML = originalText;
+                }
             });
         });
     </script>

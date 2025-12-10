@@ -196,3 +196,42 @@ This is a test message from your DCA Service."""
             "success": False,
             "error": str(e)
         }
+
+
+@router.post("/static/regenerate")
+async def regenerate_static_files(
+    current_user: User = Depends(get_current_user)  # Authentication required
+):
+    """
+    Manually trigger regeneration of static files (charts, data, etc.).
+    
+    Runs main.py as a background process to update all analysis files.
+    This is the same process that runs automatically after DCA transactions.
+    
+    Returns:
+        dict: {"success": true, "message": "...", "background": true} on success
+    """
+    try:
+        from dca_service.services.static_generator import trigger_static_generation
+        
+        # Trigger in background mode
+        process = trigger_static_generation(background=True)
+        
+        return {
+            "success": True,
+            "message": "Static file generation started in background. This may take 30-60 seconds.",
+            "background": True,
+            "pid": process.pid if process else None
+        }
+    except FileNotFoundError as e:
+        logger.error(f"Failed to trigger static generation: {e}")
+        return {
+            "success": False,
+            "error": "main.py not found. Check server configuration."
+        }
+    except Exception as e:
+        logger.error(f"Error triggering static generation: {e}")
+        return {
+            "success": False,
+            "error": str(e)
+        }
