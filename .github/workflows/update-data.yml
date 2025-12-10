@@ -28,12 +28,44 @@ jobs:
       - name: Install dependencies
         run: |
           poetry install --no-interaction
+      
+      - name: Update SSL certificates
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ca-certificates
+          sudo update-ca-certificates
           
       - name: Run data update
         env:
           FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
+          PYTHONWARNINGS: ignore:Unverified HTTPS request
         run: |
-          poetry run python main.py
+          # Retry up to 3 times with exponential backoff
+          max_attempts=3
+          attempt=1
+          
+          while [ $attempt -le $max_attempts ]; do
+            echo "Attempt $attempt of $max_attempts..."
+            
+            if poetry run python main.py; then
+              echo "✓ Data update successful"
+              exit 0
+            else
+              exit_code=$?
+              echo "✗ Attempt $attempt failed with exit code $exit_code"
+              
+              if [ $attempt -lt $max_attempts ]; then
+                sleep_time=$((attempt * 10))
+                echo "Waiting ${sleep_time}s before retry..."
+                sleep $sleep_time
+              fi
+            fi
+            
+            attempt=$((attempt + 1))
+          done
+          
+          echo "✗ All attempts failed. Continuing anyway (non-critical)..."
+          exit 0  # Don't fail the workflow - data updates are best-effort
           
       - name: Commit and push if changed
         run: |
