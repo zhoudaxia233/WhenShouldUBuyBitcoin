@@ -33,6 +33,53 @@ class DCADecision(BaseModel):
     )
 
 
+def _check_monthly_inflow(session: Session, strategy: DCAStrategy, now: datetime, month_spent: float):
+    """
+    Check if we need to add a new monthly budget inflow to savings.
+    If last_monthly_inflow is None, initialize with current month's remaining budget.
+    
+    Budget behavior depends on unlimited_monthly_budget flag:
+    - Limited Mode (default): Budget resets monthly (unspent funds are lost)
+    - Unlimited Mode: Budget accumulates monthly (unspent funds carry over)
+    """
+    # Initialize if needed
+    if strategy.last_monthly_inflow is None:
+        # First run of new logic.
+        # Initialize savings with the REMAINDER of this month's budget.
+        # Logic: savings = (TotalBudget - SpentThisMonth).
+        strategy.accumulated_savings = max(0.0, strategy.total_budget_usd - month_spent)
+        strategy.last_monthly_inflow = now
+        session.add(strategy)
+        session.commit()
+        session.refresh(strategy)
+        return
+
+    # Check for new month
+    last_inflow = strategy.last_monthly_inflow.replace(tzinfo=timezone.utc) if strategy.last_monthly_inflow.tzinfo is None else strategy.last_monthly_inflow
+    
+    # Calculate months passed
+    # Simple check: (now.year - last.year) * 12 + now.month - last_inflow.month
+    months_diff = (now.year - last_inflow.year) * 12 + (now.month - last_inflow.month)
+
+    if months_diff > 0:
+        # Budget update depends on mode
+        if strategy.unlimited_monthly_budget:
+            # Unlimited Mode: Accumulate budget for each month passed
+            # User's unspent funds carry over to future months
+            inflow_amount = months_diff * strategy.total_budget_usd
+            strategy.accumulated_savings += inflow_amount
+        else:
+            # Limited Mode: Reset to current month's budget
+            # Unspent budget from previous months is lost (resets monthly)
+            # This matches the frontend backtest behavior where cashBalance is reset
+            strategy.accumulated_savings = strategy.total_budget_usd
+        
+        strategy.last_monthly_inflow = now
+        session.add(strategy)
+        session.commit()
+        session.refresh(strategy)
+
+
 def calculate_dca_decision(session: Session) -> DCADecision:
     """
     Core logic to determine if and how much to buy.
@@ -64,6 +111,27 @@ def calculate_dca_decision(session: Session) -> DCADecision:
         decision_data = base_decision.copy()
         decision_data["reason"] = "No strategy found"
         return DCADecision(**decision_data)
+
+    # 0. Check monthly inflow (accumulate savings)
+    # Passed month_spent is not needed here as we query inside helper if needed?
+    # Actually helper needs month_spent to init?
+    # Let's calculate month_spent early or pass 0/query inside?
+    # The helper needs 'month_spent' ONLY for initialization logic.
+    # We can query it cheaply.
+    
+    # Query current month spent for initialization logic
+    now_utc = datetime.now(timezone.utc)
+    month_start = now_utc.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    month_spent_init = session.exec(
+        select(DCATransaction.fiat_amount).where(
+            DCATransaction.status == "SUCCESS",
+            DCATransaction.timestamp >= month_start,
+            DCATransaction.is_manual == False
+        )
+    ).all()
+    month_spent_val = sum(month_spent_init) if month_spent_init else 0.0
+    
+    _check_monthly_inflow(session, strategy, now_utc, month_spent_val)
 
     if not metrics:
         decision_data = base_decision.copy()
@@ -163,8 +231,33 @@ def calculate_dca_decision(session: Session) -> DCADecision:
         # Calculate expected uncapped amount (before monthly cap)
         uncapped_amount = base_amount * multiplier
 
-        if result.capped and suggested_amount == 0:
-            reason = "Monthly Cap Exceeded"
+        # Logic moved to end of function to support all strategies
+        
+        # Calculate budget limit based on mode
+        available_cash = strategy.accumulated_savings
+        monthly_remaining = max(0.0, strategy.total_budget_usd - month_spent)
+        
+        if strategy.unlimited_monthly_budget:
+            # Unlimited: Cap is only available cash (savings)
+            budget_limit = available_cash
+            tx_capped_reason = f"Capped by Savings (${available_cash:.2f})"
+        else:
+            # Limited: Cap is min(Monthly Remaining, Available Cash)
+            budget_limit = min(monthly_remaining, available_cash)
+            if monthly_remaining < available_cash:
+                tx_capped_reason = f"Capped by Monthly Limit (${monthly_remaining:.2f})"
+            else:
+                tx_capped_reason = f"Capped by Savings (${available_cash:.2f})"
+        
+        # Apply strict budget limit to suggested amount
+        original_suggested = suggested_amount
+        suggested_amount = min(suggested_amount, budget_limit)
+        
+        # Determine if capped
+        is_capped = suggested_amount < original_suggested
+        
+        if is_capped and suggested_amount == 0:
+            reason = f"Budget Exhausted ({tx_capped_reason})"
         else:
             # Build a clear, step-by-step formula showing the complete calculation chain
             # Use newlines for better readability in UI
@@ -174,54 +267,6 @@ def calculate_dca_decision(session: Session) -> DCADecision:
             lines.append(
                 f"AHR999 = {ahr999:.4f} (thresholds: a_low={config.a_low:.2f}, a_high={config.a_high:.2f})"
             )
-
-            # Step 2: Calculate cheapness
-            cheapness_calc = f"Cheapness = ({config.a_high:.2f} - {ahr999:.4f}) / ({config.a_high:.2f} - {config.a_low:.2f}) = {result.cheapness:.4f}"
-            lines.append(cheapness_calc)
-
-            # Step 3: Calculate base multiplier
-            mult_base_calc = f"Mult_base = {config.min_multiplier:.1f} + ({config.max_multiplier:.1f} - {config.min_multiplier:.1f}) × ({result.cheapness:.4f} ^ {config.gamma:.1f}) = {base_multiplier:.2f}x"
-            lines.append(mult_base_calc)
-
-            # Step 4: Drawdown and boost (if enabled)
-            if config.enable_drawdown_boost:
-                drawdown_pct = result.drawdown * 100
-                lines.append(
-                    f"Drawdown = {drawdown_pct:.1f}% → Boost = {result.drawdown_factor:.2f}x"
-                )
-
-                # Step 5: Calculate final multiplier (clear formula)
-                if result.multiplier_clipped:
-                    mult_final_calc = f"Mult_final = {base_multiplier:.2f}x × {result.drawdown_factor:.2f}x = {multiplier_before_clip:.2f}x [CLIPPED to {multiplier:.2f}x]"
-                else:
-                    mult_final_calc = f"Mult_final = {base_multiplier:.2f}x × {result.drawdown_factor:.2f}x = {multiplier:.2f}x"
-                lines.append(mult_final_calc)
-            else:
-                lines.append(
-                    f"Mult_final = Mult_base = {multiplier:.2f}x (boost disabled)"
-                )
-
-            # Step 6: Calculate buy amount (clear formula)
-            if result.capped or abs(suggested_amount - uncapped_amount) > 0.01:
-                buy_calc = f"Buy = ${base_amount:.2f} × {multiplier:.2f}x = ${uncapped_amount:.2f} [CAPPED to ${suggested_amount:.2f}]"
-                lines.append(buy_calc)
-
-                # Add monthly cap details if capped
-                if config.enable_monthly_cap:
-                    remaining_budget = config.monthly_cap - month_spent
-                    lines.append(
-                        f"Monthly Cap: ${month_spent:.2f} spent / ${config.monthly_cap:.2f} limit, remaining: ${remaining_budget:.2f}"
-                    )
-            else:
-                buy_calc = f"Buy = ${base_amount:.2f} × {multiplier:.2f}x = ${suggested_amount:.2f}"
-                lines.append(buy_calc)
-
-                # Show monthly cap status even if not capped
-                if config.enable_monthly_cap:
-                    remaining_budget = config.monthly_cap - month_spent
-                    lines.append(
-                        f"Monthly Cap: ${month_spent:.2f} spent / ${config.monthly_cap:.2f} limit, remaining: ${remaining_budget:.2f}"
-                    )
 
             # Join with separator (UI will convert to newlines)
             reason = " | ".join(lines)
@@ -397,31 +442,57 @@ def calculate_dca_decision(session: Session) -> DCADecision:
     if reason == "Conditions met":
         reason = f"Conditions met (Base ${base_amount:.2f} × Mult {multiplier:.2f}x)"
 
-    # Check Budget
-    if total_spent_sum + suggested_amount > strategy.total_budget_usd:
-        if strategy.enforce_monthly_cap:
-            reset_info = " (resets monthly)" if budget_resets else ""
+    # --- GLOBAL BUDGET CHECK (All Strategies) ---
+    available_cash = strategy.accumulated_savings
+    monthly_remaining = max(0.0, strategy.total_budget_usd - total_spent_sum) # total_spent_sum calculated at Line 362
+    
+    budget_limit = 0.0
+    tx_capped_reason = ""
+    
+    if strategy.unlimited_monthly_budget:
+        # Unlimited: Limit is available cash
+        budget_limit = available_cash
+        tx_capped_reason = f"Capped by Savings (${available_cash:.2f})"
+    else:
+        # Limited: Limit is min(Monthly Remaining, Available Cash)
+        budget_limit = min(monthly_remaining, available_cash)
+        if monthly_remaining < available_cash:
+            tx_capped_reason = f"Capped by Monthly Limit (${monthly_remaining:.2f})"
+        else:
+            tx_capped_reason = f"Capped by Savings (${available_cash:.2f})"
+
+    # Apply limit
+    original_suggested = suggested_amount
+    suggested_amount = min(suggested_amount, budget_limit)
+    is_capped = suggested_amount < original_suggested
+    
+    if is_capped:
+        if suggested_amount == 0:
             decision_data = base_decision.copy()
-            decision_data.update(
-                {
-                    "can_execute": False,
-                    "reason": f"Over budget. Spent: ${total_spent_sum:.2f}, Budget: ${strategy.total_budget_usd:.2f}{reset_info}",
-                    "ahr999_value": ahr999,
-                    "ahr_band": band,
-                    "multiplier": multiplier,
-                    "base_amount_usd": base_amount,
-                    "suggested_amount_usd": suggested_amount,
-                    "price_usd": price,
-                    "metrics_source": {
-                        "backend": source_backend,
-                        "label": source_label,
-                    },
-                    "remaining_budget": remaining_budget,
-                    "budget_resets": budget_resets,
-                    "time_until_reset": time_until_reset,
-                }
-            )
+            decision_data.update({
+                "can_execute": False,
+                "reason": f"Budget Exhausted ({tx_capped_reason}). Spent: ${total_spent_sum:.2f}",
+                "ahr999_value": ahr999,
+                "ahr_band": band,
+                "multiplier": multiplier,
+                "base_amount_usd": base_amount,
+                "suggested_amount_usd": suggested_amount,
+                "price_usd": price,
+                "remaining_budget": remaining_budget,
+                "budget_resets": budget_resets,
+                "time_until_reset": time_until_reset,
+                "metrics_source": {"backend": source_backend, "label": source_label},
+            })
             return DCADecision(**decision_data)
+        else:
+             # Partial execution allowed (or capped amount)
+             # Update reason with cap info
+             reason += f" [{tx_capped_reason}]"
+
+    # Append Budget Status to reason for visibility
+    reason += f" | Budget: Savings=${available_cash:.2f} | Monthly Spent=${total_spent_sum:.2f}/${strategy.total_budget_usd:.0f}"
+    if strategy.unlimited_monthly_budget:
+        reason += " | Mode: Unlimited Monthly Budget"
     
     # Check if multiplier is 0 or negative (no purchase needed)
     # This handles cases where user sets multiplier to 0 for a specific tier

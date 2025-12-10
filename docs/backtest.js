@@ -424,6 +424,21 @@ const AHR999_DEFAULT_MULTIPLIERS = {
     p100: 0, // Top 10% (VERY EXPENSIVE)
 };
 
+/**
+ * Default multipliers for AHR999 Fixed Range Strategy
+ * Uses absolute AHR999 values instead of historical percentiles
+ */
+const AHR999_FIXED_RANGE_DEFAULT_MULTIPLIERS = {
+    r045: 5.0,   // 0 - 0.45 (EXTREMELY CHEAP)
+    r050: 3.0,   // 0.45 - 0.5 (Very Cheap)
+    r060: 2.0,   // 0.5 - 0.6 (Cheap)
+    r070: 1.0,   // 0.6 - 0.7 (Fair)
+    r080: 0.5,   // 0.7 - 0.8 (Getting Expensive)
+    r090: 0.0,   // 0.8 - 0.9 (Expensive)
+    r100: 0.0,   // 0.9 - 1.0 (Very Expensive)
+    r999: 0.0    // > 1.0 (EXTREMELY EXPENSIVE)
+};
+
 // ============================================================================
 // STRATEGY BASE CLASS
 // ============================================================================
@@ -713,6 +728,141 @@ class AHR999PercentileStrategy extends Strategy {
 }
 
 // ============================================================================
+// STRATEGY: AHR999 FIXED RANGE
+// ============================================================================
+
+/**
+ * AHR999 Fixed Range Strategy
+ * 
+ * Uses fixed AHR999 value thresholds instead of historical percentiles.
+ * This provides deterministic behavior regardless of historical data.
+ * 
+ * Fixed ranges:
+ * - 0 - 0.45: EXTREMELY CHEAP (default 5x)
+ * - 0.45 - 0.5: Very Cheap (default 3x)
+ * - 0.5 - 0.6: Cheap (default 2x)
+ * - 0.6 - 0.7: Fair (default 1x)
+ * - 0.7 - 0.8: Getting Expensive (default 0.5x)
+ * - 0.8 - 0.9: Expensive (default 0x)
+ * - 0.9 - 1.0: Very Expensive (default 0x)
+ * - > 1.0: EXTREMELY EXPENSIVE (default 0x)
+ */
+class AHR999FixedRangeStrategy extends Strategy {
+    constructor(monthlyBudget, config = {}) {
+        super(monthlyBudget, config);
+        this.dailyBudget = monthlyBudget / BACKTEST_CONFIG.DAYS_PER_MONTH;
+
+        // Fixed AHR999 thresholds (absolute values, not percentiles)
+        this.thresholds = {
+            r045: 0.45,
+            r050: 0.50,
+            r060: 0.60,
+            r070: 0.70,
+            r080: 0.80,
+            r090: 0.90,
+            r100: 1.00
+        };
+
+        // User-configurable multipliers for each range
+        this.multipliers = {
+            r045: config.multiplier_r045 !== undefined 
+                ? config.multiplier_r045 
+                : AHR999_FIXED_RANGE_DEFAULT_MULTIPLIERS.r045,
+            r050: config.multiplier_r050 !== undefined 
+                ? config.multiplier_r050 
+                : AHR999_FIXED_RANGE_DEFAULT_MULTIPLIERS.r050,
+            r060: config.multiplier_r060 !== undefined 
+                ? config.multiplier_r060 
+                : AHR999_FIXED_RANGE_DEFAULT_MULTIPLIERS.r060,
+            r070: config.multiplier_r070 !== undefined 
+                ? config.multiplier_r070 
+                : AHR999_FIXED_RANGE_DEFAULT_MULTIPLIERS.r070,
+            r080: config.multiplier_r080 !== undefined 
+                ? config.multiplier_r080 
+                : AHR999_FIXED_RANGE_DEFAULT_MULTIPLIERS.r080,
+            r090: config.multiplier_r090 !== undefined 
+                ? config.multiplier_r090 
+                : AHR999_FIXED_RANGE_DEFAULT_MULTIPLIERS.r090,
+            r100: config.multiplier_r100 !== undefined 
+                ? config.multiplier_r100 
+                : AHR999_FIXED_RANGE_DEFAULT_MULTIPLIERS.r100,
+            r999: config.multiplier_r999 !== undefined 
+                ? config.multiplier_r999 
+                : AHR999_FIXED_RANGE_DEFAULT_MULTIPLIERS.r999,
+        };
+
+        this.unlimitedBudget = config.unlimitedBudget || false;
+    }
+
+    getName() {
+        return "AHR999 Fixed Range";
+    }
+
+    getDescription() {
+        return "Invest based on fixed AHR999 value ranges (deterministic)";
+    }
+
+    // Don't accumulate monthly budget - invest daily based on ranges
+    onMonthStart(date) {
+        // Do not add to cashBuffer - we calculate daily investment directly
+    }
+
+    initialize() {
+        super.initialize();
+        console.log("AHR999 Fixed Range Thresholds:", this.thresholds);
+        console.log("Multipliers:", this.multipliers);
+    }
+
+    shouldInvest(date, price, dayData) {
+        // Get AHR999 value
+        let ahr999;
+        if (dayData && dayData.ahr999 !== null) {
+            ahr999 = dayData.ahr999;
+        } else {
+            ahr999 = this.getCurrentAHR999(date);
+        }
+
+        // If we can't calculate AHR999 or invalid AHR999, don't invest
+        if (ahr999 === null || ahr999 === undefined || isNaN(ahr999)) {
+            return 0;
+        }
+
+        // Determine multiplier based on fixed AHR999 ranges
+        let multiplier;
+
+        if (ahr999 < this.thresholds.r045) {
+            // 0 - 0.45: EXTREMELY CHEAP
+            multiplier = this.multipliers.r045;
+        } else if (ahr999 < this.thresholds.r050) {
+            // 0.45 - 0.5: Very Cheap
+            multiplier = this.multipliers.r050;
+        } else if (ahr999 < this.thresholds.r060) {
+            // 0.5 - 0.6: Cheap
+            multiplier = this.multipliers.r060;
+        } else if (ahr999 < this.thresholds.r070) {
+            // 0.6 - 0.7: Fair
+            multiplier = this.multipliers.r070;
+        } else if (ahr999 < this.thresholds.r080) {
+            // 0.7 - 0.8: Getting Expensive
+            multiplier = this.multipliers.r080;
+        } else if (ahr999 < this.thresholds.r090) {
+            // 0.8 - 0.9: Expensive
+            multiplier = this.multipliers.r090;
+        } else if (ahr999 < this.thresholds.r100) {
+            // 0.9 - 1.0: Very Expensive
+            multiplier = this.multipliers.r100;
+        } else {
+            // > 1.0: EXTREMELY EXPENSIVE
+            multiplier = this.multipliers.r999;
+        }
+
+        // Calculate and return daily investment based on multiplier
+        // BacktestEngine will enforce cash constraints
+        return this.dailyBudget * multiplier;
+    }
+}
+
+// ============================================================================
 // STRATEGY D: DYNAMIC AHR999 (Advanced)
 // ============================================================================
 
@@ -945,31 +1095,9 @@ class BacktestEngine {
         result.durationDays =
             Math.floor((endDate - startDate) / (1000 * 60 * 60 * 24)) + 1; // +1 to include both start and end dates
 
-        // Calculate total budget for entire backtest period
-        // Strategy-specific budget calculation:
-        // - Daily DCA: Use days-based calculation (daily amount × days)
-        // - AHR999 (non-unlimited): Use days-based calculation (daily amount × days)
-        // - Monthly DCA: Use complete months count (to ensure full monthly investment)
-        // - AHR999 (unlimited): No budget limit (but still track for display)
-        let totalBudget;
-        if (this.strategy instanceof DailyDCAStrategy) {
-            // For Daily DCA, calculate based on actual days
-            const dailyBudget = monthlyBudget / BACKTEST_CONFIG.DAYS_PER_MONTH;
-            totalBudget = result.durationDays * dailyBudget; // durationDays already includes both start and end dates
-        } else if (
-            (this.strategy instanceof AHR999PercentileStrategy &&
-                !this.strategy.unlimitedBudget) ||
-            (this.strategy instanceof DynamicAHR999Strategy &&
-                this.strategy.config.enableMonthlyCap)
-        ) {
-            // For AHR999 strategies with monthly cap, calculate based on actual days
-            const dailyBudget = monthlyBudget / BACKTEST_CONFIG.DAYS_PER_MONTH;
-            totalBudget = result.durationDays * dailyBudget;
-        } else {
-            // For Monthly DCA and AHR999 (unlimited/no cap), use complete months count
-            const completeMonths = getCompleteMonthsCount(startDate, endDate);
-            totalBudget = completeMonths * monthlyBudget;
-        }
+        // Calculate total budget for entire backtest period (legacy calculation, only used for potential display)
+        // Now using monthly inflow logic
+        let totalBudgetAllocated = 0; // Tracks total USD injected into the system
 
         // Initialize strategy
         this.strategy.initialize();
@@ -980,55 +1108,54 @@ class BacktestEngine {
         let totalInvested = 0;
         let prevDate = null;
         let monthsElapsed = 0;
-
+        
+        // Monthly spending tracker (resets each month)
+        let currentMonthSpent = 0;
+        
         // Iterate day by day
         let currentDate = new Date(startDate);
+        
+        // Pre-calculate daily budget for daily DCA reference
+        const dailyBudget = monthlyBudget / BACKTEST_CONFIG.DAYS_PER_MONTH;
+
+        // Determine if strategy uses unlimited budget mode (accumulates cash)
+        // Only AHR999 strategies with unlimited flag should accumulate
+        const isUnlimitedBudget =
+            (this.strategy instanceof AHR999PercentileStrategy &&
+                this.strategy.unlimitedBudget) ||
+            (this.strategy instanceof AHR999FixedRangeStrategy &&
+                this.strategy.unlimitedBudget) ||
+            (this.strategy instanceof DynamicAHR999Strategy &&
+                !this.strategy.config.enableMonthlyCap);
 
         while (currentDate <= endDate) {
             // Check if new month started
             if (isFirstDayOfMonth(currentDate, prevDate)) {
                 this.strategy.onMonthStart(currentDate);
-                // For Daily DCA, add budget proportionally based on days in the period
-                // For AHR999 (non-unlimited), do NOT add to cashBalance - investment is limited by totalBudget only
-                // For AHR999 (unlimited), do NOT add to cashBalance - investment has no limit
-                // For Monthly DCA, add full monthly budget
-                // Note: AHR999 strategies should not accumulate cashBalance because unused budget would inflate finalPortfolioValue
-                if (this.strategy instanceof DailyDCAStrategy) {
-                    // Calculate how many days of this month are in the backtest period
-                    const monthStart = new Date(
-                        currentDate.getFullYear(),
-                        currentDate.getMonth(),
-                        1
-                    );
-                    const monthEnd = new Date(
-                        currentDate.getFullYear(),
-                        currentDate.getMonth() + 1,
-                        0
-                    );
-                    const periodStart =
-                        currentDate > startDate ? currentDate : startDate;
-                    const periodEnd = endDate < monthEnd ? endDate : monthEnd;
-                    const daysInPeriod =
-                        Math.floor(
-                            (periodEnd - periodStart) / (1000 * 60 * 60 * 24)
-                        ) + 1;
-                    // Use BACKTEST_CONFIG.DAYS_PER_MONTH for consistency with daily amount calculation
-                    const proportionalBudget =
-                        (daysInPeriod / BACKTEST_CONFIG.DAYS_PER_MONTH) *
-                        monthlyBudget;
-                    cashBalance += proportionalBudget;
-                } else if (
-                    this.strategy instanceof AHR999PercentileStrategy ||
-                    this.strategy instanceof DynamicAHR999Strategy
-                ) {
-                    // For AHR999 strategies, do NOT add to cashBalance
-                    // Investment is limited by totalBudget (for non-unlimited) or unlimited (for unlimited)
-                    // cashBalance should remain 0 to avoid inflating finalPortfolioValue with unused budget
-                    // Do nothing - cashBalance stays at 0
+                
+                // Reset monthly spending tracker
+                currentMonthSpent = 0;
+                
+                // Monthly Budget Logic:
+                // - Limited Budget Mode: Reset cashBalance to monthlyBudget (unspent money doesn't accumulate)
+                // - Unlimited Budget Mode: Accumulate monthlyBudget to cashBalance
+                if (isUnlimitedBudget) {
+                    // Unlimited: Accumulate unspent money
+                    cashBalance += monthlyBudget;
                 } else {
-                    cashBalance += monthlyBudget; // Add monthly budget to cash (Monthly DCA)
+                    // Limited: Reset budget each month (unspent money disappears)
+                    cashBalance = monthlyBudget;
                 }
+                
+                totalBudgetAllocated += monthlyBudget;
                 monthsElapsed++;
+            } else if (prevDate === null) {
+                // First day of simulation, provide initial funding
+                if (currentDate.getDate() !== 1) {
+                     cashBalance = monthlyBudget; // Start with full month budget
+                     totalBudgetAllocated += monthlyBudget;
+                     monthsElapsed++; 
+                }
             }
 
             // Get price data for this day
@@ -1041,44 +1168,46 @@ class BacktestEngine {
                 this.strategy.updatePriceHistory(price);
 
                 // Ask strategy how much to invest
-                const investAmount = this.strategy.shouldInvest(
+                // This returns the IDEAL amount based on strategy signals
+                const targetInvestAmount = this.strategy.shouldInvest(
                     currentDate,
                     price,
                     dayData
                 );
 
-                // Track if a transaction occurred (for portfolio history recording)
+                // Track if a transaction occurred
                 let hasTransaction = false;
 
                 // Execute investment if strategy decided to invest
-                if (investAmount > 0) {
-                    // Check if strategy has unlimited budget mode enabled
-                    const isUnlimitedBudget =
-                        (this.strategy instanceof AHR999PercentileStrategy &&
-                            this.strategy.unlimitedBudget) ||
-                        (this.strategy instanceof DynamicAHR999Strategy &&
-                            !this.strategy.config.enableMonthlyCap) ||
-                        false;
+                if (targetInvestAmount > 0) {
+                    let actualInvestment = 0;
 
-                    let actualInvestment;
                     if (isUnlimitedBudget) {
-                        // Unlimited budget: invest full amount requested by strategy
-                        actualInvestment = investAmount;
+                        // UNLIMITED BUDGET LOGIC (Spending from Savings)
+                        // Can spend up to total available cashBalance
+                        // No monthly cap override
+                        actualInvestment = Math.min(targetInvestAmount, cashBalance);
                     } else {
-                        // Limited budget: respect total budget constraint
-                        const budgetRemaining = totalBudget - totalInvested;
-                        actualInvestment = Math.min(
-                            investAmount,
-                            Math.max(0, budgetRemaining)
-                        );
+                        // LIMITED BUDGET LOGIC (Strict Monthly Cap)
+                        // Constraint 1: Cannot spend more than `monthlyBudget` in a single calendar month
+                        const monthlyRemaining = monthlyBudget - currentMonthSpent;
+                        
+                        // Constraint 2: Cannot spend more than you have (cashBalance)
+                        const maxSpendable = Math.min(monthlyRemaining, cashBalance);
+                        
+                        actualInvestment = Math.min(targetInvestAmount, maxSpendable);
                     }
 
-                    if (actualInvestment > 0) {
+                    if (actualInvestment > 0.01) { // Avoid dust
                         const btcBought = actualInvestment / price;
+                        
+                        // Update balances
                         btcBalance += btcBought;
+                        cashBalance -= actualInvestment;
                         totalInvested += actualInvestment;
+                        currentMonthSpent += actualInvestment;
 
-                        // Record transaction with AHR999 value
+                        // Record transaction
                         result.transactions.push(
                             new Transaction(
                                 new Date(currentDate),
@@ -1088,33 +1217,14 @@ class BacktestEngine {
                                 dayData.ahr999 || null
                             )
                         );
-
-                        // Update cashBalance
-                        // For AHR999 strategies, don't update cashBalance (finalPortfolioValue doesn't include it)
-                        // For other strategies, update cashBalance to track uninvested cash
-                        if (
-                            !(this.strategy instanceof AHR999PercentileStrategy) &&
-                            !(this.strategy instanceof DynamicAHR999Strategy)
-                        ) {
-                            cashBalance -= actualInvestment;
-                        }
                         hasTransaction = true;
                     }
                 }
 
-                // Calculate portfolio value
-                // For AHR999 strategies, only include BTC value (not unused budget)
-                // For other strategies, include cashBalance (uninvested cash)
-                const portfolioValue =
-                    this.strategy instanceof AHR999PercentileStrategy ||
-                    this.strategy instanceof DynamicAHR999Strategy
-                        ? btcBalance * price
-                        : cashBalance + btcBalance * price;
-
                 // Record portfolio state
-                // - Sample every 7 days to reduce data size
-                // - Always record on days with transactions (for buy points visibility)
-                // - Always record on end date
+                const portfolioValue = cashBalance + (btcBalance * price);
+
+                // Sample every 7 days, on transaction days, or end date
                 const daysSinceStart = Math.floor(
                     (currentDate - startDate) / (1000 * 60 * 60 * 24)
                 );
@@ -1142,37 +1252,43 @@ class BacktestEngine {
         // Calculate final results
         const finalPrice = this.dataLoader.getPriceData(endDate)?.price || 0;
         result.totalInvested = totalInvested;
+        result.totalBudgetAllocated = totalBudgetAllocated; 
         result.finalBtcBalance = btcBalance;
-        // If no investment was made, finalPortfolioValue should be 0 (no unused budget should be counted)
-        if (totalInvested === 0) {
-            result.finalPortfolioValue = 0;
+        result.cashBalance = cashBalance; // Store unspent cash
+        
+        // Final BTC Value (The value generated by the investment)
+        const btcValue = btcBalance * finalPrice;
+        result.btcValue = btcValue;
+
+        // Final Portfolio Value: 
+        // - If investments were made (totalInvested > 0): Show only BTC value (ignore unspent cash)
+        //   This is more intuitive - shows the performance of investments, not cash sitting around
+        //   For unlimited budget mode, cash can accumulate significantly and inflate the value
+        // - If no investments (totalInvested = 0): Show cashBalance (since there's no BTC to show)
+        if (totalInvested > 0) {
+            // Show only BTC value - ignore unspent cash for intuitive display
+            result.finalPortfolioValue = btcValue;
         } else {
-            // For AHR999 strategies, finalPortfolioValue should only include BTC value, not unused budget
-            // For other strategies, include cashBalance (uninvested cash)
-            if (
-                this.strategy instanceof AHR999PercentileStrategy ||
-                this.strategy instanceof DynamicAHR999Strategy
-            ) {
-                result.finalPortfolioValue = btcBalance * finalPrice;
-            } else {
-                result.finalPortfolioValue =
-                    cashBalance + btcBalance * finalPrice;
-            }
+            // No investments made - show accumulated cash
+            result.finalPortfolioValue = cashBalance;
         }
 
-        // Calculate returns
+        // Calculate ROI based on actual invested capital
+        // Return should be calculated based on totalInvested (capital actually deployed),
+        // not totalBudgetAllocated, to reflect the true performance of investments made
+        // This is especially important for AHR999 strategies where investment is conditional
+        // and actual investment may be much less than allocated budget
         if (totalInvested > 0) {
+            // Calculate return based on actual invested capital
             result.totalReturn =
-                ((result.finalPortfolioValue - totalInvested) / totalInvested) *
+                ((btcValue - totalInvested) / totalInvested) *
                 100;
 
-            // Annualized return: ((final/initial)^(365/days) - 1) * 100
-            // Only calculate if duration is at least 1 year (365 days) for meaningful annualization
+            // Annualized return
             if (result.durationDays >= 365) {
-                const returnRatio = result.finalPortfolioValue / totalInvested;
+                const returnRatio = btcValue / totalInvested;
                 const yearsElapsed = result.durationDays / 365.25;
 
-                // Additional safety checks
                 if (
                     returnRatio > 0 &&
                     yearsElapsed > 0 &&
@@ -1182,23 +1298,21 @@ class BacktestEngine {
                     const annualized =
                         (Math.pow(returnRatio, 1 / yearsElapsed) - 1) * 100;
 
-                    // Cap annualized return at reasonable maximum (e.g., 1,000,000%) to avoid display issues
                     if (isFinite(annualized) && annualized < 1000000) {
                         result.annualizedReturn = annualized;
                     } else {
-                        // If calculation produces unreasonable result, use simple linear approximation
-                        result.annualizedReturn =
-                            result.totalReturn / yearsElapsed;
+                        result.annualizedReturn = result.totalReturn / yearsElapsed;
                     }
                 } else {
-                    // Fallback to simple linear approximation if calculation fails
                     result.annualizedReturn = result.totalReturn / yearsElapsed;
                 }
             } else {
-                // For periods less than 1 year, annualized return is not meaningful
-                // Set to Infinity as a marker for "N/A" in display
                 result.annualizedReturn = Infinity;
             }
+        } else {
+            // No investment activity - return 0
+            result.totalReturn = 0;
+            result.annualizedReturn = 0;
         }
 
         return result;
@@ -1563,6 +1677,40 @@ class BacktestUI {
                     });
                     break;
 
+                case "ahr999-fixed-range":
+                    // Read multipliers from UI tier inputs (handle 0 correctly)
+                    const getFixedMultiplier = (id, defaultValue) => {
+                        const elem = document.getElementById(id);
+                        if (!elem) return defaultValue;
+                        const value = elem.value;
+                        const parsed = parseFloat(value);
+                        return isNaN(parsed) ? defaultValue : parsed;
+                    };
+                    
+                    const fixedMultipliers = {
+                        multiplier_r045: getFixedMultiplier("tier-r045", AHR999_FIXED_RANGE_DEFAULT_MULTIPLIERS.r045),
+                        multiplier_r050: getFixedMultiplier("tier-r050", AHR999_FIXED_RANGE_DEFAULT_MULTIPLIERS.r050),
+                        multiplier_r060: getFixedMultiplier("tier-r060", AHR999_FIXED_RANGE_DEFAULT_MULTIPLIERS.r060),
+                        multiplier_r070: getFixedMultiplier("tier-r070", AHR999_FIXED_RANGE_DEFAULT_MULTIPLIERS.r070),
+                        multiplier_r080: getFixedMultiplier("tier-r080", AHR999_FIXED_RANGE_DEFAULT_MULTIPLIERS.r080),
+                        multiplier_r090: getFixedMultiplier("tier-r090", AHR999_FIXED_RANGE_DEFAULT_MULTIPLIERS.r090),
+                        multiplier_r100: getFixedMultiplier("tier-r100", AHR999_FIXED_RANGE_DEFAULT_MULTIPLIERS.r100),
+                        multiplier_r999: getFixedMultiplier("tier-r999", AHR999_FIXED_RANGE_DEFAULT_MULTIPLIERS.r999)
+                    };
+
+                    console.log("AHR999 Fixed Range Multipliers:", fixedMultipliers);
+
+                    // Read unlimited budget setting
+                    const unlimitedBudgetFixed =
+                        document.getElementById("unlimitedBudgetFixed")?.checked ||
+                        false;
+
+                    strategy = new AHR999FixedRangeStrategy(monthlyBudget, {
+                        ...fixedMultipliers,
+                        unlimitedBudget: unlimitedBudgetFixed
+                    });
+                    break;
+
                 case "dynamic-ahr999":
                     // Get Dynamic AHR999 strategy config from UI
                     const getDynamicValue = (id, defaultValue) => {
@@ -1808,12 +1956,14 @@ export {
     DailyDCAStrategy,
     MonthlyDCAStrategy,
     AHR999PercentileStrategy,
+    AHR999FixedRangeStrategy,
     DynamicAHR999Strategy,
     BacktestEngine,
     BacktestUI,
-    DayData,
-    PortfolioState,
-    Transaction,
+    calculatePercentile,
+    getPercentileValue,
+    AHR999_DEFAULT_MULTIPLIERS,
+    AHR999_FIXED_RANGE_DEFAULT_MULTIPLIERS,
     BacktestResult,
 };
 

@@ -1519,6 +1519,13 @@
                             </label>
                         </div>
                         <div class="strategy-option">
+                            <input type="radio" id="strategy-ahr999-fixed" name="backtestStrategy" value="ahr999-fixed-range" />
+                            <label for="strategy-ahr999-fixed">
+                                AHR999 Fixed Range
+                                <button type="button" class="strategy-info-btn" onclick="showStrategyInfo('ahr999-fixed-range'); event.stopPropagation();">i</button>
+                            </label>
+                        </div>
+                        <div class="strategy-option">
                             <input type="radio" id="strategy-dynamic-ahr999" name="backtestStrategy" value="dynamic-ahr999" />
                             <label for="strategy-dynamic-ahr999">
                                 Dynamic AHR999 (Advanced)
@@ -1625,6 +1632,117 @@
                                     <input type="number" class="tier-input" id="tier-p100" value="0" min="0" max="10" step="0.5" placeholder="0" oninput="updatePercentileTiers()" />
                                 </div>
                                 <div class="tier-daily" id="tier-p100-amount">$0/day</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="ahr999FixedRangeConfig" class="strategy-config">
+                        <label style="display: block; margin-bottom: 12px;">AHR999 Fixed Range Strategy</label>
+                        <p style="font-size: 12px; color: #86868b; margin-bottom: 12px;">
+                            Configure investment multipliers based on fixed AHR999 value thresholds.
+                            This provides deterministic behavior regardless of historical data.
+                        </p>
+                        
+                        <p style="font-size: 12px; color: #ff9500; background: #fff3e0; padding: 8px 12px; border-radius: 6px; margin-bottom: 12px; border-left: 3px solid #ff9500;">
+                            <strong>⚠️ Note:</strong> Uses absolute AHR999 values, not historical percentiles.
+                        </p>
+                        
+                        <div class="percentile-tiers">
+                            <div class="tier-row tier-header">
+                                <div class="tier-label">AHR999 Range</div>
+                                <div class="tier-multiplier">Multiplier</div>
+                                <div class="tier-daily">Daily Amount</div>
+                            </div>
+                            
+                            <div class="tier-row">
+                                <div class="tier-label">
+                                    0 - 0.45 (EXTREME CHEAP)
+                                </div>
+                                <div class="tier-multiplier">
+                                    <input type="number" class="tier-input" id="tier-r045" value="5" min="0" max="20" step="0.5" placeholder="5" oninput="updateFixedRangeTiers()" />
+                                </div>
+                                <div class="tier-daily" id="tier-r045-amount">$82.15/day</div>
+                            </div>
+                            
+                            <div class="tier-row">
+                                <div class="tier-label">
+                                    0.45 - 0.5 (Very Cheap)
+                                </div>
+                                <div class="tier-multiplier">
+                                    <input type="number" class="tier-input" id="tier-r050" value="3" min="0" max="20" step="0.5" placeholder="3" oninput="updateFixedRangeTiers()" />
+                                </div>
+                                <div class="tier-daily" id="tier-r050-amount">$49.29/day</div>
+                            </div>
+                            
+                            <div class="tier-row">
+                                <div class="tier-label">
+                                    0.5 - 0.6 (Cheap)
+                                </div>
+                                <div class="tier-multiplier">
+                                    <input type="number" class="tier-input" id="tier-r060" value="2" min="0" max="20" step="0.5" placeholder="2" oninput="updateFixedRangeTiers()" />
+                                </div>
+                                <div class="tier-daily" id="tier-r060-amount">$32.86/day</div>
+                            </div>
+                            
+                            <div class="tier-row">
+                                <div class="tier-label">
+                                    0.6 - 0.7 (Fair)
+                                </div>
+                                <div class="tier-multiplier">
+                                    <input type="number" class="tier-input" id="tier-r070" value="1" min="0" max="20" step="0.5" placeholder="1" oninput="updateFixedRangeTiers()" />
+                                </div>
+                                <div class="tier-daily" id="tier-r070-amount">$16.43/day</div>
+                            </div>
+                            
+                            <div class="tier-row">
+                                <div class="tier-label">
+                                    0.7 - 0.8 (Getting Expensive)
+                                </div>
+                                <div class="tier-multiplier">
+                                    <input type="number" class="tier-input" id="tier-r080" value="0.5" min="0" max="20" step="0.5" placeholder="0.5" oninput="updateFixedRangeTiers()" />
+                                </div>
+                                <div class="tier-daily" id="tier-r080-amount">$8.22/day</div>
+                            </div>
+                            
+                            <div class="tier-row">
+                                <div class="tier-label">
+                                    0.8 - 0.9 (Expensive)
+                                </div>
+                                <div class="tier-multiplier">
+                                    <input type="number" class="tier-input" id="tier-r090" value="0" min="0" max="20" step="0.5" placeholder="0" oninput="updateFixedRangeTiers()" />
+                                </div>
+                                <div class="tier-daily" id="tier-r090-amount">$0.00/day</div>
+                            </div>
+                            
+                            <div class="tier-row">
+                                <div class="tier-label">
+                                    0.9 - 1.0 (Very Expensive)
+                                </div>
+                                <div class="tier-multiplier">
+                                    <input type="number" class="tier-input" id="tier-r100" value="0" min="0" max="20" step="0.5" placeholder="0" oninput="updateFixedRangeTiers()" />
+                                </div>
+                                <div class="tier-daily" id="tier-r100-amount">$0.00/day</div>
+                            </div>
+                            
+                            <div class="tier-row">
+                                <div class="tier-label">
+                                    > 1.0 (EXTREMELY EXPENSIVE)
+                                </div>
+                                <div class="tier-multiplier">
+                                    <input type="number" class="tier-input" id="tier-r999" value="0" min="0" max="20" step="0.5" placeholder="0" oninput="updateFixedRangeTiers()" />
+                                </div>
+                                <div class="tier-daily" id="tier-r999-amount">$0.00/day</div>
+                            </div>
+                            
+                            <div class="unlimited-budget-option" style="margin-top: 16px; padding-top: 16px; border-top: 1px solid #d2d2d7;">
+                                <label style="display: flex; align-items: center; justify-content: space-between; cursor: pointer;">
+                                    <span style="font-weight: 500;">Unlimited Monthly Budget</span>
+                                    <input type="checkbox" id="unlimitedBudgetFixed" style="width: 20px; height: 20px;" />
+                                </label>
+                                <p style="font-size: 12px; color: #86868b; margin-top: 4px;">
+                                    Invest full multiplier amount even if it exceeds monthly budget. 
+                                    (e.g., 5x multiplier = invest 5 days of budget in 1 day)
+                                </p>
                             </div>
                         </div>
                     </div>
@@ -1975,6 +2093,30 @@
                     <p>Sophisticated investors, those who want to "time the market" systematically, medium-to-long time horizons (2+ years), investors willing to accept complexity for potential alpha.</p>
                 `
             },
+            'ahr999-fixed-range': {
+                title: 'AHR999 Fixed Range Strategy',
+                content: `
+                    <p>Similar to AHR999 Percentile, but uses <strong>fixed value ranges</strong> (e.g., 0.45, 0.50) instead of historical percentiles. This makes the strategy deterministic and independent of data history changes.</p>
+                    
+                    <h4>How it works</h4>
+                    <p>The strategy checks the absolute AHR999 value each day and invests a multiple of your daily budget based on which range it falls into:</p>
+                    <ul>
+                        <li><span class="range-badge extremely-cheap">0 - 0.45</span>: Extreme accumulation zone (Default: 5x)</li>
+                        <li><span class="range-badge very-cheap">0.45 - 0.50</span>: Heavy accumulation zone (Default: 3x)</li>
+                        <li><span class="range-badge cheap">0.50 - 0.60</span>: Moderate accumulation zone (Default: 2x)</li>
+                        <li><span class="range-badge fair">0.60 - 0.70</span>: Light accumulation zone (Default: 1x)</li>
+                        <li><span class="range-badge expensive">0.70 - 0.80</span>: Reduced accumulation (Default: 0.5x)</li>
+                        <li><span class="range-badge very-expensive">> 0.80</span>: Stop buying (Default: 0x)</li>
+                    </ul>
+                    
+                    <h4>Pros vs Percentile</h4>
+                    <ul>
+                        <li><strong>Deterministic:</strong> Evaluation of a specific day never changes based on future data.</li>
+                        <li><strong>Predictable:</strong> Specific price levels triggered based on geometric mean.</li>
+                        <li><strong>Stable:</strong> Ranges are fixed constants.</li>
+                    </ul>
+                `
+            },
             'dynamic-ahr999': {
                 title: 'Dynamic AHR999 Strategy (Advanced)',
                 content: `
@@ -2151,6 +2293,11 @@
                 dailyAmountDiv.style.display = 'block';
                 // Update AHR999 tier amounts when budget changes
                 updatePercentileTiersOnly();
+            } else if (selectedStrategy === 'ahr999-fixed-range') {
+                dailyAmountDiv.innerHTML = `→ Base daily amount: <strong>$${dailyAmount.toFixed(2)}</strong>/day (varies by AHR999 range)`;
+                dailyAmountDiv.style.display = 'block';
+                // Update AHR999 fixed range tier amounts when budget changes
+                updateFixedRangeTiersOnly();
             } else {
                 dailyAmountDiv.style.display = 'none';
             }
@@ -2173,6 +2320,31 @@
         // Update percentile tier amounts (called when user changes multipliers in tier inputs)
         function updatePercentileTiers() {
             updatePercentileTiersOnly();
+        }
+
+        // Update fixed range tier amounts only
+        function updateFixedRangeTiersOnly() {
+            const monthlyBudget = parseFloat(document.getElementById('backtestBudget').value) || 0;
+            const DAYS_PER_MONTH = 30.44;
+            const dailyAmount = monthlyBudget / DAYS_PER_MONTH;
+            
+            const tiers = ['r045', 'r050', 'r060', 'r070', 'r080', 'r090', 'r100', 'r999'];
+            tiers.forEach(tier => {
+                const elem = document.getElementById(`tier-${tier}`);
+                if (elem) {
+                    const multiplier = parseFloat(elem.value) || 0;
+                    const amount = dailyAmount * multiplier;
+                    const amountDisplay = document.getElementById(`tier-${tier}-amount`);
+                    if (amountDisplay) {
+                        amountDisplay.textContent = `$${amount.toFixed(2)}/day`;
+                    }
+                }
+            });
+        }
+
+        // Update fixed range tier amounts (called when user changes multipliers in tier inputs)
+        function updateFixedRangeTiers() {
+            updateFixedRangeTiersOnly();
         }
 
         // Check if end date is in the future and disable AHR999 strategies accordingly
@@ -2248,6 +2420,7 @@
             const selectedStrategy = document.querySelector('input[name="backtestStrategy"]:checked')?.value;
             const monthlyConfig = document.getElementById('monthlyDcaConfig');
             const ahr999Config = document.getElementById('ahr999ThresholdConfig');
+            const ahr999FixedRangeConfig = document.getElementById('ahr999FixedRangeConfig');
             const dynamicAhr999Config = document.getElementById('dynamicAhr999Config');
             
             if (!monthlyConfig || !ahr999Config) return;
@@ -2255,9 +2428,12 @@
             // Hide all
             monthlyConfig.classList.remove('active');
             ahr999Config.classList.remove('active');
+            if (ahr999FixedRangeConfig) ahr999FixedRangeConfig.classList.remove('active');
             if (dynamicAhr999Config) dynamicAhr999Config.classList.remove('active');
+            
             monthlyConfig.style.display = '';
             ahr999Config.style.display = '';
+            if (ahr999FixedRangeConfig) ahr999FixedRangeConfig.style.display = '';
             if (dynamicAhr999Config) dynamicAhr999Config.style.display = '';
             
             // Show selected
@@ -2265,6 +2441,8 @@
                 monthlyConfig.classList.add('active');
             } else if (selectedStrategy === 'ahr999-percentile') {
                 ahr999Config.classList.add('active');
+            } else if (selectedStrategy === 'ahr999-fixed-range') {
+                if (ahr999FixedRangeConfig) ahr999FixedRangeConfig.classList.add('active');
             } else if (selectedStrategy === 'dynamic-ahr999') {
                 if (dynamicAhr999Config) dynamicAhr999Config.classList.add('active');
             }
@@ -2337,6 +2515,7 @@
             updateStrategyConfigPanels();
             updateDailyAmount();
             updatePercentileTiers();
+            updateFixedRangeTiers();
             validateFutureDateForStrategies();
             updateAHR999PercentileRanges(); // Update AHR999 ranges with calculated values
             
@@ -2346,6 +2525,7 @@
                     updateStrategyConfigPanels();
                     updateDailyAmount();
                     updatePercentileTiers();
+                    updateFixedRangeTiers();
                 });
             });
             
