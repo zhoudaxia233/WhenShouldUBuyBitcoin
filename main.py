@@ -335,8 +335,8 @@ def main():
         )
         print(sample_df.to_string(index=False))
 
-        # Generate interactive charts
-        generate_all_charts(df, auto_open=True)
+        # Generate interactive charts (don't auto-open when triggered via API)
+        generate_all_charts(df, auto_open=False)
 
         # Generate USD/JPY charts
         print("\n" + "=" * 80)

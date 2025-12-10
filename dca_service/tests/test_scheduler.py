@@ -272,6 +272,88 @@ class TestExecutionModes:
         assert tx.source == "DCA"  # Changed from "BINANCE" to "DCA" for bot-triggered trades
 
 
+class TestStaticGenerationIntegration:
+    """Tests for static file generation integration with scheduler"""
+    
+    @freeze_time("2024-01-15 14:30:00")
+    @patch("dca_service.services.static_generator.trigger_static_generation")
+    def test_static_generation_triggered_after_success(self, mock_trigger, scheduler, daily_strategy, session):
+        """Test that static generation is triggered after successful DCA transaction"""
+        # Execute DCA
+        scheduler._execute_dca(daily_strategy, session)
+        
+        # Verify static generation was triggered
+        mock_trigger.assert_called_once_with(background=True)
+        
+        # Verify transaction was created
+        tx = session.exec(select(DCATransaction)).first()
+        assert tx is not None
+        assert tx.status == "SUCCESS"
+    
+    @freeze_time("2024-01-15 14:30:00")
+    @patch("dca_service.services.binance_client.BinanceClient")
+    @patch("dca_service.services.security.decrypt_text")
+    @patch("dca_service.services.static_generator.trigger_static_generation")
+    def test_static_generation_not_triggered_on_failure(
+        self, mock_trigger, mock_decrypt, mock_client_class, scheduler, daily_strategy, session
+    ):
+        """Test that static generation is NOT triggered when DCA fails"""
+        from unittest.mock import AsyncMock
+        
+        # Setup mocks to simulate trading failure
+        mock_decrypt.return_value = "secret_key"
+        mock_client = mock_client_class.return_value
+        mock_client.execute_market_order_with_confirmation = AsyncMock(
+            side_effect=Exception("Trading API error")
+        )
+        mock_client.close = AsyncMock()
+        
+        # Add credentials for LIVE mode
+        from dca_service.models import BinanceCredentials
+        creds = BinanceCredentials(
+            api_key_encrypted="encrypted_key",
+            api_secret_encrypted="encrypted_secret",
+            credential_type="TRADING"
+        )
+        session.add(creds)
+        
+        # Change to LIVE mode (to trigger the failure path)
+        daily_strategy.execution_mode = "LIVE"
+        session.add(daily_strategy)
+        session.commit()
+        
+        # Execute DCA (will fail)
+        scheduler._execute_dca(daily_strategy, session)
+        
+        # Verify static generation was NOT triggered
+        mock_trigger.assert_not_called()
+        
+        # Verify failed transaction was created
+        tx = session.exec(select(DCATransaction)).first()
+        assert tx is not None
+        assert tx.status == "FAILED"
+    
+    @freeze_time("2024-01-15 14:30:00")
+    @patch("dca_service.services.static_generator.trigger_static_generation")
+    def test_scheduler_continues_on_static_generation_error(
+        self, mock_trigger, scheduler, daily_strategy, session
+    ):
+        """Test that scheduler continues even if static generation fails"""
+        # Make static generation raise an error
+        mock_trigger.side_effect = Exception("Static generation failed")
+        
+        # Execute DCA (should complete despite static generation error)
+        scheduler._execute_dca(daily_strategy, session)
+        
+        # Verify transaction was still created successfully
+        tx = session.exec(select(DCATransaction)).first()
+        assert tx is not None
+        assert tx.status == "SUCCESS"
+        
+        # Verify static generation was attempted
+        mock_trigger.assert_called_once()
+
+
 class TestSchedulerLifecycle:
     """Tests for scheduler start/stop lifecycle"""
     

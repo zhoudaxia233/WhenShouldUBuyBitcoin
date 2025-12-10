@@ -389,6 +389,17 @@ class DCAScheduler:
                 except Exception as e:
                     logger.error(f"Failed to send DCA notification email: {e}")
             
+            # Trigger static file generation for successful transactions
+            # This updates charts and data files on the website
+            if transaction.status == "SUCCESS":
+                try:
+                    from dca_service.services.static_generator import trigger_static_generation
+                    trigger_static_generation(background=True)
+                    logger.info("Triggered static file generation after successful DCA transaction")
+                except Exception as e:
+                    logger.error(f"Failed to trigger static file generation: {e}")
+                    # Don't re-raise - static generation failure shouldn't fail the transaction
+            
             # Broadcast event to connected clients for immediate UI update
             try:
                 from dca_service.sse import sse_manager
