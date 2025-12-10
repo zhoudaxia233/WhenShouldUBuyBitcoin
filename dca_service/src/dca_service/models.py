@@ -64,13 +64,23 @@ class DCAStrategy(SQLModel, table=True):
     ahr999_multiplier_p90: Optional[float] = Field(default=None)  # 75-90% (Expensive)
     ahr999_multiplier_p100: Optional[float] = Field(default=None)  # Top 10% (VERY EXPENSIVE)
     
+    # AHR999 Fixed Range Strategy multipliers (8 ranges)
+    ahr999_multiplier_r045: Optional[float] = Field(default=None)  # 0 - 0.45 (EXTREMELY CHEAP)
+    ahr999_multiplier_r050: Optional[float] = Field(default=None)  # 0.45 - 0.5 (Very Cheap)
+    ahr999_multiplier_r060: Optional[float] = Field(default=None)  # 0.5 - 0.6 (Cheap)
+    ahr999_multiplier_r070: Optional[float] = Field(default=None)  # 0.6 - 0.7 (Fair)
+    ahr999_multiplier_r080: Optional[float] = Field(default=None)  # 0.7 - 0.8 (Getting Expensive)
+    ahr999_multiplier_r090: Optional[float] = Field(default=None)  # 0.8 - 0.9 (Expensive)
+    ahr999_multiplier_r100: Optional[float] = Field(default=None)  # 0.9 - 1.0 (Very Expensive)
+    ahr999_multiplier_r999: Optional[float] = Field(default=None)  # > 1.0 (EXTREMELY EXPENSIVE)
+    
     target_btc_amount: float = Field(default=1.0)
     execution_frequency: str = Field(default="daily") # "daily" or "weekly"
     execution_day_of_week: Optional[str] = Field(default=None) # "monday", "tuesday", etc. (only for weekly)
     execution_time_utc: str = Field(default="00:00") # "HH:MM"
     
     # Strategy Configuration
-    strategy_type: str = Field(default="legacy_band") # "legacy_band" or "dynamic_ahr999"
+    strategy_type: str = Field(default="legacy_band") # "legacy_band", "dynamic_ahr999", or "ahr999_fixed_range"
     
     # Execution Mode (Phase 9: Execution Mode Plumbing)
     execution_mode: str = Field(default="DRY_RUN")  # "DRY_RUN" or "LIVE"

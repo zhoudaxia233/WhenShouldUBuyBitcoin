@@ -90,13 +90,23 @@ class StrategyBase(BaseModel):
     ahr999_multiplier_p90: Optional[float] = None  # 75-90% (Expensive)
     ahr999_multiplier_p100: Optional[float] = None  # Top 10% (VERY EXPENSIVE)
     
+    # AHR999 Fixed Range Strategy multipliers (8 ranges)
+    ahr999_multiplier_r045: Optional[float] = None  # 0 - 0.45 (EXTREMELY CHEAP)
+    ahr999_multiplier_r050: Optional[float] = None  # 0.45 - 0.5 (Very Cheap)
+    ahr999_multiplier_r060: Optional[float] = None  # 0.5 - 0.6 (Cheap)
+    ahr999_multiplier_r070: Optional[float] = None  # 0.6 - 0.7 (Fair)
+    ahr999_multiplier_r080: Optional[float] = None  # 0.7 - 0.8 (Getting Expensive)
+    ahr999_multiplier_r090: Optional[float] = None  # 0.8 - 0.9 (Expensive)
+    ahr999_multiplier_r100: Optional[float] = None  # 0.9 - 1.0 (Very Expensive)
+    ahr999_multiplier_r999: Optional[float] = None  # > 1.0 (EXTREMELY EXPENSIVE)
+    
     target_btc_amount: float = 1.0
     execution_frequency: str = "daily"
     execution_day_of_week: Optional[str] = None
     execution_time_utc: str = "00:00"
     
     # Dynamic Strategy Config
-    strategy_type: str = "legacy_band" # "legacy_band" or "dynamic_ahr999"
+    strategy_type: str = "legacy_band" # "legacy_band", "ahr999_fixed_range", or "dynamic_ahr999"
     execution_mode: str = "DRY_RUN"  # "DRY_RUN" or "LIVE"
     dynamic_min_multiplier: Optional[float] = None
     dynamic_max_multiplier: Optional[float] = None

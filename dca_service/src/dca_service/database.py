@@ -153,6 +153,15 @@ def _migrate_strategy_table():
                 ('ahr999_multiplier_p75', 'REAL', None),  # 50-75% (Fair)
                 ('ahr999_multiplier_p90', 'REAL', None),  # 75-90% (Expensive)
                 ('ahr999_multiplier_p100', 'REAL', None),  # Top 10% (VERY EXPENSIVE)
+                # AHR999 Fixed Range Strategy multipliers (8 ranges)
+                ('ahr999_multiplier_r045', 'REAL', None),  # 0 - 0.45 (EXTREMELY CHEAP)
+                ('ahr999_multiplier_r050', 'REAL', None),  # 0.45 - 0.5 (Very Cheap)
+                ('ahr999_multiplier_r060', 'REAL', None),  # 0.5 - 0.6 (Cheap)
+                ('ahr999_multiplier_r070', 'REAL', None),  # 0.6 - 0.7 (Fair)
+                ('ahr999_multiplier_r080', 'REAL', None),  # 0.7 - 0.8 (Getting Expensive)
+                ('ahr999_multiplier_r090', 'REAL', None),  # 0.8 - 0.9 (Expensive)
+                ('ahr999_multiplier_r100', 'REAL', None),  # 0.9 - 1.0 (Very Expensive)
+                ('ahr999_multiplier_r999', 'REAL', None),  # > 1.0 (EXTREMELY EXPENSIVE)
                 ('unlimited_monthly_budget', 'BOOLEAN', 0),  # Default False
                 ('accumulated_savings', 'REAL', 0.0),  # Default 0.0
                 ('last_monthly_inflow', 'TIMESTAMP', None),  # Default None

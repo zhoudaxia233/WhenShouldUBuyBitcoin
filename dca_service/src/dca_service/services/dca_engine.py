@@ -151,9 +151,10 @@ def calculate_dca_decision(session: Session) -> DCADecision:
 
         # Construct Config from Strategy Model
         # Use defaults if fields are None
+        # Use 30.44 days per month (same as backtest framework) for consistency
         config = DynamicAhr999Config(
             base_amount=strategy.total_budget_usd
-            / 30.0,  # Default base amount, will be overridden if we want
+            / 30.44,  # Default base amount, will be overridden if we want
             max_multiplier=(
                 strategy.dynamic_max_multiplier
                 if strategy.dynamic_max_multiplier is not None
@@ -184,12 +185,13 @@ def calculate_dca_decision(session: Session) -> DCADecision:
         # For base_amount, we need to respect the execution frequency logic
         # But the dynamic strategy takes base_amount in config.
         # Let's calculate it first based on budget/frequency
+        # Use 30.44 days per month (same as backtest framework) for consistency
         if strategy.execution_frequency == "daily":
-            base_amount_calc = strategy.total_budget_usd / 30.0
+            base_amount_calc = strategy.total_budget_usd / 30.44
         elif strategy.execution_frequency == "weekly":
             base_amount_calc = strategy.total_budget_usd / 4.0
         else:
-            base_amount_calc = strategy.total_budget_usd / 30.0
+            base_amount_calc = strategy.total_budget_usd / 30.44
 
         config.base_amount = base_amount_calc
 
@@ -282,6 +284,82 @@ def calculate_dca_decision(session: Session) -> DCADecision:
         # If capped by monthly cap in strategy, we should respect that
         # The strategy module already capped 'buy', so suggested_amount is correct.
 
+    elif strategy.strategy_type == "ahr999_fixed_range":
+        # AHR999 Fixed Range Strategy Logic (8-range system matching backtest)
+        # Uses fixed AHR999 value thresholds instead of historical percentiles
+        # This provides deterministic behavior regardless of historical data
+        
+        # Fixed AHR999 thresholds (absolute values, not percentiles)
+        thresholds = {
+            "r045": 0.45,
+            "r050": 0.50,
+            "r060": 0.60,
+            "r070": 0.70,
+            "r080": 0.80,
+            "r090": 0.90,
+            "r100": 1.00
+        }
+        
+        # Default multipliers matching backtest strategy
+        def get_fixed_multiplier(field_name, default):
+            """Get multiplier from field or default"""
+            if hasattr(strategy, field_name):
+                value = getattr(strategy, field_name)
+                if value is not None:
+                    return value
+            return default
+        
+        multiplier_r045 = get_fixed_multiplier('ahr999_multiplier_r045', 5.0)
+        multiplier_r050 = get_fixed_multiplier('ahr999_multiplier_r050', 3.0)
+        multiplier_r060 = get_fixed_multiplier('ahr999_multiplier_r060', 2.0)
+        multiplier_r070 = get_fixed_multiplier('ahr999_multiplier_r070', 1.0)
+        multiplier_r080 = get_fixed_multiplier('ahr999_multiplier_r080', 0.5)
+        multiplier_r090 = get_fixed_multiplier('ahr999_multiplier_r090', 0.0)
+        multiplier_r100 = get_fixed_multiplier('ahr999_multiplier_r100', 0.0)
+        multiplier_r999 = get_fixed_multiplier('ahr999_multiplier_r999', 0.0)
+        
+        # Determine which fixed range the current AHR999 falls into
+        if ahr999 < thresholds["r045"]:
+            # 0 - 0.45: EXTREMELY CHEAP
+            band = "r045"
+            multiplier = multiplier_r045
+            reason = f"AHR999 {ahr999:.4f} < 0.45 (EXTREMELY CHEAP) → {multiplier}x"
+        elif ahr999 < thresholds["r050"]:
+            # 0.45 - 0.5: Very Cheap
+            band = "r050"
+            multiplier = multiplier_r050
+            reason = f"AHR999 {ahr999:.4f} between 0.45-0.5 (Very Cheap) → {multiplier}x"
+        elif ahr999 < thresholds["r060"]:
+            # 0.5 - 0.6: Cheap
+            band = "r060"
+            multiplier = multiplier_r060
+            reason = f"AHR999 {ahr999:.4f} between 0.5-0.6 (Cheap) → {multiplier}x"
+        elif ahr999 < thresholds["r070"]:
+            # 0.6 - 0.7: Fair
+            band = "r070"
+            multiplier = multiplier_r070
+            reason = f"AHR999 {ahr999:.4f} between 0.6-0.7 (Fair) → {multiplier}x"
+        elif ahr999 < thresholds["r080"]:
+            # 0.7 - 0.8: Getting Expensive
+            band = "r080"
+            multiplier = multiplier_r080
+            reason = f"AHR999 {ahr999:.4f} between 0.7-0.8 (Getting Expensive) → {multiplier}x"
+        elif ahr999 < thresholds["r090"]:
+            # 0.8 - 0.9: Expensive
+            band = "r090"
+            multiplier = multiplier_r090
+            reason = f"AHR999 {ahr999:.4f} between 0.8-0.9 (Expensive) → {multiplier}x"
+        elif ahr999 < thresholds["r100"]:
+            # 0.9 - 1.0: Very Expensive
+            band = "r100"
+            multiplier = multiplier_r100
+            reason = f"AHR999 {ahr999:.4f} between 0.9-1.0 (Very Expensive) → {multiplier}x"
+        else:
+            # > 1.0: EXTREMELY EXPENSIVE
+            band = "r999"
+            multiplier = multiplier_r999
+            reason = f"AHR999 {ahr999:.4f} >= 1.0 (EXTREMELY EXPENSIVE) → {multiplier}x"
+
     else:
         # AHR999 Percentile Strategy Logic (6-tier system matching backtest)
         # Use historical percentiles to determine which tier the current AHR999 falls into
@@ -348,7 +426,8 @@ def calculate_dca_decision(session: Session) -> DCADecision:
 
     # 4. Calculate base amount based on budget and execution frequency
     # Only needed if not already calculated by dynamic strategy
-    if strategy.strategy_type != "dynamic_ahr999":
+    # For ahr999_fixed_range, we need to calculate base_amount here
+    if strategy.strategy_type not in ["dynamic_ahr999"]:
         if strategy.execution_frequency == "daily":
             # Use 30.44 days per month (same as backtest framework)
             base_amount = strategy.total_budget_usd / 30.44
@@ -359,6 +438,8 @@ def calculate_dca_decision(session: Session) -> DCADecision:
             # Fallback to daily if frequency is unknown
             base_amount = strategy.total_budget_usd / 30.44
 
+        # Calculate suggested amount based on multiplier
+        # For ahr999_fixed_range, multiplier is already set above
         suggested_amount = base_amount * multiplier
 
     # 5. Calculate budget spent (with monthly reset logic)
