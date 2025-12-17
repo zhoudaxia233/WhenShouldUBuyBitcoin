@@ -38,9 +38,9 @@ def _check_monthly_inflow(session: Session, strategy: DCAStrategy, now: datetime
     Check if we need to add a new monthly budget inflow to savings.
     If last_monthly_inflow is None, initialize with current month's remaining budget.
     
-    Budget behavior depends on unlimited_monthly_budget flag:
-    - Limited Mode (default): Budget resets monthly (unspent funds are lost)
-    - Unlimited Mode: Budget accumulates monthly (unspent funds carry over)
+    Budget behavior depends on enforce_monthly_cap flag:
+    - Enforced (enforce_monthly_cap=True): Budget resets monthly (unspent funds are lost)
+    - Not Enforced (enforce_monthly_cap=False): Budget accumulates monthly (unspent funds carry over)
     """
     # Initialize if needed
     if strategy.last_monthly_inflow is None:
@@ -63,13 +63,13 @@ def _check_monthly_inflow(session: Session, strategy: DCAStrategy, now: datetime
 
     if months_diff > 0:
         # Budget update depends on mode
-        if strategy.unlimited_monthly_budget:
-            # Unlimited Mode: Accumulate budget for each month passed
+        if not strategy.enforce_monthly_cap:
+            # No Cap Mode: Accumulate budget for each month passed
             # User's unspent funds carry over to future months
             inflow_amount = months_diff * strategy.total_budget_usd
             strategy.accumulated_savings += inflow_amount
         else:
-            # Limited Mode: Reset to current month's budget
+            # Enforced Cap Mode: Reset to current month's budget
             # Unspent budget from previous months is lost (resets monthly)
             # This matches the frontend backtest behavior where cashBalance is reset
             strategy.accumulated_savings = strategy.total_budget_usd
@@ -239,12 +239,12 @@ def calculate_dca_decision(session: Session) -> DCADecision:
         available_cash = strategy.accumulated_savings
         monthly_remaining = max(0.0, strategy.total_budget_usd - month_spent)
         
-        if strategy.unlimited_monthly_budget:
-            # Unlimited: Cap is only available cash (savings)
+        if not strategy.enforce_monthly_cap:
+            # No Cap Mode: Limit is only available cash (accumulated savings)
             budget_limit = available_cash
             tx_capped_reason = f"Capped by Savings (${available_cash:.2f})"
         else:
-            # Limited: Cap is min(Monthly Remaining, Available Cash)
+            # Enforced Cap Mode: Limit is min(Monthly Remaining, Available Cash)
             budget_limit = min(monthly_remaining, available_cash)
             if monthly_remaining < available_cash:
                 tx_capped_reason = f"Capped by Monthly Limit (${monthly_remaining:.2f})"
@@ -512,7 +512,7 @@ def calculate_dca_decision(session: Session) -> DCADecision:
                 "suggested_amount_usd": suggested_amount,
                 "price_usd": price,
                 "metrics_source": {"backend": source_backend, "label": source_label},
-                "remaining_budget": remaining_budget,
+                "remaining_budget": remaining_budget if strategy.enforce_monthly_cap else None,
                 "budget_resets": budget_resets,
                 "time_until_reset": time_until_reset,
             }
@@ -525,17 +525,17 @@ def calculate_dca_decision(session: Session) -> DCADecision:
 
     # --- GLOBAL BUDGET CHECK (All Strategies) ---
     available_cash = strategy.accumulated_savings
-    monthly_remaining = max(0.0, strategy.total_budget_usd - total_spent_sum) # total_spent_sum calculated at Line 362
+    monthly_remaining = max(0.0, strategy.total_budget_usd - total_spent_sum) # total_spent_sum calculated at Line 468
     
     budget_limit = 0.0
     tx_capped_reason = ""
     
-    if strategy.unlimited_monthly_budget:
-        # Unlimited: Limit is available cash
+    if not strategy.enforce_monthly_cap:
+        # No Cap Mode: Limit is only available cash (accumulated savings)
         budget_limit = available_cash
         tx_capped_reason = f"Capped by Savings (${available_cash:.2f})"
     else:
-        # Limited: Limit is min(Monthly Remaining, Available Cash)
+        # Enforced Cap Mode: Limit is min(Monthly Remaining, Available Cash)
         budget_limit = min(monthly_remaining, available_cash)
         if monthly_remaining < available_cash:
             tx_capped_reason = f"Capped by Monthly Limit (${monthly_remaining:.2f})"
@@ -559,7 +559,7 @@ def calculate_dca_decision(session: Session) -> DCADecision:
                 "base_amount_usd": base_amount,
                 "suggested_amount_usd": suggested_amount,
                 "price_usd": price,
-                "remaining_budget": remaining_budget,
+                "remaining_budget": remaining_budget if strategy.enforce_monthly_cap else None,
                 "budget_resets": budget_resets,
                 "time_until_reset": time_until_reset,
                 "metrics_source": {"backend": source_backend, "label": source_label},
@@ -572,8 +572,8 @@ def calculate_dca_decision(session: Session) -> DCADecision:
 
     # Append Budget Status to reason for visibility
     reason += f" | Budget: Savings=${available_cash:.2f} | Monthly Spent=${total_spent_sum:.2f}/${strategy.total_budget_usd:.0f}"
-    if strategy.unlimited_monthly_budget:
-        reason += " | Mode: Unlimited Monthly Budget"
+    if not strategy.enforce_monthly_cap:
+        reason += " | Mode: No Monthly Cap"
     
     # Check if multiplier is 0 or negative (no purchase needed)
     # This handles cases where user sets multiplier to 0 for a specific tier
@@ -590,7 +590,7 @@ def calculate_dca_decision(session: Session) -> DCADecision:
                 "suggested_amount_usd": suggested_amount,
                 "price_usd": price,
                 "metrics_source": {"backend": source_backend, "label": source_label},
-                "remaining_budget": remaining_budget,
+                "remaining_budget": remaining_budget if strategy.enforce_monthly_cap else None,
                 "budget_resets": budget_resets,
                 "time_until_reset": time_until_reset,
             }
@@ -608,7 +608,7 @@ def calculate_dca_decision(session: Session) -> DCADecision:
         price_usd=price,
         timestamp=timestamp,
         metrics_source={"backend": source_backend, "label": source_label},
-        remaining_budget=remaining_budget,
+        remaining_budget=remaining_budget if strategy.enforce_monthly_cap else None,
         budget_resets=budget_resets,
         time_until_reset=time_until_reset,
     )
