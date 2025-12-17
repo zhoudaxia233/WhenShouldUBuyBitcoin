@@ -2,8 +2,8 @@ name: Update BTC Data Daily
 
 # Run every day at 00:30 UTC (after daily close)
 on:
-  schedule:
-    - cron: '30 0 * * *'
+  # schedule:
+  #   - cron: '30 0 * * *'
   # Allow manual trigger
   workflow_dispatch:
 
