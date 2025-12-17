@@ -30,8 +30,7 @@ def strategy_fixture(session):
         ahr999_multiplier_mid=2.0,  # Legacy
         ahr999_multiplier_high=0.0, # Legacy (Strategy requires these)
         
-        # New defaults
-        unlimited_monthly_budget=False,
+        # Savings and inflow tracking
         accumulated_savings=0.0,
         last_monthly_inflow=None,
         
@@ -80,10 +79,10 @@ def test_initial_savings_setup_partial_spend(session, strategy):
     assert strategy.accumulated_savings == 300.0
 
 def test_monthly_accumulation(session, strategy):
-    """Test monthly budget accumulation in Limited vs Unlimited mode."""
+    """Test monthly budget accumulation in Limited vs No-Cap mode."""
     strategy.total_budget_usd = 500.0
     strategy.accumulated_savings = 0.0
-    strategy.unlimited_monthly_budget = False  # Limited mode
+    strategy.enforce_monthly_cap = True  # Limited mode (cap enforced)
     strategy.last_monthly_inflow = datetime(2025, 1, 1, tzinfo=timezone.utc)
     session.add(strategy)
     session.commit()
@@ -103,8 +102,8 @@ def test_monthly_accumulation(session, strategy):
         retrieved = retrieved.replace(tzinfo=timezone.utc)
     assert retrieved == now
     
-    # Test Unlimited mode
-    strategy.unlimited_monthly_budget = True
+    # Test No-Cap mode (enforce_monthly_cap=False)
+    strategy.enforce_monthly_cap = False
     strategy.accumulated_savings = 200.0  # Start with some savings
     strategy.last_monthly_inflow = datetime(2025, 2, 1, tzinfo=timezone.utc)
     session.add(strategy)
@@ -114,13 +113,13 @@ def test_monthly_accumulation(session, strategy):
     now = datetime(2025, 3, 1, tzinfo=timezone.utc)
     _check_monthly_inflow(session, strategy, now, month_spent)
     
-    # In Unlimited mode, budget should ACCUMULATE (200 + 500 = 700)
+    # In No-Cap mode, budget should ACCUMULATE (200 + 500 = 700)
     assert strategy.accumulated_savings == 700.0
 
 def test_multi_month_accumulation(session, strategy):
     """Test budget behavior when bot is offline for multiple months."""
-    # Test Limited mode: Should only reset to current month's budget
-    strategy.unlimited_monthly_budget = False
+    # Test Limited mode (enforce_monthly_cap=True): Should only reset to current month's budget
+    strategy.enforce_monthly_cap = True
     strategy.last_monthly_inflow = datetime(2025, 1, 15, tzinfo=timezone.utc)
     strategy.accumulated_savings = 50.0
     session.add(strategy)
@@ -135,8 +134,8 @@ def test_multi_month_accumulation(session, strategy):
     # Even though 3 months passed, unspent budget doesn't accumulate
     assert strategy.accumulated_savings == 500.0
     
-    # Test Unlimited mode: Should accumulate all missed months
-    strategy.unlimited_monthly_budget = True
+    # Test No-Cap mode (enforce_monthly_cap=False): Should accumulate all missed months
+    strategy.enforce_monthly_cap = False
     strategy.last_monthly_inflow = datetime(2025, 4, 15, tzinfo=timezone.utc)
     strategy.accumulated_savings = 50.0
     session.add(strategy)
@@ -146,7 +145,7 @@ def test_multi_month_accumulation(session, strategy):
     now = datetime(2025, 7, 10, tzinfo=timezone.utc)
     _check_monthly_inflow(session, strategy, now, 0.0)
     
-    # In Unlimited mode: Should add 3 * 500 = 1500
+    # In No-Cap mode: Should add 3 * 500 = 1500
     # months_diff: (7-4) = 3 (May, Jun, Jul)
     assert strategy.accumulated_savings == 1550.0  # 50 + (3 * 500)
     
@@ -154,7 +153,7 @@ def test_limited_budget_cap(session, strategy):
     """Test strict monthly cap enforcement."""
     # Setup: Lots of savings, but monthly cap applies
     strategy.accumulated_savings = 5000.0 
-    strategy.unlimited_monthly_budget = False
+    strategy.enforce_monthly_cap = True  # Enforce monthly cap
     strategy.last_monthly_inflow = datetime.now(timezone.utc)
     session.add(strategy)
     session.commit()
@@ -229,15 +228,10 @@ def test_limited_budget_cap(session, strategy):
         engine_module.get_latest_metrics = original_get_metrics
 
 def test_unlimited_budget_spending(session, strategy):
-    """Test spending from savings in unlimited mode."""
+    """Test spending from savings in no-cap mode (enforce_monthly_cap=False)."""
     strategy.accumulated_savings = 5000.0 
-    strategy.unlimited_monthly_budget = True
+    strategy.enforce_monthly_cap = False  # No monthly cap, can spend accumulated savings
     strategy.last_monthly_inflow = datetime.now(timezone.utc) # Prevent initialization overwrite
-    strategy.enforce_monthly_cap = True # Kept True but 'unlimited' flag overrides for spending cap?
-    # Wait, 'enforce_monthly_cap' in models usually enables the logic check.
-    # In my logic: `if strategy.unlimited_monthly_budget: limit = savings`.
-    # `enforce_monthly_cap` flag is mostly legacy or UI toggle.
-    # But effectively `unlimited` overrides "Monthly Cap".
     session.add(strategy)
     session.commit()
 
@@ -264,12 +258,12 @@ def test_unlimited_budget_spending(session, strategy):
     engine_module.get_latest_metrics = lambda: mock_metrics
     
     try:
-        # Should allows spending despite monthly cap being hit
+        # Should allow spending despite monthly cap being hit
         decision = calculate_dca_decision(session)
         assert decision.can_execute is True
         # Should not be capped to 0. Should be full amount ~83.
         assert decision.suggested_amount_usd > 80.0
-        assert "Unlimited Monthly Budget" in decision.reason
+        assert "No Monthly Cap" in decision.reason
         
     finally:
         engine_module.get_latest_metrics = original_get_metrics
