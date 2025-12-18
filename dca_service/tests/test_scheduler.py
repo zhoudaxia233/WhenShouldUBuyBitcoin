@@ -291,14 +291,24 @@ class TestStaticGenerationIntegration:
         assert tx.status == "SUCCESS"
     
     @freeze_time("2024-01-15 14:30:00")
+    @patch("dca_service.services.dca_engine.get_latest_metrics")
     @patch("dca_service.services.binance_client.BinanceClient")
     @patch("dca_service.services.security.decrypt_text")
     @patch("dca_service.services.static_generator.trigger_static_generation")
     def test_static_generation_not_triggered_on_failure(
-        self, mock_trigger, mock_decrypt, mock_client_class, scheduler, daily_strategy, session
+        self, mock_trigger, mock_decrypt, mock_client_class, mock_get_metrics, scheduler, daily_strategy, session
     ):
         """Test that static generation is NOT triggered when DCA fails"""
         from unittest.mock import AsyncMock
+        
+        # Mock metrics to ensure execution can proceed
+        mock_get_metrics.return_value = {
+            "price_usd": 50000.0,
+            "ahr999": 0.5,
+            "peak180": 50000.0,
+            "source": "test",
+            "source_label": "Test Data"
+        }
         
         # Setup mocks to simulate trading failure
         mock_decrypt.return_value = "secret_key"
