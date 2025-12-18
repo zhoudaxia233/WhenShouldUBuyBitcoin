@@ -118,9 +118,6 @@ class TradeSyncService:
             for trade in trades:
                 trade_id = trade["id"]
                 order_id = trade["orderId"]
-                is_buyer = trade.get("isBuyer", False)
-                
-                logger.info(f"Processing trade {trade_id}: order={order_id}, isBuyer={is_buyer}, time={trade.get('time')}")
                 
                 # Skip if we already have this trade ID (double check)
                 exists = self.session.exec(
@@ -129,13 +126,12 @@ class TradeSyncService:
                 ).first()
                 
                 if exists:
-                    logger.info(f"Trade {trade_id} already exists in database, skipping")
+                    logger.debug(f"Trade {trade_id} already exists in database, skipping")
                     continue
                 
                 # Check if this order belongs to our DCA bot
                 # If so, update the existing DCA record or skip if already linked
                 if order_id in existing_dca_orders:
-                    logger.info(f"Trade {trade_id} belongs to DCA bot order {order_id}")
                     # This is a trade from our own bot
                     # Try to link trade_id to existing DCA record if not yet linked
                     dca_tx = self.session.exec(
@@ -148,13 +144,13 @@ class TradeSyncService:
                         # Link this trade to the existing DCA record
                         dca_tx.binance_trade_id = trade_id
                         self.session.add(dca_tx)
-                        logger.info(f"Linked trade {trade_id} to existing DCA transaction {dca_tx.id}")
+                        logger.debug(f"Linked trade {trade_id} to existing DCA transaction {dca_tx.id}")
                         # If there are multiple fills, subsequent ones will be skipped by the continue below
                         continue
                     else:
                         # Already linked, or this is a subsequent fill
                         # To avoid duplicates in the UI, we skip additional fills for now
-                        logger.info(f"Trade {trade_id} from DCA order {order_id} already linked or is duplicate fill, skipping")
+                        logger.debug(f"Trade {trade_id} from DCA order {order_id} already linked, skipping")
                         continue
                 
                 # ADDITIONAL CHECK: Even if order_id is not in existing_dca_orders,
@@ -175,7 +171,6 @@ class TradeSyncService:
                 
                 # Only import BUY trades for now (DCA context)
                 if not trade["isBuyer"]:
-                    logger.info(f"Trade {trade_id} is a SELL order, skipping (only BUY trades are synced)")
                     continue
                     
                 # Create new transaction record for this manual trade
