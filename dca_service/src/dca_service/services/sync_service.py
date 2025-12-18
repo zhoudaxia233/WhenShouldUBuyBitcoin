@@ -32,12 +32,18 @@ class TradeSyncService:
         
         if last_tx:
             # Convert datetime to ms timestamp
-            return int(last_tx.timestamp.timestamp() * 1000)
+            timestamp_ms = int(last_tx.timestamp.timestamp() * 1000)
+            logger.info(f"📍 Last synced trade: ID={last_tx.binance_trade_id}, "
+                       f"Time={last_tx.timestamp.isoformat()}, Timestamp={timestamp_ms}ms")
+            return timestamp_ms
         
+        logger.info("📍 No previous trades found in database, will fetch all available trades")
         return 0
 
     def _get_client(self) -> Optional[BinanceClient]:
         """Get authenticated Binance client (READ_ONLY preferred)"""
+        logger.info("🔑 Looking for Binance credentials...")
+        
         # Try READ_ONLY first
         creds = self.session.exec(
             select(BinanceCredentials).where(BinanceCredentials.credential_type == "READ_ONLY")
@@ -45,19 +51,26 @@ class TradeSyncService:
         
         # Fallback to TRADING
         if not creds:
+            logger.info("🔑 READ_ONLY credentials not found, trying TRADING credentials...")
             creds = self.session.exec(
                 select(BinanceCredentials).where(BinanceCredentials.credential_type == "TRADING")
             ).first()
         
         if not creds or not creds.api_key_encrypted:
+            logger.warning("❌ No Binance credentials found in database")
             return None
+        
+        logger.info(f"✅ Found credentials: type={creds.credential_type}, "
+                   f"key_exists={bool(creds.api_key_encrypted)}, "
+                   f"secret_exists={bool(creds.api_secret_encrypted)}")
         
         try:
             api_key = decrypt_text(creds.api_key_encrypted)
             api_secret = decrypt_text(creds.api_secret_encrypted)
+            logger.info("✅ Credentials decrypted successfully")
             return BinanceClient(api_key, api_secret)
         except Exception as e:
-            logger.error(f"Failed to decrypt credentials: {e}")
+            logger.error(f"❌ Failed to decrypt credentials: {e}")
             return None
 
     async def sync_trades(self, symbol: str = "BTCUSDC", start_from_scratch: bool = False) -> int:
@@ -70,39 +83,62 @@ class TradeSyncService:
         Returns:
             Number of new trades added
         """
+        logger.info(f"{'='*80}")
+        logger.info(f"🔄 Starting trade sync for {symbol}")
+        logger.info(f"{'='*80}")
+        
         client = self._get_client()
         if not client:
-            logger.warning("No Binance credentials found. Skipping sync.")
+            logger.warning("❌ No Binance credentials found. Skipping sync.")
             return 0
             
         try:
             # 1. Get last sync timestamp
             if start_from_scratch:
                 last_ts = 0
+                logger.info("🔄 Mode: Start from scratch (fetching all trades)")
             else:
                 last_ts = self.get_last_synced_timestamp()
             
             # Add 1ms to avoid fetching the same trade again
             start_time = last_ts + 1 if last_ts > 0 else None
             
-            logger.info(f"Syncing trades for {symbol} starting from {start_time or 'beginning'}...")
+            logger.info(f"📅 Sync parameters:")
+            logger.info(f"   - Symbol: {symbol}")
+            logger.info(f"   - Start timestamp: {start_time}ms" + 
+                       (f" ({datetime.fromtimestamp(start_time/1000, tz=timezone.utc).isoformat()})" if start_time else " (all history)"))
             
             # 2. Fetch new trades from Binance
             # Note: We use a custom request here because get_all_btc_trades doesn't support startTime yet
             params = {"symbol": symbol, "limit": 1000}
             if start_time:
                 params["startTime"] = start_time
-                
+            
+            logger.info(f"📡 Calling Binance API: GET /api/v3/myTrades with params={params}")
             trades = await client._request("GET", "/api/v3/myTrades", params=params, signed=True)
             
             if not trades:
-                logger.info("No new trades found.")
+                logger.info("✅ No new trades found (Binance returned empty list)")
                 return 0
-                
-            logger.info(f"Fetched {len(trades)} new trades from Binance")
+            
+            logger.info(f"📦 Fetched {len(trades)} trades from Binance API")
+            
+            # Log first and last trade for reference
+            if trades:
+                first_trade = trades[0]
+                last_trade = trades[-1]
+                logger.info(f"📊 Trade range:")
+                logger.info(f"   - First: ID={first_trade['id']}, Time={datetime.fromtimestamp(first_trade['time']/1000, tz=timezone.utc).isoformat()}")
+                logger.info(f"   - Last:  ID={last_trade['id']}, Time={datetime.fromtimestamp(last_trade['time']/1000, tz=timezone.utc).isoformat()}")
             
             # 3. Store new trades
             added_count = 0
+            skipped_count = 0
+            skip_reasons = {
+                "already_exists": 0,
+                "dca_order": 0,
+                "sell_order": 0
+            }
             
             # Get existing DCA order IDs to avoid duplicating bot-created transactions
             # IMPORTANT: Only include orders created by the DCA bot, not previously synced MANUAL trades
@@ -115,9 +151,29 @@ class TradeSyncService:
                 ).all()
             )
             
-            for trade in trades:
+            logger.info(f"🔍 Found {len(existing_dca_orders)} existing DCA order IDs in database")
+            logger.info(f"{'='*80}")
+            logger.info(f"Processing {len(trades)} trades...")
+            logger.info(f"{'='*80}")
+            
+            for idx, trade in enumerate(trades, 1):
                 trade_id = trade["id"]
                 order_id = trade["orderId"]
+                is_buyer = trade.get("isBuyer", False)
+                trade_time = datetime.fromtimestamp(trade["time"] / 1000, tz=timezone.utc)
+                qty = float(trade["qty"])
+                price = float(trade["price"])
+                quote_qty = float(trade["quoteQty"])
+                
+                logger.info(f"")
+                logger.info(f"📝 Trade {idx}/{len(trades)}:")
+                logger.info(f"   - Trade ID: {trade_id}")
+                logger.info(f"   - Order ID: {order_id}")
+                logger.info(f"   - Time: {trade_time.isoformat()}")
+                logger.info(f"   - Side: {'BUY' if is_buyer else 'SELL'}")
+                logger.info(f"   - Quantity: {qty} BTC")
+                logger.info(f"   - Price: ${price}")
+                logger.info(f"   - Total: ${quote_qty}")
                 
                 # Skip if we already have this trade ID (double check)
                 exists = self.session.exec(
@@ -126,12 +182,15 @@ class TradeSyncService:
                 ).first()
                 
                 if exists:
-                    logger.debug(f"Trade {trade_id} already exists in database, skipping")
+                    logger.info(f"   ⏭️  SKIP: Trade already exists in database")
+                    skipped_count += 1
+                    skip_reasons["already_exists"] += 1
                     continue
                 
                 # Check if this order belongs to our DCA bot
                 # If so, update the existing DCA record or skip if already linked
                 if order_id in existing_dca_orders:
+                    logger.info(f"   🤖 Order belongs to DCA bot")
                     # This is a trade from our own bot
                     # Try to link trade_id to existing DCA record if not yet linked
                     dca_tx = self.session.exec(
@@ -144,13 +203,17 @@ class TradeSyncService:
                         # Link this trade to the existing DCA record
                         dca_tx.binance_trade_id = trade_id
                         self.session.add(dca_tx)
-                        logger.debug(f"Linked trade {trade_id} to existing DCA transaction {dca_tx.id}")
+                        logger.info(f"   🔗 Linked trade {trade_id} to existing DCA transaction {dca_tx.id}")
                         # If there are multiple fills, subsequent ones will be skipped by the continue below
+                        skipped_count += 1
+                        skip_reasons["dca_order"] += 1
                         continue
                     else:
                         # Already linked, or this is a subsequent fill
                         # To avoid duplicates in the UI, we skip additional fills for now
-                        logger.debug(f"Trade {trade_id} from DCA order {order_id} already linked, skipping")
+                        logger.info(f"   ⏭️  SKIP: DCA order already linked or duplicate fill")
+                        skipped_count += 1
+                        skip_reasons["dca_order"] += 1
                         continue
                 
                 # ADDITIONAL CHECK: Even if order_id is not in existing_dca_orders,
@@ -164,28 +227,32 @@ class TradeSyncService:
                 
                 if existing_bot_tx:
                     logger.warning(
-                        f"Order {order_id} already exists as {existing_bot_tx.source} transaction "
+                        f"   ⚠️  Order {order_id} already exists as {existing_bot_tx.source} transaction "
                         f"but was not in existing_dca_orders cache. Skipping to prevent duplicate."
                     )
+                    skipped_count += 1
+                    skip_reasons["dca_order"] += 1
                     continue
                 
                 # Only import BUY trades for now (DCA context)
                 if not trade["isBuyer"]:
+                    logger.info(f"   ⏭️  SKIP: SELL order (only BUY trades are synced)")
+                    skipped_count += 1
+                    skip_reasons["sell_order"] += 1
                     continue
                     
                 # Create new transaction record for this manual trade
-                ts = datetime.fromtimestamp(trade["time"] / 1000, tz=timezone.utc)
-                qty = float(trade["qty"])
-                price = float(trade["price"])
-                quote_qty = float(trade["quoteQty"])
                 commission = float(trade["commission"])
                 commission_asset = trade["commissionAsset"]
+                
+                logger.info(f"   ✅ IMPORTING as MANUAL trade")
+                logger.info(f"      - Fee: {commission} {commission_asset}")
                 
                 # Normalize fee to USD if possible (approximate)
                 # This is tricky without historical prices. We'll store raw values.
                 
                 new_tx = DCATransaction(
-                    timestamp=ts,
+                    timestamp=trade_time,
                     status="SUCCESS",
                     fiat_amount=quote_qty,
                     btc_amount=qty,
@@ -210,11 +277,32 @@ class TradeSyncService:
                 added_count += 1
             
             self.session.commit()
-            logger.info(f"Successfully synced {added_count} new trades")
+            
+            logger.info(f"")
+            logger.info(f"{'='*80}")
+            logger.info(f"✅ Sync completed successfully")
+            logger.info(f"{'='*80}")
+            logger.info(f"📊 Summary:")
+            logger.info(f"   - Total trades from API: {len(trades)}")
+            logger.info(f"   - Added to database: {added_count}")
+            logger.info(f"   - Skipped: {skipped_count}")
+            logger.info(f"     • Already exists: {skip_reasons['already_exists']}")
+            logger.info(f"     • DCA bot orders: {skip_reasons['dca_order']}")
+            logger.info(f"     • SELL orders: {skip_reasons['sell_order']}")
+            logger.info(f"{'='*80}")
+            
             return added_count
             
         except Exception as e:
-            logger.error(f"Error syncing trades: {e}")
+            logger.error(f"{'='*80}")
+            logger.error(f"❌ ERROR during sync")
+            logger.error(f"{'='*80}")
+            logger.error(f"Exception type: {type(e).__name__}")
+            logger.error(f"Exception message: {str(e)}")
+            logger.error(f"{'='*80}")
+            import traceback
+            logger.error(f"Full traceback:\n{traceback.format_exc()}")
             return 0
         finally:
             await client.close()
+            logger.info("🔌 Binance client connection closed")
