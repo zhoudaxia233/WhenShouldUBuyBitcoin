@@ -66,6 +66,11 @@ app.add_middleware(
 BASE_DIR = Path(__file__).resolve().parent
 templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
 
+# Mount static folder for favicon and other static assets
+STATIC_DIR = BASE_DIR / "static"
+if STATIC_DIR.exists():
+    app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
+
 # Mount docs folder for analysis charts and data
 # This serves the btc_metrics.csv analysis HTML files
 DOCS_DIR = Path(__file__).resolve().parent.parent.parent.parent / "docs"
