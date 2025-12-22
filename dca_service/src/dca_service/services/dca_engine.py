@@ -605,16 +605,11 @@ def calculate_dca_decision(session: Session) -> DCADecision:
         )
         return DCADecision(**decision_data)
 
-    # In No Monthly Cap mode, check if there's sufficient accumulated savings for execution
-    # The preview shows the uncapped amount, but execution requires sufficient funds
-    can_execute_final = True
-    if not strategy.enforce_monthly_cap:
-        if suggested_amount > available_cash:
-            can_execute_final = False
-            reason += f" | WARNING: Insufficient savings (${available_cash:.2f}) for suggested amount (${suggested_amount:.2f})"
-
+    # In No Monthly Cap mode, accumulated_savings is only for record-keeping
+    # Actual balance check happens during execution via Binance API
+    # We don't block execution based on accumulated_savings in No Monthly Cap mode
     return DCADecision(
-        can_execute=can_execute_final,
+        can_execute=True,
         reason=reason,
         ahr999_value=ahr999,
         ahr_band=band,

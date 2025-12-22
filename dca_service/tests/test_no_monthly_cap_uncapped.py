@@ -70,16 +70,16 @@ def strategy_no_cap(session):
 def test_no_monthly_cap_shows_uncapped_amount(session, strategy_no_cap):
     """
     Test that in No Monthly Cap mode, the suggested_amount_usd is NOT capped
-    by accumulated_savings.
+    by accumulated_savings, and execution is NOT blocked by accumulated_savings.
     
     Scenario:
-    - accumulated_savings = $50
+    - accumulated_savings = $50 (virtual budget tracking)
     - AHR999 = 0.42 (in "r045" range: < 0.45, 5x multiplier)
     - base_amount = $16.43 (500/30.44 days/month)
     - Strategy suggests: $16.43 × 5.0 = $82.15
     - Expected: suggested_amount_usd should be $82.15 (NOT capped to $50)
-    - Expected: can_execute should be False (insufficient savings: $50 < $82.15)
-    - Expected: reason should contain WARNING about insufficient savings
+    - Expected: can_execute should be True (not limited by accumulated_savings)
+    - Actual balance check happens during execution via Binance API
     """
     # Mock metrics to return an "extremely cheap" condition (AHR999 = 0.42, r045 range)
     mock_metrics = {
@@ -111,17 +111,16 @@ def test_no_monthly_cap_shows_uncapped_amount(session, strategy_no_cap):
     assert decision.suggested_amount_usd > strategy_no_cap.accumulated_savings, \
         f"Suggested amount (${decision.suggested_amount_usd:.2f}) should exceed savings (${strategy_no_cap.accumulated_savings:.2f})"
     
-    # Execution should be blocked due to insufficient savings
-    assert decision.can_execute == False, \
-        "can_execute should be False when savings are insufficient"
+    # Execution should be ALLOWED in No Monthly Cap mode
+    # accumulated_savings is only for tracking, not limiting
+    assert decision.can_execute == True, \
+        "can_execute should be True in No Monthly Cap mode (balance check happens at execution)"
     
-    # Reason should contain warning about insufficient savings
-    assert "WARNING" in decision.reason, \
-        "Reason should contain WARNING about insufficient savings"
-    assert "Insufficient savings" in decision.reason, \
-        "Reason should mention insufficient savings"
-    assert "$50.00" in decision.reason, \
-        "Reason should show available savings amount"
+    # No WARNING should be shown
+    assert "WARNING" not in decision.reason, \
+        "No WARNING should be shown in No Monthly Cap mode"
+    assert "Insufficient savings" not in decision.reason, \
+        "No insufficient savings message in No Monthly Cap mode"
     
     # Verify mode indicator is present
     assert "No Monthly Cap" in decision.reason, \
@@ -139,14 +138,15 @@ def test_no_monthly_cap_shows_uncapped_amount(session, strategy_no_cap):
 
 def test_no_monthly_cap_with_sufficient_savings(session, strategy_no_cap):
     """
-    Test that in No Monthly Cap mode with sufficient savings, execution is allowed.
+    Test that in No Monthly Cap mode, execution is always allowed regardless of
+    accumulated_savings (balance check is done at execution time via Binance API).
     
     Scenario:
-    - accumulated_savings = $100
+    - accumulated_savings = $100 (but this doesn't matter in No Monthly Cap mode)
     - AHR999 = 0.42 (in "r045" range, 5x multiplier)
     - base_amount = $16.43, strategy suggests $82.15
     - Expected: suggested_amount_usd = $82.15 (uncapped)
-    - Expected: can_execute = True (sufficient savings)
+    - Expected: can_execute = True (always allowed in No Monthly Cap mode)
     """
     # Update strategy to have more savings
     strategy_no_cap.accumulated_savings = 100.0
@@ -251,7 +251,8 @@ def test_enforced_cap_mode_still_caps_correctly(session):
 def test_no_monthly_cap_zero_savings(session, strategy_no_cap):
     """
     Edge case: No Monthly Cap mode with zero accumulated savings.
-    Should show uncapped suggested amount but block execution.
+    Should show uncapped suggested amount and allow execution attempt.
+    Actual balance check happens at execution time via Binance API.
     """
     # Set savings to zero
     strategy_no_cap.accumulated_savings = 0.0
@@ -276,13 +277,17 @@ def test_no_monthly_cap_zero_savings(session, strategy_no_cap):
     assert abs(decision.suggested_amount_usd - expected_amount) < 0.01, \
         f"Should show uncapped amount even with $0 savings, got ${decision.suggested_amount_usd:.2f}"
     
-    # Execution must be blocked
-    assert decision.can_execute == False, \
-        "Execution should be blocked with zero savings"
+    # Execution should be ALLOWED in No Monthly Cap mode
+    # Even with zero accumulated_savings, we still attempt execution
+    # Binance API will handle the actual balance check
+    assert decision.can_execute == True, \
+        "Execution should be allowed in No Monthly Cap mode (balance check at execution time)"
     
-    # Should show warning
-    assert "WARNING" in decision.reason and "Insufficient savings" in decision.reason, \
-        "Should warn about insufficient savings"
+    # No warning should be shown
+    assert "WARNING" not in decision.reason, \
+        "No WARNING in No Monthly Cap mode"
+    assert "Insufficient savings" not in decision.reason, \
+        "No insufficient savings message in No Monthly Cap mode"
     
     print(f"✓ Zero savings edge case handled correctly")
     print(f"✓ Shows uncapped amount: ${decision.suggested_amount_usd:.2f}")
