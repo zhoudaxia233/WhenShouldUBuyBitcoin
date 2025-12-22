@@ -92,11 +92,18 @@ def test_engine_over_budget_with_enforcement(mock_metrics, session: Session, bas
 
 @patch('dca_service.services.dca_engine.get_latest_metrics')
 def test_engine_allow_over_budget(mock_metrics, session: Session, basic_strategy: DCAStrategy):
-    """Test that disabling enforcement allows going over budget"""
+    """
+    Test No Monthly Cap mode behavior:
+    - Shows uncapped suggested amount (not limited by monthly budget)
+    - But execution still requires sufficient accumulated savings
+    """
     basic_strategy.enforce_monthly_cap = False
+    basic_strategy.accumulated_savings = 100.0  # Ensure sufficient savings for execution
+    basic_strategy.last_monthly_inflow = datetime.now(timezone.utc)  # Mark as initialized to prevent reset
     session.add(basic_strategy)
     session.commit()
     
+    # Add transaction showing we've spent $980 (over typical monthly budget)
     tx = DCATransaction(
         status="SUCCESS",
         fiat_amount=980.0,
@@ -109,13 +116,19 @@ def test_engine_allow_over_budget(mock_metrics, session: Session, basic_strategy
     mock_metrics.return_value = {
         "ahr999": 1.0,
         "price_usd": 50000.0,
+        "peak180": 50000.0,
         "timestamp": datetime.now(timezone.utc),
         "source": "csv",
         "source_label": "Test"
     }
     
     decision = calculate_dca_decision(session)
+    
+    # In No Monthly Cap mode with sufficient savings, execution should be allowed
+    # even though we've already spent $980 (demonstrating no monthly limit)
     assert decision.can_execute is True
+    assert "No Monthly Cap" in decision.reason
+    assert "WARNING" not in decision.reason  # No warning when savings are sufficient
 
 
 @patch('dca_service.services.dca_engine.get_latest_metrics')

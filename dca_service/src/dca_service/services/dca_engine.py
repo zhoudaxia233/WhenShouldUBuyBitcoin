@@ -529,11 +529,16 @@ def calculate_dca_decision(session: Session) -> DCADecision:
     
     budget_limit = 0.0
     tx_capped_reason = ""
+    is_capped = False
+    original_suggested = suggested_amount
     
     if not strategy.enforce_monthly_cap:
-        # No Cap Mode: Limit is only available cash (accumulated savings)
-        budget_limit = available_cash
-        tx_capped_reason = f"Capped by Savings (${available_cash:.2f})"
+        # No Cap Mode: No budget limit applied to suggested amount
+        # User wants to see the full strategy-calculated amount without restrictions
+        # Execution will still require sufficient accumulated_savings, but preview shows uncapped amount
+        budget_limit = float('inf')  # No limit
+        tx_capped_reason = ""
+        # Do not cap the suggested_amount in this mode
     else:
         # Enforced Cap Mode: Limit is min(Monthly Remaining, Available Cash)
         budget_limit = min(monthly_remaining, available_cash)
@@ -541,11 +546,10 @@ def calculate_dca_decision(session: Session) -> DCADecision:
             tx_capped_reason = f"Capped by Monthly Limit (${monthly_remaining:.2f})"
         else:
             tx_capped_reason = f"Capped by Savings (${available_cash:.2f})"
-
-    # Apply limit
-    original_suggested = suggested_amount
-    suggested_amount = min(suggested_amount, budget_limit)
-    is_capped = suggested_amount < original_suggested
+        
+        # Apply limit only in enforced cap mode
+        suggested_amount = min(suggested_amount, budget_limit)
+        is_capped = suggested_amount < original_suggested
     
     if is_capped:
         if suggested_amount == 0:
@@ -567,13 +571,17 @@ def calculate_dca_decision(session: Session) -> DCADecision:
             return DCADecision(**decision_data)
         else:
              # Partial execution allowed (or capped amount)
-             # Update reason with cap info
-             reason += f" [{tx_capped_reason}]"
+             # Update reason with cap info (only for enforced cap mode)
+             if strategy.enforce_monthly_cap:
+                 reason += f" [{tx_capped_reason}]"
 
     # Append Budget Status to reason for visibility
-    reason += f" | Budget: Savings=${available_cash:.2f} | Monthly Spent=${total_spent_sum:.2f}/${strategy.total_budget_usd:.0f}"
     if not strategy.enforce_monthly_cap:
-        reason += " | Mode: No Monthly Cap"
+        # No Monthly Cap mode: Show available savings without monthly budget comparison
+        reason += f" | Budget: Savings=${available_cash:.2f} | Mode: No Monthly Cap"
+    else:
+        # Enforced Cap mode: Show both savings and monthly spent/budget
+        reason += f" | Budget: Savings=${available_cash:.2f} | Monthly Spent=${total_spent_sum:.2f}/${strategy.total_budget_usd:.0f}"
     
     # Check if multiplier is 0 or negative (no purchase needed)
     # This handles cases where user sets multiplier to 0 for a specific tier
@@ -597,8 +605,16 @@ def calculate_dca_decision(session: Session) -> DCADecision:
         )
         return DCADecision(**decision_data)
 
+    # In No Monthly Cap mode, check if there's sufficient accumulated savings for execution
+    # The preview shows the uncapped amount, but execution requires sufficient funds
+    can_execute_final = True
+    if not strategy.enforce_monthly_cap:
+        if suggested_amount > available_cash:
+            can_execute_final = False
+            reason += f" | WARNING: Insufficient savings (${available_cash:.2f}) for suggested amount (${suggested_amount:.2f})"
+
     return DCADecision(
-        can_execute=True,
+        can_execute=can_execute_final,
         reason=reason,
         ahr999_value=ahr999,
         ahr_band=band,
