@@ -1,27 +1,6 @@
 {
-  "timestamp": "2025-12-19T17:56:26.668877",
+  "timestamp": "2025-12-22T11:25:24.487696",
   "data": [
-    {
-      "symbol": "BTCUSDC",
-      "sumOpenInterest": "8295.19100000",
-      "sumOpenInterestValue": "758618342.54393880",
-      "CMCCirculatingSupply": "19950440.00000000",
-      "timestamp": 1763596800000
-    },
-    {
-      "symbol": "BTCUSDC",
-      "sumOpenInterest": "8934.57700000",
-      "sumOpenInterestValue": "773019619.35878410",
-      "CMCCirculatingSupply": "19950600.00000000",
-      "timestamp": 1763683200000
-    },
-    {
-      "symbol": "BTCUSDC",
-      "sumOpenInterest": "8919.53100000",
-      "sumOpenInterestValue": "758579352.95700000",
-      "CMCCirculatingSupply": "19950600.00000000",
-      "timestamp": 1763769600000
-    },
     {
       "symbol": "BTCUSDC",
       "sumOpenInterest": "8894.44500000",
@@ -210,6 +189,27 @@
       "sumOpenInterestValue": "723876736.79795940",
       "CMCCirculatingSupply": "19963521.00000000",
       "timestamp": 1766102400000
+    },
+    {
+      "symbol": "BTCUSDC",
+      "sumOpenInterest": "8437.40600000",
+      "sumOpenInterestValue": "743006409.76600000",
+      "CMCCirculatingSupply": "19963959.00000000",
+      "timestamp": 1766188800000
+    },
+    {
+      "symbol": "BTCUSDC",
+      "sumOpenInterest": "8505.05000000",
+      "sumOpenInterestValue": "751006121.06000000",
+      "CMCCirculatingSupply": "19964415.00000000",
+      "timestamp": 1766275200000
+    },
+    {
+      "symbol": "BTCUSDC",
+      "sumOpenInterest": "8549.63100000",
+      "sumOpenInterestValue": "757547606.23060210",
+      "CMCCirculatingSupply": "19964890.00000000",
+      "timestamp": 1766361600000
     }
   ]
 }
