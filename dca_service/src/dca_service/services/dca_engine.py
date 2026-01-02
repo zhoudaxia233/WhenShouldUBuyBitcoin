@@ -78,6 +78,20 @@ def _check_monthly_inflow(session: Session, strategy: DCAStrategy, now: datetime
         session.add(strategy)
         session.commit()
         session.refresh(strategy)
+    elif months_diff == 0 and strategy.enforce_monthly_cap:
+        # Same month, but in Enforced Cap Mode: Check if budget was changed mid-month
+        # If accumulated_savings + month_spent doesn't match total_budget_usd, 
+        # it means the budget was modified after the month started
+        expected_savings = max(0.0, strategy.total_budget_usd - month_spent)
+        
+        # Allow small floating point differences (0.01 USD tolerance)
+        if abs(strategy.accumulated_savings - expected_savings) > 0.01:
+            # Budget was changed mid-month, adjust accumulated_savings accordingly
+            # This ensures budget changes take effect immediately
+            strategy.accumulated_savings = expected_savings
+            session.add(strategy)
+            session.commit()
+            session.refresh(strategy)
 
 
 def calculate_dca_decision(session: Session) -> DCADecision:
