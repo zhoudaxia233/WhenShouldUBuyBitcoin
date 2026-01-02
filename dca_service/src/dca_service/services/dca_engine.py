@@ -79,15 +79,29 @@ def _check_monthly_inflow(session: Session, strategy: DCAStrategy, now: datetime
         session.commit()
         session.refresh(strategy)
     elif months_diff == 0 and strategy.enforce_monthly_cap:
-        # Same month, but in Enforced Cap Mode: Check if budget was changed mid-month
-        # If accumulated_savings + month_spent doesn't match total_budget_usd, 
-        # it means the budget was modified after the month started
+        # Same month, but in Enforced Cap Mode: Check if budget was increased mid-month
+        # Only adjust upward (when user increases budget), not downward (to preserve manual adjustments)
         expected_savings = max(0.0, strategy.total_budget_usd - month_spent)
         
-        # Allow small floating point differences (0.01 USD tolerance)
-        if abs(strategy.accumulated_savings - expected_savings) > 0.01:
-            # Budget was changed mid-month, adjust accumulated_savings accordingly
-            # This ensures budget changes take effect immediately
+        # Detect if this looks like a budget increase scenario:
+        # Calculate what the old budget might have been
+        implied_old_budget = strategy.accumulated_savings + month_spent
+        budget_diff = strategy.total_budget_usd - implied_old_budget
+        
+        # Only adjust if:
+        # 1. Expected savings is higher than current
+        # 2. The difference looks like a deliberate budget increase (multiples of 50 or 100)
+        # 3. The old implied budget was a reasonable value (at least 100)
+        is_budget_increase = (
+            expected_savings > strategy.accumulated_savings + 0.01 and
+            implied_old_budget >= 100.0 and  # Old budget was reasonable
+            budget_diff >= 50.0 and  # Increase is at least $50
+            abs(budget_diff % 50) < 5.0  # Increase is close to a multiple of $50
+        )
+        
+        if is_budget_increase:
+            # Budget was increased mid-month, adjust accumulated_savings upward
+            # This ensures budget increases take effect immediately
             strategy.accumulated_savings = expected_savings
             session.add(strategy)
             session.commit()
