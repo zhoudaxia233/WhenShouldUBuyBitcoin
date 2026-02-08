@@ -3,13 +3,18 @@ from sqlmodel import Session
 
 from dca_service.database import get_session
 from dca_service.services.dca_engine import calculate_dca_decision, DCADecision
-from dca_service.models import DCATransaction
+from dca_service.models import DCATransaction, User
 from dca_service.api.schemas import TransactionRead
+from dca_service.auth.dependencies import get_current_user
+from dca_service.core.logging import logger
 
 router = APIRouter()
 
 @router.get("/dca/preview", response_model=DCADecision)
-def preview_dca(session: Session = Depends(get_session)):
+def preview_dca(
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
     """
     Preview the DCA decision based on current strategy and metrics.
     Does NOT execute any transaction.
@@ -21,7 +26,8 @@ def preview_dca(session: Session = Depends(get_session)):
 @router.post("/dca/execute-simulated", response_model=dict)
 async def execute_simulated_dca(
     background_tasks: BackgroundTasks,
-    session: Session = Depends(get_session)
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
 ):
     """
     Execute a simulated DCA transaction if conditions are met.

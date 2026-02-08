@@ -8,12 +8,13 @@ from sqlmodel import Session
 from typing import Optional
 
 from dca_service.database import get_session
-from dca_service.models import GlobalSettings, BinanceCredentials
+from dca_service.models import GlobalSettings, BinanceCredentials, User
 from dca_service.api.schemas import WalletSummary, ColdWalletBalanceUpdate
 from dca_service.services.binance_client import BinanceClient
 from dca_service.services.security import decrypt_text
 from dca_service.core.logging import logger
 from sqlmodel import select
+from dca_service.auth.dependencies import get_current_user
 
 router = APIRouter(prefix="/wallet", tags=["wallet"])
 
@@ -118,7 +119,10 @@ async def fetch_wallet_summary(session: Session) -> WalletSummary:
 
 
 @router.get("/summary", response_model=WalletSummary)
-async def get_wallet_summary(session: Session = Depends(get_session)):
+async def get_wallet_summary(
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
     """
     Get comprehensive wallet information including:
     - Cold wallet balance (from database)
@@ -133,7 +137,8 @@ async def get_wallet_summary(session: Session = Depends(get_session)):
 @router.post("/cold-balance", response_model=WalletSummary)
 async def update_cold_wallet_balance(
     update: ColdWalletBalanceUpdate,
-    session: Session = Depends(get_session)
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
 ):
     """
     Update the cold wallet balance.
@@ -157,4 +162,4 @@ async def update_cold_wallet_balance(
     logger.info(f"Cold wallet balance updated to {update.balance} BTC")
     
     # Return updated summary
-    return await get_wallet_summary(session)
+    return await fetch_wallet_summary(session)
