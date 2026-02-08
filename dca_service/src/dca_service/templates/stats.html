@@ -4,6 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Stats & Analytics</title>
+    <script>
+        (function () {
+            const savedTheme = localStorage.getItem('dca_theme');
+            const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+            const initialTheme = savedTheme || (prefersDark ? 'dark' : 'light');
+            document.documentElement.setAttribute('data-bs-theme', initialTheme);
+        })();
+    </script>
     
     <!-- Favicon -->
     <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
@@ -13,7 +21,11 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/notyf@3.10.0/notyf.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        body { padding-top: 20px; background-color: #f8f9fa; }
+        body {
+            padding-top: 20px;
+            background-color: #f8f9fa;
+            transition: background-color 0.2s ease, color 0.2s ease;
+        }
         .container { max-width: 1200px; }
         .card { margin-bottom: 20px; }
         .percentile-card {
@@ -32,14 +44,54 @@
             width: 20px;
             margin-right: 8px;
         }
+        .theme-toggle-btn {
+            min-width: 90px;
+        }
         /* Mobile optimization */
         @media (max-width: 576px) {
+            .nav-actions {
+                width: 100%;
+            }
             .display-4 {
                 font-size: 2.5rem;
             }
             .btn .btn-text {
                 display: none;
             }
+            .theme-toggle-btn {
+                min-width: 44px;
+                padding-left: 10px;
+                padding-right: 10px;
+            }
+        }
+        @media (min-width: 992px) {
+            .theme-toggle-btn {
+                min-width: 96px;
+            }
+        }
+
+        html[data-bs-theme="dark"] body {
+            background-color: #121820;
+            color: #e5e7eb;
+        }
+        html[data-bs-theme="dark"] .card {
+            border-color: #2f3a49;
+        }
+        html[data-bs-theme="dark"] .card-header.bg-white,
+        html[data-bs-theme="dark"] .card-footer {
+            background-color: #1b2430 !important;
+            border-color: #2f3a49;
+        }
+        html[data-bs-theme="dark"] .table-light {
+            --bs-table-bg: #1b2430;
+            --bs-table-color: #e5e7eb;
+            --bs-table-border-color: #2f3a49;
+        }
+        html[data-bs-theme="dark"] .highlight-row {
+            background-color: #1f2d40;
+        }
+        html[data-bs-theme="dark"] .text-muted {
+            color: #9ba7b7 !important;
         }
         .version-badge {
             position: fixed;
@@ -62,7 +114,7 @@
                 <h1 class="mb-0 text-center text-md-start">Stats & Analytics</h1>
                 <div class="d-flex flex-column flex-md-row align-items-center gap-3">
                     <!-- Navigation buttons -->
-                    <div class="d-flex flex-wrap flex-md-nowrap justify-content-center gap-2">
+                    <div class="nav-actions d-flex flex-wrap flex-md-nowrap justify-content-center gap-2">
                         <a href="/" class="btn btn-outline-secondary text-nowrap"><i class="bi bi-house-fill"></i> <span class="btn-text">Dashboard</span></a>
                         <!-- Settings Dropdown -->
                         <div class="dropdown">
@@ -87,6 +139,9 @@
                         </button>
                         <button id="regenerateStaticBtn" class="btn btn-outline-success text-nowrap" title="Regenerate static files (charts, data)">
                             📊 <span class="btn-text">Update Charts</span>
+                        </button>
+                        <button id="themeToggleBtn" type="button" class="btn btn-outline-secondary text-nowrap theme-toggle-btn">
+                            <i class="bi bi-moon-stars-fill"></i> <span class="btn-text">Dark</span>
                         </button>
                     </div>
                     <!-- User section -->
@@ -210,6 +265,21 @@
     <script src="https://cdn.jsdelivr.net/npm/notyf@3.10.0/notyf.min.js"></script>
     <script>
         window.notyf = new Notyf({ duration: 3000, position: { x: 'right', y: 'top' } });
+        const THEME_STORAGE_KEY = 'dca_theme';
+
+        function updateThemeToggleButton(theme) {
+            const btn = document.getElementById('themeToggleBtn');
+            if (!btn) return;
+            btn.innerHTML = theme === 'dark'
+                ? '<i class="bi bi-sun-fill"></i> <span class="btn-text">Light</span>'
+                : '<i class="bi bi-moon-stars-fill"></i> <span class="btn-text">Dark</span>';
+        }
+
+        function applyTheme(theme) {
+            document.documentElement.setAttribute('data-bs-theme', theme);
+            localStorage.setItem(THEME_STORAGE_KEY, theme);
+            updateThemeToggleButton(theme);
+        }
 
         // Load Wealth Percentile
         // Cache Helpers
@@ -518,6 +588,16 @@
 
         // Initialize
         document.addEventListener('DOMContentLoaded', async () => {
+            const currentTheme = document.documentElement.getAttribute('data-bs-theme') || 'light';
+            updateThemeToggleButton(currentTheme);
+            const themeBtn = document.getElementById('themeToggleBtn');
+            if (themeBtn) {
+                themeBtn.addEventListener('click', () => {
+                    const theme = document.documentElement.getAttribute('data-bs-theme') === 'dark' ? 'light' : 'dark';
+                    applyTheme(theme);
+                });
+            }
+
             loadPercentile();
             loadDistribution();
             loadFees();

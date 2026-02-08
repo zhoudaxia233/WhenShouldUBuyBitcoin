@@ -4,6 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - DCA Service</title>
+    <script>
+        (function () {
+            const savedTheme = localStorage.getItem('dca_theme');
+            const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+            const initialTheme = savedTheme || (prefersDark ? 'dark' : 'light');
+            document.documentElement.setAttribute('data-theme', initialTheme);
+        })();
+    </script>
     
     <!-- Favicon -->
     <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
@@ -23,6 +31,21 @@
             align-items: center;
             justify-content: center;
             padding: 20px;
+        }
+
+        .theme-toggle-btn {
+            position: fixed;
+            top: max(16px, env(safe-area-inset-top));
+            right: max(16px, env(safe-area-inset-right));
+            border: 1px solid rgba(255, 255, 255, 0.45);
+            background: rgba(255, 255, 255, 0.2);
+            color: #fff;
+            border-radius: 999px;
+            padding: 8px 14px;
+            font-size: 13px;
+            cursor: pointer;
+            backdrop-filter: blur(6px);
+            z-index: 20;
         }
         
         .login-container {
@@ -117,7 +140,6 @@
             color: #999;
             font-size: 12px;
         }
-
         .version-badge {
             position: fixed;
             right: 10px;
@@ -130,9 +152,68 @@
             border-radius: 999px;
             padding: 3px 10px;
         }
+
+        @media (max-width: 576px) {
+            .theme-toggle-btn {
+                padding: 7px 12px;
+                font-size: 12px;
+            }
+            .login-container {
+                padding: 28px 22px;
+                margin-top: 32px;
+            }
+        }
+        @media (min-width: 992px) {
+            .login-container {
+                max-width: 420px;
+            }
+        }
+
+        html[data-theme="dark"] body {
+            background: linear-gradient(135deg, #0f172a 0%, #1f2937 100%);
+            color: #e5e7eb;
+        }
+        html[data-theme="dark"] .theme-toggle-btn {
+            border-color: rgba(148, 163, 184, 0.45);
+            background: rgba(15, 23, 42, 0.65);
+            color: #e5e7eb;
+        }
+        html[data-theme="dark"] .login-container {
+            background: #111827;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45);
+        }
+        html[data-theme="dark"] .login-header h1,
+        html[data-theme="dark"] .form-group label {
+            color: #f3f4f6;
+        }
+        html[data-theme="dark"] .login-header p,
+        html[data-theme="dark"] .security-note {
+            color: #9ca3af;
+            border-top-color: #374151;
+        }
+        html[data-theme="dark"] .form-group input {
+            background: #0b1220;
+            border-color: #334155;
+            color: #e5e7eb;
+        }
+        html[data-theme="dark"] .form-group input:focus {
+            border-color: #818cf8;
+            box-shadow: 0 0 0 3px rgba(129, 140, 248, 0.2);
+        }
+        html[data-theme="dark"] .error-message {
+            background: #3b0f19;
+            border-color: #7f1d1d;
+            color: #fca5a5;
+        }
+        html[data-theme="dark"] .version-badge {
+            color: #9ba7b7;
+            background: rgba(17, 24, 39, 0.9);
+            border-color: #374151;
+        }
     </style>
 </head>
 <body>
+    <button id="themeToggleBtn" type="button" class="theme-toggle-btn">Dark</button>
     <div class="login-container">
         <div class="login-header">
             <h1>DCA Service</h1>
@@ -183,5 +264,32 @@
     <div class="version-badge">
         v{{ app_version }}{% if app_commit_sha %} ({{ app_commit_sha[:7] }}){% endif %}
     </div>
+    <script>
+        const THEME_STORAGE_KEY = 'dca_theme';
+
+        function updateThemeToggleButton(theme) {
+            const btn = document.getElementById('themeToggleBtn');
+            if (!btn) return;
+            btn.textContent = theme === 'dark' ? 'Light' : 'Dark';
+        }
+
+        function applyTheme(theme) {
+            document.documentElement.setAttribute('data-theme', theme);
+            localStorage.setItem(THEME_STORAGE_KEY, theme);
+            updateThemeToggleButton(theme);
+        }
+
+        (function initThemeToggle() {
+            const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
+            updateThemeToggleButton(currentTheme);
+            const themeBtn = document.getElementById('themeToggleBtn');
+            if (themeBtn) {
+                themeBtn.addEventListener('click', () => {
+                    const theme = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+                    applyTheme(theme);
+                });
+            }
+        })();
+    </script>
 </body>
 </html>

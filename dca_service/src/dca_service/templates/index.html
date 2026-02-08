@@ -4,6 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>DCA Dashboard</title>
+    <script>
+        (function () {
+            const savedTheme = localStorage.getItem('dca_theme');
+            const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+            const initialTheme = savedTheme || (prefersDark ? 'dark' : 'light');
+            document.documentElement.setAttribute('data-bs-theme', initialTheme);
+        })();
+    </script>
     
     <!-- Favicon -->
     <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
@@ -12,7 +20,11 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/notyf@3.10.0/notyf.min.css">
     <style>
-        body { padding-top: 20px; background-color: #f8f9fa; }
+        body {
+            padding-top: 20px;
+            background-color: #f8f9fa;
+            transition: background-color 0.2s ease, color 0.2s ease;
+        }
         .container { max-width: 1200px; }
         .status-badge { font-size: 0.9em; }
         /* Ensure tooltips are visible */
@@ -30,11 +42,54 @@
             width: 20px;
             margin-right: 8px;
         }
+        .theme-toggle-btn {
+            min-width: 90px;
+        }
         /* Mobile optimization - hide button text on small screens, show only icons */
         @media (max-width: 576px) {
+            .nav-actions {
+                width: 100%;
+            }
             .btn .btn-text {
                 display: none;
             }
+            .theme-toggle-btn {
+                min-width: 44px;
+                padding-left: 10px;
+                padding-right: 10px;
+            }
+        }
+        @media (min-width: 992px) {
+            .theme-toggle-btn {
+                min-width: 96px;
+            }
+        }
+
+        /* Dark mode overrides for custom light-only classes */
+        html[data-bs-theme="dark"] body {
+            background-color: #121820;
+            color: #e5e7eb;
+        }
+        html[data-bs-theme="dark"] .card {
+            border-color: #2f3a49;
+        }
+        html[data-bs-theme="dark"] .card-header.bg-white,
+        html[data-bs-theme="dark"] .card-footer.bg-white {
+            background-color: #1b2430 !important;
+            border-color: #2f3a49;
+        }
+        html[data-bs-theme="dark"] .table-light {
+            --bs-table-bg: #1b2430;
+            --bs-table-color: #e5e7eb;
+            --bs-table-border-color: #2f3a49;
+        }
+        html[data-bs-theme="dark"] .alert-light {
+            background-color: #1b2430;
+            border-color: #2f3a49;
+            color: #e5e7eb;
+        }
+        html[data-bs-theme="dark"] .text-muted {
+            color: #9ba7b7 !important;
         }
     </style>
 </head>
@@ -45,7 +100,7 @@
                 <h1 class="mb-0">{{ project_name }}</h1>
                 <div class="d-flex flex-column flex-md-row align-items-center gap-3">
                     <!-- Navigation buttons -->
-                    <div class="d-flex flex-wrap justify-content-center gap-2">
+                    <div class="nav-actions d-flex flex-wrap justify-content-center gap-2">
                         <!-- Settings Dropdown -->
                         <div class="dropdown">
                             <button class="btn btn-outline-secondary dropdown-toggle" type="button" id="settingsDropdown" data-bs-toggle="dropdown" aria-expanded="false">
@@ -66,6 +121,9 @@
                         </div>
                         <a href="/stats" class="btn btn-outline-secondary"><i class="bi bi-graph-up"></i> <span class="btn-text">Stats & Analytics</span></a>
                         <a href="/analysis/" class="btn btn-outline-secondary" target="_blank">WSUB₿</a>
+                        <button id="themeToggleBtn" type="button" class="btn btn-outline-secondary text-nowrap theme-toggle-btn">
+                            <i class="bi bi-moon-stars-fill"></i> <span class="btn-text">Dark</span>
+                        </button>
                     </div>
                     <!-- User section -->
                     {% if user %}
@@ -411,7 +469,22 @@
         let allTransactions = [];
         let currentPage = 1;
         const rowsPerPage = 20;
-        
+        const THEME_STORAGE_KEY = 'dca_theme';
+
+        function updateThemeToggleButton(theme) {
+            const btn = document.getElementById('themeToggleBtn');
+            if (!btn) return;
+            btn.innerHTML = theme === 'dark'
+                ? '<i class="bi bi-sun-fill"></i> <span class="btn-text">Light</span>'
+                : '<i class="bi bi-moon-stars-fill"></i> <span class="btn-text">Dark</span>';
+        }
+
+        function applyTheme(theme) {
+            document.documentElement.setAttribute('data-bs-theme', theme);
+            localStorage.setItem(THEME_STORAGE_KEY, theme);
+            updateThemeToggleButton(theme);
+        }
+
         // Cache Helpers
         function saveToCache(key, data) {
             try {
@@ -541,6 +614,16 @@
         
         // Pagination button handlers
         document.addEventListener('DOMContentLoaded', function() {
+            const currentTheme = document.documentElement.getAttribute('data-bs-theme') || 'light';
+            updateThemeToggleButton(currentTheme);
+            const themeBtn = document.getElementById('themeToggleBtn');
+            if (themeBtn) {
+                themeBtn.addEventListener('click', () => {
+                    const theme = document.documentElement.getAttribute('data-bs-theme') === 'dark' ? 'light' : 'dark';
+                    applyTheme(theme);
+                });
+            }
+
             document.getElementById('prevPageBtn').addEventListener('click', () => {
                 if (currentPage > 1) {
                     currentPage--;
