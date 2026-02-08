@@ -17,6 +17,7 @@ from dca_service.database import get_session
 from dca_service.auth.password import verify_password
 from dca_service.auth.csrf import get_csrf_token, validate_csrf
 from dca_service.core.logging import logger
+from dca_service.config import settings
 
 # Setup templates
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -43,7 +44,9 @@ async def login_page(request: Request):
         name="login.html",
         context={
             "csrf_token": csrf_token,
-            "error": None
+            "error": None,
+            "app_version": settings.APP_VERSION,
+            "app_commit_sha": settings.APP_COMMIT_SHA,
         }
     )
 
@@ -80,7 +83,9 @@ async def login(
             name="login.html",
             context={
                 "csrf_token": csrf_token,
-                "error": "Security check failed. Please try again."
+                "error": "Security check failed. Please try again.",
+                "app_version": settings.APP_VERSION,
+                "app_commit_sha": settings.APP_COMMIT_SHA,
             },
             status_code=403
         )
@@ -98,7 +103,9 @@ async def login(
             name="login.html",
             context={
                 "csrf_token": csrf_token,
-                "error": "Invalid email or password"
+                "error": "Invalid email or password",
+                "app_version": settings.APP_VERSION,
+                "app_commit_sha": settings.APP_COMMIT_SHA,
             },
             status_code=401
         )
@@ -112,7 +119,9 @@ async def login(
             name="login.html",
             context={
                 "csrf_token": csrf_token,
-                "error": "Account is disabled"
+                "error": "Account is disabled",
+                "app_version": settings.APP_VERSION,
+                "app_commit_sha": settings.APP_COMMIT_SHA,
             },
             status_code=403
         )

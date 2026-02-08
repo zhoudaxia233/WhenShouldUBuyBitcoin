@@ -201,7 +201,7 @@
                         <div class="form-text text-muted">Budget resets at the start of each calendar month. Uncheck to allow unlimited spending.</div>
                     </div>
 
-                    <h5 class="mt-4 mb-3">Schedule (UTC)</h5>
+                    <h5 class="mt-4 mb-3">Schedule</h5>
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label class="form-label">Frequency</label>
@@ -224,8 +224,23 @@
                             </div>
                         </div>
                         <div class="col-md-6 mb-3">
-                            <label class="form-label">Time (UTC)</label>
+                            <label class="form-label" id="execution_time_label">Time (UTC)</label>
                             <input type="time" class="form-control" id="execution_time_utc" required>
+                            <div class="form-text text-muted">Set this in your selected time mode below.</div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Time Mode</label>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="time_display_mode" id="time_mode_utc" value="UTC" checked>
+                                <label class="form-check-label" for="time_mode_utc">UTC</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="time_display_mode" id="time_mode_local" value="LOCAL">
+                                <label class="form-check-label" for="time_mode_local">Local (server timezone)</label>
+                            </div>
                         </div>
                     </div>
 
@@ -574,6 +589,12 @@
                     document.getElementById('execution_frequency').value = strategy.execution_frequency || 'daily';
                     document.getElementById('execution_day_of_week').value = strategy.execution_day_of_week || 'monday';
                     document.getElementById('execution_time_utc').value = strategy.execution_time_utc || '00:00';
+                    const timeMode = strategy.time_display_mode || 'UTC';
+                    if (timeMode === 'LOCAL') {
+                        document.getElementById('time_mode_local').checked = true;
+                    } else {
+                        document.getElementById('time_mode_utc').checked = true;
+                    }
                     
                     // Strategy Type
                     document.getElementById('strategy_type').value = strategy.strategy_type || 'legacy_band';
@@ -620,6 +641,7 @@
                     updateDailyCalc();
                     toggleDayOfWeek();
                     toggleStrategyType();
+                    updateExecutionTimeLabel();
                     loadPercentileThresholds();
                     updateFixedRangeTiers();
                 }
@@ -731,6 +753,14 @@
                 container.classList.add('d-none');
             }
         }
+
+        function updateExecutionTimeLabel() {
+            const mode = document.querySelector('input[name="time_display_mode"]:checked')?.value || 'UTC';
+            const label = document.getElementById('execution_time_label');
+            if (label) {
+                label.textContent = mode === 'LOCAL' ? 'Time (Local)' : 'Time (UTC)';
+            }
+        }
         
         function toggleStrategyType() {
             const type = document.getElementById('strategy_type').value;
@@ -758,8 +788,11 @@
         document.getElementById('total_budget_usd').addEventListener('input', updateDailyCalc);
         document.getElementById('execution_frequency').addEventListener('change', toggleDayOfWeek);
         document.getElementById('strategy_type').addEventListener('change', toggleStrategyType);
+        document.getElementById('time_mode_utc').addEventListener('change', updateExecutionTimeLabel);
+        document.getElementById('time_mode_local').addEventListener('change', updateExecutionTimeLabel);
 
         // Load strategy and percentile thresholds on page load
+        updateExecutionTimeLabel();
         loadStrategy();
         loadPercentileThresholds();
 
@@ -804,6 +837,7 @@
                 execution_frequency: document.getElementById('execution_frequency').value,
                 execution_day_of_week: document.getElementById('execution_frequency').value === 'weekly' ? document.getElementById('execution_day_of_week').value : null,
                 execution_time_utc: document.getElementById('execution_time_utc').value,
+                time_display_mode: document.querySelector('input[name="time_display_mode"]:checked').value,
                 
                 // Strategy Type
                 strategy_type: document.getElementById('strategy_type').value,
@@ -872,5 +906,8 @@
         }
 
     </script>
+    <div style="position: fixed; right: 10px; bottom: 8px; z-index: 9999; font-size: 12px; color: #6c757d; background: rgba(255,255,255,0.92); border: 1px solid #d9dee3; border-radius: 999px; padding: 3px 10px;">
+        v{{ app_version }}{% if app_commit_sha %} ({{ app_commit_sha[:7] }}){% endif %}
+    </div>
 </body>
 </html>

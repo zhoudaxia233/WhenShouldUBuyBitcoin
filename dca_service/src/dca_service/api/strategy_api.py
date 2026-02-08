@@ -1,7 +1,7 @@
 from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import Session, select
-from datetime import datetime
+from datetime import datetime, timezone
 
 from dca_service.database import get_session
 from dca_service.models import DCAStrategy, User
@@ -57,7 +57,7 @@ def update_strategy(
     for key, value in strategy_data.items():
         setattr(strategy, key, value)
     
-    strategy.updated_at = datetime.utcnow()
+    strategy.updated_at = datetime.now(timezone.utc)
     session.add(strategy)
     session.commit()
     session.refresh(strategy)

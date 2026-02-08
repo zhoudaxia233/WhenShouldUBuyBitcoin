@@ -77,6 +77,7 @@ class DCAStrategy(SQLModel, table=True):
     execution_frequency: str = Field(default="daily") # "daily" or "weekly"
     execution_day_of_week: Optional[str] = Field(default=None) # "monday", "tuesday", etc. (only for weekly)
     execution_time_utc: str = Field(default="00:00") # "HH:MM"
+    time_display_mode: str = Field(default="UTC")  # "UTC" or "LOCAL"
     
     # Strategy Configuration
     strategy_type: str = Field(default="legacy_band") # "legacy_band", "dynamic_ahr999", or "ahr999_fixed_range"
