@@ -1634,6 +1634,383 @@ def plot_ma_cross_analysis(
     return str(output_path)
 
 
+def plot_net_liquidity_dashboard(
+    btc_df: pd.DataFrame,
+    macro_df: pd.DataFrame,
+    output_filename: str = "net_liquidity.html",
+    auto_open: bool = False,
+) -> str:
+    """
+    Plot net liquidity and BTC together with major liquidity components.
+
+    Args:
+        btc_df: DataFrame with date and close_price columns
+        macro_df: DataFrame with net_liquidity_bil and component columns
+        output_filename: Output HTML filename
+        auto_open: Whether to automatically open chart
+
+    Returns:
+        Path to saved chart HTML
+    """
+    price_df = btc_df.copy()
+    price_df["date"] = pd.to_datetime(price_df["date"]).dt.tz_localize(None)
+
+    macro_plot = macro_df.copy()
+    macro_plot["date"] = pd.to_datetime(macro_plot["date"]).dt.tz_localize(None)
+    macro_plot = macro_plot.sort_values("date")
+
+    required_cols = ["net_liquidity_bil", "walcl_bil", "tga_bil", "rrp_bil"]
+    missing_cols = [col for col in required_cols if col not in macro_plot.columns]
+    if missing_cols:
+        raise ValueError(f"Missing macro columns for liquidity chart: {missing_cols}")
+
+    merged = pd.merge(
+        price_df[["date", "close_price"]],
+        macro_plot[["date", "net_liquidity_bil", "walcl_bil", "tga_bil", "rrp_bil"]],
+        on="date",
+        how="left",
+    ).sort_values("date")
+
+    for col in ["net_liquidity_bil", "walcl_bil", "tga_bil", "rrp_bil"]:
+        merged[col] = merged[col].ffill()
+
+    merged = merged.dropna(subset=["close_price", "net_liquidity_bil"])
+    if merged.empty:
+        raise ValueError("No overlapping BTC and net liquidity data available")
+
+    merged["net_liquidity_90d_delta"] = merged["net_liquidity_bil"].diff(90)
+    latest = merged.iloc[-1]
+
+    fig = make_subplots(
+        rows=2,
+        cols=1,
+        shared_xaxes=True,
+        vertical_spacing=0.08,
+        row_heights=[0.56, 0.44],
+        specs=[[{}], [{"secondary_y": True}]],
+    )
+
+    fig.add_trace(
+        go.Scatter(
+            x=merged["date"],
+            y=merged["net_liquidity_bil"],
+            mode="lines",
+            name="Net Liquidity (bn USD)",
+            showlegend=True,
+            line=dict(color="#1f77b4", width=2.5),
+            hovertemplate="<b>%{x|%Y-%m-%d}</b><br>Net Liquidity: %{y:,.0f} bn<extra></extra>",
+        ),
+        row=1,
+        col=1,
+    )
+
+    fig.add_trace(
+        go.Scatter(
+            x=merged["date"],
+            y=merged["walcl_bil"],
+            mode="lines",
+            name="Fed Assets (WALCL)",
+            showlegend=True,
+            line=dict(color="#2ca02c", width=1.6),
+            opacity=0.75,
+            hovertemplate="<b>%{x|%Y-%m-%d}</b><br>WALCL: %{y:,.0f} bn<extra></extra>",
+        ),
+        row=1,
+        col=1,
+    )
+
+    fig.add_trace(
+        go.Scatter(
+            x=merged["date"],
+            y=merged["tga_bil"],
+            mode="lines",
+            name="TGA (WTREGEN)",
+            showlegend=True,
+            line=dict(color="#ff7f0e", width=1.4, dash="dot"),
+            opacity=0.9,
+            hovertemplate="<b>%{x|%Y-%m-%d}</b><br>TGA: %{y:,.0f} bn<extra></extra>",
+        ),
+        row=1,
+        col=1,
+    )
+
+    fig.add_trace(
+        go.Scatter(
+            x=merged["date"],
+            y=merged["rrp_bil"],
+            mode="lines",
+            name="ON RRP (RRPONTSYD)",
+            showlegend=True,
+            line=dict(color="#d62728", width=1.4, dash="dash"),
+            opacity=0.9,
+            hovertemplate="<b>%{x|%Y-%m-%d}</b><br>ON RRP: %{y:,.0f} bn<extra></extra>",
+        ),
+        row=1,
+        col=1,
+    )
+
+    fig.add_trace(
+        go.Bar(
+            x=merged["date"],
+            y=merged["net_liquidity_90d_delta"],
+            name="Net Liquidity 90D Change",
+            showlegend=True,
+            marker_color=np.where(
+                merged["net_liquidity_90d_delta"] >= 0,
+                "rgba(40, 167, 69, 0.55)",
+                "rgba(220, 53, 69, 0.55)",
+            ),
+            hovertemplate="<b>%{x|%Y-%m-%d}</b><br>90D Change: %{y:,.0f} bn<extra></extra>",
+        ),
+        row=2,
+        col=1,
+        secondary_y=False,
+    )
+
+    fig.add_trace(
+        go.Scatter(
+            x=merged["date"],
+            y=merged["close_price"],
+            mode="lines",
+            name="BTC Price (USD)",
+            showlegend=True,
+            line=dict(color="#111111", width=2.1),
+            hovertemplate="<b>%{x|%Y-%m-%d}</b><br>BTC: $%{y:,.0f}<extra></extra>",
+        ),
+        row=2,
+        col=1,
+        secondary_y=True,
+    )
+
+    fig.add_hline(
+        y=0,
+        line_color="rgba(80, 80, 80, 0.5)",
+        line_dash="dot",
+        row=2,
+        col=1,
+        secondary_y=False,
+    )
+
+    fig.update_layout(
+        title={
+            "text": (
+                "BTC vs Net Liquidity Dashboard"
+                f"<br><sub>Latest Net Liquidity: {latest['net_liquidity_bil']:,.0f} bn | "
+                f"90D Change: {latest['net_liquidity_90d_delta']:,.0f} bn</sub>"
+            ),
+            "x": 0.5,
+            "xanchor": "center",
+            "y": 0.97,
+            "yanchor": "top",
+        },
+        template="plotly_white",
+        hovermode="x unified",
+        height=820,
+        showlegend=True,
+        legend=dict(
+            orientation="h",
+            yanchor="bottom",
+            y=1.06,
+            xanchor="center",
+            x=0.5,
+            bgcolor="rgba(255, 255, 255, 0.9)",
+            bordercolor="rgba(0, 0, 0, 0.15)",
+            borderwidth=1,
+            itemsizing="constant",
+            entrywidthmode="fraction",
+            entrywidth=0.30,
+            font=dict(size=11),
+        ),
+        margin=dict(l=70, r=70, t=210, b=70),
+    )
+
+    fig.update_yaxes(title_text="USD Billion", row=1, col=1)
+    fig.update_yaxes(title_text="90D Delta (bn USD)", row=2, col=1, secondary_y=False)
+    fig.update_yaxes(title_text="BTC Price (USD, log)", type="log", row=2, col=1, secondary_y=True)
+    fig.update_xaxes(title_text="Date", row=2, col=1, rangeslider_visible=True)
+
+    output_dir = get_output_dir()
+    output_path = output_dir / output_filename
+    fig.write_html(str(output_path), auto_open=auto_open)
+    add_yaxis_autoscale_script(output_path)
+
+    print(f"✓ Saved net liquidity dashboard to: {output_path}")
+    return str(output_path)
+
+
+def plot_funding_credit_stress(
+    btc_df: pd.DataFrame,
+    macro_df: pd.DataFrame,
+    output_filename: str = "funding_credit_stress.html",
+    auto_open: bool = False,
+) -> str:
+    """
+    Plot funding and credit stress signals alongside BTC price.
+
+    Args:
+        btc_df: DataFrame with date and close_price columns
+        macro_df: DataFrame with sofr, move, and hy_oas columns
+        output_filename: Output HTML filename
+        auto_open: Whether to open chart automatically
+
+    Returns:
+        Path to saved chart HTML
+    """
+    price_df = btc_df.copy()
+    price_df["date"] = pd.to_datetime(price_df["date"]).dt.tz_localize(None)
+
+    macro_plot = macro_df.copy()
+    macro_plot["date"] = pd.to_datetime(macro_plot["date"]).dt.tz_localize(None)
+    macro_plot = macro_plot.sort_values("date")
+
+    required_cols = ["sofr", "move", "hy_oas"]
+    missing_cols = [col for col in required_cols if col not in macro_plot.columns]
+    if missing_cols:
+        raise ValueError(f"Missing macro columns for stress chart: {missing_cols}")
+
+    merged = pd.merge(
+        price_df[["date", "close_price"]],
+        macro_plot[["date", "sofr", "move", "hy_oas"]],
+        on="date",
+        how="left",
+    ).sort_values("date")
+
+    for col in ["sofr", "move", "hy_oas"]:
+        merged[col] = merged[col].ffill()
+
+    merged = merged.dropna(subset=["close_price", "sofr", "hy_oas"])
+    if merged.empty:
+        raise ValueError("No overlapping BTC and stress indicator data available")
+
+    latest = merged.iloc[-1]
+
+    fig = make_subplots(
+        rows=2,
+        cols=1,
+        shared_xaxes=True,
+        vertical_spacing=0.09,
+        row_heights=[0.5, 0.5],
+        specs=[[{"secondary_y": True}], [{"secondary_y": True}]],
+    )
+
+    fig.add_trace(
+        go.Scatter(
+            x=merged["date"],
+            y=merged["sofr"],
+            mode="lines",
+            name="SOFR",
+            showlegend=True,
+            line=dict(color="#1f77b4", width=2.2),
+            hovertemplate="<b>%{x|%Y-%m-%d}</b><br>SOFR: %{y:.2f}%<extra></extra>",
+        ),
+        row=1,
+        col=1,
+        secondary_y=False,
+    )
+
+    fig.add_trace(
+        go.Scatter(
+            x=merged["date"],
+            y=merged["move"],
+            mode="lines",
+            name="MOVE",
+            showlegend=True,
+            line=dict(color="#ff7f0e", width=2.0, dash="dash"),
+            hovertemplate="<b>%{x|%Y-%m-%d}</b><br>MOVE: %{y:.1f}<extra></extra>",
+        ),
+        row=1,
+        col=1,
+        secondary_y=True,
+    )
+
+    fig.add_trace(
+        go.Scatter(
+            x=merged["date"],
+            y=merged["hy_oas"],
+            mode="lines",
+            name="HY OAS",
+            showlegend=True,
+            line=dict(color="#d62728", width=2.2),
+            hovertemplate="<b>%{x|%Y-%m-%d}</b><br>HY OAS: %{y:.2f}%<extra></extra>",
+        ),
+        row=2,
+        col=1,
+        secondary_y=False,
+    )
+
+    fig.add_trace(
+        go.Scatter(
+            x=merged["date"],
+            y=merged["close_price"],
+            mode="lines",
+            name="BTC Price",
+            showlegend=True,
+            line=dict(color="#111111", width=2.0),
+            hovertemplate="<b>%{x|%Y-%m-%d}</b><br>BTC: $%{y:,.0f}<extra></extra>",
+        ),
+        row=2,
+        col=1,
+        secondary_y=True,
+    )
+
+    fig.add_hline(
+        y=5.0,
+        line_color="rgba(220, 53, 69, 0.7)",
+        line_dash="dot",
+        annotation_text="HY OAS 5% stress threshold",
+        annotation_position="top left",
+        row=2,
+        col=1,
+        secondary_y=False,
+    )
+
+    fig.update_layout(
+        title={
+            "text": (
+                "Funding & Credit Stress Monitor"
+                f"<br><sub>Latest SOFR: {latest['sofr']:.2f}% | MOVE: {latest['move']:.1f} | HY OAS: {latest['hy_oas']:.2f}%</sub>"
+            ),
+            "x": 0.5,
+            "xanchor": "center",
+            "y": 0.97,
+            "yanchor": "top",
+        },
+        template="plotly_white",
+        hovermode="x unified",
+        height=820,
+        showlegend=True,
+        legend=dict(
+            orientation="h",
+            yanchor="bottom",
+            y=1.06,
+            xanchor="center",
+            x=0.5,
+            bgcolor="rgba(255, 255, 255, 0.9)",
+            bordercolor="rgba(0, 0, 0, 0.15)",
+            borderwidth=1,
+            itemsizing="constant",
+            entrywidthmode="fraction",
+            entrywidth=0.22,
+            font=dict(size=11),
+        ),
+        margin=dict(l=70, r=70, t=170, b=70),
+    )
+
+    fig.update_yaxes(title_text="SOFR (%)", row=1, col=1, secondary_y=False)
+    fig.update_yaxes(title_text="MOVE", row=1, col=1, secondary_y=True)
+    fig.update_yaxes(title_text="HY OAS (%)", row=2, col=1, secondary_y=False)
+    fig.update_yaxes(title_text="BTC Price (USD, log)", type="log", row=2, col=1, secondary_y=True)
+    fig.update_xaxes(title_text="Date", row=2, col=1, rangeslider_visible=True)
+
+    output_dir = get_output_dir()
+    output_path = output_dir / output_filename
+    fig.write_html(str(output_path), auto_open=auto_open)
+    add_yaxis_autoscale_script(output_path)
+
+    print(f"✓ Saved funding/credit stress chart to: {output_path}")
+    return str(output_path)
+
+
 def generate_all_charts(df: pd.DataFrame, auto_open: bool = True) -> dict:
     """
     Generate all visualization charts at once.

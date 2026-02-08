@@ -5,6 +5,7 @@ This module provides functions to fetch BTC price history from Yahoo Finance,
 USD/JPY exchange rate data, and interest rate data from FRED API and Yahoo Finance.
 """
 
+import io
 import os
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -386,6 +387,172 @@ def fetch_fred_series(
     except Exception as e:
         print(f"✗ Error fetching {series_id} from FRED: {e}")
         raise
+
+
+def fetch_fred_series_csv_public(
+    series_id: str,
+    days: Optional[int] = None,
+    start_date: Optional[str] = None,
+) -> pd.DataFrame:
+    """
+    Fetch data from public FRED CSV endpoint without requiring an API key.
+
+    Args:
+        series_id: FRED series ID (e.g., 'SOFR')
+        days: Number of days to fetch (optional)
+        start_date: Specific start date in 'YYYY-MM-DD' format (optional)
+
+    Returns:
+        DataFrame with columns:
+            - date: datetime object
+            - close_price: series value
+    """
+    if requests is None:
+        raise ImportError(
+            "requests library is required for FRED data fetching. Install it with: pip install requests"
+        )
+
+    url = f"https://fred.stlouisfed.org/graph/fredgraph.csv?id={series_id}"
+    end_date = datetime.now()
+
+    if start_date:
+        start_dt = pd.to_datetime(start_date)
+    elif days:
+        start_dt = end_date - timedelta(days=days)
+    else:
+        # Default to 10 years for macro dashboards.
+        start_dt = end_date - timedelta(days=3650)
+
+    try:
+        print(
+            f"Fetching {series_id} from public FRED CSV from {start_dt.date()} to {end_date.date()}..."
+        )
+        response = requests.get(url, timeout=30)
+        response.raise_for_status()
+
+        df = pd.read_csv(io.StringIO(response.text))
+        if df.empty or "observation_date" not in df.columns:
+            raise ValueError(f"Invalid CSV format from FRED for {series_id}")
+
+        value_col = series_id
+        if value_col not in df.columns:
+            # Fallback: use the second column when the series column name changes.
+            if len(df.columns) < 2:
+                raise ValueError(f"Missing value column from FRED for {series_id}")
+            value_col = df.columns[1]
+
+        df = df.rename(columns={"observation_date": "date", value_col: "close_price"})
+        df["date"] = pd.to_datetime(df["date"], errors="coerce")
+        df["close_price"] = pd.to_numeric(df["close_price"], errors="coerce")
+        df = df.dropna(subset=["date", "close_price"])
+
+        df = df[df["date"] >= pd.to_datetime(start_dt)]
+        df = df[df["date"] <= pd.to_datetime(end_date)]
+        df["date"] = df["date"].dt.tz_localize(None)
+        df = df.sort_values("date").reset_index(drop=True)
+
+        if df.empty:
+            raise ValueError(f"No valid data returned from FRED for {series_id}")
+
+        print(f"✓ Successfully fetched {len(df)} rows of {series_id} from public CSV")
+        return df[["date", "close_price"]]
+
+    except Exception as e:
+        print(f"✗ Error fetching {series_id} from public FRED CSV: {e}")
+        raise
+
+
+def fetch_macro_liquidity_indicators(
+    days: Optional[int] = None, start_date: Optional[str] = None
+) -> pd.DataFrame:
+    """
+    Fetch macro liquidity indicators used for BTC risk/liquidity dashboards.
+
+    Indicators:
+        - WALCL (Fed total assets, million USD)
+        - WTREGEN (Treasury General Account, million USD)
+        - RRPONTSYD (ON RRP, billion USD)
+        - SOFR (funding rate)
+        - BAMLH0A0HYM2 (HY OAS)
+        - ^MOVE (Treasury volatility index, Yahoo Finance)
+
+    Returns:
+        DataFrame with merged daily fields and computed net liquidity:
+            - date
+            - walcl, wtregen, rrpontsyd, sofr, hy_oas, move
+            - walcl_bil, tga_bil, rrp_bil, net_liquidity_bil
+    """
+    series_map = {
+        "walcl": "WALCL",
+        "wtregen": "WTREGEN",
+        "rrpontsyd": "RRPONTSYD",
+        "sofr": "SOFR",
+        "hy_oas": "BAMLH0A0HYM2",
+    }
+
+    merged_df: Optional[pd.DataFrame] = None
+
+    for output_col, series_id in series_map.items():
+        series_df = fetch_fred_series_csv_public(
+            series_id=series_id,
+            days=days,
+            start_date=start_date,
+        ).rename(columns={"close_price": output_col})
+
+        if merged_df is None:
+            merged_df = series_df
+        else:
+            merged_df = pd.merge(merged_df, series_df, on="date", how="outer")
+
+    if merged_df is None:
+        raise ValueError("No macro indicator data was fetched")
+
+    # Fetch MOVE from Yahoo Finance.
+    end_date = datetime.now()
+    if start_date:
+        move_start = pd.to_datetime(start_date).strftime("%Y-%m-%d")
+    elif days:
+        move_start = (end_date - timedelta(days=days)).strftime("%Y-%m-%d")
+    else:
+        move_start = "2002-01-01"
+
+    print(f"Fetching ^MOVE from Yahoo Finance from {move_start}...")
+    move_df = yf.Ticker("^MOVE").history(
+        start=move_start,
+        end=end_date.strftime("%Y-%m-%d"),
+        interval="1d",
+    )
+    if not move_df.empty:
+        move_df = move_df.reset_index()
+        if "Date" in move_df.columns:
+            date_col = "Date"
+        elif "index" in move_df.columns:
+            date_col = "index"
+        elif "date" in move_df.columns:
+            date_col = "date"
+        else:
+            raise ValueError("Could not determine date column for ^MOVE data")
+
+        move_df = move_df.rename(columns={date_col: "date", "Close": "move"})
+        move_df["date"] = pd.to_datetime(move_df["date"]).dt.tz_localize(None)
+        move_df = move_df[["date", "move"]]
+        merged_df = pd.merge(merged_df, move_df, on="date", how="outer")
+    else:
+        print("⚠ Warning: ^MOVE data is empty from Yahoo Finance")
+
+    merged_df = merged_df.sort_values("date").reset_index(drop=True)
+
+    # Unit normalization for net liquidity:
+    # WALCL/WTREGEN are in million USD; RRPONTSYD is in billion USD.
+    merged_df["walcl_bil"] = merged_df["walcl"] / 1000.0
+    merged_df["tga_bil"] = merged_df["wtregen"] / 1000.0
+    merged_df["rrp_bil"] = merged_df["rrpontsyd"]
+    merged_df["net_liquidity_bil"] = (
+        merged_df["walcl_bil"] - merged_df["tga_bil"] - merged_df["rrp_bil"]
+    )
+
+    print(f"✓ Macro indicators fetched with {len(merged_df)} merged rows")
+    return merged_df
 
 
 def fetch_mof_japan_yield() -> pd.DataFrame:
