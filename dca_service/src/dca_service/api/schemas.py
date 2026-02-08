@@ -104,6 +104,7 @@ class StrategyBase(BaseModel):
     execution_frequency: str = "daily"
     execution_day_of_week: Optional[str] = None
     execution_time_utc: str = "00:00"
+    time_display_mode: str = "UTC"
     
     # Dynamic Strategy Config
     strategy_type: str = "legacy_band" # "legacy_band", "ahr999_fixed_range", or "dynamic_ahr999"
