@@ -148,26 +148,66 @@
             width: 20px;
             margin-right: 8px;
         }
+        .nav-actions {
+            align-items: center;
+        }
+        .nav-actions > .btn,
+        .nav-actions > .dropdown > .btn {
+            min-height: 44px;
+            display: inline-flex;
+            align-items: center;
+        }
+        .nav-actions > .btn .bi,
+        .nav-actions > .dropdown > .btn .bi {
+            margin-right: 0.45rem;
+        }
         .theme-toggle-btn {
-            min-width: 90px;
+            width: 46px;
+            height: 46px;
+            padding: 0;
+            border: 1px solid #d8dde6;
+            border-radius: 14px;
+            background: #eef1f5;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            color: #3f4857;
+            transition: all 0.2s ease;
+        }
+        .theme-toggle-btn:hover {
+            background: #e6eaf0;
+            color: #2f3745;
+            border-color: #cbd2dd;
+        }
+        .theme-toggle-btn .theme-icon {
+            width: 22px;
+            height: 22px;
+            stroke: currentColor;
+            fill: none;
+            stroke-width: 2.2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
         }
         /* Mobile optimization */
         @media (max-width: 576px) {
             .nav-actions {
                 width: 100%;
             }
+            .nav-actions > .btn,
+            .nav-actions > .dropdown > .btn {
+                min-height: 40px;
+            }
+            .nav-actions > .btn .bi,
+            .nav-actions > .dropdown > .btn .bi {
+                margin-right: 0;
+            }
             .btn .btn-text {
                 display: none;
             }
             .theme-toggle-btn {
-                min-width: 44px;
-                padding-left: 10px;
-                padding-right: 10px;
-            }
-        }
-        @media (min-width: 992px) {
-            .theme-toggle-btn {
-                min-width: 96px;
+                width: 44px;
+                height: 44px;
+                border-radius: 12px;
             }
         }
 
@@ -201,6 +241,16 @@
         html[data-bs-theme="dark"] .text-muted {
             color: #9ba7b7 !important;
         }
+        html[data-bs-theme="dark"] .theme-toggle-btn {
+            border-color: #2f3a49;
+            background: #1b2430;
+            color: #d8deea;
+        }
+        html[data-bs-theme="dark"] .theme-toggle-btn:hover {
+            background: #233043;
+            color: #eef2f8;
+            border-color: #3a4a5f;
+        }
     </style>
 </head>
 <body>
@@ -214,9 +264,7 @@
                         <a href="/" class="btn btn-outline-secondary text-nowrap"><i class="bi bi-house-fill"></i> <span class="btn-text">Dashboard</span></a>
                         <a href="/settings/binance" class="btn btn-outline-secondary text-nowrap"><i class="bi bi-currency-bitcoin"></i> <span class="btn-text">Binance Settings</span></a>
                         <a href="/stats" class="btn btn-outline-secondary text-nowrap"><i class="bi bi-graph-up"></i> <span class="btn-text">Stats</span></a>
-                        <button id="themeToggleBtn" type="button" class="btn btn-outline-secondary text-nowrap theme-toggle-btn">
-                            <i class="bi bi-moon-stars-fill"></i> <span class="btn-text">Dark</span>
-                        </button>
+                        <button id="themeToggleBtn" type="button" class="btn text-nowrap theme-toggle-btn" aria-label="Toggle theme" title="Toggle theme"></button>
                     </div>
                     <!-- User section -->
                     {% if user %}
@@ -617,13 +665,16 @@
     </script>
     <script>
         const THEME_STORAGE_KEY = 'dca_theme';
+        const THEME_ICON_SUN = '<svg class="theme-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"></circle><line x1="12" y1="2.5" x2="12" y2="5"></line><line x1="12" y1="19" x2="12" y2="21.5"></line><line x1="2.5" y1="12" x2="5" y2="12"></line><line x1="19" y1="12" x2="21.5" y2="12"></line><line x1="5.2" y1="5.2" x2="6.9" y2="6.9"></line><line x1="17.1" y1="17.1" x2="18.8" y2="18.8"></line><line x1="17.1" y1="6.9" x2="18.8" y2="5.2"></line><line x1="5.2" y1="18.8" x2="6.9" y2="17.1"></line></svg>';
+        const THEME_ICON_MOON = '<svg class="theme-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M14.5 3.5a8.8 8.8 0 1 0 6 14.9 9.2 9.2 0 0 1-6.8-2.7 9.3 9.3 0 0 1-2.8-6.9 8.9 8.9 0 0 1 3.6-7.3Z"></path></svg>';
 
         function updateThemeToggleButton(theme) {
             const btn = document.getElementById('themeToggleBtn');
             if (!btn) return;
-            btn.innerHTML = theme === 'dark'
-                ? '<i class="bi bi-sun-fill"></i> <span class="btn-text">Light</span>'
-                : '<i class="bi bi-moon-stars-fill"></i> <span class="btn-text">Dark</span>';
+            const isDark = theme === 'dark';
+            btn.innerHTML = isDark ? THEME_ICON_SUN : THEME_ICON_MOON;
+            btn.setAttribute('aria-label', isDark ? 'Switch to light mode' : 'Switch to dark mode');
+            btn.setAttribute('title', isDark ? 'Switch to light mode' : 'Switch to dark mode');
         }
 
         function applyTheme(theme) {
