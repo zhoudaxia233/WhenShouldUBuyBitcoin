@@ -4,6 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Binance Settings</title>
+    <script>
+        (function () {
+            const savedTheme = localStorage.getItem('dca_theme');
+            const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+            const initialTheme = savedTheme || (prefersDark ? 'dark' : 'light');
+            document.documentElement.setAttribute('data-bs-theme', initialTheme);
+        })();
+    </script>
     
     <!-- Favicon -->
     <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
@@ -16,6 +24,7 @@
             padding-top: 20px; 
             padding-bottom: 60px;  /* Add bottom margin */
             background-color: #f8f9fa; 
+            transition: background-color 0.2s ease, color 0.2s ease;
         }
         .container { max-width: 900px; }
         .masked-key { font-family: monospace; letter-spacing: 2px; }
@@ -27,11 +36,46 @@
             width: 20px;
             margin-right: 8px;
         }
+        .theme-toggle-btn {
+            min-width: 90px;
+        }
         /* Mobile optimization */
         @media (max-width: 576px) {
+            .nav-actions {
+                width: 100%;
+            }
             .btn .btn-text {
                 display: none;
             }
+            .theme-toggle-btn {
+                min-width: 44px;
+                padding-left: 10px;
+                padding-right: 10px;
+            }
+        }
+        @media (min-width: 992px) {
+            .theme-toggle-btn {
+                min-width: 96px;
+            }
+        }
+
+        html[data-bs-theme="dark"] body {
+            background-color: #121820;
+            color: #e5e7eb;
+        }
+        html[data-bs-theme="dark"] .card {
+            border-color: #2f3a49;
+        }
+        html[data-bs-theme="dark"] .card-header.bg-white {
+            background-color: #1b2430 !important;
+            border-color: #2f3a49;
+        }
+        html[data-bs-theme="dark"] .bg-light {
+            background-color: #1b2430 !important;
+            border-color: #2f3a49;
+        }
+        html[data-bs-theme="dark"] .text-muted {
+            color: #9ba7b7 !important;
         }
     </style>
 </head>
@@ -42,10 +86,13 @@
                 <h1 class="mb-0 text-center text-md-start">Binance Settings</h1>
                 <div class="d-flex flex-column flex-md-row align-items-center gap-3">
                     <!-- Navigation buttons -->
-                    <div class="d-flex flex-wrap flex-md-nowrap justify-content-center gap-2">
+                    <div class="nav-actions d-flex flex-wrap flex-md-nowrap justify-content-center gap-2">
                         <a href="/" class="btn btn-outline-secondary text-nowrap"><i class="bi bi-house-fill"></i> <span class="btn-text">Dashboard</span></a>
                         <a href="/strategy" class="btn btn-outline-secondary text-nowrap"><i class="bi bi-sliders"></i> <span class="btn-text">Strategy Config</span></a>
                         <a href="/stats" class="btn btn-outline-secondary text-nowrap"><i class="bi bi-graph-up"></i> <span class="btn-text">Stats</span></a>
+                        <button id="themeToggleBtn" type="button" class="btn btn-outline-secondary text-nowrap theme-toggle-btn">
+                            <i class="bi bi-moon-stars-fill"></i> <span class="btn-text">Dark</span>
+                        </button>
                     </div>
                     <!-- User section -->
                     {% if user %}
@@ -402,6 +449,33 @@
             dismissible: true,
             position: { x: 'right', y: 'top' }
         });
+        const THEME_STORAGE_KEY = 'dca_theme';
+
+        function updateThemeToggleButton(theme) {
+            const btn = document.getElementById('themeToggleBtn');
+            if (!btn) return;
+            btn.innerHTML = theme === 'dark'
+                ? '<i class="bi bi-sun-fill"></i> <span class="btn-text">Light</span>'
+                : '<i class="bi bi-moon-stars-fill"></i> <span class="btn-text">Dark</span>';
+        }
+
+        function applyTheme(theme) {
+            document.documentElement.setAttribute('data-bs-theme', theme);
+            localStorage.setItem(THEME_STORAGE_KEY, theme);
+            updateThemeToggleButton(theme);
+        }
+
+        (function initThemeToggle() {
+            const currentTheme = document.documentElement.getAttribute('data-bs-theme') || 'light';
+            updateThemeToggleButton(currentTheme);
+            const themeBtn = document.getElementById('themeToggleBtn');
+            if (themeBtn) {
+                themeBtn.addEventListener('click', () => {
+                    const theme = document.documentElement.getAttribute('data-bs-theme') === 'dark' ? 'light' : 'dark';
+                    applyTheme(theme);
+                });
+            }
+        })();
 
         // Check credentials status on load
         async function loadCredentialsStatus() {
