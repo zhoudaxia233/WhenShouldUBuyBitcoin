@@ -25,6 +25,7 @@ from whenshouldubuybitcoin.data_fetcher import (
     fetch_btc_history,
     fetch_usdjpy_history,
     fetch_yield_data,
+    fetch_macro_liquidity_indicators,
     get_latest_btc_price,
 )
 from whenshouldubuybitcoin.metrics import (
@@ -44,6 +45,8 @@ from whenshouldubuybitcoin.visualization import (
     generate_all_charts,
     plot_usdjpy_risk_map,
     create_futures_oi_timeseries_chart,
+    plot_net_liquidity_dashboard,
+    plot_funding_credit_stress,
 )
 from whenshouldubuybitcoin.realtime_check import check_realtime_status
 
@@ -352,6 +355,19 @@ def main():
         except Exception as e:
             print(f"⚠ Warning: Failed to generate USD/JPY Risk Map: {e}")
             print("  This may be due to Yahoo Finance data limitations.")
+
+        # Generate macro liquidity and stress charts
+        print("\n" + "=" * 80)
+        print("GENERATING MACRO LIQUIDITY & STRESS CHARTS")
+        print("=" * 80)
+        try:
+            macro_df = fetch_macro_liquidity_indicators(days=None)
+            plot_net_liquidity_dashboard(df, macro_df, auto_open=False)
+            plot_funding_credit_stress(df, macro_df, auto_open=False)
+            print("✓ Macro liquidity and stress charts generated successfully")
+        except Exception as e:
+            print(f"⚠ Warning: Failed to generate macro charts: {e}")
+            print("  Continuing without macro charts.")
             
         # --- Step 6: Futures Data Analysis ---
         print("\n" + "=" * 80)
