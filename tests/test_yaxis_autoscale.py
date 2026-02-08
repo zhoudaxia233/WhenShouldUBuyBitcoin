@@ -16,6 +16,7 @@ from whenshouldubuybitcoin.visualization import (
     plot_price_comparison,
     plot_net_liquidity_dashboard,
     plot_funding_credit_stress,
+    plot_macro_risk_score,
 )
 
 
@@ -205,9 +206,17 @@ def test_macro_charts_generate_html(sample_dataframe):
             output_filename=str(stress_path),
             auto_open=False,
         )
+        score_path = Path(tmpdir) / "macro_score_test.html"
+        plot_macro_risk_score(
+            sample_dataframe[["date", "close_price"]],
+            macro_df,
+            output_filename=str(score_path),
+            auto_open=False,
+        )
 
         assert liq_path.exists()
         assert stress_path.exists()
+        assert score_path.exists()
 
 
 if __name__ == "__main__":
