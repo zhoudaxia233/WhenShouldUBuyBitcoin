@@ -165,6 +165,7 @@ def _migrate_strategy_table():
                 ('unlimited_monthly_budget', 'BOOLEAN', 0),  # Default False
                 ('accumulated_savings', 'REAL', 0.0),  # Default 0.0
                 ('last_monthly_inflow', 'TIMESTAMP', None),  # Default None
+                ('time_display_mode', 'TEXT', "'UTC'"),  # UTC or LOCAL
             ]
             
             # Check and add each column

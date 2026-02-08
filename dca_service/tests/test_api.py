@@ -4,6 +4,7 @@ from unittest.mock import patch
 from datetime import datetime, timezone
 
 from dca_service.models import DCATransaction, DCAStrategy
+from dca_service.config import settings
 
 # ============================================================================
 # TRANSACTION API TESTS
@@ -34,6 +35,26 @@ def test_read_transactions_populated(client: TestClient, session: Session):
     data = response.json()
     assert len(data) >= 1
     assert data[0]["fiat_amount"] == 100.0
+
+
+def test_version_endpoint(client: TestClient):
+    response = client.get("/api/version")
+    assert response.status_code == 200
+
+    data = response.json()
+    assert data["project"] == settings.PROJECT_NAME
+    assert data["version"] == settings.APP_VERSION
+    assert data["commit"] == settings.APP_COMMIT_SHA
+
+
+def test_healthz_endpoint(client: TestClient):
+    response = client.get("/healthz")
+    assert response.status_code == 200
+
+    data = response.json()
+    assert data["status"] == "ok"
+    assert data["project"] == settings.PROJECT_NAME
+    assert data["version"] == settings.APP_VERSION
 
 # ============================================================================
 # DCA API TESTS

@@ -322,31 +322,36 @@
             return null;
         }
         
-        // Format timestamp for global refresh bar (YYYY-MM-DD HH:MM (Local) · HH:MM UTC)
-        function formatGlobalRefreshTime(isoString) {
+        // Strategy-selected timestamp display mode: "UTC" or "LOCAL"
+        let currentTimeDisplayMode = 'UTC';
+
+        // Format timestamp for global refresh bar based on strategy time mode
+        function formatGlobalRefreshTime(isoString, displayMode = currentTimeDisplayMode) {
             if (!isoString) return 'Never';
             
             const date = new Date(isoString);
-            
-            // Local time in 24-hour format
-            const localDate = date.toLocaleString('sv-SE', {
-                year: 'numeric',
-                month: '2-digit',
-                day: '2-digit',
-                hour: '2-digit',
-                minute: '2-digit',
-                hour12: false
-            }).replace(' ', ' ');
-            
-            // UTC time in 24-hour format
-            const utcHours = String(date.getUTCHours()).padStart(2, '0');
-            const utcMinutes = String(date.getUTCMinutes()).padStart(2, '0');
-            
-            return `${localDate} (Local) · ${utcHours}:${utcMinutes} UTC`;
+            if (displayMode === 'LOCAL') {
+                const localDate = date.toLocaleString('sv-SE', {
+                    year: 'numeric',
+                    month: '2-digit',
+                    day: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    hour12: false
+                });
+                const utcHours = String(date.getUTCHours()).padStart(2, '0');
+                const utcMinutes = String(date.getUTCMinutes()).padStart(2, '0');
+                return `${localDate} (Local) · ${utcHours}:${utcMinutes} UTC`;
+            }
+
+            const utcDate = date.toISOString().replace('T', ' ').substring(0, 16);
+            const localHours = String(date.getHours()).padStart(2, '0');
+            const localMinutes = String(date.getMinutes()).padStart(2, '0');
+            return `${utcDate} UTC · ${localHours}:${localMinutes} Local`;
         }
         
-        // Format timestamp for transaction table (Local 24-hour, UTC in tooltip)
-        function formatTransactionTimestamp(isoString) {
+        // Format timestamp for transaction table based on strategy time mode
+        function formatTransactionTimestamp(isoString, displayMode = currentTimeDisplayMode) {
             if (!isoString) return '--';
             
             let dateStr = isoString;
@@ -358,7 +363,6 @@
             
             const date = new Date(dateStr);
             
-            // Local time in 24-hour format
             const localTime = date.toLocaleString('sv-SE', {
                 year: 'numeric',
                 month: '2-digit',
@@ -367,11 +371,12 @@
                 minute: '2-digit',
                 hour12: false
             });
-            
-            // UTC time for tooltip
             const utcTime = date.toISOString().replace('T', ' ').substring(0, 16);
-            
-            return { display: localTime, utcTooltip: `UTC: ${utcTime}` };
+
+            if (displayMode === 'LOCAL') {
+                return { display: localTime, utcTooltip: `UTC: ${utcTime}` };
+            }
+            return { display: `${utcTime} UTC`, utcTooltip: `Local: ${localTime}` };
         }
         
         function formatTimestampInTimezone(isoString, timezone) {
@@ -557,7 +562,9 @@
         function updateStrategyUI(strategy) {
             if (strategy) {
                 const freq = strategy.execution_frequency.charAt(0).toUpperCase() + strategy.execution_frequency.slice(1);
-                document.getElementById('scheduleDisplay').textContent = `Schedule: ${freq} at ${strategy.execution_time_utc} UTC`;
+                currentTimeDisplayMode = (strategy.time_display_mode || 'UTC').toUpperCase();
+                const modeLabel = currentTimeDisplayMode === 'LOCAL' ? 'Local' : 'UTC';
+                document.getElementById('scheduleDisplay').textContent = `Schedule: ${freq} at ${strategy.execution_time_utc} (${modeLabel})`;
             }
         }
 
@@ -1034,5 +1041,8 @@
         loadWalletSummary();
         connectSSE();  // Connect to server-sent events for real-time updates
     </script>
+    <div style="position: fixed; right: 10px; bottom: 8px; z-index: 9999; font-size: 12px; color: #6c757d; background: rgba(255,255,255,0.92); border: 1px solid #d9dee3; border-radius: 999px; padding: 3px 10px;">
+        v{{ app_version }}{% if app_commit_sha %} ({{ app_commit_sha[:7] }}){% endif %}
+    </div>
 </body>
 </html>
