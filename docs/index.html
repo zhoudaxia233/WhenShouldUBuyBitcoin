@@ -1425,23 +1425,18 @@
                 <div class="chart-tabs">
                     <button class="chart-tab active" data-section="core" data-chart="ratios" onclick="switchChart('ratios', this)">Valuation Ratios</button>
                 <button class="chart-tab" data-section="core" data-chart="prices" onclick="switchChart('prices', this)">Price Comparison</button>
-                <button class="chart-tab" data-section="core" data-chart="net-liquidity" onclick="switchChart('net-liquidity', this)">Net Liquidity</button>
-                <button class="chart-tab" data-section="core" data-chart="funding-stress" onclick="switchChart('funding-stress', this)">Funding & Credit Stress</button>
                 <button class="chart-tab" data-section="core" data-chart="macro-score" onclick="switchChart('macro-score', this)">Macro Risk Score</button>
-                <button class="chart-tab" data-section="core" data-chart="futures-oi" onclick="switchChart('futures-oi', this)">Futures OI & Price</button>
-                <button class="chart-tab" data-section="core" data-chart="usdjpy" onclick="switchChart('usdjpy', this)">USD/JPY Risk Map</button>
-                <button class="chart-tab" data-section="advanced" data-chart="stats" style="display: none;" onclick="switchChart('stats', this)">Statistics</button>
-                <button class="chart-tab" data-section="advanced" data-chart="ma-cross" style="display: none;" onclick="switchChart('ma-cross', this)">MA Cross Analysis</button>
+                <button class="chart-tab" data-section="advanced" data-chart="net-liquidity" onclick="switchChart('net-liquidity', this)">Net Liquidity</button>
+                <button class="chart-tab" data-section="advanced" data-chart="funding-stress" onclick="switchChart('funding-stress', this)">Funding & Credit Stress</button>
+                <button class="chart-tab" data-section="advanced" data-chart="futures-oi" onclick="switchChart('futures-oi', this)">Futures OI & Price</button>
+                <button class="chart-tab" data-section="advanced" data-chart="usdjpy" onclick="switchChart('usdjpy', this)">USD/JPY Risk Map</button>
+                <button class="chart-tab" data-section="advanced" data-chart="ma-cross" onclick="switchChart('ma-cross', this)">MA Cross Analysis</button>
             </div>
 
             <!-- Chart Content Areas -->
             <div class="chart-display">
                 <div id="ratios-chart" class="chart-content active">
                     <iframe class="chart-iframe" data-src="charts/valuation_ratios.html"></iframe>
-                </div>
-                
-                <div id="stats-chart" class="chart-content">
-                    <iframe class="chart-iframe" data-src="charts/double_uv_stats.html"></iframe>
                 </div>
                 
                 <div id="prices-chart" class="chart-content">
@@ -1485,6 +1480,7 @@
                 <div id="ma-cross-chart" class="chart-content">
                     <iframe class="chart-iframe" data-src="charts/ma_cross_analysis.html" style="height: 800px;"></iframe>
                 </div>
+
             </div>
             </div>
         </div>
@@ -2052,10 +2048,8 @@
         }
 
         document.addEventListener('DOMContentLoaded', () => {
-            const initialChart = document.querySelector('.chart-content.active');
-            if (initialChart) {
-                loadChartIframes(initialChart);
-            }
+            const coreSectionTab = document.querySelector('.chart-section-tab[onclick*="core"]');
+            switchChartSection('core', coreSectionTab);
         });
 
         // Strategy info modal functions
