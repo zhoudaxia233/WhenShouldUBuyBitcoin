@@ -1425,6 +1425,9 @@
                 <div class="chart-tabs">
                     <button class="chart-tab active" data-section="core" data-chart="ratios" onclick="switchChart('ratios', this)">Valuation Ratios</button>
                 <button class="chart-tab" data-section="core" data-chart="prices" onclick="switchChart('prices', this)">Price Comparison</button>
+                <button class="chart-tab" data-section="core" data-chart="net-liquidity" onclick="switchChart('net-liquidity', this)">Net Liquidity</button>
+                <button class="chart-tab" data-section="core" data-chart="funding-stress" onclick="switchChart('funding-stress', this)">Funding & Credit Stress</button>
+                <button class="chart-tab" data-section="core" data-chart="macro-score" onclick="switchChart('macro-score', this)">Macro Risk Score</button>
                 <button class="chart-tab" data-section="core" data-chart="futures-oi" onclick="switchChart('futures-oi', this)">Futures OI & Price</button>
                 <button class="chart-tab" data-section="core" data-chart="usdjpy" onclick="switchChart('usdjpy', this)">USD/JPY Risk Map</button>
                 <button class="chart-tab" data-section="advanced" data-chart="stats" style="display: none;" onclick="switchChart('stats', this)">Statistics</button>
@@ -1443,6 +1446,18 @@
                 
                 <div id="prices-chart" class="chart-content">
                     <iframe class="chart-iframe" data-src="charts/price_comparison.html"></iframe>
+                </div>
+
+                <div id="net-liquidity-chart" class="chart-content">
+                    <iframe class="chart-iframe" data-src="charts/net_liquidity.html" style="height: 840px;"></iframe>
+                </div>
+
+                <div id="funding-stress-chart" class="chart-content">
+                    <iframe class="chart-iframe" data-src="charts/funding_credit_stress.html" style="height: 840px;"></iframe>
+                </div>
+
+                <div id="macro-score-chart" class="chart-content">
+                    <iframe class="chart-iframe" data-src="charts/macro_risk_score.html" style="height: 920px;"></iframe>
                 </div>
                 
                 <div id="usdjpy-chart" class="chart-content">
