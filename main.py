@@ -47,6 +47,7 @@ from whenshouldubuybitcoin.visualization import (
     create_futures_oi_timeseries_chart,
     plot_net_liquidity_dashboard,
     plot_funding_credit_stress,
+    plot_macro_risk_score,
 )
 from whenshouldubuybitcoin.realtime_check import check_realtime_status
 
@@ -364,6 +365,7 @@ def main():
             macro_df = fetch_macro_liquidity_indicators(days=None)
             plot_net_liquidity_dashboard(df, macro_df, auto_open=False)
             plot_funding_credit_stress(df, macro_df, auto_open=False)
+            plot_macro_risk_score(df, macro_df, auto_open=False)
             print("✓ Macro liquidity and stress charts generated successfully")
         except Exception as e:
             print(f"⚠ Warning: Failed to generate macro charts: {e}")
