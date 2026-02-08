@@ -91,7 +91,7 @@ app.include_router(auth_api.router, prefix=settings.API_V1_STR)
 from dca_service.sse import sse_manager
 
 @app.get("/api/events")
-async def events(request: Request):
+async def events(request: Request, user: User = Depends(get_current_user)):
     """Server-Sent Events endpoint for real-time updates"""
     return await sse_manager.connect(request)
 

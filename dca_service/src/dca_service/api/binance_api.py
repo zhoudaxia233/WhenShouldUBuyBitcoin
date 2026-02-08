@@ -5,10 +5,11 @@ from typing import Optional
 from datetime import datetime, timezone
 
 from dca_service.database import get_session
-from dca_service.models import BinanceCredentials, DCAStrategy
+from dca_service.models import BinanceCredentials, DCAStrategy, User
 from dca_service.services.security import encrypt_text, decrypt_text
 from dca_service.services.binance_client import BinanceClient
 from dca_service.config import settings
+from dca_service.auth.dependencies import get_current_user
 
 router = APIRouter(prefix="/binance", tags=["binance"])
 
@@ -40,7 +41,11 @@ class HoldingsSummary(BaseModel):
     cold_wallet_btc_balance: Optional[float] = None
 
 @router.post("/credentials")
-def save_credentials(creds: CredentialsSchema, session: Session = Depends(get_session)):
+def save_credentials(
+    creds: CredentialsSchema,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
     """Save credentials - supports both READ_ONLY and TRADING types"""
     if not creds.api_key or not creds.api_secret:
         raise HTTPException(status_code=400, detail="API Key and Secret are required")
@@ -75,7 +80,11 @@ def save_credentials(creds: CredentialsSchema, session: Session = Depends(get_se
     return {"success": True, "message": f"{cred_label} credentials saved."}
 
 @router.get("/credentials/status", response_model=CredentialsStatus)
-def get_credentials_status(credential_type: str = "READ_ONLY", session: Session = Depends(get_session)):
+def get_credentials_status(
+    credential_type: str = "READ_ONLY",
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
     """Get status of credentials by type (READ_ONLY or TRADING)"""
     creds = session.exec(
         select(BinanceCredentials).where(BinanceCredentials.credential_type == credential_type)
@@ -97,7 +106,11 @@ def get_credentials_status(credential_type: str = "READ_ONLY", session: Session 
         return CredentialsStatus(has_credentials=True, masked_api_key="ERROR", last_updated=creds.updated_at)
 
 @router.post("/test-connection", response_model=ConnectionTestResult)
-async def test_connection(credential_type: str = "READ_ONLY", session: Session = Depends(get_session)):
+async def test_connection(
+    credential_type: str = "READ_ONLY",
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
     """Test connection using specified credential type"""
     creds = session.exec(
         select(BinanceCredentials).where(BinanceCredentials.credential_type == credential_type)
@@ -122,7 +135,10 @@ async def test_connection(credential_type: str = "READ_ONLY", session: Session =
         await client.close()
 
 @router.get("/holdings", response_model=HoldingsSummary)
-async def get_holdings(session: Session = Depends(get_session)):
+async def get_holdings(
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
     """Get holdings using READ_ONLY credentials"""
     quote_asset = settings.DCA_QUOTE_ASSET
     
@@ -198,7 +214,10 @@ class TradingStatus(BaseModel):
     error_message: Optional[str] = None
 
 @router.get("/trading-status", response_model=TradingStatus)
-async def get_trading_status(session: Session = Depends(get_session)):
+async def get_trading_status(
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
     """
     Check if LIVE trading can be enabled by validating TRADING credentials:
     1. TRADING credentials exist
@@ -270,4 +289,3 @@ async def get_trading_status(session: Session = Depends(get_session)):
         )
     finally:
         await client.close()
-

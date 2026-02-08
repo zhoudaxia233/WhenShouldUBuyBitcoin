@@ -29,9 +29,20 @@ Using two independent metrics reduces false signals and identifies stronger buyi
 
 ### Data Updates
 
-- Historical data updates **daily at 00:30 UTC** via automated script
+- Historical data update workflow is currently **manual trigger only** (`workflow_dispatch`); cron schedule is intentionally commented out
 - Real-time check fetches **live price** from Yahoo Finance
 - **Note**: Yahoo Finance BTC-USD data may have 1-2 day delay and typically excludes weekends (even though Bitcoin trades 24/7). This is a limitation of the data source, not the tool.
+
+### Local DCA Service (Poetry)
+
+- Start/restart backend on port 8000:
+```bash
+lsof -i :8000 | awk 'NR!=1 {print $2}' | xargs kill -9; poetry run uvicorn dca_service.main:app --reload
+```
+- Run DCA service tests with Poetry:
+```bash
+poetry run pytest dca_service/tests -v
+```
 
 ---
 

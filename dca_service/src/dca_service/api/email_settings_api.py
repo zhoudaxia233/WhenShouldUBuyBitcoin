@@ -9,8 +9,9 @@ from sqlmodel import Session, select
 from datetime import datetime, timezone
 
 from dca_service.database import get_session
-from dca_service.models import EmailSettings
+from dca_service.models import EmailSettings, User
 from dca_service.services.security import encrypt_text, decrypt_text
+from dca_service.auth.dependencies import get_current_user
 
 router = APIRouter()
 
@@ -28,7 +29,8 @@ class EmailSettingsRequest(BaseModel):
 @router.post("/email/settings")
 def save_email_settings(
     settings: EmailSettingsRequest,
-    session: Session = Depends(get_session)
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
 ):
     """
     Save email SMTP settings with encrypted password.
@@ -83,7 +85,10 @@ def save_email_settings(
 
 
 @router.get("/email/settings/status")
-def get_email_settings_status(session: Session = Depends(get_session)):
+def get_email_settings_status(
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
     """
     Get status of email settings (whether configured, masked values).
     Does not return the password.
@@ -127,7 +132,8 @@ class EmailToggleRequest(BaseModel):
 @router.post("/email/settings/toggle")
 def toggle_email_settings(
     toggle: EmailToggleRequest,
-    session: Session = Depends(get_session)
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
 ):
     """
     Enable or disable email notifications without changing other settings.
