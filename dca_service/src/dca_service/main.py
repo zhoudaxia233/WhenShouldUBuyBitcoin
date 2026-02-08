@@ -36,6 +36,16 @@ app = FastAPI(
     lifespan=lifespan
 )
 
+
+def build_template_context(**extra):
+    context = {
+        "project_name": settings.PROJECT_NAME,
+        "app_version": settings.APP_VERSION,
+        "app_commit_sha": settings.APP_COMMIT_SHA,
+    }
+    context.update(extra)
+    return context
+
 # Exception handler for 401 Unauthorized - redirect to login
 @app.exception_handler(401)
 async def unauthorized_exception_handler(request: Request, exc: HTTPException):
@@ -95,6 +105,24 @@ async def events(request: Request, user: User = Depends(get_current_user)):
     """Server-Sent Events endpoint for real-time updates"""
     return await sse_manager.connect(request)
 
+
+@app.get("/api/version")
+def get_app_version():
+    return {
+        "project": settings.PROJECT_NAME,
+        "version": settings.APP_VERSION,
+        "commit": settings.APP_COMMIT_SHA,
+    }
+
+
+@app.get("/healthz")
+def healthz():
+    return {
+        "status": "ok",
+        "project": settings.PROJECT_NAME,
+        "version": settings.APP_VERSION,
+    }
+
 async def run_dca_cycle():
     """
     Placeholder for the main DCA execution logic.
@@ -109,19 +137,35 @@ async def run_dca_cycle():
 
 @app.get("/")
 def read_root(request: Request, user: User = Depends(get_current_user)):
-    return templates.TemplateResponse(request=request, name="index.html", context={"user": user, "project_name": settings.PROJECT_NAME})
+    return templates.TemplateResponse(
+        request=request,
+        name="index.html",
+        context=build_template_context(user=user),
+    )
 
 @app.get("/strategy")
 def read_strategy_page(request: Request, user: User = Depends(get_current_user)):
-    return templates.TemplateResponse(request=request, name="strategy.html", context={"user": user, "project_name": settings.PROJECT_NAME})
+    return templates.TemplateResponse(
+        request=request,
+        name="strategy.html",
+        context=build_template_context(user=user),
+    )
 
 @app.get("/settings/binance")
 def read_binance_settings_page(request: Request, user: User = Depends(get_current_user)):
-    return templates.TemplateResponse(request=request, name="binance_settings.html", context={"user": user, "project_name": settings.PROJECT_NAME})
+    return templates.TemplateResponse(
+        request=request,
+        name="binance_settings.html",
+        context=build_template_context(user=user),
+    )
 
 @app.get("/stats")
 def read_stats_page(request: Request, user: User = Depends(get_current_user)):
-    return templates.TemplateResponse(request=request, name="stats.html", context={"user": user, "project_name": settings.PROJECT_NAME})
+    return templates.TemplateResponse(
+        request=request,
+        name="stats.html",
+        context=build_template_context(user=user),
+    )
 
 if __name__ == "__main__":
     import uvicorn

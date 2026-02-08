@@ -214,6 +214,17 @@ class TestStrategyConditions:
         now = datetime.now(timezone.utc)
         assert scheduler._should_execute_now(daily_strategy, session) is False
 
+    def test_local_time_mode_uses_strategy_timezone(self, scheduler, daily_strategy, session):
+        """Test LOCAL mode executes based on local timezone clock."""
+        daily_strategy.time_display_mode = "LOCAL"
+        daily_strategy.execution_time_utc = "09:15"  # Interpreted as local time in LOCAL mode
+        session.add(daily_strategy)
+        session.commit()
+
+        fake_local_now = datetime(2024, 1, 15, 9, 15, tzinfo=timezone(timedelta(hours=8)))
+        with patch.object(scheduler, "_get_now_in_strategy_timezone", return_value=fake_local_now):
+            assert scheduler._should_execute_now(daily_strategy, session) is True
+
 
 class TestExecutionModes:
     """Tests for execution modes (DRY_RUN vs LIVE)"""

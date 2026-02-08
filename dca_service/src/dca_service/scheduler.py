@@ -4,7 +4,7 @@ DCA Scheduler - Automatic execution of DCA transactions
 Uses APScheduler to check every minute if a DCA transaction should be executed
 based on the strategy configuration (execution_time_utc, execution_frequency).
 """
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from typing import Optional
 import sys
 
@@ -97,6 +97,18 @@ class DCAScheduler:
                 
         except Exception as e:
             logger.exception(f"Error in DCA scheduler: {e}")
+
+    def _get_now_in_strategy_timezone(self, strategy: DCAStrategy) -> datetime:
+        """
+        Get current time in strategy-selected timezone context.
+
+        UTC mode: returns UTC now.
+        LOCAL mode: returns server-local timezone now.
+        """
+        mode = (strategy.time_display_mode or "UTC").upper()
+        if mode == "LOCAL":
+            return datetime.now(timezone.utc).astimezone()
+        return datetime.now(timezone.utc)
     
     # ... (skipping _should_execute_now and helpers as they use logger.debug/error which is fine) ...
 
@@ -111,7 +123,7 @@ class DCAScheduler:
         Returns:
             True if DCA should be executed now, False otherwise
         """
-        now = datetime.now(timezone.utc)
+        now = self._get_now_in_strategy_timezone(strategy)
         
         if not strategy.is_active:
             return False
@@ -147,8 +159,8 @@ class DCAScheduler:
         Returns:
             True if no transaction executed today, False otherwise
         """
-        # Check if we already executed today
-        today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+        # Start of "today" in strategy timezone, converted back to UTC for DB query.
+        today_start = now.replace(hour=0, minute=0, second=0, microsecond=0).astimezone(timezone.utc)
         
         existing_tx = session.exec(
             select(DCATransaction)
@@ -179,7 +191,7 @@ class DCAScheduler:
         Returns:
             True if correct day and no transaction this week, False otherwise
         """
-        # Check if today is the configured day of week
+        # Check if today is the configured day of week in strategy timezone.
         current_day = now.strftime('%A').lower()
         if current_day != strategy.execution_day_of_week:
             logger.debug(
@@ -188,11 +200,11 @@ class DCAScheduler:
             )
             return False
         
-        # Check if we already executed this week
-        # Week starts on Monday (weekday 0)
+        # Start of week in strategy timezone, converted to UTC for DB query.
+        # Week starts on Monday (weekday 0).
         days_since_monday = now.weekday()
-        week_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
-        week_start = week_start.replace(day=now.day - days_since_monday)
+        week_start_local = now.replace(hour=0, minute=0, second=0, microsecond=0) - timedelta(days=days_since_monday)
+        week_start = week_start_local.astimezone(timezone.utc)
         
         existing_tx = session.exec(
             select(DCATransaction)

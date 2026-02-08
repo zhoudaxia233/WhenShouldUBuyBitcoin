@@ -1,5 +1,44 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from pathlib import Path
+import subprocess
+import tomllib
+
+
+def _find_repo_root() -> Path:
+    """Find repository root by locating pyproject.toml."""
+    for parent in Path(__file__).resolve().parents:
+        if (parent / "pyproject.toml").exists():
+            return parent
+    return Path.cwd()
+
+
+def _detect_app_version() -> str:
+    """Read version from pyproject.toml; fallback to dev tag."""
+    repo_root = _find_repo_root()
+    pyproject_path = repo_root / "pyproject.toml"
+
+    try:
+        with pyproject_path.open("rb") as fh:
+            pyproject = tomllib.load(fh)
+        return pyproject.get("project", {}).get("version", "0.0.0-dev")
+    except Exception:
+        return "0.0.0-dev"
+
+
+def _detect_commit_sha() -> str:
+    """Resolve current git short SHA; fallback to empty string."""
+    repo_root = _find_repo_root()
+    try:
+        result = subprocess.run(
+            ["git", "rev-parse", "--short", "HEAD"],
+            cwd=repo_root,
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+        return result.stdout.strip()
+    except Exception:
+        return ""
 
 
 class Settings(BaseSettings):
@@ -10,6 +49,8 @@ class Settings(BaseSettings):
     METRICS_FALLBACK_TO_CSV: bool = True
     API_V1_STR: str = "/api"
     PROJECT_NAME: str = "DCA Service"
+    APP_VERSION: str = _detect_app_version()
+    APP_COMMIT_SHA: str = _detect_commit_sha()
     BINANCE_CRED_ENC_KEY: str = ""  # Required for saving credentials
     DCA_QUOTE_ASSET: str = "USDC"
     
