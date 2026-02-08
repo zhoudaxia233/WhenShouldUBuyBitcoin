@@ -4,20 +4,28 @@ from sqlmodel import Session, select
 from datetime import datetime
 
 from dca_service.database import get_session
-from dca_service.models import DCAStrategy
+from dca_service.models import DCAStrategy, User
 from dca_service.api.schemas import StrategyCreate, StrategyRead, StrategyUpdate
 from dca_service.services.metrics_provider import calculate_ahr999_percentile_thresholds
+from dca_service.auth.dependencies import get_current_user
 
 router = APIRouter()
 
 @router.get("/strategy", response_model=Optional[StrategyRead])
-def get_strategy(session: Session = Depends(get_session)):
+def get_strategy(
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
     # Singleton pattern: get the first strategy
     strategy = session.exec(select(DCAStrategy)).first()
     return strategy
 
 @router.post("/strategy", response_model=StrategyRead)
-def create_strategy(strategy_in: StrategyCreate, session: Session = Depends(get_session)):
+def create_strategy(
+    strategy_in: StrategyCreate,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
     # Ensure only one strategy exists
     existing = session.exec(select(DCAStrategy)).first()
     if existing:
@@ -30,7 +38,11 @@ def create_strategy(strategy_in: StrategyCreate, session: Session = Depends(get_
     return strategy
 
 @router.put("/strategy", response_model=StrategyRead)
-def update_strategy(strategy_in: StrategyUpdate, session: Session = Depends(get_session)):
+def update_strategy(
+    strategy_in: StrategyUpdate,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
     strategy = session.exec(select(DCAStrategy)).first()
     if not strategy:
         # Auto-create if not exists (convenience)
@@ -52,7 +64,10 @@ def update_strategy(strategy_in: StrategyUpdate, session: Session = Depends(get_
     return strategy
 
 @router.delete("/strategy")
-def delete_strategy(session: Session = Depends(get_session)):
+def delete_strategy(
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
     strategy = session.exec(select(DCAStrategy)).first()
     if not strategy:
         raise HTTPException(status_code=404, detail="Strategy not found")
@@ -62,7 +77,7 @@ def delete_strategy(session: Session = Depends(get_session)):
     return {"ok": True}
 
 @router.get("/metrics/percentiles")
-def get_percentile_thresholds():
+def get_percentile_thresholds(current_user: User = Depends(get_current_user)):
     """Get AHR999 percentile thresholds calculated from historical data"""
     try:
         percentiles = calculate_ahr999_percentile_thresholds()
