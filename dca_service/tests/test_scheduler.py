@@ -15,6 +15,7 @@ from sqlmodel import Session, select
 
 from dca_service.scheduler import DCAScheduler
 from dca_service.models import DCAStrategy, DCATransaction
+from dca_service.services.dca_engine import DCADecision
 from dca_service.database import get_session
 
 
@@ -276,9 +277,28 @@ class TestStaticGenerationIntegration:
     """Tests for static file generation integration with scheduler"""
     
     @freeze_time("2024-01-15 14:30:00")
+    @patch("dca_service.scheduler.calculate_dca_decision")
     @patch("dca_service.services.static_generator.trigger_static_generation")
-    def test_static_generation_triggered_after_success(self, mock_trigger, scheduler, daily_strategy, session):
+    def test_static_generation_triggered_after_success(
+        self, mock_trigger, mock_calculate_decision, scheduler, daily_strategy, session
+    ):
         """Test that static generation is triggered after successful DCA transaction"""
+        mock_calculate_decision.return_value = DCADecision(
+            can_execute=True,
+            reason="Test decision allows execution",
+            ahr999_value=0.5,
+            ahr_band="low",
+            multiplier=2.0,
+            base_amount_usd=100.0,
+            suggested_amount_usd=200.0,
+            price_usd=50000.0,
+            timestamp=datetime.now(timezone.utc),
+            metrics_source={"backend": "test", "label": "Mock data"},
+            remaining_budget=800.0,
+            budget_resets=False,
+            time_until_reset=None,
+        )
+
         # Execute DCA
         scheduler._execute_dca(daily_strategy, session)
         
