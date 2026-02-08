@@ -44,6 +44,35 @@ lsof -i :8000 | awk 'NR!=1 {print $2}' | xargs kill -9; poetry run uvicorn dca_s
 poetry run pytest dca_service/tests -v
 ```
 
+### Macro Risk Score (Quick Config)
+
+The chart `Macro Risk Score` is a weighted blend of macro stress signals:
+
+- Net Liquidity 90D change
+- SOFR
+- MOVE
+- HY OAS
+
+Default weights are defined in:
+
+- `src/whenshouldubuybitcoin/visualization.py` -> `MACRO_RISK_SCORE_WEIGHTS`
+
+Current defaults:
+
+- `net_liquidity_90d_change`: `0.35`
+- `sofr`: `0.20`
+- `move`: `0.20`
+- `hy_oas`: `0.25`
+
+To quickly tune weights:
+
+1. Edit `MACRO_RISK_SCORE_WEIGHTS` in `visualization.py`
+2. Regenerate charts:
+
+```bash
+poetry run python main.py
+```
+
 ---
 
 ## 🎮 Strategy Backtesting

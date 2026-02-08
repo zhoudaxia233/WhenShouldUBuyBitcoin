@@ -10,10 +10,15 @@ src_path = Path(__file__).parent.parent / "src"
 sys.path.insert(0, str(src_path))
 
 import pytest
+import pandas as pd
 from unittest.mock import Mock, patch
 from datetime import datetime
 
-from whenshouldubuybitcoin.data_fetcher import get_realtime_btc_price
+from whenshouldubuybitcoin.data_fetcher import (
+    get_realtime_btc_price,
+    fetch_fred_series_csv_public,
+    fetch_macro_liquidity_indicators,
+)
 
 
 class TestGetRealtimeBtcPrice:
@@ -194,3 +199,72 @@ class TestGetRealtimeBtcPrice:
         finally:
             # Restore original requests
             data_fetcher_module.requests = original_requests
+
+
+class TestFredPublicCsvFetcher:
+    """Test cases for public FRED CSV fetching without API key."""
+
+    @patch("whenshouldubuybitcoin.data_fetcher.requests")
+    def test_fetch_fred_series_csv_public_parses_and_filters(self, mock_requests):
+        """Should parse CSV and drop invalid numeric rows."""
+        mock_response = Mock()
+        mock_response.raise_for_status = Mock()
+        mock_response.text = (
+            "observation_date,SOFR\n"
+            "2024-01-01,5.30\n"
+            "2024-01-02,.\n"
+            "2024-01-03,5.31\n"
+        )
+        mock_requests.get.return_value = mock_response
+
+        df = fetch_fred_series_csv_public("SOFR", start_date="2024-01-01")
+
+        assert list(df.columns) == ["date", "close_price"]
+        assert len(df) == 2
+        assert float(df["close_price"].iloc[0]) == 5.30
+        assert float(df["close_price"].iloc[1]) == 5.31
+
+
+class TestMacroLiquidityIndicators:
+    """Test cases for macro liquidity indicator aggregation."""
+
+    @patch("whenshouldubuybitcoin.data_fetcher.yf.Ticker")
+    @patch("whenshouldubuybitcoin.data_fetcher.fetch_fred_series_csv_public")
+    def test_fetch_macro_liquidity_indicators_builds_net_liquidity(
+        self, mock_fetch_fred_csv, mock_ticker
+    ):
+        """Should merge all series and compute net liquidity in billion USD."""
+        base_dates = [datetime(2024, 1, 1), datetime(2024, 1, 2)]
+
+        def fred_side_effect(series_id, days=None, start_date=None):
+            series_values = {
+                "WALCL": [900000.0, 901000.0],  # million USD
+                "WTREGEN": [80000.0, 81000.0],  # million USD
+                "RRPONTSYD": [500.0, 490.0],    # billion USD
+                "SOFR": [5.3, 5.29],
+                "BAMLH0A0HYM2": [3.5, 3.45],
+            }
+            return pd.DataFrame(
+                {"date": base_dates, "close_price": series_values[series_id]}
+            )
+
+        mock_fetch_fred_csv.side_effect = fred_side_effect
+
+        move_df = pd.DataFrame(
+            {
+                "Close": [120.0, 121.0],
+            },
+            index=pd.to_datetime(base_dates),
+        )
+        mock_ticker.return_value.history.return_value = move_df
+
+        result = fetch_macro_liquidity_indicators(start_date="2024-01-01")
+
+        assert "net_liquidity_bil" in result.columns
+        assert "sofr" in result.columns
+        assert "hy_oas" in result.columns
+        assert "move" in result.columns
+
+        latest = result.dropna(subset=["net_liquidity_bil"]).iloc[-1]
+        # 901000/1000 - 81000/1000 - 490 = 330
+        assert round(float(latest["net_liquidity_bil"]), 2) == 330.0

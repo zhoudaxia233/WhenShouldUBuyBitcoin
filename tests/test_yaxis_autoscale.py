@@ -14,6 +14,9 @@ from datetime import datetime, timedelta
 from whenshouldubuybitcoin.visualization import (
     plot_valuation_ratios,
     plot_price_comparison,
+    plot_net_liquidity_dashboard,
+    plot_funding_credit_stress,
+    plot_macro_risk_score,
 )
 
 
@@ -170,6 +173,50 @@ def test_yaxis_autoscale_updates_on_x_only_change(sample_dataframe):
             "Should have function to force y-axis autorange"
         assert "'yaxis.autorange': true" in html_content, \
             "Should set yaxis.autorange to true"
+
+
+def test_macro_charts_generate_html(sample_dataframe):
+    """Test that macro chart helpers generate HTML files from sample data."""
+    macro_df = pd.DataFrame(
+        {
+            "date": sample_dataframe["date"],
+            "walcl_bil": 8_500.0,
+            "tga_bil": 800.0,
+            "rrp_bil": 500.0,
+            "net_liquidity_bil": 7_200.0,
+            "sofr": 5.25,
+            "move": 110.0,
+            "hy_oas": 3.8,
+        }
+    )
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        liq_path = Path(tmpdir) / "net_liquidity_test.html"
+        stress_path = Path(tmpdir) / "funding_stress_test.html"
+
+        plot_net_liquidity_dashboard(
+            sample_dataframe[["date", "close_price"]],
+            macro_df,
+            output_filename=str(liq_path),
+            auto_open=False,
+        )
+        plot_funding_credit_stress(
+            sample_dataframe[["date", "close_price"]],
+            macro_df,
+            output_filename=str(stress_path),
+            auto_open=False,
+        )
+        score_path = Path(tmpdir) / "macro_score_test.html"
+        plot_macro_risk_score(
+            sample_dataframe[["date", "close_price"]],
+            macro_df,
+            output_filename=str(score_path),
+            auto_open=False,
+        )
+
+        assert liq_path.exists()
+        assert stress_path.exists()
+        assert score_path.exists()
 
 
 if __name__ == "__main__":

@@ -16,6 +16,13 @@ import pandas as pd
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 
+MACRO_RISK_SCORE_WEIGHTS = {
+    "net_liquidity_90d_change": 0.35,
+    "sofr": 0.20,
+    "move": 0.20,
+    "hy_oas": 0.25,
+}
+
 
 def get_output_dir() -> Path:
     """
@@ -254,6 +261,180 @@ def add_yaxis_autoscale_script(html_path: Path) -> None:
     if "</body>" in html_content:
         html_content = html_content.replace("</body>", autoscale_script + "\n</body>")
         # Write back to file
+        with open(html_path, "w", encoding="utf-8") as f:
+            f.write(html_content)
+
+
+def add_info_modal_script(html_path: Path, title: str, content_html: str) -> None:
+    """
+    Add a reusable info button + modal popup to a generated chart HTML.
+
+    Args:
+        html_path: Path to the HTML chart file
+        title: Modal title text
+        content_html: Modal body HTML
+    """
+    if not html_path.exists():
+        return
+
+    with open(html_path, "r", encoding="utf-8") as f:
+        html_content = f.read()
+
+    marker = "chart-info-button"
+    if marker in html_content:
+        return
+
+    info_script = f"""
+    <script>
+    (function() {{
+        var modalTitle = {json.dumps(title)};
+        var modalContent = {json.dumps(content_html)};
+
+        function ensureStyles() {{
+            if (document.getElementById('chart-info-modal-style')) return;
+            var style = document.createElement('style');
+            style.id = 'chart-info-modal-style';
+            style.textContent = `
+                .chart-info-button {{
+                    position: fixed;
+                    top: 14px;
+                    left: 14px;
+                    width: 30px;
+                    height: 30px;
+                    border-radius: 50%;
+                    border: 1px solid rgba(0,0,0,0.25);
+                    background: rgba(255,255,255,0.95);
+                    color: #2f4668;
+                    font-size: 18px;
+                    font-weight: 700;
+                    line-height: 1;
+                    cursor: pointer;
+                    z-index: 9999;
+                    box-shadow: 0 1px 4px rgba(0,0,0,0.18);
+                }}
+                .chart-info-modal-overlay {{
+                    position: fixed;
+                    inset: 0;
+                    background: rgba(0, 0, 0, 0.42);
+                    display: none;
+                    align-items: center;
+                    justify-content: center;
+                    z-index: 10000;
+                }}
+                .chart-info-modal {{
+                    width: min(760px, 92vw);
+                    max-height: 84vh;
+                    overflow-y: auto;
+                    background: #ffffff;
+                    border-radius: 10px;
+                    border: 1px solid rgba(0,0,0,0.18);
+                    box-shadow: 0 10px 40px rgba(0,0,0,0.28);
+                    color: #1d2f4a;
+                    padding: 18px 20px 16px 20px;
+                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                }}
+                .chart-info-modal-head {{
+                    display: flex;
+                    align-items: center;
+                    justify-content: space-between;
+                    margin-bottom: 10px;
+                }}
+                .chart-info-modal-title {{
+                    font-size: 20px;
+                    font-weight: 700;
+                    margin: 0;
+                }}
+                .chart-info-modal-close {{
+                    border: none;
+                    background: transparent;
+                    font-size: 24px;
+                    line-height: 1;
+                    color: #44546a;
+                    cursor: pointer;
+                }}
+                .chart-info-modal-body {{
+                    font-size: 15px;
+                    line-height: 1.6;
+                }}
+                .chart-info-modal-body h4 {{
+                    margin: 12px 0 6px 0;
+                    font-size: 16px;
+                }}
+                .chart-info-modal-body p {{
+                    margin: 6px 0;
+                }}
+                .chart-info-modal-body code {{
+                    background: #f0f4fa;
+                    border: 1px solid #d8e2f1;
+                    border-radius: 4px;
+                    padding: 1px 4px;
+                }}
+            `;
+            document.head.appendChild(style);
+        }}
+
+        function createModal() {{
+            ensureStyles();
+
+            var btn = document.createElement('button');
+            btn.className = 'chart-info-button';
+            btn.id = 'chart-info-button';
+            btn.type = 'button';
+            btn.title = 'Open chart guide';
+            btn.setAttribute('aria-label', 'Open chart guide');
+            btn.textContent = 'i';
+
+            var overlay = document.createElement('div');
+            overlay.className = 'chart-info-modal-overlay';
+            overlay.id = 'chart-info-modal-overlay';
+
+            var modal = document.createElement('div');
+            modal.className = 'chart-info-modal';
+            modal.innerHTML = `
+                <div class="chart-info-modal-head">
+                    <h3 class="chart-info-modal-title"></h3>
+                    <button class="chart-info-modal-close" type="button" aria-label="Close">×</button>
+                </div>
+                <div class="chart-info-modal-body"></div>
+            `;
+
+            modal.querySelector('.chart-info-modal-title').textContent = modalTitle;
+            modal.querySelector('.chart-info-modal-body').innerHTML = modalContent;
+            overlay.appendChild(modal);
+
+            function openModal() {{
+                overlay.style.display = 'flex';
+                document.body.style.overflow = 'hidden';
+            }}
+            function closeModal() {{
+                overlay.style.display = 'none';
+                document.body.style.overflow = '';
+            }}
+
+            btn.addEventListener('click', openModal);
+            overlay.addEventListener('click', function(evt) {{
+                if (evt.target === overlay) closeModal();
+            }});
+            modal.querySelector('.chart-info-modal-close').addEventListener('click', closeModal);
+            document.addEventListener('keydown', function(evt) {{
+                if (evt.key === 'Escape' && overlay.style.display === 'flex') closeModal();
+            }});
+
+            document.body.appendChild(btn);
+            document.body.appendChild(overlay);
+        }}
+
+        if (document.readyState === 'loading') {{
+            document.addEventListener('DOMContentLoaded', createModal);
+        }} else {{
+            createModal();
+        }}
+    }})();
+    </script>
+    """
+
+    if "</body>" in html_content:
+        html_content = html_content.replace("</body>", info_script + "\n</body>")
         with open(html_path, "w", encoding="utf-8") as f:
             f.write(html_content)
 
@@ -1631,6 +1812,657 @@ def plot_ma_cross_analysis(
     if auto_open:
         print("  Opening in browser...")
 
+    return str(output_path)
+
+
+def plot_net_liquidity_dashboard(
+    btc_df: pd.DataFrame,
+    macro_df: pd.DataFrame,
+    output_filename: str = "net_liquidity.html",
+    auto_open: bool = False,
+) -> str:
+    """
+    Plot net liquidity and BTC together with major liquidity components.
+
+    Args:
+        btc_df: DataFrame with date and close_price columns
+        macro_df: DataFrame with net_liquidity_bil and component columns
+        output_filename: Output HTML filename
+        auto_open: Whether to automatically open chart
+
+    Returns:
+        Path to saved chart HTML
+    """
+    price_df = btc_df.copy()
+    price_df["date"] = pd.to_datetime(price_df["date"]).dt.tz_localize(None)
+
+    macro_plot = macro_df.copy()
+    macro_plot["date"] = pd.to_datetime(macro_plot["date"]).dt.tz_localize(None)
+    macro_plot = macro_plot.sort_values("date")
+
+    required_cols = ["net_liquidity_bil", "walcl_bil", "tga_bil", "rrp_bil"]
+    missing_cols = [col for col in required_cols if col not in macro_plot.columns]
+    if missing_cols:
+        raise ValueError(f"Missing macro columns for liquidity chart: {missing_cols}")
+
+    merged = pd.merge(
+        price_df[["date", "close_price"]],
+        macro_plot[["date", "net_liquidity_bil", "walcl_bil", "tga_bil", "rrp_bil"]],
+        on="date",
+        how="left",
+    ).sort_values("date")
+
+    for col in ["net_liquidity_bil", "walcl_bil", "tga_bil", "rrp_bil"]:
+        merged[col] = merged[col].ffill()
+
+    merged = merged.dropna(subset=["close_price", "net_liquidity_bil"])
+    if merged.empty:
+        raise ValueError("No overlapping BTC and net liquidity data available")
+
+    merged["net_liquidity_90d_delta"] = merged["net_liquidity_bil"].diff(90)
+    latest = merged.iloc[-1]
+
+    fig = make_subplots(
+        rows=2,
+        cols=1,
+        shared_xaxes=True,
+        vertical_spacing=0.08,
+        row_heights=[0.56, 0.44],
+        specs=[[{}], [{"secondary_y": True}]],
+    )
+
+    fig.add_trace(
+        go.Scatter(
+            x=merged["date"],
+            y=merged["net_liquidity_bil"],
+            mode="lines",
+            name="Net Liquidity (bn USD)",
+            showlegend=True,
+            line=dict(color="#1f77b4", width=2.5),
+            hovertemplate="<b>%{x|%Y-%m-%d}</b><br>Net Liquidity: %{y:,.0f} bn<extra></extra>",
+        ),
+        row=1,
+        col=1,
+    )
+
+    fig.add_trace(
+        go.Scatter(
+            x=merged["date"],
+            y=merged["walcl_bil"],
+            mode="lines",
+            name="Fed Assets (WALCL)",
+            showlegend=True,
+            line=dict(color="#2ca02c", width=1.6),
+            opacity=0.75,
+            hovertemplate="<b>%{x|%Y-%m-%d}</b><br>WALCL: %{y:,.0f} bn<extra></extra>",
+        ),
+        row=1,
+        col=1,
+    )
+
+    fig.add_trace(
+        go.Scatter(
+            x=merged["date"],
+            y=merged["tga_bil"],
+            mode="lines",
+            name="TGA (WTREGEN)",
+            showlegend=True,
+            line=dict(color="#ff7f0e", width=1.4, dash="dot"),
+            opacity=0.9,
+            hovertemplate="<b>%{x|%Y-%m-%d}</b><br>TGA: %{y:,.0f} bn<extra></extra>",
+        ),
+        row=1,
+        col=1,
+    )
+
+    fig.add_trace(
+        go.Scatter(
+            x=merged["date"],
+            y=merged["rrp_bil"],
+            mode="lines",
+            name="ON RRP (RRPONTSYD)",
+            showlegend=True,
+            line=dict(color="#d62728", width=1.4, dash="dash"),
+            opacity=0.9,
+            hovertemplate="<b>%{x|%Y-%m-%d}</b><br>ON RRP: %{y:,.0f} bn<extra></extra>",
+        ),
+        row=1,
+        col=1,
+    )
+
+    fig.add_trace(
+        go.Bar(
+            x=merged["date"],
+            y=merged["net_liquidity_90d_delta"],
+            name="Net Liquidity 90D Change",
+            showlegend=True,
+            marker_color=np.where(
+                merged["net_liquidity_90d_delta"] >= 0,
+                "rgba(40, 167, 69, 0.55)",
+                "rgba(220, 53, 69, 0.55)",
+            ),
+            hovertemplate="<b>%{x|%Y-%m-%d}</b><br>90D Change: %{y:,.0f} bn<extra></extra>",
+        ),
+        row=2,
+        col=1,
+        secondary_y=False,
+    )
+
+    fig.add_trace(
+        go.Scatter(
+            x=merged["date"],
+            y=merged["close_price"],
+            mode="lines",
+            name="BTC Price (USD)",
+            showlegend=True,
+            line=dict(color="#111111", width=2.1),
+            hovertemplate="<b>%{x|%Y-%m-%d}</b><br>BTC: $%{y:,.0f}<extra></extra>",
+        ),
+        row=2,
+        col=1,
+        secondary_y=True,
+    )
+
+    fig.add_hline(
+        y=0,
+        line_color="rgba(80, 80, 80, 0.5)",
+        line_dash="dot",
+        row=2,
+        col=1,
+        secondary_y=False,
+    )
+
+    fig.update_layout(
+        title={
+            "text": (
+                "BTC vs Net Liquidity Dashboard"
+                f"<br><sub>Latest Net Liquidity: {latest['net_liquidity_bil']:,.0f} bn | "
+                f"90D Change: {latest['net_liquidity_90d_delta']:,.0f} bn</sub>"
+            ),
+            "x": 0.5,
+            "xanchor": "center",
+            "y": 0.97,
+            "yanchor": "top",
+        },
+        template="plotly_white",
+        hovermode="x unified",
+        height=820,
+        showlegend=True,
+        legend=dict(
+            orientation="h",
+            yanchor="bottom",
+            y=1.06,
+            xanchor="center",
+            x=0.5,
+            bgcolor="rgba(255, 255, 255, 0.9)",
+            bordercolor="rgba(0, 0, 0, 0.15)",
+            borderwidth=1,
+            itemsizing="constant",
+            entrywidthmode="fraction",
+            entrywidth=0.30,
+            font=dict(size=11),
+        ),
+        margin=dict(l=70, r=70, t=210, b=70),
+    )
+
+    fig.update_yaxes(title_text="USD Billion", row=1, col=1)
+    fig.update_yaxes(title_text="90D Delta (bn USD)", row=2, col=1, secondary_y=False)
+    fig.update_yaxes(title_text="BTC Price (USD, log)", type="log", row=2, col=1, secondary_y=True)
+    fig.update_xaxes(title_text="Date", row=2, col=1, rangeslider_visible=True)
+
+    output_dir = get_output_dir()
+    output_path = output_dir / output_filename
+    fig.write_html(str(output_path), auto_open=auto_open)
+    add_yaxis_autoscale_script(output_path)
+    add_info_modal_script(
+        output_path,
+        title="How to Read: Net Liquidity",
+        content_html=(
+            "<h4>What this chart measures</h4>"
+            "<p><b>Net Liquidity</b> = Fed Assets (WALCL) - TGA (WTREGEN) - ON RRP (RRPONTSYD).</p>"
+            "<p>It is a practical proxy for how much system cash is available to absorb risk.</p>"
+            "<h4>How to interpret</h4>"
+            "<p>If net liquidity trends down, macro conditions are tightening; BTC usually faces stronger headwinds.</p>"
+            "<p><b>90D Change bars</b>: green means liquidity improving, red means liquidity draining.</p>"
+            "<h4>Quick use</h4>"
+            "<p>Use this panel as the background regime filter, not a single-day trading trigger.</p>"
+        ),
+    )
+
+    print(f"✓ Saved net liquidity dashboard to: {output_path}")
+    return str(output_path)
+
+
+def plot_funding_credit_stress(
+    btc_df: pd.DataFrame,
+    macro_df: pd.DataFrame,
+    output_filename: str = "funding_credit_stress.html",
+    auto_open: bool = False,
+) -> str:
+    """
+    Plot funding and credit stress signals alongside BTC price.
+
+    Args:
+        btc_df: DataFrame with date and close_price columns
+        macro_df: DataFrame with sofr, move, and hy_oas columns
+        output_filename: Output HTML filename
+        auto_open: Whether to open chart automatically
+
+    Returns:
+        Path to saved chart HTML
+    """
+    price_df = btc_df.copy()
+    price_df["date"] = pd.to_datetime(price_df["date"]).dt.tz_localize(None)
+
+    macro_plot = macro_df.copy()
+    macro_plot["date"] = pd.to_datetime(macro_plot["date"]).dt.tz_localize(None)
+    macro_plot = macro_plot.sort_values("date")
+
+    required_cols = ["sofr", "move", "hy_oas"]
+    missing_cols = [col for col in required_cols if col not in macro_plot.columns]
+    if missing_cols:
+        raise ValueError(f"Missing macro columns for stress chart: {missing_cols}")
+
+    merged = pd.merge(
+        price_df[["date", "close_price"]],
+        macro_plot[["date", "sofr", "move", "hy_oas"]],
+        on="date",
+        how="left",
+    ).sort_values("date")
+
+    for col in ["sofr", "move", "hy_oas"]:
+        merged[col] = merged[col].ffill()
+
+    merged = merged.dropna(subset=["close_price", "sofr", "hy_oas"])
+    if merged.empty:
+        raise ValueError("No overlapping BTC and stress indicator data available")
+
+    latest = merged.iloc[-1]
+
+    fig = make_subplots(
+        rows=2,
+        cols=1,
+        shared_xaxes=True,
+        vertical_spacing=0.09,
+        row_heights=[0.5, 0.5],
+        specs=[[{"secondary_y": True}], [{"secondary_y": True}]],
+    )
+
+    fig.add_trace(
+        go.Scatter(
+            x=merged["date"],
+            y=merged["sofr"],
+            mode="lines",
+            name="SOFR",
+            showlegend=True,
+            line=dict(color="#1f77b4", width=2.2),
+            hovertemplate="<b>%{x|%Y-%m-%d}</b><br>SOFR: %{y:.2f}%<extra></extra>",
+        ),
+        row=1,
+        col=1,
+        secondary_y=False,
+    )
+
+    fig.add_trace(
+        go.Scatter(
+            x=merged["date"],
+            y=merged["move"],
+            mode="lines",
+            name="MOVE",
+            showlegend=True,
+            line=dict(color="#ff7f0e", width=2.0, dash="dash"),
+            hovertemplate="<b>%{x|%Y-%m-%d}</b><br>MOVE: %{y:.1f}<extra></extra>",
+        ),
+        row=1,
+        col=1,
+        secondary_y=True,
+    )
+
+    fig.add_trace(
+        go.Scatter(
+            x=merged["date"],
+            y=merged["hy_oas"],
+            mode="lines",
+            name="HY OAS",
+            showlegend=True,
+            line=dict(color="#d62728", width=2.2),
+            hovertemplate="<b>%{x|%Y-%m-%d}</b><br>HY OAS: %{y:.2f}%<extra></extra>",
+        ),
+        row=2,
+        col=1,
+        secondary_y=False,
+    )
+
+    fig.add_trace(
+        go.Scatter(
+            x=merged["date"],
+            y=merged["close_price"],
+            mode="lines",
+            name="BTC Price",
+            showlegend=True,
+            line=dict(color="#111111", width=2.0),
+            hovertemplate="<b>%{x|%Y-%m-%d}</b><br>BTC: $%{y:,.0f}<extra></extra>",
+        ),
+        row=2,
+        col=1,
+        secondary_y=True,
+    )
+
+    fig.add_hline(
+        y=5.0,
+        line_color="rgba(220, 53, 69, 0.7)",
+        line_dash="dot",
+        annotation_text="HY OAS 5% stress threshold",
+        annotation_position="top left",
+        row=2,
+        col=1,
+        secondary_y=False,
+    )
+
+    fig.update_layout(
+        title={
+            "text": (
+                "Funding & Credit Stress Monitor"
+                f"<br><sub>Latest SOFR: {latest['sofr']:.2f}% | MOVE: {latest['move']:.1f} | HY OAS: {latest['hy_oas']:.2f}%</sub>"
+            ),
+            "x": 0.5,
+            "xanchor": "center",
+            "y": 0.97,
+            "yanchor": "top",
+        },
+        template="plotly_white",
+        hovermode="x unified",
+        height=820,
+        showlegend=True,
+        legend=dict(
+            orientation="h",
+            yanchor="bottom",
+            y=1.06,
+            xanchor="center",
+            x=0.5,
+            bgcolor="rgba(255, 255, 255, 0.9)",
+            bordercolor="rgba(0, 0, 0, 0.15)",
+            borderwidth=1,
+            itemsizing="constant",
+            entrywidthmode="fraction",
+            entrywidth=0.22,
+            font=dict(size=11),
+        ),
+        margin=dict(l=70, r=70, t=170, b=70),
+    )
+
+    fig.update_yaxes(title_text="SOFR (%)", row=1, col=1, secondary_y=False)
+    fig.update_yaxes(title_text="MOVE", row=1, col=1, secondary_y=True)
+    fig.update_yaxes(title_text="HY OAS (%)", row=2, col=1, secondary_y=False)
+    fig.update_yaxes(title_text="BTC Price (USD, log)", type="log", row=2, col=1, secondary_y=True)
+    fig.update_xaxes(title_text="Date", row=2, col=1, rangeslider_visible=True)
+
+    output_dir = get_output_dir()
+    output_path = output_dir / output_filename
+    fig.write_html(str(output_path), auto_open=auto_open)
+    add_yaxis_autoscale_script(output_path)
+    add_info_modal_script(
+        output_path,
+        title="How to Read: Funding & Credit Stress",
+        content_html=(
+            "<h4>Signals in this panel</h4>"
+            "<p><b>SOFR</b>: short-term funding cost. Rising SOFR means money is getting more expensive.</p>"
+            "<p><b>MOVE</b>: U.S. rate volatility. Rising MOVE means bond market stress and weaker risk tolerance.</p>"
+            "<p><b>HY OAS</b>: high-yield credit spread. Widening spread means financing stress is spreading.</p>"
+            "<h4>Rule of thumb</h4>"
+            "<p>When SOFR + MOVE + HY OAS rise together, BTC drawdown risk usually increases.</p>"
+        ),
+    )
+
+    print(f"✓ Saved funding/credit stress chart to: {output_path}")
+    return str(output_path)
+
+
+def plot_macro_risk_score(
+    btc_df: pd.DataFrame,
+    macro_df: pd.DataFrame,
+    output_filename: str = "macro_risk_score.html",
+    auto_open: bool = False,
+) -> str:
+    """
+    Plot a composite macro risk score and validate it against forward BTC returns.
+
+    The score blends:
+        - Net liquidity 90D change (decline is riskier)
+        - SOFR level
+        - MOVE level
+        - HY OAS level
+    """
+    price_df = btc_df.copy()
+    price_df["date"] = pd.to_datetime(price_df["date"]).dt.tz_localize(None)
+
+    macro_plot = macro_df.copy()
+    macro_plot["date"] = pd.to_datetime(macro_plot["date"]).dt.tz_localize(None)
+    macro_plot = macro_plot.sort_values("date")
+
+    required_cols = ["net_liquidity_bil", "sofr", "move", "hy_oas"]
+    missing_cols = [col for col in required_cols if col not in macro_plot.columns]
+    if missing_cols:
+        raise ValueError(f"Missing macro columns for risk score chart: {missing_cols}")
+
+    merged = pd.merge(
+        price_df[["date", "close_price"]],
+        macro_plot[["date", "net_liquidity_bil", "sofr", "move", "hy_oas"]],
+        on="date",
+        how="left",
+    ).sort_values("date")
+
+    for col in ["net_liquidity_bil", "sofr", "move", "hy_oas"]:
+        merged[col] = merged[col].ffill()
+
+    merged["net_liquidity_90d_change"] = merged["net_liquidity_bil"].diff(90)
+
+    # Convert each component into percentile rank [0, 1].
+    # Higher component = higher risk.
+    merged["risk_net_liq"] = 1.0 - merged["net_liquidity_90d_change"].rank(pct=True)
+    merged["risk_sofr"] = merged["sofr"].rank(pct=True)
+    merged["risk_move"] = merged["move"].rank(pct=True)
+    merged["risk_hy_oas"] = merged["hy_oas"].rank(pct=True)
+
+    merged["macro_risk_score"] = 100.0 * (
+        MACRO_RISK_SCORE_WEIGHTS["net_liquidity_90d_change"] * merged["risk_net_liq"]
+        + MACRO_RISK_SCORE_WEIGHTS["sofr"] * merged["risk_sofr"]
+        + MACRO_RISK_SCORE_WEIGHTS["move"] * merged["risk_move"]
+        + MACRO_RISK_SCORE_WEIGHTS["hy_oas"] * merged["risk_hy_oas"]
+    )
+
+    merged["fwd_7d_return_pct"] = (merged["close_price"].shift(-7) / merged["close_price"] - 1.0) * 100.0
+    merged["fwd_30d_return_pct"] = (merged["close_price"].shift(-30) / merged["close_price"] - 1.0) * 100.0
+    merged = merged.dropna(subset=["macro_risk_score", "close_price", "fwd_30d_return_pct"])
+
+    if merged.empty:
+        raise ValueError("No overlapping data available for macro risk score chart")
+
+    high_risk_mask = merged["macro_risk_score"] >= 70
+    low_risk_mask = merged["macro_risk_score"] <= 30
+
+    high_count = int(high_risk_mask.sum())
+    low_count = int(low_risk_mask.sum())
+    hit_rate = (
+        float((merged.loc[high_risk_mask, "fwd_30d_return_pct"] < 0).mean() * 100.0)
+        if high_count > 0
+        else float("nan")
+    )
+    high_avg = (
+        float(merged.loc[high_risk_mask, "fwd_30d_return_pct"].mean())
+        if high_count > 0
+        else float("nan")
+    )
+    low_avg = (
+        float(merged.loc[low_risk_mask, "fwd_30d_return_pct"].mean())
+        if low_count > 0
+        else float("nan")
+    )
+    if (
+        merged["macro_risk_score"].nunique() > 1
+        and merged["fwd_30d_return_pct"].nunique() > 1
+    ):
+        corr = float(merged["macro_risk_score"].corr(merged["fwd_30d_return_pct"]))
+    else:
+        corr = float("nan")
+
+    fig = make_subplots(
+        rows=3,
+        cols=1,
+        shared_xaxes=True,
+        vertical_spacing=0.07,
+        row_heights=[0.34, 0.36, 0.30],
+    )
+
+    fig.add_trace(
+        go.Scatter(
+            x=merged["date"],
+            y=merged["macro_risk_score"],
+            mode="lines",
+            name="Macro Risk Score",
+            line=dict(color="#8c2d04", width=2.4),
+            hovertemplate="<b>%{x|%Y-%m-%d}</b><br>Risk Score: %{y:.1f}<extra></extra>",
+        ),
+        row=1,
+        col=1,
+    )
+
+    fig.add_hline(y=70, line_color="#d62728", line_dash="dash", row=1, col=1)
+    fig.add_hline(y=30, line_color="#2ca02c", line_dash="dash", row=1, col=1)
+
+    fig.add_trace(
+        go.Scatter(
+            x=merged["date"],
+            y=merged["close_price"],
+            mode="lines",
+            name="BTC Price",
+            line=dict(color="#111111", width=2.1),
+            hovertemplate="<b>%{x|%Y-%m-%d}</b><br>BTC: $%{y:,.0f}<extra></extra>",
+        ),
+        row=2,
+        col=1,
+    )
+
+    fig.add_trace(
+        go.Scatter(
+            x=merged["date"],
+            y=merged["fwd_30d_return_pct"],
+            mode="lines",
+            name="Forward 30D Return",
+            line=dict(color="#1f77b4", width=2.0),
+            hovertemplate="<b>%{x|%Y-%m-%d}</b><br>Fwd 30D: %{y:.2f}%<extra></extra>",
+        ),
+        row=3,
+        col=1,
+    )
+
+    fig.add_trace(
+        go.Scatter(
+            x=merged["date"],
+            y=merged["fwd_7d_return_pct"],
+            mode="lines",
+            name="Forward 7D Return",
+            line=dict(color="#ff7f0e", width=1.4, dash="dot"),
+            hovertemplate="<b>%{x|%Y-%m-%d}</b><br>Fwd 7D: %{y:.2f}%<extra></extra>",
+        ),
+        row=3,
+        col=1,
+    )
+
+    fig.add_hline(y=0, line_color="rgba(80,80,80,0.5)", line_dash="dot", row=3, col=1)
+
+    # Highlight high-risk windows on all panels.
+    in_window = False
+    start_dt = None
+    for _, r in merged.iterrows():
+        is_high = bool(r["macro_risk_score"] >= 70)
+        if is_high and not in_window:
+            in_window = True
+            start_dt = r["date"]
+        elif (not is_high) and in_window:
+            in_window = False
+            end_dt = r["date"]
+            fig.add_vrect(x0=start_dt, x1=end_dt, fillcolor="rgba(220,53,69,0.08)", line_width=0)
+    if in_window and start_dt is not None:
+        fig.add_vrect(
+            x0=start_dt,
+            x1=merged["date"].iloc[-1],
+            fillcolor="rgba(220,53,69,0.08)",
+            line_width=0,
+        )
+
+    corr_text = f"{corr:.2f}" if np.isfinite(corr) else "N/A"
+    hit_rate_text = f"{hit_rate:.1f}%" if np.isfinite(hit_rate) else "N/A"
+    high_avg_text = f"{high_avg:.2f}%" if np.isfinite(high_avg) else "N/A"
+    low_avg_text = f"{low_avg:.2f}%" if np.isfinite(low_avg) else "N/A"
+    weights_text = (
+        f"NetLiq {MACRO_RISK_SCORE_WEIGHTS['net_liquidity_90d_change']:.2f}, "
+        f"SOFR {MACRO_RISK_SCORE_WEIGHTS['sofr']:.2f}, "
+        f"MOVE {MACRO_RISK_SCORE_WEIGHTS['move']:.2f}, "
+        f"HY OAS {MACRO_RISK_SCORE_WEIGHTS['hy_oas']:.2f}"
+    )
+
+    fig.update_layout(
+        title={
+            "text": (
+                "Macro Risk Score Validation"
+                f"<br><sub>Corr(score, fwd30d)={corr_text} | "
+                f"High-risk hit rate={hit_rate_text} | "
+                f"Avg fwd30d (high/low)={high_avg_text} / {low_avg_text}</sub>"
+                f"<br><sub>Default Weights: {weights_text}</sub>"
+            ),
+            "x": 0.5,
+            "xanchor": "center",
+            "y": 0.97,
+            "yanchor": "top",
+        },
+        template="plotly_white",
+        hovermode="x unified",
+        height=900,
+        showlegend=True,
+        legend=dict(
+            orientation="h",
+            yanchor="bottom",
+            y=1.04,
+            xanchor="center",
+            x=0.5,
+            bgcolor="rgba(255,255,255,0.9)",
+            bordercolor="rgba(0,0,0,0.15)",
+            borderwidth=1,
+            font=dict(size=11),
+            entrywidthmode="fraction",
+            entrywidth=0.22,
+        ),
+        margin=dict(l=70, r=70, t=180, b=70),
+    )
+
+    fig.update_yaxes(title_text="Risk Score (0-100)", range=[0, 100], row=1, col=1)
+    fig.update_yaxes(title_text="BTC Price (USD, log)", type="log", row=2, col=1)
+    fig.update_yaxes(title_text="Forward Return (%)", row=3, col=1)
+    fig.update_xaxes(title_text="Date", row=3, col=1, rangeslider_visible=True)
+
+    output_dir = get_output_dir()
+    output_path = output_dir / output_filename
+    fig.write_html(str(output_path), auto_open=auto_open)
+    add_yaxis_autoscale_script(output_path)
+    add_info_modal_script(
+        output_path,
+        title="How to Read: Macro Risk Score",
+        content_html=(
+            "<h4>Score meaning</h4>"
+            "<p><b>Score >= 70</b>: high macro risk regime.<br><b>Score <= 30</b>: low macro risk regime.</p>"
+            "<p>The score combines four components: net liquidity change, SOFR, MOVE, and HY OAS.</p>"
+            f"<p><b>Default weights</b>: NetLiq {MACRO_RISK_SCORE_WEIGHTS['net_liquidity_90d_change']:.2f}, "
+            f"SOFR {MACRO_RISK_SCORE_WEIGHTS['sofr']:.2f}, MOVE {MACRO_RISK_SCORE_WEIGHTS['move']:.2f}, "
+            f"HY OAS {MACRO_RISK_SCORE_WEIGHTS['hy_oas']:.2f}.</p>"
+            "<h4>Validation panel</h4>"
+            "<p>Bottom panel plots forward BTC returns (7D/30D) to check if high score periods"
+            " are followed by weaker performance.</p>"
+            "<p>To tune quickly, edit <code>MACRO_RISK_SCORE_WEIGHTS</code> in <code>visualization.py</code> and regenerate.</p>"
+        ),
+    )
+
+    print(f"✓ Saved macro risk score chart to: {output_path}")
     return str(output_path)
 
 
