@@ -25,6 +25,25 @@ from dca_service.services.dca_engine import calculate_dca_decision
 # FIXTURES
 # ============================================================================
 
+
+@pytest.fixture(autouse=True)
+def restore_metrics_settings():
+    """
+    Keep global metrics settings isolated per test.
+    Some tests mutate settings.METRICS_* directly and must not leak to others.
+    """
+    original_backend = settings.METRICS_BACKEND
+    original_fallback = settings.METRICS_FALLBACK_TO_CSV
+    original_csv_path = settings.METRICS_CSV_PATH
+    original_max_age = settings.METRICS_MAX_AGE_HOURS
+
+    yield
+
+    settings.METRICS_BACKEND = original_backend
+    settings.METRICS_FALLBACK_TO_CSV = original_fallback
+    settings.METRICS_CSV_PATH = original_csv_path
+    settings.METRICS_MAX_AGE_HOURS = original_max_age
+
 @pytest.fixture
 def mock_csv_file(tmp_path):
     """Create a temporary CSV file with valid recent data"""
