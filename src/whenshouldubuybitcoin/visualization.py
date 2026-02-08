@@ -2491,12 +2491,8 @@ def generate_all_charts(df: pd.DataFrame, auto_open: bool = True) -> dict:
     print("\n2. Price Comparison Chart...")
     charts["price_comparison"] = plot_price_comparison(df, auto_open=False)
 
-    # Statistics chart
-    print("\n3. Statistics Chart...")
-    charts["statistics"] = plot_double_undervaluation_stats(df, auto_open=False)
-
     # MA Cross Analysis chart
-    print("\n4. MA Cross Analysis Chart...")
+    print("\n3. MA Cross Analysis Chart...")
     charts["ma_cross"] = plot_ma_cross_analysis(df, auto_open=False)
 
     print("\n" + "=" * 80)

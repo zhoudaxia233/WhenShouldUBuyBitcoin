@@ -40,6 +40,10 @@ describe("Chart Navigation Architecture", () => {
     it("should lazy-load chart iframes via data-src", () => {
         expect(htmlContent).toContain('class="chart-iframe"');
         expect(htmlContent).toContain('data-src="charts/valuation_ratios.html"');
-        expect(htmlContent).toContain("loadChartIframes(initialChart)");
+    });
+
+    it("should initialize chart section to core on first page load", () => {
+        expect(htmlContent).toContain("document.addEventListener('DOMContentLoaded'");
+        expect(htmlContent).toContain("switchChartSection('core', coreSectionTab)");
     });
 });
