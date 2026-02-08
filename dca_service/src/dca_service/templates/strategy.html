@@ -980,8 +980,13 @@
                     } else {
                         notyf.success('Strategy updated');
                     }
+                    // Force dashboard to reload fresh strategy/transaction caches after mode switch.
+                    localStorage.removeItem('strategy_config');
+                    localStorage.removeItem('transactions_list');
+                    localStorage.removeItem('preview_decision');
+                    localStorage.removeItem('wallet_summary');
                     setTimeout(() => {
-                        window.location.href = '/';
+                        window.location.replace('/?refresh=1');
                     }, 1000);
                 } else {
                     notyf.error('Error saving strategy');
