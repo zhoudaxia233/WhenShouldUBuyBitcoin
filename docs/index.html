@@ -132,6 +132,30 @@
             overflow-x: auto;
         }
 
+        .chart-section-tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .chart-section-tab {
+            padding: 8px 14px;
+            font-size: 13px;
+            font-weight: 600;
+            color: #6e6e73;
+            background: #f5f5f7;
+            border: 1px solid #d2d2d7;
+            border-radius: 999px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .chart-section-tab.active {
+            color: #0071e3;
+            border-color: #0071e3;
+            background: #e8f4fd;
+        }
+
         .chart-tab {
             padding: 12px 24px;
             font-size: 15px;
@@ -166,6 +190,15 @@
             height: 600px;
             border: none;
             border-radius: 12px;
+        }
+
+        .chart-iframe {
+            opacity: 0;
+            transition: opacity 0.2s ease;
+        }
+
+        .chart-iframe.is-loaded {
+            opacity: 1;
         }
 
         /* Check Section (Results Only) */
@@ -1383,40 +1416,44 @@
         <!-- Charts Tab Content -->
         <div id="charts-tab" class="tab-content active">
             <div class="chart-container">
+                <div class="chart-section-tabs">
+                    <button class="chart-section-tab active" onclick="switchChartSection('core', this)">Core</button>
+                    <button class="chart-section-tab" onclick="switchChartSection('advanced', this)">Advanced</button>
+                </div>
                 <div class="chart-tabs">
-                    <button class="chart-tab active" onclick="switchChart('ratios')">Valuation Ratios</button>
-                <button class="chart-tab" onclick="switchChart('prices')">Price Comparison</button>
-                <button class="chart-tab" onclick="switchChart('stats')">Statistics</button>
-                <button class="chart-tab" onclick="switchChart('usdjpy')">USD/JPY Risk</button>
-                <button class="chart-tab" onclick="switchChart('futures-oi')">Futures OI & Price</button>
-                <button class="chart-tab" onclick="switchChart('ma-cross')">MA Cross Analysis</button>
+                    <button class="chart-tab active" data-section="core" data-chart="ratios" onclick="switchChart('ratios', this)">Valuation Ratios</button>
+                <button class="chart-tab" data-section="core" data-chart="prices" onclick="switchChart('prices', this)">Price Comparison</button>
+                <button class="chart-tab" data-section="core" data-chart="futures-oi" onclick="switchChart('futures-oi', this)">Futures OI & Price</button>
+                <button class="chart-tab" data-section="core" data-chart="usdjpy" onclick="switchChart('usdjpy', this)">USD/JPY Risk Map</button>
+                <button class="chart-tab" data-section="advanced" data-chart="stats" style="display: none;" onclick="switchChart('stats', this)">Statistics</button>
+                <button class="chart-tab" data-section="advanced" data-chart="ma-cross" style="display: none;" onclick="switchChart('ma-cross', this)">MA Cross Analysis</button>
             </div>
 
             <!-- Chart Content Areas -->
             <div class="chart-display">
                 <div id="ratios-chart" class="chart-content active">
-                    <iframe src="charts/valuation_ratios.html"></iframe>
+                    <iframe class="chart-iframe" data-src="charts/valuation_ratios.html"></iframe>
                 </div>
                 
                 <div id="stats-chart" class="chart-content">
-                    <iframe src="charts/double_uv_stats.html"></iframe>
+                    <iframe class="chart-iframe" data-src="charts/double_uv_stats.html"></iframe>
                 </div>
                 
                 <div id="prices-chart" class="chart-content">
-                    <iframe src="charts/price_comparison.html"></iframe>
+                    <iframe class="chart-iframe" data-src="charts/price_comparison.html"></iframe>
                 </div>
                 
                 <div id="usdjpy-chart" class="chart-content">
-                    <iframe src="charts/usdjpy_risk_map.html" style="height: 800px;"></iframe>
+                    <iframe class="chart-iframe" data-src="charts/usdjpy_risk_map.html" style="height: 800px;"></iframe>
                 </div>
 
                 <div id="futures-oi-chart" class="chart-content">
                     <div style="display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-start;">
                         <div style="flex: 1; min-width: 300px;">
-                            <iframe src="charts/futures_oi.html" style="width: 100%; height: 650px; border: none;"></iframe>
+                            <iframe class="chart-iframe" data-src="charts/futures_oi.html" style="width: 100%; height: 650px; border: none;"></iframe>
                         </div>
                         <div style="flex: 0 0 auto; min-width: 300px; max-width: 460px; width: 100%;">
-                            <iframe src="charts/oi_quadrant.html" style="width: 100%; height: 480px; border: none;"></iframe>
+                            <iframe class="chart-iframe" data-src="charts/oi_quadrant.html" style="width: 100%; height: 480px; border: none;"></iframe>
                             <!-- Quadrant Legend (below chart) - exact width match with reduced padding -->
                             <div id="oi-quadrant-legend" style="background: white; padding: 4px 8px; border-radius: 4px; margin: 6px auto 0 auto; width: calc(100% - 80px); font-size: 0.85em; border: 1px solid #e5e5e5; box-shadow: 0 1px 2px rgba(0,0,0,0.04); word-wrap: break-word; overflow-wrap: break-word; line-height: 1.4;">
                                 <div id="q1-legend" style="color: #FF6347; margin-bottom: 1px;"><b>↗ Price ↑ & OI ↑</b> — Risky Up (leveraged)</div>
@@ -1429,7 +1466,7 @@
                 </div>
 
                 <div id="ma-cross-chart" class="chart-content">
-                    <iframe src="charts/ma_cross_analysis.html" style="height: 800px;"></iframe>
+                    <iframe class="chart-iframe" data-src="charts/ma_cross_analysis.html" style="height: 800px;"></iframe>
                 </div>
             </div>
             </div>
@@ -1936,18 +1973,73 @@
             }
         }
 
-        // Chart switching function
-        function switchChart(chartType) {
-            // Update tabs
-            const tabs = document.querySelectorAll('.chart-tab');
-            tabs.forEach(tab => tab.classList.remove('active'));
-            event.target.classList.add('active');
-            
-            // Update chart content
+        function setActiveChart(chartType) {
             const contents = document.querySelectorAll('.chart-content');
             contents.forEach(content => content.classList.remove('active'));
-            document.getElementById(`${chartType}-chart`).classList.add('active');
+
+            const target = document.getElementById(`${chartType}-chart`);
+            if (target) {
+                target.classList.add('active');
+                loadChartIframes(target);
+            }
         }
+
+        function loadChartIframes(container) {
+            const iframes = container.querySelectorAll('iframe.chart-iframe');
+            iframes.forEach(iframe => {
+                if (iframe.dataset.src && !iframe.src) {
+                    iframe.addEventListener('load', () => {
+                        iframe.classList.add('is-loaded');
+                    }, { once: true });
+                    iframe.src = iframe.dataset.src;
+                }
+            });
+        }
+
+        function switchChart(chartType, sourceElement) {
+            const tabs = document.querySelectorAll('.chart-tab');
+            tabs.forEach(tab => tab.classList.remove('active'));
+            if (sourceElement) {
+                sourceElement.classList.add('active');
+            }
+            setActiveChart(chartType);
+        }
+
+        function switchChartSection(sectionName, sourceElement) {
+            const sectionTabs = document.querySelectorAll('.chart-section-tab');
+            sectionTabs.forEach(tab => tab.classList.remove('active'));
+            if (sourceElement) {
+                sourceElement.classList.add('active');
+            }
+
+            const chartTabs = document.querySelectorAll('.chart-tab');
+            chartTabs.forEach(tab => {
+                const isInSection = tab.dataset.section === sectionName;
+                tab.style.display = isInSection ? '' : 'none';
+                if (!isInSection) {
+                    tab.classList.remove('active');
+                }
+            });
+
+            const activeVisibleTab = document.querySelector(`.chart-tab.active[data-section="${sectionName}"]`);
+            if (activeVisibleTab) {
+                setActiveChart(activeVisibleTab.dataset.chart);
+                return;
+            }
+
+            const firstVisibleTab = document.querySelector(`.chart-tab[data-section="${sectionName}"]`);
+            if (firstVisibleTab) {
+                const chartType = firstVisibleTab.dataset.chart;
+                switchChart(chartType, firstVisibleTab);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const initialChart = document.querySelector('.chart-content.active');
+            if (initialChart) {
+                loadChartIframes(initialChart);
+            }
+        });
 
         // Strategy info modal functions
         const strategyInfo = {
@@ -2739,4 +2831,3 @@
     </script>
 </body>
 </html>
-

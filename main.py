@@ -42,7 +42,6 @@ from whenshouldubuybitcoin.persistence import (
 from whenshouldubuybitcoin.providers.binance_api import fetch_btc_funding_rate, fetch_open_interest_history
 from whenshouldubuybitcoin.visualization import (
     generate_all_charts,
-    plot_usdjpy,
     plot_usdjpy_risk_map,
     create_futures_oi_timeseries_chart,
 )
@@ -340,10 +339,9 @@ def main():
 
         # Generate USD/JPY charts
         print("\n" + "=" * 80)
-        print("GENERATING USD/JPY CHARTS")
+        print("GENERATING USD/JPY RISK MAP")
         print("=" * 80)
         usdjpy_df = fetch_usdjpy_history(days=None)  # Fetch all available data
-        plot_usdjpy(usdjpy_df, auto_open=False)
 
         # Generate USD/JPY Risk Map
         print("\nGenerating USD/JPY Systemic Risk Map...")
@@ -354,7 +352,6 @@ def main():
         except Exception as e:
             print(f"⚠ Warning: Failed to generate USD/JPY Risk Map: {e}")
             print("  This may be due to Yahoo Finance data limitations.")
-            print("  The basic USD/JPY chart is still available.")
             
         # --- Step 6: Futures Data Analysis ---
         print("\n" + "=" * 80)
