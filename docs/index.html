@@ -2234,20 +2234,40 @@
             overallEl.textContent = summary.overall_summary || text.noOverall;
             emptyEl.style.display = "none";
 
-            const generatedAt = dailyReportData.generated_at
-                ? new Date(dailyReportData.generated_at).toLocaleString(
-                      dailyReportLanguage === "zh" ? "zh-CN" : "en-US",
-                      {
-                          year: "numeric",
-                          month: "2-digit",
-                          day: "2-digit",
-                          hour: "2-digit",
-                          minute: "2-digit",
-                          hour12: false,
-                      },
-                  )
-                : text.unknown;
-            metaEl.textContent = `${text.reportDate}: ${dailyReportData.report_date || "N/A"} | ${text.generatedAt}: ${generatedAt}`;
+            const formatReportDate = (reportDate) => {
+                if (!reportDate) return "N/A";
+                const date = new Date(`${reportDate}T00:00:00Z`);
+                return date.toLocaleDateString("en-US", {
+                    year: "numeric",
+                    month: "short",
+                    day: "2-digit",
+                    timeZone: "UTC",
+                });
+            };
+
+            const formatGeneratedAt = (value) => {
+                if (!value) return text.unknown;
+                const date = new Date(value);
+                const datePart = date.toLocaleDateString("en-US", {
+                    year: "numeric",
+                    month: "short",
+                    day: "2-digit",
+                });
+                const timePart = date.toLocaleTimeString("en-US", {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                    second: "2-digit",
+                    hour12: false,
+                });
+                const tz = new Intl.DateTimeFormat("en-US", {
+                    timeZoneName: "short",
+                }).formatToParts(date).find((part) => part.type === "timeZoneName")?.value || "Local";
+                return `${datePart} ${timePart} (${tz})`;
+            };
+
+            const reportDateText = formatReportDate(dailyReportData.report_date);
+            const generatedAt = formatGeneratedAt(dailyReportData.generated_at);
+            metaEl.textContent = `${text.reportDate}: ${reportDateText} | ${text.generatedAt}: ${generatedAt}`;
         }
 
         async function loadDailyReport() {

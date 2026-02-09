@@ -22,6 +22,8 @@ describe("Daily Report UI", () => {
         expect(htmlContent).toContain("data/daily_report.json?t=${Date.now()}");
         expect(htmlContent).toContain('cache: "no-store"');
         expect(htmlContent).toContain("hour12: false");
+        expect(htmlContent).toContain('month: "short"');
+        expect(htmlContent).toContain('timeZoneName: "short"');
         expect(htmlContent).toContain("function loadDailyReport()");
         expect(htmlContent).toContain("function setDailyReportLanguage(language)");
         expect(htmlContent).toContain("function getDailySummaryByLanguage(report, language)");
