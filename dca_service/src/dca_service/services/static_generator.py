@@ -51,7 +51,7 @@ def trigger_static_generation(background: bool = True) -> Optional[subprocess.Po
             # Run as background process (non-blocking)
             # stdout/stderr are captured to avoid polluting logs
             process = subprocess.Popen(
-                [python_executable, str(main_py_path)],
+                [python_executable, str(main_py_path), "--strict-update"],
                 cwd=str(project_root),
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
@@ -62,7 +62,7 @@ def trigger_static_generation(background: bool = True) -> Optional[subprocess.Po
         else:
             # Run synchronously and wait for completion
             result = subprocess.run(
-                [python_executable, str(main_py_path)],
+                [python_executable, str(main_py_path), "--strict-update"],
                 cwd=str(project_root),
                 capture_output=True,
                 text=True,

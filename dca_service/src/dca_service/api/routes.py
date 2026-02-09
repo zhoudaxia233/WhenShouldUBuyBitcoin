@@ -12,6 +12,8 @@ from dca_service.core.logging import logger
 from dca_service.auth.dependencies import get_current_user
 
 router = APIRouter()
+_static_generation_process = None
+_static_generation_last_result = None
 
 
 def _get_binance_client(session: Session) -> Optional[BinanceClient]:
@@ -211,17 +213,36 @@ async def regenerate_static_files(
     Returns:
         dict: {"success": true, "message": "...", "background": true} on success
     """
+    global _static_generation_process, _static_generation_last_result
     try:
-        from dca_service.services.static_generator import trigger_static_generation
-        
-        # Trigger in background mode
+        from dca_service.services.static_generator import (
+            check_static_generation_status,
+            trigger_static_generation,
+        )
+
+        if _static_generation_process is not None:
+            status = check_static_generation_status(_static_generation_process)
+            if status.get("running"):
+                return {
+                    "success": True,
+                    "message": "Static generation is already running.",
+                    "background": True,
+                    "pid": _static_generation_process.pid,
+                    "running": True,
+                }
+            _static_generation_last_result = status
+            _static_generation_process = None
+
         process = trigger_static_generation(background=True)
-        
+        _static_generation_process = process
+        _static_generation_last_result = None
+
         return {
             "success": True,
-            "message": "Static file generation started in background. This may take 30-60 seconds.",
+            "message": "Static file generation started in background. This may take 30-120 seconds.",
             "background": True,
-            "pid": process.pid if process else None
+            "pid": process.pid if process else None,
+            "running": True,
         }
     except FileNotFoundError as e:
         logger.error(f"Failed to trigger static generation: {e}")
@@ -235,3 +256,54 @@ async def regenerate_static_files(
             "success": False,
             "error": str(e)
         }
+
+
+@router.get("/static/regenerate/status")
+async def regenerate_static_files_status(
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Check current static regeneration task status.
+
+    Returns running/completed/failed state with brief output.
+    """
+    global _static_generation_process, _static_generation_last_result
+    from dca_service.services.static_generator import check_static_generation_status
+
+    if _static_generation_process is not None:
+        status = check_static_generation_status(_static_generation_process)
+        if status.get("running"):
+            return {
+                "success": True,
+                "running": True,
+                "completed": False,
+                "exit_code": None,
+                "message": "Static generation is running.",
+            }
+
+        _static_generation_last_result = status
+        _static_generation_process = None
+
+    if _static_generation_last_result is None:
+        return {
+            "success": True,
+            "running": False,
+            "completed": False,
+            "exit_code": None,
+            "message": "No static generation task has run yet in this server process.",
+        }
+
+    exit_code = _static_generation_last_result.get("exit_code")
+    stderr = (_static_generation_last_result.get("stderr") or "").strip()
+    stdout = (_static_generation_last_result.get("stdout") or "").strip()
+    failed = exit_code not in (0, None)
+
+    return {
+        "success": not failed,
+        "running": False,
+        "completed": True,
+        "exit_code": exit_code,
+        "message": "Static generation completed successfully." if not failed else "Static generation failed.",
+        "stderr_preview": stderr[-500:] if stderr else "",
+        "stdout_preview": stdout[-500:] if stdout else "",
+    }
