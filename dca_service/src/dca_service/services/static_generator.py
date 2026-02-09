@@ -6,10 +6,22 @@ This is typically called after a DCA transaction to ensure the website data is u
 """
 import subprocess
 import sys
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
 
 from dca_service.core.logging import logger
+
+
+def resolve_project_root() -> Path:
+    """Resolve repository root from this module location."""
+    # dca_service/src/dca_service/services/static_generator.py -> project_root
+    return Path(__file__).parent.parent.parent.parent.parent
+
+
+def get_static_generation_log_path() -> Path:
+    """Return background static generation log path."""
+    return resolve_project_root() / "data" / "static_generation.log"
 
 
 def trigger_static_generation(background: bool = True) -> Optional[subprocess.Popen]:
@@ -34,9 +46,7 @@ def trigger_static_generation(background: bool = True) -> Optional[subprocess.Po
         subprocess.CalledProcessError: If main.py execution fails (only when background=False)
     """
     try:
-        # Find main.py in the project root (3 levels up from this file)
-        # dca_service/src/dca_service/services/static_generator.py -> project_root/main.py
-        project_root = Path(__file__).parent.parent.parent.parent.parent
+        project_root = resolve_project_root()
         main_py_path = project_root / "main.py"
         
         if not main_py_path.exists():
@@ -49,15 +59,31 @@ def trigger_static_generation(background: bool = True) -> Optional[subprocess.Po
         
         if background:
             # Run as background process (non-blocking)
-            # IMPORTANT: avoid PIPE here; long-running verbose jobs can block
-            # when pipe buffers fill up and nobody drains them.
+            # Write full output to a dedicated log file for diagnostics.
+            # Avoid PIPE here; long-running verbose jobs can block when pipe
+            # buffers fill up and nobody drains them.
+            log_path = get_static_generation_log_path()
+            log_path.parent.mkdir(parents=True, exist_ok=True)
+            start_banner = (
+                f"\n\n=== Static generation started at "
+                f"{datetime.now(timezone.utc).isoformat()} "
+                f"(pid pending) ===\n"
+            )
+            with log_path.open("a", encoding="utf-8") as log_file:
+                log_file.write(start_banner)
+                log_file.flush()
+            log_handle = log_path.open("a", encoding="utf-8")
             process = subprocess.Popen(
                 [python_executable, str(main_py_path), "--strict-update"],
                 cwd=str(project_root),
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
+                stdout=log_handle,
+                stderr=subprocess.STDOUT,
                 text=True
             )
+            log_handle.close()
+            with log_path.open("a", encoding="utf-8") as log_file:
+                log_file.write(f"PID: {process.pid}\n")
+                log_file.flush()
             logger.info(f"Started static generation process (PID: {process.pid})")
             return process
         else:
