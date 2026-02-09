@@ -49,12 +49,13 @@ def trigger_static_generation(background: bool = True) -> Optional[subprocess.Po
         
         if background:
             # Run as background process (non-blocking)
-            # stdout/stderr are captured to avoid polluting logs
+            # IMPORTANT: avoid PIPE here; long-running verbose jobs can block
+            # when pipe buffers fill up and nobody drains them.
             process = subprocess.Popen(
                 [python_executable, str(main_py_path), "--strict-update"],
                 cwd=str(project_root),
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
                 text=True
             )
             logger.info(f"Started static generation process (PID: {process.pid})")
