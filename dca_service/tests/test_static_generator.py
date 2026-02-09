@@ -42,8 +42,8 @@ class TestStaticGeneratorBasic:
         
         # Check that background options were set
         kwargs = call_args[1]
-        assert kwargs['stdout'] == subprocess.PIPE
-        assert kwargs['stderr'] == subprocess.PIPE
+        assert kwargs['stdout'] == subprocess.DEVNULL
+        assert kwargs['stderr'] == subprocess.DEVNULL
         assert kwargs['text'] is True
     
     @patch('subprocess.run')
