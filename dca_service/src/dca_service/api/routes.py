@@ -2,6 +2,7 @@ from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlmodel import Session, select, col, delete
 from datetime import datetime, timezone
+from pathlib import Path
 
 from dca_service.database import get_session
 from dca_service.models import DCATransaction, BinanceCredentials, User
@@ -14,6 +15,7 @@ from dca_service.auth.dependencies import get_current_user
 router = APIRouter()
 _static_generation_process = None
 _static_generation_last_result = None
+_static_generation_log_path = None
 
 
 def _try_collect_static_generation_status() -> Optional[dict]:
@@ -31,6 +33,16 @@ def _try_collect_static_generation_status() -> Optional[dict]:
         logger.warning(f"Failed to probe static generation process status, resetting state: {e}")
         _static_generation_process = None
         return None
+
+
+def _read_log_tail(path: str | None, max_chars: int = 2000) -> str:
+    if not path:
+        return ""
+    try:
+        content = Path(path).read_text(encoding="utf-8", errors="replace")
+        return content[-max_chars:]
+    except Exception:
+        return ""
 
 
 def _get_binance_client(session: Session) -> Optional[BinanceClient]:
@@ -231,8 +243,10 @@ async def regenerate_static_files(
         dict: {"success": true, "message": "...", "background": true} on success
     """
     global _static_generation_process, _static_generation_last_result
+    global _static_generation_log_path
     try:
         from dca_service.services.static_generator import (
+            get_static_generation_log_path,
             trigger_static_generation,
         )
 
@@ -245,11 +259,13 @@ async def regenerate_static_files(
                     "background": True,
                     "pid": _static_generation_process.pid,
                     "running": True,
+                    "log_path": _static_generation_log_path,
                 }
             if status:
                 _static_generation_last_result = status
                 _static_generation_process = None
 
+        _static_generation_log_path = str(get_static_generation_log_path())
         process = trigger_static_generation(background=True)
         _static_generation_process = process
         _static_generation_last_result = None
@@ -260,6 +276,7 @@ async def regenerate_static_files(
             "background": True,
             "pid": process.pid if process else None,
             "running": True,
+            "log_path": _static_generation_log_path,
         }
     except FileNotFoundError as e:
         logger.error(f"Failed to trigger static generation: {e}")
@@ -285,6 +302,7 @@ async def regenerate_static_files_status(
     Returns running/completed/failed state with brief output.
     """
     global _static_generation_process, _static_generation_last_result
+    global _static_generation_log_path
 
     if _static_generation_process is not None:
         status = _try_collect_static_generation_status()
@@ -295,6 +313,8 @@ async def regenerate_static_files_status(
                 "completed": False,
                 "exit_code": None,
                 "message": "Static generation is running.",
+                "log_path": _static_generation_log_path,
+                "log_tail": _read_log_tail(_static_generation_log_path, 2000),
             }
 
         if status:
@@ -308,6 +328,8 @@ async def regenerate_static_files_status(
             "completed": False,
             "exit_code": None,
             "message": "No static generation task has run yet in this server process.",
+            "log_path": _static_generation_log_path,
+            "log_tail": _read_log_tail(_static_generation_log_path, 2000),
         }
 
     exit_code = _static_generation_last_result.get("exit_code")
@@ -323,4 +345,6 @@ async def regenerate_static_files_status(
         "message": "Static generation completed successfully." if not failed else "Static generation failed.",
         "stderr_preview": stderr[-500:] if stderr else "",
         "stdout_preview": stdout[-500:] if stdout else "",
+        "log_path": _static_generation_log_path,
+        "log_tail": _read_log_tail(_static_generation_log_path, 4000),
     }

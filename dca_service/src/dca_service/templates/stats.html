@@ -725,8 +725,13 @@
                                         loadChart(true)
                                     ]);
                                 } else {
-                                    const details = statusData.stderr_preview || statusData.stdout_preview || 'No error details available.';
-                                    notyf.error(`Update Charts failed: ${details}`);
+                                    const details = statusData.log_tail || statusData.stderr_preview || statusData.stdout_preview || 'No error details available.';
+                                    console.error('Update Charts failed details:', {
+                                        logPath: statusData.log_path,
+                                        details,
+                                    });
+                                    const shortDetails = String(details).slice(-220).replace(/\n/g, ' ');
+                                    notyf.error(`Update Charts failed. Check logs: ${statusData.log_path || '/app/data/static_generation.log'} | ${shortDetails}`);
                                 }
                                 break;
                             }
