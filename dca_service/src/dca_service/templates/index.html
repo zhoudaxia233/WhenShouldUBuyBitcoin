@@ -465,15 +465,11 @@
                     minute: '2-digit',
                     hour12: false
                 });
-                const utcHours = String(date.getUTCHours()).padStart(2, '0');
-                const utcMinutes = String(date.getUTCMinutes()).padStart(2, '0');
-                return `${localDate} (Local) · ${utcHours}:${utcMinutes} UTC`;
+                return `${localDate} Local`;
             }
 
             const utcDate = date.toISOString().replace('T', ' ').substring(0, 16);
-            const localHours = String(date.getHours()).padStart(2, '0');
-            const localMinutes = String(date.getMinutes()).padStart(2, '0');
-            return `${utcDate} UTC · ${localHours}:${localMinutes} Local`;
+            return `${utcDate} UTC`;
         }
         
         // Format timestamp for transaction table based on strategy time mode
@@ -500,9 +496,9 @@
             const utcTime = date.toISOString().replace('T', ' ').substring(0, 16);
 
             if (displayMode === 'LOCAL') {
-                return { display: localTime, utcTooltip: `UTC: ${utcTime}` };
+                return localTime;
             }
-            return { display: utcTime, utcTooltip: `Local: ${localTime}` };
+            return utcTime;
         }
         
         function formatTimestampInTimezone(isoString, timezone) {
@@ -618,7 +614,7 @@
                 const row = document.createElement('tr');
                 
                 // Format timestamp with tooltip
-                const timestampData = formatTransactionTimestamp(tx.timestamp);
+                const timestampDisplay = formatTransactionTimestamp(tx.timestamp);
                 
                 const statusClass = tx.status === 'SUCCESS' ? 'bg-success' : 
                                   tx.status === 'FAILED' ? 'bg-danger' : 'bg-secondary';
@@ -663,7 +659,7 @@
                 
                 row.innerHTML = `
                     <td>${tx.id}</td>
-                    <td title="${timestampData.utcTooltip}">${timestampData.display}</td>
+                    <td>${timestampDisplay}</td>
                     <td><span class="badge ${statusClass} status-badge">${tx.status}</span></td>
                     <td>${sourceBadge}</td>
                     <td>${tx.fiat_amount ? '$' + tx.fiat_amount.toFixed(2) : '-'}</td>
