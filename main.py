@@ -15,6 +15,7 @@ from pathlib import Path
 import pandas as pd
 import json
 from datetime import datetime
+import tempfile
 
 # Add src to path
 sys.path.insert(0, str(Path(__file__).parent / "src"))
@@ -60,8 +61,18 @@ def save_oi_cache(oi_data: list, cache_path: Path) -> None:
             "timestamp": datetime.now().isoformat(),
             "data": oi_data
         }
-        with open(cache_path, 'w') as f:
-            json.dump(cache_obj, f, indent=2)
+        cache_path.parent.mkdir(parents=True, exist_ok=True)
+        with tempfile.NamedTemporaryFile(
+            mode="w",
+            encoding="utf-8",
+            dir=cache_path.parent,
+            prefix=f".{cache_path.name}.",
+            suffix=".tmp",
+            delete=False,
+        ) as tmp:
+            json.dump(cache_obj, tmp, indent=2)
+            tmp_path = Path(tmp.name)
+        tmp_path.replace(cache_path)
         print(f"✓ Saved OI data to cache: {cache_path}")
     except Exception as e:
         print(f"⚠ Warning: Failed to save OI cache: {e}")
