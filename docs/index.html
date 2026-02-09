@@ -125,6 +125,94 @@
             box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
         }
 
+        .daily-report-card {
+            background: white;
+            border-radius: 18px;
+            padding: 24px 28px;
+            margin-bottom: 22px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+            border: 1px solid #ececf1;
+        }
+
+        .daily-report-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            gap: 16px;
+            margin-bottom: 12px;
+            flex-wrap: wrap;
+        }
+
+        .daily-report-title {
+            font-size: 1.2em;
+            font-weight: 600;
+            color: #1d1d1f;
+        }
+
+        .daily-report-title-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .daily-report-lang-toggle {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 3px;
+            border-radius: 999px;
+            border: 1px solid #d2d2d7;
+            background: #f5f5f7;
+        }
+
+        .daily-report-lang-btn {
+            border: none;
+            background: transparent;
+            color: #6e6e73;
+            font-size: 12px;
+            font-weight: 600;
+            padding: 5px 10px;
+            border-radius: 999px;
+            cursor: pointer;
+        }
+
+        .daily-report-lang-btn.active {
+            background: #0071e3;
+            color: #ffffff;
+        }
+
+        .daily-report-meta {
+            font-size: 13px;
+            color: #6e6e73;
+        }
+
+        .daily-report-list {
+            margin: 10px 0 14px 0;
+            padding-left: 20px;
+        }
+
+        .daily-report-list li {
+            margin: 8px 0;
+            color: #1d1d1f;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .daily-report-overall {
+            padding: 12px 14px;
+            border-radius: 10px;
+            background: #f8f8fb;
+            border: 1px solid #e7e7ec;
+            font-size: 14px;
+            color: #1d1d1f;
+        }
+
+        .daily-report-empty {
+            color: #6e6e73;
+            font-size: 14px;
+        }
+
         /* Chart Tabs */
         .chart-tabs {
             display: flex;
@@ -1287,6 +1375,14 @@
                 height: 360px;
             }
 
+            .daily-report-header {
+                align-items: flex-start;
+            }
+
+            .daily-report-meta {
+                width: 100%;
+            }
+
             .check-section,
             .forecast-section,
             .backtest-section {
@@ -1417,6 +1513,23 @@
 
         <!-- Charts Tab Content -->
         <div id="charts-tab" class="tab-content active">
+            <div class="daily-report-card">
+                <div class="daily-report-header">
+                    <div class="daily-report-title-row">
+                        <div class="daily-report-title">Daily Summary</div>
+                        <div class="daily-report-lang-toggle" role="group" aria-label="Daily summary language">
+                            <button id="dailyReportLangEn" class="daily-report-lang-btn active" type="button" onclick="setDailyReportLanguage('en')">EN</button>
+                            <button id="dailyReportLangZh" class="daily-report-lang-btn" type="button" onclick="setDailyReportLanguage('zh')">中文</button>
+                        </div>
+                    </div>
+                    <div id="dailyReportMeta" class="daily-report-meta">Loading...</div>
+                </div>
+                <ul id="dailyReportItems" class="daily-report-list"></ul>
+                <div id="dailyReportOverall" class="daily-report-overall"></div>
+                <div id="dailyReportEmpty" class="daily-report-empty" style="display:none;">
+                    Today's summary is unavailable. Please run the data update first.
+                </div>
+            </div>
             <div class="chart-container">
                 <div class="chart-section-tabs">
                     <button class="chart-section-tab active" onclick="switchChartSection('core', this)">Core</button>
@@ -2047,9 +2160,120 @@
             }
         }
 
+        let dailyReportLanguage = "en";
+        let dailyReportData = null;
+
+        const DAILY_REPORT_TEXT = {
+            en: {
+                loading: "Loading...",
+                unavailable: "Summary unavailable",
+                empty: "Today's summary is unavailable. Please run the data update first.",
+                noOverall: "No overall summary available.",
+                reportDate: "Report Date",
+                generatedAt: "Generated At",
+                unknown: "Unknown",
+            },
+            zh: {
+                loading: "加载中...",
+                unavailable: "报告暂不可用",
+                empty: "今日解读暂不可用，请先运行数据更新。",
+                noOverall: "暂无汇总。",
+                reportDate: "报告日期",
+                generatedAt: "生成时间",
+                unknown: "未知",
+            },
+        };
+
+        function getDailySummaryByLanguage(report, language) {
+            const summary = report?.human_summary || {};
+            const localized = summary.localized || {};
+            if (language === "zh") {
+                return localized.zh || summary;
+            }
+            return localized.en || summary;
+        }
+
+        function setDailyReportLanguage(language) {
+            dailyReportLanguage = language === "zh" ? "zh" : "en";
+            document.getElementById("dailyReportLangEn")?.classList.toggle("active", dailyReportLanguage === "en");
+            document.getElementById("dailyReportLangZh")?.classList.toggle("active", dailyReportLanguage === "zh");
+            renderDailyReport();
+        }
+
+        function renderDailyReport() {
+            const metaEl = document.getElementById("dailyReportMeta");
+            const itemsEl = document.getElementById("dailyReportItems");
+            const overallEl = document.getElementById("dailyReportOverall");
+            const emptyEl = document.getElementById("dailyReportEmpty");
+            const text = DAILY_REPORT_TEXT[dailyReportLanguage];
+
+            if (!dailyReportData) {
+                itemsEl.innerHTML = "";
+                overallEl.textContent = "";
+                emptyEl.style.display = "";
+                emptyEl.textContent = text.empty;
+                metaEl.textContent = text.unavailable;
+                return;
+            }
+
+            const summary = getDailySummaryByLanguage(dailyReportData, dailyReportLanguage);
+            const items = summary.items || [];
+            if (!items.length) {
+                itemsEl.innerHTML = "";
+                overallEl.textContent = "";
+                emptyEl.style.display = "";
+                emptyEl.textContent = text.empty;
+                metaEl.textContent = text.unavailable;
+                return;
+            }
+
+            itemsEl.innerHTML = items
+                .map((item) => `<li><strong>${item.chart}</strong>: ${item.summary}</li>`)
+                .join("");
+
+            overallEl.textContent = summary.overall_summary || text.noOverall;
+            emptyEl.style.display = "none";
+
+            const generatedAt = dailyReportData.generated_at
+                ? new Date(dailyReportData.generated_at).toLocaleString(
+                      dailyReportLanguage === "zh" ? "zh-CN" : "en-US",
+                      {
+                          year: "numeric",
+                          month: "2-digit",
+                          day: "2-digit",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                          hour12: false,
+                      },
+                  )
+                : text.unknown;
+            metaEl.textContent = `${text.reportDate}: ${dailyReportData.report_date || "N/A"} | ${text.generatedAt}: ${generatedAt}`;
+        }
+
+        async function loadDailyReport() {
+            const metaEl = document.getElementById("dailyReportMeta");
+            try {
+                metaEl.textContent = DAILY_REPORT_TEXT[dailyReportLanguage].loading;
+                const response = await fetch(`data/daily_report.json?t=${Date.now()}`, {
+                    cache: "no-store",
+                });
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+
+                dailyReportData = await response.json();
+                renderDailyReport();
+            } catch (error) {
+                dailyReportData = null;
+                renderDailyReport();
+                console.warn("Failed to load daily report:", error);
+            }
+        }
+
         document.addEventListener('DOMContentLoaded', () => {
             const coreSectionTab = document.querySelector('.chart-section-tab[onclick*="core"]');
             switchChartSection('core', coreSectionTab);
+            loadDailyReport();
         });
 
         // Strategy info modal functions
