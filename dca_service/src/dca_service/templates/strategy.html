@@ -628,6 +628,54 @@
         </div>
     </div>
 
+    <div class="container mt-4">
+        <div class="card shadow-sm">
+            <div class="card-header bg-white">
+                <h5 class="mb-0">🤖 OpenAI Summary API Settings</h5>
+            </div>
+            <div class="card-body">
+                <p class="text-muted mb-3">
+                    Used for daily chart-to-human summary generation. API key is encrypted at rest.
+                </p>
+                <form id="summaryApiForm">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Provider</label>
+                            <input type="text" id="summary_api_provider" class="form-control" value="openai" readonly />
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Enabled</label>
+                            <div class="form-check form-switch mt-2">
+                                <input class="form-check-input" type="checkbox" id="summary_api_enabled" />
+                                <label class="form-check-label" for="summary_api_enabled">Enable API-generated summary</label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label" for="summary_api_base_url">Base URL</label>
+                            <input type="text" id="summary_api_base_url" class="form-control" value="https://api.openai.com/v1" />
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label" for="summary_api_model">Model</label>
+                            <input type="text" id="summary_api_model" class="form-control" value="gpt-4o-mini" />
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" for="summary_api_key">API Key</label>
+                        <input type="password" id="summary_api_key" class="form-control" placeholder="Leave blank to keep existing key" />
+                        <div id="summaryApiKeyMasked" class="form-text text-muted mt-1"></div>
+                    </div>
+                    <div class="d-flex justify-content-end gap-2">
+                        <button type="button" id="testSummaryApiBtn" class="btn btn-outline-secondary">Test API Connectivity</button>
+                        <button type="submit" class="btn btn-outline-primary">Save Summary API Settings</button>
+                    </div>
+                </form>
+                <div id="summaryApiStatus" class="small text-muted mt-3">Checking settings...</div>
+            </div>
+        </div>
+    </div>
+
     <!-- Live Trading Warning Modal -->
     <div class="modal fade" id="liveTradingModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
@@ -921,6 +969,103 @@
             }
         }
         
+        async function loadSummaryApiSettings() {
+            try {
+                const response = await fetch('/api/summary-api/settings/status');
+                const data = await response.json();
+
+                const statusEl = document.getElementById('summaryApiStatus');
+                const maskedEl = document.getElementById('summaryApiKeyMasked');
+                if (!data.has_settings) {
+                    document.getElementById('summary_api_enabled').checked = false;
+                    statusEl.textContent = 'Summary API not configured yet.';
+                    maskedEl.textContent = '';
+                    return;
+                }
+
+                document.getElementById('summary_api_enabled').checked = !!data.is_enabled;
+                document.getElementById('summary_api_provider').value = data.provider || 'openai';
+                document.getElementById('summary_api_base_url').value = data.base_url || 'https://api.openai.com/v1';
+                document.getElementById('summary_api_model').value = data.model || 'gpt-4o-mini';
+                maskedEl.textContent = data.api_key_masked ? `Current key: ${data.api_key_masked}` : '';
+
+                const updatedAt = data.updated_at ? new Date(data.updated_at).toLocaleString() : 'unknown';
+                statusEl.textContent = `Configured (${data.is_enabled ? 'enabled' : 'disabled'}). Last updated: ${updatedAt}`;
+            } catch (error) {
+                console.error('Error loading summary API settings:', error);
+                document.getElementById('summaryApiStatus').textContent = 'Failed to load summary API settings.';
+            }
+        }
+
+        document.getElementById('summaryApiForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const payload = {
+                is_enabled: document.getElementById('summary_api_enabled').checked,
+                provider: document.getElementById('summary_api_provider').value || 'openai',
+                base_url: document.getElementById('summary_api_base_url').value.trim() || 'https://api.openai.com/v1',
+                model: document.getElementById('summary_api_model').value.trim() || 'gpt-4o-mini',
+                api_key: document.getElementById('summary_api_key').value.trim() || null
+            };
+
+            try {
+                const response = await fetch('/api/summary-api/settings', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) {
+                    const err = await response.json();
+                    throw new Error(err.detail || 'Failed to save summary API settings');
+                }
+
+                document.getElementById('summary_api_key').value = '';
+                notyf.success('Summary API settings saved');
+                await loadSummaryApiSettings();
+            } catch (error) {
+                console.error('Error saving summary API settings:', error);
+                notyf.error(error.message || 'Failed to save summary API settings');
+            }
+        });
+
+        document.getElementById('testSummaryApiBtn').addEventListener('click', async () => {
+            const btn = document.getElementById('testSummaryApiBtn');
+            const statusEl = document.getElementById('summaryApiStatus');
+            const originalText = btn.textContent;
+            btn.disabled = true;
+            btn.textContent = 'Testing...';
+
+            const payload = {
+                provider: document.getElementById('summary_api_provider').value || 'openai',
+                base_url: document.getElementById('summary_api_base_url').value.trim() || 'https://api.openai.com/v1',
+                model: document.getElementById('summary_api_model').value.trim() || 'gpt-4o-mini',
+                api_key: document.getElementById('summary_api_key').value.trim() || null
+            };
+
+            try {
+                const response = await fetch('/api/summary-api/settings/test', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const data = await response.json();
+                if (!response.ok) {
+                    throw new Error(data.detail || 'Connectivity test failed');
+                }
+
+                const modelText = data.model_available ? 'model available' : 'model not listed';
+                statusEl.textContent = `Connection OK: ${data.base_url} (${modelText})`;
+                notyf.success(`Summary API reachable (${modelText})`);
+            } catch (error) {
+                console.error('Error testing summary API settings:', error);
+                statusEl.textContent = `Connection failed: ${error.message || 'unknown error'}`;
+                notyf.error(error.message || 'Summary API connectivity test failed');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = originalText;
+            }
+        });
 
 
         document.getElementById('total_budget_usd').addEventListener('input', updateDailyCalc);
@@ -933,6 +1078,7 @@
         updateExecutionTimeLabel();
         loadStrategy();
         loadPercentileThresholds();
+        loadSummaryApiSettings();
 
         // Execution Mode Confirmation Logic - Only on form submit
         document.getElementById('strategyForm').addEventListener('submit', async (e) => {

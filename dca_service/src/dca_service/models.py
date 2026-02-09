@@ -138,6 +138,21 @@ class EmailSettings(SQLModel, table=True):
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
+class SummaryApiSettings(SQLModel, table=True):
+    """
+    LLM summary API configuration with encrypted API key storage.
+    """
+    __tablename__ = "summary_api_settings"
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    is_enabled: bool = Field(default=False)
+    provider: str = Field(default="openai")
+    base_url: str = Field(default="https://api.openai.com/v1")
+    model: str = Field(default="gpt-4o-mini")
+    api_key_encrypted: str
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+
 class User(SQLModel, table=True):
     """
     User model for authentication.
