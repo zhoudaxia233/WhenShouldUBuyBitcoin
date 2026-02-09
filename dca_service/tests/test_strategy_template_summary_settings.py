@@ -2,7 +2,9 @@ from pathlib import Path
 
 
 def test_strategy_template_has_summary_api_settings_section():
-    html = Path("dca_service/src/dca_service/templates/strategy.html").read_text(encoding="utf-8")
+    repo_root = Path(__file__).resolve().parents[2]
+    template_path = repo_root / "dca_service" / "src" / "dca_service" / "templates" / "strategy.html"
+    html = template_path.read_text(encoding="utf-8")
 
     assert "OpenAI Summary API Settings" in html
     assert 'id="summaryApiForm"' in html
