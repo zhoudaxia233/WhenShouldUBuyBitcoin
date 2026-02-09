@@ -16,6 +16,23 @@ _static_generation_process = None
 _static_generation_last_result = None
 
 
+def _try_collect_static_generation_status() -> Optional[dict]:
+    """
+    Best-effort status probe for current background process.
+    Returns None if no process or probe fails.
+    """
+    global _static_generation_process
+    if _static_generation_process is None:
+        return None
+    try:
+        from dca_service.services.static_generator import check_static_generation_status
+        return check_static_generation_status(_static_generation_process)
+    except Exception as e:
+        logger.warning(f"Failed to probe static generation process status, resetting state: {e}")
+        _static_generation_process = None
+        return None
+
+
 def _get_binance_client(session: Session) -> Optional[BinanceClient]:
     """Get authenticated Binance client (READ_ONLY preferred)"""
     # Try READ_ONLY first
@@ -216,13 +233,12 @@ async def regenerate_static_files(
     global _static_generation_process, _static_generation_last_result
     try:
         from dca_service.services.static_generator import (
-            check_static_generation_status,
             trigger_static_generation,
         )
 
         if _static_generation_process is not None:
-            status = check_static_generation_status(_static_generation_process)
-            if status.get("running"):
+            status = _try_collect_static_generation_status()
+            if status and status.get("running"):
                 return {
                     "success": True,
                     "message": "Static generation is already running.",
@@ -230,8 +246,9 @@ async def regenerate_static_files(
                     "pid": _static_generation_process.pid,
                     "running": True,
                 }
-            _static_generation_last_result = status
-            _static_generation_process = None
+            if status:
+                _static_generation_last_result = status
+                _static_generation_process = None
 
         process = trigger_static_generation(background=True)
         _static_generation_process = process
@@ -268,11 +285,10 @@ async def regenerate_static_files_status(
     Returns running/completed/failed state with brief output.
     """
     global _static_generation_process, _static_generation_last_result
-    from dca_service.services.static_generator import check_static_generation_status
 
     if _static_generation_process is not None:
-        status = check_static_generation_status(_static_generation_process)
-        if status.get("running"):
+        status = _try_collect_static_generation_status()
+        if status and status.get("running"):
             return {
                 "success": True,
                 "running": True,
@@ -281,8 +297,9 @@ async def regenerate_static_files_status(
                 "message": "Static generation is running.",
             }
 
-        _static_generation_last_result = status
-        _static_generation_process = None
+        if status:
+            _static_generation_last_result = status
+            _static_generation_process = None
 
     if _static_generation_last_result is None:
         return {
