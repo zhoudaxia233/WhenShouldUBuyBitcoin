@@ -6,7 +6,17 @@ from contextlib import asynccontextmanager
 
 from dca_service.config import settings
 from dca_service.database import create_db_and_tables
-from dca_service.api import routes, strategy_api, dca_api, binance_api, email_settings_api, wallet_api, stats_api, auth_api
+from dca_service.api import (
+    routes,
+    strategy_api,
+    dca_api,
+    binance_api,
+    email_settings_api,
+    summary_api_settings_api,
+    wallet_api,
+    stats_api,
+    auth_api,
+)
 from starlette.middleware.sessions import SessionMiddleware
 from dca_service.scheduler import scheduler
 from sqlmodel import Session, select
@@ -94,6 +104,7 @@ app.include_router(dca_api.router, prefix=settings.API_V1_STR)
 app.include_router(binance_api.router, prefix=settings.API_V1_STR)
 app.include_router(wallet_api.router, prefix=settings.API_V1_STR)
 app.include_router(email_settings_api.router, prefix=settings.API_V1_STR)
+app.include_router(summary_api_settings_api.router, prefix=settings.API_V1_STR)
 app.include_router(stats_api.router, prefix=settings.API_V1_STR)
 app.include_router(auth_api.router, prefix=settings.API_V1_STR)
 
