@@ -12,3 +12,8 @@ def test_dashboard_wallet_section_avoids_dash_placeholders():
     assert 'id="quoteBalance">--<' not in html
     assert 'id="progressPercent">--%<' not in html
     assert 'id="targetAmount">Target: -- BTC<' not in html
+
+    # Keep initial state explicit (no blank values).
+    assert 'id="totalBtc">Loading...<' in html
+    assert 'id="quoteBalance">Loading...<' in html
+    assert 'id="progressPercent">Loading...<' in html
