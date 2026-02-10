@@ -14,6 +14,6 @@ def test_dashboard_wallet_section_uses_dash_placeholders_and_cache_hydration():
     assert 'id="targetAmount">Target: -- BTC<' in html
 
     # Ensure pre-hydration from cache exists to avoid placeholder flash on refresh.
-    assert "Hydrate wallet overview from cache as early as possible" in html
+    assert "Hydrate wallet and DCA preview from cache as early as possible" in html
     assert "parseCache('wallet_summary')" in html
     assert "const toFiniteNumber = (value)" in html
