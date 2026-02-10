@@ -214,10 +214,10 @@
                         <!-- Total BTC - Main Display -->
                         <div class="col-md-4">
                             <div class="text-muted small">Total BTC Balance</div>
-                            <div class="h3" id="totalBtc">Loading...</div>
+                            <div class="h3" id="totalBtc">--</div>
                             <div class="small text-muted">
-                                <span id="hotBalance" title="Binance (Hot)">Hot: Loading...</span> | 
-                                <span id="coldBalance" title="Cold Storage">Cold: Loading...</span>
+                                <span id="hotBalance" title="Binance (Hot)">Hot: --</span> | 
+                                <span id="coldBalance" title="Cold Storage">Cold: --</span>
                             </div>
                             <div class="mt-2">
                                 <button class="btn btn-sm btn-outline-info" data-bs-toggle="modal" data-bs-target="#setColdWalletModal" title="Set your total cold wallet BTC balance">
@@ -229,15 +229,15 @@
                         <!-- Available USDC (Binance) -->
                         <div class="col-md-3">
                             <div class="text-muted small">Available USDC</div>
-                            <div class="h3" id="quoteBalance">Loading...</div>
+                            <div class="h3" id="quoteBalance">--</div>
                             <div class="small text-muted">Binance Balance</div>
                         </div>
                         
                         <!-- Target Progress -->
                         <div class="col-md-4">
                             <div class="text-muted small">Target Progress</div>
-                            <div class="h3" id="progressPercent">Loading...</div>
-                            <div class="text-muted small" id="targetAmount">Target: Loading...</div>
+                            <div class="h3" id="progressPercent">--%</div>
+                            <div class="text-muted small" id="targetAmount">Target: -- BTC</div>
                         </div>
                     </div>
                     
@@ -338,6 +338,64 @@
         </div>
 
     </div>
+    <script>
+        // Hydrate wallet overview from cache as early as possible to avoid placeholder flash on refresh.
+        (function () {
+            const toFiniteNumber = (value) => {
+                const num = Number(value);
+                return Number.isFinite(num) ? num : null;
+            };
+
+            const parseCache = (key) => {
+                try {
+                    const raw = localStorage.getItem(key);
+                    if (!raw) return null;
+                    const parsed = JSON.parse(raw);
+                    return parsed && typeof parsed === 'object' ? (parsed.data ?? parsed) : null;
+                } catch (_) {
+                    return null;
+                }
+            };
+
+            const wallet = parseCache('wallet_summary');
+            if (wallet && wallet.total_btc !== undefined && wallet.total_btc !== null) {
+                const strategy = parseCache('strategy_config');
+                const binance = parseCache('binance_holdings');
+                const totalBtc = toFiniteNumber(wallet.total_btc);
+                const hotBtc = toFiniteNumber(wallet.hot_wallet_balance ?? 0);
+                const coldBtc = toFiniteNumber(wallet.cold_wallet_balance ?? 0);
+
+                const totalBtcEl = document.getElementById('totalBtc');
+                const hotEl = document.getElementById('hotBalance');
+                const coldEl = document.getElementById('coldBalance');
+                const quoteEl = document.getElementById('quoteBalance');
+                const progressEl = document.getElementById('progressPercent');
+                const targetEl = document.getElementById('targetAmount');
+                const progressBarEl = document.getElementById('progressBar');
+
+                if (totalBtcEl && totalBtc !== null) totalBtcEl.textContent = `${totalBtc.toFixed(8)} BTC`;
+                if (hotEl && hotBtc !== null) hotEl.textContent = `Hot: ${hotBtc.toFixed(8)}`;
+                if (coldEl && coldBtc !== null) coldEl.textContent = `Cold: ${coldBtc.toFixed(8)}`;
+
+                if (quoteEl && binance && binance.quote_balance !== null && binance.quote_balance !== undefined) {
+                    const quoteBalance = toFiniteNumber(binance.quote_balance);
+                    if (quoteBalance !== null) {
+                        quoteEl.textContent = `$${quoteBalance.toFixed(2)}`;
+                    }
+                }
+
+                if (strategy && strategy.target_btc_amount) {
+                    const target = toFiniteNumber(strategy.target_btc_amount);
+                    if (target !== null && target > 0 && totalBtc !== null) {
+                        const progress = Math.min((totalBtc / target) * 100, 100).toFixed(4);
+                        if (progressEl) progressEl.textContent = `${progress}%`;
+                        if (targetEl) targetEl.textContent = `Target: ${target} BTC`;
+                        if (progressBarEl) progressBarEl.style.width = `${progress}%`;
+                    }
+                }
+            }
+        })();
+    </script>
 
     <!-- Set Cold Wallet Balance Modal -->
     <div class="modal fade" id="setColdWalletModal" tabindex="-1">
