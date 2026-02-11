@@ -47,7 +47,7 @@ jobs:
           while [ $attempt -le $max_attempts ]; do
             echo "Attempt $attempt of $max_attempts..."
             
-            if poetry run python main.py; then
+            if poetry run python main.py --strict-update; then
               echo "✓ Data update successful"
               exit 0
             else
@@ -64,8 +64,8 @@ jobs:
             attempt=$((attempt + 1))
           done
           
-          echo "✗ All attempts failed. Continuing anyway (non-critical)..."
-          exit 0  # Don't fail the workflow - data updates are best-effort
+          echo "✗ All attempts failed."
+          exit 1
           
       - name: Commit and push if changed
         run: |
@@ -73,4 +73,3 @@ jobs:
           git config --local user.name "github-actions[bot]"
           git add docs/data/*.csv docs/data/*.json docs/charts/*.html dca_service/src/dca_service/data/wealth_distribution.json
           git diff --quiet && git diff --staged --quiet || (git commit -m "chore: update BTC data and charts [skip ci]" && git push)
-

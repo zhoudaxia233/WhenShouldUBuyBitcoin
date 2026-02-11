@@ -1241,6 +1241,45 @@
                     
                     if (data.success) {
                         notyf.success(data.message || 'Static files are being regenerated');
+
+                        // Poll task status so user can see completion/failure.
+                        const maxPolls = 60; // ~5 minutes at 5s interval
+                        let seenCompletion = false;
+                        for (let i = 0; i < maxPolls; i++) {
+                            await new Promise(resolve => setTimeout(resolve, 5000));
+                            const statusResp = await fetch('/api/static/regenerate/status');
+                            const statusData = await statusResp.json();
+
+                            if (statusData.running) {
+                                continue;
+                            }
+
+                            if (statusData.completed) {
+                                seenCompletion = true;
+                                if (statusData.success) {
+                                    notyf.success('Update Charts finished successfully. Refreshing stats...');
+                                    await Promise.all([
+                                        loadPercentile(true),
+                                        loadDistribution(true),
+                                        loadFees(true),
+                                        loadWalletBalance(true),
+                                        loadChart(true)
+                                    ]);
+                                } else {
+                                    const details = statusData.log_tail || statusData.stderr_preview || statusData.stdout_preview || 'No error details available.';
+                                    console.error('Update Charts failed details:', {
+                                        logPath: statusData.log_path,
+                                        details,
+                                    });
+                                    const shortDetails = String(details).slice(-220).replace(/\n/g, ' ');
+                                    notyf.error(`Update Charts failed. Check logs: ${statusData.log_path || '/app/data/static_generation.log'} | ${shortDetails}`);
+                                }
+                                break;
+                            }
+                        }
+                        if (!seenCompletion) {
+                            notyf.error('Update Charts timed out after 5 minutes. Please check server logs and try again.');
+                        }
                     } else {
                         notyf.error(data.error || 'Failed to trigger static file generation');
                     }

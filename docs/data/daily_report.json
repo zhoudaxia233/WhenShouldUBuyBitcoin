@@ -1,0 +1,165 @@
+{
+  "report_date": "2026-02-08",
+  "generated_at": "2026-02-09T21:36:24Z",
+  "excluded_charts": [
+    "Price Comparison",
+    "Valuation Ratios"
+  ],
+  "sections": [
+    {
+      "chart": "MA Cross Analysis",
+      "metrics": {
+        "close_price": 70264.7265625,
+        "ma_50": 86937.762265625,
+        "ma_200": 102304.66841796874,
+        "ma_spread": -15366.906152343741,
+        "regime": "bearish",
+        "last_golden_cross": "2025-05-22",
+        "last_death_cross": "2025-11-16"
+      }
+    },
+    {
+      "chart": "Net Liquidity",
+      "metrics": {
+        "net_liquidity_bil": 5694.722,
+        "net_liquidity_90d_delta": 75.78300000000036,
+        "walcl_bil": 6605.909,
+        "tga_bil": 908.773,
+        "rrp_bil": 3.111,
+        "btc_price": 70264.7265625
+      }
+    },
+    {
+      "chart": "Funding & Credit Stress",
+      "metrics": {
+        "sofr": 3.64,
+        "move": 63.619998931884766,
+        "hy_oas": 2.87,
+        "stress_flags": 0,
+        "btc_price": 70264.7265625
+      }
+    },
+    {
+      "chart": "Macro Risk Score",
+      "metrics": {
+        "score": 31.46847023527738,
+        "regime": "neutral",
+        "high_risk_hit_rate": 47.23032069970846,
+        "fwd_30d_return": null,
+        "btc_price": 70264.7265625
+      }
+    },
+    {
+      "chart": "USD/JPY Risk Map",
+      "metrics": {
+        "usdjpy": 156.78399658203125,
+        "spread": 2.825000114440918,
+        "us_2y": 3.755000114440918,
+        "jp_2y": 0.93,
+        "usdjpy_30d_change_pct": 0.3893054816001662,
+        "spread_30d_change_pct_pts": 0.03800010681152344,
+        "risk_level": "MODERATE RISK",
+        "risk_description": "Moderate Risk - USD/JPY 156.78, Spread 2.83%"
+      }
+    },
+    {
+      "chart": "Futures OI & Price",
+      "metrics": {
+        "oi_usd": 770442938.8956746,
+        "oi_30d_change_pct": -7.975819334399614,
+        "oi_percentile": 9.67741935483871,
+        "quadrant": "Flush-Out (deleveraging)"
+      }
+    }
+  ],
+  "human_summary": {
+    "items": [
+      {
+        "chart": "MA Cross Analysis",
+        "summary": "The current close price is $70,264.73, with the 50-day moving average at $86,937.76 and the 200-day moving average at $102,304.67. This indicates a bearish regime, as the moving averages show a negative spread of -$15,366.91. The last death cross occurred on November 16, 2025, reinforcing the current bearish sentiment."
+      },
+      {
+        "chart": "Net Liquidity",
+        "summary": "Net liquidity stands at $5,694. 72 billion, with a 90-day delta increase of $75. 78 billion. This slight increase suggests a modest improvement in liquidity conditions, although it remains to be seen how this will impact market dynamics moving forward."
+      },
+      {
+        "chart": "Funding & Credit Stress",
+        "summary": "The SOFR is currently at 3. 64%, with a high-yield option-adjusted spread (HY OAS) of 2. 87%. The absence of stress flags indicates a stable funding environment, suggesting that credit conditions are not under significant pressure at this time."
+      },
+      {
+        "chart": "Macro Risk Score",
+        "summary": "The macro risk score is at 31. 47, indicating a neutral regime with a high-risk hit rate of 47. 23%. This score suggests that while risks are present, they are balanced and not currently skewed towards extreme outcomes."
+      },
+      {
+        "chart": "USD/JPY Risk Map",
+        "summary": "The USD/JPY exchange rate is at 156. 78, with a spread of 2. 83%. This moderate risk level reflects a 30-day change of 0. 39%, indicating relative stability in the currency pair despite the ongoing fluctuations in interest rates."
+      },
+      {
+        "chart": "Futures OI & Price",
+        "summary": "Open interest in futures is at $770. 44 million, with a 30-day change of -7. 98%. This decline places open interest in the 9. 68 percentile, suggesting a flush-out or deleveraging phase in the market."
+      }
+    ],
+    "overall_summary": "Today's analysis reflects a bearish sentiment in the market, particularly in the MA Cross Analysis, while liquidity conditions show slight improvement. Credit stress remains low, and macro risks are balanced, indicating a cautious but stable environment. The USD/JPY exchange rate and futures open interest suggest ongoing volatility and potential deleveraging.",
+    "localized": {
+      "en": {
+        "items": [
+          {
+            "chart": "MA Cross Analysis",
+            "summary": "The current close price is $70,264.73, with the 50-day moving average at $86,937.76 and the 200-day moving average at $102,304.67. This indicates a bearish regime, as the moving averages show a negative spread of -$15,366.91. The last death cross occurred on November 16, 2025, reinforcing the current bearish sentiment."
+          },
+          {
+            "chart": "Net Liquidity",
+            "summary": "Net liquidity stands at $5,694. 72 billion, with a 90-day delta increase of $75. 78 billion. This slight increase suggests a modest improvement in liquidity conditions, although it remains to be seen how this will impact market dynamics moving forward."
+          },
+          {
+            "chart": "Funding & Credit Stress",
+            "summary": "The SOFR is currently at 3. 64%, with a high-yield option-adjusted spread (HY OAS) of 2. 87%. The absence of stress flags indicates a stable funding environment, suggesting that credit conditions are not under significant pressure at this time."
+          },
+          {
+            "chart": "Macro Risk Score",
+            "summary": "The macro risk score is at 31. 47, indicating a neutral regime with a high-risk hit rate of 47. 23%. This score suggests that while risks are present, they are balanced and not currently skewed towards extreme outcomes."
+          },
+          {
+            "chart": "USD/JPY Risk Map",
+            "summary": "The USD/JPY exchange rate is at 156. 78, with a spread of 2. 83%. This moderate risk level reflects a 30-day change of 0. 39%, indicating relative stability in the currency pair despite the ongoing fluctuations in interest rates."
+          },
+          {
+            "chart": "Futures OI & Price",
+            "summary": "Open interest in futures is at $770. 44 million, with a 30-day change of -7. 98%. This decline places open interest in the 9. 68 percentile, suggesting a flush-out or deleveraging phase in the market."
+          }
+        ],
+        "overall_summary": "Today's analysis reflects a bearish sentiment in the market, particularly in the MA Cross Analysis, while liquidity conditions show slight improvement. Credit stress remains low, and macro risks are balanced, indicating a cautious but stable environment. The USD/JPY exchange rate and futures open interest suggest ongoing volatility and potential deleveraging."
+      },
+      "zh": {
+        "items": [
+          {
+            "chart": "MA Cross Analysis",
+            "summary": "当前收盘价为70264.73，50日均线为86937.76，200日均线为102304.67。市场处于熊市状态，表明短期内价格走势偏弱。最近一次死亡交叉发生在2025年11月16日，显示出持续的下行压力。"
+          },
+          {
+            "chart": "Net Liquidity",
+            "summary": "净流动性为5694.72亿美元，过去90天变化为75.78亿美元。当前流动性水平相对稳定，表明市场资金状况良好。"
+          },
+          {
+            "chart": "Funding & Credit Stress",
+            "summary": "SOFR利率为3.64，HY OAS为2.87，当前没有压力信号。整体信贷环境较为宽松，显示出市场流动性充足。"
+          },
+          {
+            "chart": "Macro Risk Score",
+            "summary": "宏观风险评分为31.47，当前处于中性状态。高风险命中率为47.23%，表明市场面临一定的风险，但整体风险水平可控。"
+          },
+          {
+            "chart": "USD/JPY Risk Map",
+            "summary": "USD/JPY汇率为156.78，当前利差为2.83%。风险水平为中等风险，表明市场对日元的压力有所增加。过去30天汇率变化为0.39%，显示出一定的波动性。"
+          },
+          {
+            "chart": "Futures OI & Price",
+            "summary": "期货未平仓合约总值为770442938.90美元，过去30天变化为-7.98%。当前未平仓合约处于低位，反映出市场情绪偏向于去杠杆化。"
+          }
+        ],
+        "overall_summary": "整体来看，市场当前处于熊市状态，流动性相对稳定，信贷环境宽松，但宏观风险水平中性，显示出一定的风险。美元对日元汇率处于中等风险区间，期货市场情绪偏向去杠杆化，需关注后续市场动态。"
+      }
+    },
+    "generated_by": "llm_api"
+  }
+}
