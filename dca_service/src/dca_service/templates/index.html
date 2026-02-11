@@ -338,6 +338,130 @@
         </div>
 
     </div>
+    <script>
+        // Hydrate wallet and DCA preview from cache as early as possible to avoid placeholder flash on refresh.
+        (function () {
+            const toFiniteNumber = (value) => {
+                const num = Number(value);
+                return Number.isFinite(num) ? num : null;
+            };
+
+            const parseCache = (key) => {
+                try {
+                    const raw = localStorage.getItem(key);
+                    if (!raw) return null;
+                    const parsed = JSON.parse(raw);
+                    return parsed && typeof parsed === 'object' ? (parsed.data ?? parsed) : null;
+                } catch (_) {
+                    return null;
+                }
+            };
+
+            const wallet = parseCache('wallet_summary');
+            const strategy = parseCache('strategy_config');
+            const preview = parseCache('dca_preview');
+
+            if (wallet && wallet.total_btc !== undefined && wallet.total_btc !== null) {
+                const binance = parseCache('binance_holdings');
+                const totalBtc = toFiniteNumber(wallet.total_btc);
+                const hotBtc = toFiniteNumber(wallet.hot_wallet_balance ?? 0);
+                const coldBtc = toFiniteNumber(wallet.cold_wallet_balance ?? 0);
+
+                const totalBtcEl = document.getElementById('totalBtc');
+                const hotEl = document.getElementById('hotBalance');
+                const coldEl = document.getElementById('coldBalance');
+                const quoteEl = document.getElementById('quoteBalance');
+                const progressEl = document.getElementById('progressPercent');
+                const targetEl = document.getElementById('targetAmount');
+                const progressBarEl = document.getElementById('progressBar');
+
+                if (totalBtcEl && totalBtc !== null) totalBtcEl.textContent = `${totalBtc.toFixed(8)} BTC`;
+                if (hotEl && hotBtc !== null) hotEl.textContent = `Hot: ${hotBtc.toFixed(8)}`;
+                if (coldEl && coldBtc !== null) coldEl.textContent = `Cold: ${coldBtc.toFixed(8)}`;
+
+                if (quoteEl && binance && binance.quote_balance !== null && binance.quote_balance !== undefined) {
+                    const quoteBalance = toFiniteNumber(binance.quote_balance);
+                    if (quoteBalance !== null) {
+                        quoteEl.textContent = `$${quoteBalance.toFixed(2)}`;
+                    }
+                }
+
+                if (strategy && strategy.target_btc_amount) {
+                    const target = toFiniteNumber(strategy.target_btc_amount);
+                    if (target !== null && target > 0 && totalBtc !== null) {
+                        const progress = Math.min((totalBtc / target) * 100, 100).toFixed(4);
+                        if (progressEl) progressEl.textContent = `${progress}%`;
+                        if (targetEl) targetEl.textContent = `Target: ${target} BTC`;
+                        if (progressBarEl) progressBarEl.style.width = `${progress}%`;
+                    }
+                }
+            }
+
+            if (strategy && strategy.execution_frequency && strategy.execution_time_utc) {
+                const scheduleDisplayEl = document.getElementById('scheduleDisplay');
+                if (scheduleDisplayEl) {
+                    const freq = strategy.execution_frequency.charAt(0).toUpperCase() + strategy.execution_frequency.slice(1);
+                    const mode = (strategy.time_display_mode || 'UTC').toUpperCase();
+                    const modeLabel = mode === 'LOCAL' ? 'Local' : 'UTC';
+                    scheduleDisplayEl.textContent = `Schedule: ${freq} at ${strategy.execution_time_utc} (${modeLabel})`;
+                }
+            }
+
+            if (preview) {
+                const previewAhrEl = document.getElementById('previewAhr');
+                const previewPriceEl = document.getElementById('previewPrice');
+                const previewBandEl = document.getElementById('previewBand');
+                const previewActionEl = document.getElementById('previewAction');
+                const previewReasonEl = document.getElementById('previewReason');
+                const dataSourceBadgeEl = document.getElementById('dataSourceBadge');
+                const remainingBudgetEl = document.getElementById('remainingBudget');
+                const globalRefreshEl = document.getElementById('globalRefreshTime');
+
+                const ahrValue = toFiniteNumber(preview.ahr999_value);
+                const priceValue = toFiniteNumber(preview.price_usd);
+                const suggestedAmount = toFiniteNumber(preview.suggested_amount_usd);
+                const remainingBudget = toFiniteNumber(preview.remaining_budget);
+
+                if (previewAhrEl && ahrValue !== null) {
+                    previewAhrEl.textContent = ahrValue.toFixed(2);
+                }
+                if (previewPriceEl && priceValue !== null) {
+                    previewPriceEl.textContent = `$${priceValue.toLocaleString()}`;
+                }
+                if (previewBandEl && typeof preview.ahr_band === 'string' && preview.ahr_band.trim() !== '') {
+                    previewBandEl.textContent = preview.ahr_band.toUpperCase();
+                }
+                if (previewActionEl && typeof preview.can_execute === 'boolean') {
+                    if (preview.can_execute && suggestedAmount !== null) {
+                        previewActionEl.textContent = `BUY $${suggestedAmount.toFixed(2)}`;
+                    } else if (!preview.can_execute) {
+                        previewActionEl.textContent = 'WAIT';
+                    }
+                }
+                if (previewReasonEl && typeof preview.reason === 'string' && preview.reason.trim() !== '') {
+                    previewReasonEl.textContent = preview.reason.replace(/\s*\|\s*/g, '\n');
+                }
+                if (
+                    dataSourceBadgeEl &&
+                    preview.metrics_source &&
+                    typeof preview.metrics_source.label === 'string' &&
+                    preview.metrics_source.label.trim() !== ''
+                ) {
+                    dataSourceBadgeEl.textContent = `Source: ${preview.metrics_source.label}`;
+                    dataSourceBadgeEl.title = preview.metrics_source.label;
+                }
+                if (remainingBudgetEl && remainingBudget !== null) {
+                    remainingBudgetEl.textContent = `$${remainingBudget.toFixed(2)}`;
+                }
+                if (globalRefreshEl && typeof preview.timestamp === 'string' && preview.timestamp.trim() !== '') {
+                    const parsedDate = new Date(preview.timestamp);
+                    if (!Number.isNaN(parsedDate.getTime())) {
+                        globalRefreshEl.textContent = `${parsedDate.toISOString().replace('T', ' ').substring(0, 16)} UTC`;
+                    }
+                }
+            }
+        })();
+    </script>
 
     <!-- Set Cold Wallet Balance Modal -->
     <div class="modal fade" id="setColdWalletModal" tabindex="-1">

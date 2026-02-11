@@ -15,6 +15,7 @@ from pathlib import Path
 import pandas as pd
 import json
 from datetime import datetime
+import tempfile
 
 # Add src to path
 sys.path.insert(0, str(Path(__file__).parent / "src"))
@@ -50,6 +51,7 @@ from whenshouldubuybitcoin.visualization import (
     plot_macro_risk_score,
 )
 from whenshouldubuybitcoin.realtime_check import check_realtime_status
+from whenshouldubuybitcoin.daily_report import generate_daily_report
 
 
 def save_oi_cache(oi_data: list, cache_path: Path) -> None:
@@ -59,8 +61,18 @@ def save_oi_cache(oi_data: list, cache_path: Path) -> None:
             "timestamp": datetime.now().isoformat(),
             "data": oi_data
         }
-        with open(cache_path, 'w') as f:
-            json.dump(cache_obj, f, indent=2)
+        cache_path.parent.mkdir(parents=True, exist_ok=True)
+        with tempfile.NamedTemporaryFile(
+            mode="w",
+            encoding="utf-8",
+            dir=cache_path.parent,
+            prefix=f".{cache_path.name}.",
+            suffix=".tmp",
+            delete=False,
+        ) as tmp:
+            json.dump(cache_obj, tmp, indent=2)
+            tmp_path = Path(tmp.name)
+        tmp_path.replace(cache_path)
         print(f"✓ Saved OI data to cache: {cache_path}")
     except Exception as e:
         print(f"⚠ Warning: Failed to save OI cache: {e}")
@@ -96,7 +108,7 @@ def load_oi_cache(cache_path: Path) -> tuple[list | None, str | None]:
         return None, None
 
 
-def main():
+def main(strict_update: bool = False):
     """Main entry point for Step 5 MVP."""
     print("=" * 80)
     print("When Should U Buy Bitcoin - Step 5 MVP")
@@ -105,6 +117,18 @@ def main():
 
     try:
         # Step 1: Try to load existing data
+        usdjpy_df = None
+        yield_df = None
+        macro_df = None
+        oi_df = None
+        report_status = "pending"
+        component_status = {
+            "valuation_charts": False,
+            "usdjpy_risk_map": False,
+            "macro_charts": False,
+            "futures_oi_charts": False,
+            "daily_report": False,
+        }
         print("=" * 80)
         print("STEP 1: Load Existing Data")
         print("=" * 80)
@@ -340,6 +364,7 @@ def main():
 
         # Generate interactive charts (don't auto-open when triggered via API)
         generate_all_charts(df, auto_open=False)
+        component_status["valuation_charts"] = True
 
         # Generate USD/JPY charts
         print("\n" + "=" * 80)
@@ -353,9 +378,12 @@ def main():
             yield_df, data_source = fetch_yield_data(days=None)  # Fetch all available data
             plot_usdjpy_risk_map(usdjpy_df, yield_df, data_source=data_source, auto_open=False)
             print("✓ USD/JPY Risk Map generated successfully")
+            component_status["usdjpy_risk_map"] = True
         except Exception as e:
             print(f"⚠ Warning: Failed to generate USD/JPY Risk Map: {e}")
             print("  This may be due to Yahoo Finance data limitations.")
+            if strict_update:
+                raise
 
         # Generate macro liquidity and stress charts
         print("\n" + "=" * 80)
@@ -367,9 +395,12 @@ def main():
             plot_funding_credit_stress(df, macro_df, auto_open=False)
             plot_macro_risk_score(df, macro_df, auto_open=False)
             print("✓ Macro liquidity and stress charts generated successfully")
+            component_status["macro_charts"] = True
         except Exception as e:
             print(f"⚠ Warning: Failed to generate macro charts: {e}")
             print("  Continuing without macro charts.")
+            if strict_update:
+                raise
             
         # --- Step 6: Futures Data Analysis ---
         print("\n" + "=" * 80)
@@ -433,8 +464,11 @@ def main():
                     )
                     
                     print(f"✓ Generated Futures OI charts using {data_source} data")
+                    component_status["futures_oi_charts"] = True
                 else:
                     print("⚠ OI Data is empty or missing columns.")
+                    if strict_update:
+                        raise ValueError("OI data missing required columns")
             
             print("\n" + "=" * 80)
             print("STEP 7: Update Wealth Distribution Data")
@@ -478,6 +512,42 @@ def main():
             print(f"⚠ Warning: Failed to generate futures analysis: {e}")
             import traceback
             traceback.print_exc()
+            if strict_update:
+                raise
+
+        print("\n" + "=" * 80)
+        print("STEP 8: Generate Daily Report Summary")
+        print("=" * 80)
+        try:
+            daily_report = generate_daily_report(
+                df,
+                macro_df=macro_df,
+                usdjpy_df=usdjpy_df,
+                yield_df=yield_df,
+                oi_df=oi_df,
+            )
+            report_status = daily_report.get("human_summary", {}).get("generated_by", "ok")
+            component_status["daily_report"] = True
+            print(
+                f"✓ Daily report generated ({report_status}) with {len(daily_report.get('sections', []))} sections"
+            )
+        except Exception as e:
+            print(f"⚠ Warning: Failed to generate daily report: {e}")
+            if strict_update:
+                raise
+
+        print("\n" + "=" * 80)
+        print("UPDATE COMPONENT STATUS")
+        print("=" * 80)
+        for name, ok in component_status.items():
+            mark = "✓" if ok else "✗"
+            print(f"  {mark} {name}")
+
+        if strict_update and not all(component_status.values()):
+            missing = [name for name, ok in component_status.items() if not ok]
+            raise RuntimeError(
+                "Strict update failed. Missing components: " + ", ".join(missing)
+            )
 
 
 
@@ -490,36 +560,36 @@ def main():
 
 
 if __name__ == "__main__":
-    # Check for command-line arguments
-    if len(sys.argv) > 1:
-        arg = sys.argv[1].lower()
+    args = {arg.lower() for arg in sys.argv[1:]}
 
-        if arg in ["--check-now", "--realtime", "-r"]:
-            # Real-time buy zone check
-            check_realtime_status(verbose=True)
-            sys.exit(0)
-        elif arg in ["--help", "-h"]:
-            # Show help
-            print("=" * 80)
-            print("When Should U Buy Bitcoin - Usage")
-            print("=" * 80)
-            print("\nCommands:")
-            print("  python main.py                    Run full analysis and update")
-            print("  python main.py --check-now        Quick real-time buy zone check")
-            print("  python main.py --realtime         Same as --check-now")
-            print("  python main.py --market-health    Run full analysis and show market health")
-            print("  python main.py --help             Show this help message")
-            print("\nDescription:")
-            print("  Full analysis: Fetches historical data, calculates metrics,")
-            print("                 saves to CSV, and generates interactive charts")
-            print("\n  Real-time check: Quickly checks current buy zone status")
-            print("                   using real-time price without full update")
-            print("=" * 80)
-            sys.exit(0)
-        else:
-            print(f"Unknown argument: {arg}")
-            print("Use --help to see available commands")
-            sys.exit(1)
+    if "--check-now" in args or "--realtime" in args or "-r" in args:
+        check_realtime_status(verbose=True)
+        sys.exit(0)
 
-    # No arguments, run full analysis
-    main()
+    if "--help" in args or "-h" in args:
+        print("=" * 80)
+        print("When Should U Buy Bitcoin - Usage")
+        print("=" * 80)
+        print("\nCommands:")
+        print("  python main.py                    Run full analysis and update")
+        print("  python main.py --strict-update    Fail if any chart/report update step fails")
+        print("  python main.py --check-now        Quick real-time buy zone check")
+        print("  python main.py --realtime         Same as --check-now")
+        print("  python main.py --market-health    Run full analysis and show market health")
+        print("  python main.py --help             Show this help message")
+        print("\nDescription:")
+        print("  Full analysis: Fetches historical data, calculates metrics,")
+        print("                 saves to CSV, generates interactive charts, and writes daily report")
+        print("\n  Real-time check: Quickly checks current buy zone status")
+        print("                   using real-time price without full update")
+        print("=" * 80)
+        sys.exit(0)
+
+    known_flags = {"--strict-update"}
+    unknown_flags = [arg for arg in args if arg.startswith("-") and arg not in known_flags]
+    if unknown_flags:
+        print(f"Unknown argument(s): {', '.join(sorted(unknown_flags))}")
+        print("Use --help to see available commands")
+        sys.exit(1)
+
+    main(strict_update="--strict-update" in args)
