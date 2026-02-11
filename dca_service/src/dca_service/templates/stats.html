@@ -1085,9 +1085,9 @@
                     return;
                 }
 
+                if (cached) renderChart(cached.data);
                 if (cached) {
                     latestStatsPnlData = cached.data;
-                    renderChart(cached.data);
                     updateSaylorSummary(cached.data);
                     renderSaylorChart(cached.data);
                 }
@@ -1155,8 +1155,8 @@
                 }
 
                 if (cachedWallet) {
-                    latestWalletSummary = cachedWallet.data;
                     updateWalletBalanceUI(cachedWallet.data);
+                    latestWalletSummary = cachedWallet.data;
                     if (latestStatsPnlData) {
                         updateSaylorSummary(latestStatsPnlData);
                     }
