@@ -162,6 +162,167 @@
             border-radius: 999px;
             padding: 3px 10px;
         }
+        .saylor-card {
+            background: linear-gradient(180deg, #f7fbff 0%, #edf3fa 100%);
+            border: 1px solid #d7e0ec;
+            color: #1a2737;
+        }
+        .saylor-card .card-header {
+            background: transparent !important;
+            border-bottom: 1px solid #d7e0ec;
+        }
+        .saylor-header-kicker {
+            color: #5f7188;
+            font-size: 0.78rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+        }
+        .saylor-main-value {
+            font-size: clamp(2rem, 4.5vw, 3.2rem);
+            line-height: 1.1;
+            font-weight: 700;
+            color: #122238;
+        }
+        .saylor-meta {
+            color: #4f6278;
+            font-size: 0.95rem;
+        }
+        .saylor-meta strong {
+            color: #d97821;
+        }
+        .saylor-negative {
+            color: #ff7f7f;
+            font-weight: 600;
+        }
+        .saylor-positive {
+            color: #6fd8a9;
+            font-weight: 600;
+        }
+        .saylor-summary-box {
+            border: 1px solid #234267;
+            border-radius: 15px;
+            background: linear-gradient(180deg, rgba(20, 37, 61, 0.92) 0%, rgba(17, 31, 50, 0.92) 100%);
+            box-shadow: inset 0 0 0 1px rgba(60, 88, 120, 0.14);
+            padding: 12px 14px 10px;
+            width: 100%;
+            max-width: 420px;
+            margin-left: auto;
+        }
+        .saylor-summary-metrics {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            column-gap: 16px;
+        }
+        .saylor-summary-metric {
+            display: grid;
+            grid-template-rows: auto auto auto;
+            row-gap: 4px;
+            align-items: start;
+        }
+        .saylor-summary-box .label {
+            color: #8f9fb4;
+            font-size: 0.68rem;
+            text-transform: uppercase;
+            letter-spacing: 0.09em;
+            font-weight: 600;
+            line-height: 1.15;
+        }
+        .saylor-summary-box .metric-value {
+            margin-top: 0;
+            color: #eef4fb;
+            line-height: 1;
+            font-weight: 700;
+            letter-spacing: 0;
+            display: inline-flex;
+            align-items: baseline;
+        }
+        .saylor-summary-box .metric-number {
+            font-size: clamp(1.22rem, 1.36vw, 1.46rem);
+            line-height: 1;
+            font-weight: 700;
+            letter-spacing: -0.01em;
+            font-variant-numeric: tabular-nums;
+        }
+        .saylor-summary-box .metric-sub {
+            margin-top: 0;
+            color: #8f9fb4;
+            font-size: 0.75rem;
+            font-weight: 600;
+            line-height: 1.18;
+        }
+        .saylor-summary-box .metric-value .btc-symbol {
+            color: #f59a3d;
+            font-size: 1.22rem;
+            margin-right: 2px;
+            line-height: 1;
+            font-weight: 700;
+            transform: translateY(-0.02em);
+        }
+        #saylorRangeBtc {
+            white-space: nowrap;
+            letter-spacing: -0.015em;
+        }
+        .saylor-chart-wrap {
+            height: 460px;
+            position: relative;
+        }
+        html[data-bs-theme="dark"] .saylor-card {
+            background: linear-gradient(180deg, #071323 0%, #030a16 100%);
+            border-color: #1c2d46;
+            color: #d8e0f0;
+        }
+        html[data-bs-theme="dark"] .saylor-card .card-header {
+            border-bottom-color: #16263d;
+        }
+        html[data-bs-theme="dark"] .saylor-header-kicker {
+            color: #7f8aa0;
+        }
+        html[data-bs-theme="dark"] .saylor-main-value {
+            color: #f4f7ff;
+        }
+        html[data-bs-theme="dark"] .saylor-meta {
+            color: #9ea9bd;
+        }
+        html[data-bs-theme="dark"] .saylor-meta strong {
+            color: #ffb056;
+        }
+        html[data-bs-theme="dark"] .saylor-summary-box {
+            border-color: #253a59;
+            background: rgba(16, 27, 44, 0.82);
+        }
+        html[data-bs-theme="dark"] .saylor-summary-box .label {
+            color: #8491a7;
+        }
+        html[data-bs-theme="dark"] .saylor-summary-box .metric-sub {
+            color: #96a1b6;
+        }
+        html[data-bs-theme="light"] .saylor-summary-box {
+            border-color: #c8d3e2;
+            background: linear-gradient(180deg, #f7f9fc 0%, #edf2f8 100%);
+            box-shadow: inset 0 0 0 1px rgba(148, 165, 184, 0.20);
+        }
+        html[data-bs-theme="light"] .saylor-summary-box .label {
+            color: #5e7189;
+        }
+        html[data-bs-theme="light"] .saylor-summary-box .metric-sub {
+            color: #667b95;
+        }
+        html[data-bs-theme="light"] .saylor-summary-box .metric-value {
+            color: #1b2b40;
+        }
+        html[data-bs-theme="light"] .saylor-summary-box .metric-value .btc-symbol {
+            color: #df7c1f;
+        }
+        @media (max-width: 991px) {
+            .saylor-chart-wrap {
+                height: 400px;
+            }
+        }
+        @media (max-width: 575px) {
+            .saylor-chart-wrap {
+                height: 340px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -314,15 +475,70 @@
                 </div>
             </div>
         </div>
+
+        <div class="row mt-2">
+            <div class="col-12">
+                <div class="card shadow-sm saylor-card">
+                    <div class="card-header px-4 pt-4 pb-3">
+                        <div class="row g-3 align-items-start">
+                            <div class="col-lg-8">
+                                <div class="saylor-header-kicker">Bitcoin Reserve Value</div>
+                                <div class="saylor-main-value" id="saylorReserveValue">$--</div>
+                                <div class="saylor-meta d-flex flex-wrap gap-3">
+                                    <span><strong id="saylorTotalBtc">--</strong> BTC</span>
+                                    <span>Avg Cost: <strong id="saylorAvgCost">$--</strong></span>
+                                    <span id="saylorPnlPercent">--</span>
+                                    <span id="saylorPnlUsd">--</span>
+                                </div>
+                                <div class="small mt-2 text-secondary" id="saylorAsOf">As of --</div>
+                            </div>
+                            <div class="col-lg-4">
+                                <div class="saylor-summary-box">
+                                    <div class="saylor-summary-metrics">
+                                        <div class="saylor-summary-metric">
+                                            <div class="label">Purchase Events</div>
+                                            <div class="metric-value"><span class="metric-number" id="saylorPurchaseEvents">0</span></div>
+                                            <div class="metric-sub">in selected range</div>
+                                        </div>
+                                        <div class="saylor-summary-metric">
+                                            <div class="label">Total BTC</div>
+                                            <div class="metric-value"><span class="btc-symbol">₿</span><span class="metric-number" id="saylorRangeBtc">0</span></div>
+                                            <div class="metric-sub">As of now</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body pt-2">
+                        <div class="saylor-chart-wrap">
+                            <canvas id="saylorChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/notyf@3.10.0/notyf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.2.0/dist/chartjs-plugin-zoom.min.js"></script>
     <script>
         window.notyf = new Notyf({ duration: 3000, position: { x: 'right', y: 'top' } });
         const THEME_STORAGE_KEY = 'dca_theme';
         const THEME_ICON_SUN = '<svg class="theme-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"></circle><line x1="12" y1="2.5" x2="12" y2="5"></line><line x1="12" y1="19" x2="12" y2="21.5"></line><line x1="2.5" y1="12" x2="5" y2="12"></line><line x1="19" y1="12" x2="21.5" y2="12"></line><line x1="5.2" y1="5.2" x2="6.9" y2="6.9"></line><line x1="17.1" y1="17.1" x2="18.8" y2="18.8"></line><line x1="17.1" y1="6.9" x2="18.8" y2="5.2"></line><line x1="5.2" y1="18.8" x2="6.9" y2="17.1"></line></svg>';
         const THEME_ICON_MOON = '<svg class="theme-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M14.5 3.5a8.8 8.8 0 1 0 6 14.9 9.2 9.2 0 0 1-6.8-2.7 9.3 9.3 0 0 1-2.8-6.9 8.9 8.9 0 0 1 3.6-7.3Z"></path></svg>';
+        if (window.Chart) {
+            try {
+                const zoomPlugin = window['chartjs-plugin-zoom'] || window.ChartZoom;
+                const zoomRegistered = window.Chart.registry?.plugins?.get?.('zoom');
+                if (zoomPlugin && !zoomRegistered) {
+                    window.Chart.register(zoomPlugin);
+                }
+            } catch (e) {
+                console.warn('Zoom plugin registration skipped:', e);
+            }
+        }
 
         function updateThemeToggleButton(theme) {
             const btn = document.getElementById('themeToggleBtn');
@@ -478,6 +694,11 @@
 
         // Load PnL Chart
         let pnlChartInstance = null;
+        let saylorChartInstance = null;
+        let saylorInitialXMin = null;
+        let saylorInitialXMax = null;
+        let latestStatsPnlData = null;
+        let latestWalletSummary = null;
 
         function renderChart(data) {
             if (data.dates.length === 0) return;
@@ -562,22 +783,322 @@
             });
         }
 
+        function updateSaylorSummary(data) {
+            const prices = Array.isArray(data.prices) ? data.prices : [];
+            const avgPrices = Array.isArray(data.avg_price) ? data.avg_price : [];
+            const btcBalances = Array.isArray(data.btc_balance) ? data.btc_balance : [];
+            const purchaseBtc = Array.isArray(data.purchase_btc) ? data.purchase_btc : [];
+
+            if (!data.dates || data.dates.length === 0 || prices.length === 0) return;
+
+            const lastIdx = prices.length - 1;
+            const lastDate = new Date(data.dates[lastIdx]);
+            const lastPrice = prices[lastIdx] || 0;
+            const walletPrice = (latestWalletSummary && Number.isFinite(latestWalletSummary.current_price))
+                ? latestWalletSummary.current_price
+                : lastPrice;
+            const lastAvg = avgPrices[lastIdx] || 0;
+            const walletAvg = (latestWalletSummary && Number.isFinite(latestWalletSummary.hot_wallet_avg_price) && latestWalletSummary.hot_wallet_avg_price > 0)
+                ? latestWalletSummary.hot_wallet_avg_price
+                : lastAvg;
+            const fallbackBtc = btcBalances[lastIdx] || purchaseBtc.reduce((sum, x) => sum + (x || 0), 0);
+            const totalBtc = (latestWalletSummary && Number.isFinite(latestWalletSummary.total_btc))
+                ? latestWalletSummary.total_btc
+                : fallbackBtc;
+            const reserveValue = totalBtc * walletPrice;
+            const pnlUsd = totalBtc * (walletPrice - walletAvg);
+            const pnlPct = walletAvg > 0 ? ((walletPrice - walletAvg) / walletAvg) * 100 : 0;
+
+            document.getElementById('saylorReserveValue').textContent = `$${reserveValue.toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
+            document.getElementById('saylorTotalBtc').textContent = Number(totalBtc).toFixed(8);
+            document.getElementById('saylorAvgCost').textContent = `$${walletAvg.toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
+
+            const pnlPctEl = document.getElementById('saylorPnlPercent');
+            const pnlUsdEl = document.getElementById('saylorPnlUsd');
+            const sign = pnlUsd >= 0 ? '+' : '-';
+            const cls = pnlUsd >= 0 ? 'saylor-positive' : 'saylor-negative';
+
+            pnlPctEl.className = cls;
+            pnlUsdEl.className = cls;
+            pnlPctEl.textContent = `${sign}${Math.abs(pnlPct).toFixed(2)}%`;
+            pnlUsdEl.textContent = `(${sign}$${Math.abs(pnlUsd).toLocaleString(undefined, { maximumFractionDigits: 0 })})`;
+
+            document.getElementById('saylorAsOf').textContent = `As of ${lastDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`;
+            const purchaseEvents = purchaseBtc.filter((v) => (v || 0) > 0).length;
+            document.getElementById('saylorPurchaseEvents').textContent = purchaseEvents.toLocaleString();
+            document.getElementById('saylorRangeBtc').textContent = Number(totalBtc).toFixed(8);
+        }
+
+        function renderSaylorChart(data) {
+            if (!data.dates || data.dates.length === 0) return;
+
+            const prices = Array.isArray(data.prices) ? data.prices : [];
+            const marketDates = Array.isArray(data.market_dates) && data.market_dates.length > 0 ? data.market_dates : data.dates;
+            const marketPrices = Array.isArray(data.market_prices) && data.market_prices.length > 0 ? data.market_prices : prices;
+            const avgTimeline = Array.isArray(data.avg_price_timeline) && data.avg_price_timeline.length > 0
+                ? data.avg_price_timeline
+                : (Array.isArray(data.avg_price) ? data.avg_price : []);
+            const purchaseBtc = Array.isArray(data.purchase_btc) ? data.purchase_btc : [];
+            const purchaseUsdRaw = Array.isArray(data.purchase_usd) ? data.purchase_usd : [];
+            if (marketPrices.length === 0 || marketDates.length === 0) return;
+
+            const marketTimestamps = marketDates.map((d) => new Date(d).getTime());
+            const txTimestamps = data.dates.map((d) => new Date(d).getTime());
+            const timestamps = marketTimestamps;
+            const firstTs = timestamps[0];
+            const nowTs = Date.now();
+            const monthMs = 1000 * 60 * 60 * 24 * 30;
+            const isDark = (document.documentElement.getAttribute('data-bs-theme') || 'light') === 'dark';
+            const axisColor = isDark ? '#93a2b8' : '#4f6278';
+            const gridColor = isDark ? 'rgba(126, 150, 180, 0.16)' : 'rgba(69, 95, 123, 0.14)';
+            const legendColor = isDark ? '#b8c4d6' : '#42566d';
+            const dragBorderColor = isDark ? 'rgba(255,255,255,0.58)' : 'rgba(22, 45, 74, 0.62)';
+            const dragFillColor = isDark ? 'rgba(255,255,255,0.15)' : 'rgba(22, 45, 74, 0.20)';
+
+            // Bubble sizing strategy:
+            // - Baseline = average single purchase USD
+            // - Radius scales with sqrt(amount / avg) so bubble area ~ purchase amount
+            // - Clamp range keeps chart readable
+            const purchaseUsd = purchaseUsdRaw.map((usd, idx) => {
+                if ((usd || 0) > 0) return usd;
+                return (purchaseBtc[idx] || 0) * (prices[idx] || 0);
+            });
+            const positiveUsd = purchaseUsd.filter((v) => (v || 0) > 0);
+            const avgPurchaseUsd = positiveUsd.length > 0
+                ? positiveUsd.reduce((sum, v) => sum + v, 0) / positiveUsd.length
+                : 1;
+
+            // Merge duplicated timestamps (e.g. split fills in same second) to avoid stacked circles.
+            const purchaseMap = new Map();
+            txTimestamps.forEach((ts, idx) => {
+                const amountUsd = purchaseUsd[idx] || 0;
+                if (amountUsd <= 0) return;
+                const amountBtc = purchaseBtc[idx] || 0;
+                const price = prices[idx] || 0;
+                const key = String(ts);
+                const existing = purchaseMap.get(key);
+                if (!existing) {
+                    purchaseMap.set(key, {
+                        x: ts,
+                        usd: amountUsd,
+                        btc: amountBtc,
+                        weightedPriceSum: price * amountUsd
+                    });
+                } else {
+                    existing.usd += amountUsd;
+                    existing.btc += amountBtc;
+                    existing.weightedPriceSum += price * amountUsd;
+                }
+            });
+
+            const priceData = marketPrices.map((price, idx) => ({ x: marketTimestamps[idx], y: price }));
+            const avgPriceData = avgTimeline.map((avg, idx) => ({ x: marketTimestamps[idx], y: avg }));
+            const bubbleData = Array.from(purchaseMap.values())
+                .sort((a, b) => a.x - b.x)
+                .map((item) => {
+                    const ratio = item.usd / Math.max(avgPurchaseUsd, 1e-6);
+                    const radius = 5.5 * Math.sqrt(Math.max(ratio, 0.04));
+                    const y = item.usd > 0 ? (item.weightedPriceSum / item.usd) : 0;
+                    return {
+                        x: item.x,
+                        y: y,
+                        r: Math.max(3, Math.min(11, radius)),
+                        buySize: item.btc,
+                        buyUsd: item.usd
+                    };
+                });
+
+            const ctx = document.getElementById('saylorChart').getContext('2d');
+            if (saylorChartInstance) {
+                saylorChartInstance.destroy();
+            }
+
+            saylorChartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    datasets: [
+                        {
+                            label: 'Bitcoin Price',
+                            data: priceData,
+                            borderColor: '#f2a33a',
+                            backgroundColor: 'rgba(242, 163, 58, 0.12)',
+                            borderWidth: 3,
+                            pointRadius: 0,
+                            tension: 0.16
+                        },
+                        {
+                            type: 'bubble',
+                            label: 'My Purchase',
+                            data: bubbleData,
+                            borderColor: '#fff3e8',
+                            borderWidth: 2,
+                            backgroundColor: 'rgba(241, 123, 65, 0.9)',
+                            pointHoverBorderWidth: 3,
+                            pointHoverRadius: 12,
+                            pointStyle: 'circle'
+                        },
+                        {
+                            label: 'Average Purchase Price',
+                            data: avgPriceData,
+                            borderColor: '#56c79c',
+                            borderDash: [7, 6],
+                            borderWidth: 2,
+                            pointRadius: 0,
+                            tension: 0.05,
+                            pointStyle: 'line'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: { mode: 'nearest', intersect: true, axis: 'xy' },
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                            labels: {
+                                color: legendColor,
+                                usePointStyle: true,
+                                boxWidth: 22,
+                                generateLabels(chart) {
+                                    const labels = Chart.defaults.plugins.legend.labels.generateLabels(chart);
+                                    return labels.map((label) => {
+                                        const ds = chart.data.datasets[label.datasetIndex] || {};
+                                        if (ds.type === 'bubble') {
+                                            return { ...label, pointStyle: 'circle' };
+                                        }
+                                        return { ...label, pointStyle: 'line' };
+                                    });
+                                }
+                            }
+                        },
+                        tooltip: {
+                            mode: 'nearest',
+                            intersect: true,
+                            callbacks: {
+                                title(items) {
+                                    const ts = items?.[0]?.parsed?.x;
+                                    return ts ? new Date(ts).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' }) : '';
+                                },
+                                label(context) {
+                                    const isBubble = context.dataset.type === 'bubble';
+                                    if (isBubble) {
+                                        const point = context.raw || {};
+                                        const buySize = point.buySize || 0;
+                                        const buyUsd = point.buyUsd || 0;
+                                        return `Buy: $${Number(buyUsd).toLocaleString(undefined, { maximumFractionDigits: 2 })} (${buySize.toFixed(8)} BTC) @ $${Number(point.y || 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
+                                    }
+                                    return `${context.dataset.label}: $${Number(context.parsed.y || 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
+                                }
+                            }
+                        },
+                        zoom: {
+                            limits: {
+                                x: { min: firstTs, max: nowTs },
+                                y: { min: 0 }
+                            },
+                            pan: {
+                                enabled: false,
+                                mode: 'xy',
+                                threshold: 10
+                            },
+                            zoom: {
+                                wheel: {
+                                    enabled: true,
+                                    speed: 0.04
+                                },
+                                pinch: {
+                                    enabled: true
+                                },
+                                drag: {
+                                    enabled: true,
+                                    threshold: 12,
+                                    borderColor: dragBorderColor,
+                                    borderWidth: 1,
+                                    backgroundColor: dragFillColor
+                                },
+                                mode: 'xy'
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            type: 'linear',
+                            min: firstTs,
+                            max: nowTs,
+                            grid: { color: gridColor },
+                            ticks: {
+                                color: axisColor,
+                                stepSize: monthMs,
+                                autoSkip: false,
+                                maxRotation: 0,
+                                callback(value) {
+                                    const d = new Date(value);
+                                    return d.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+                                }
+                            }
+                        },
+                        y: {
+                            position: 'right',
+                            beginAtZero: true,
+                            grid: { color: gridColor },
+                            ticks: {
+                                color: axisColor,
+                                callback(value) {
+                                    return `$${Number(value).toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            saylorInitialXMin = firstTs;
+            saylorInitialXMax = nowTs;
+        }
+
+        function resetSaylorZoom() {
+            if (!saylorChartInstance) return;
+
+            if (typeof saylorChartInstance.resetZoom === 'function') {
+                saylorChartInstance.resetZoom();
+            }
+
+            // Hard fallback in case plugin method is unavailable or ineffective.
+            if (saylorInitialXMin && saylorInitialXMax) {
+                saylorChartInstance.options.scales.x.min = saylorInitialXMin;
+                saylorChartInstance.options.scales.x.max = saylorInitialXMax;
+                saylorChartInstance.update('none');
+            }
+        }
+
         // Load PnL Chart (TTL: 5 mins)
         async function loadChart(forceRefresh = false) {
             try {
                 const cached = loadFromCache('stats_pnl');
                 
                 if (!forceRefresh && isCacheValid(cached, 5)) {
+                    latestStatsPnlData = cached.data;
                     renderChart(cached.data);
+                    updateSaylorSummary(cached.data);
+                    renderSaylorChart(cached.data);
                     return;
                 }
 
                 if (cached) renderChart(cached.data);
+                if (cached) {
+                    latestStatsPnlData = cached.data;
+                    updateSaylorSummary(cached.data);
+                    renderSaylorChart(cached.data);
+                }
 
                 const response = await fetch('/api/stats/pnl');
                 const data = await response.json();
+                latestStatsPnlData = data;
                 saveToCache('stats_pnl', data);
                 renderChart(data);
+                updateSaylorSummary(data);
+                renderSaylorChart(data);
             } catch (error) {
                 console.error('Error loading chart:', error);
             }
@@ -625,20 +1146,32 @@
                 
                 // Use cache if valid (5 mins TTL like fees)
                 if (!forceRefresh && isCacheValid(cachedWallet, 5)) {
+                    latestWalletSummary = cachedWallet.data;
                     updateWalletBalanceUI(cachedWallet.data);
+                    if (latestStatsPnlData) {
+                        updateSaylorSummary(latestStatsPnlData);
+                    }
                     return;
                 }
 
                 if (cachedWallet) {
                     updateWalletBalanceUI(cachedWallet.data);
+                    latestWalletSummary = cachedWallet.data;
+                    if (latestStatsPnlData) {
+                        updateSaylorSummary(latestStatsPnlData);
+                    }
                 }
 
                 // Fetch wallet summary
                 const walletResponse = await fetch('/api/wallet/summary');
                 const walletData = await walletResponse.json();
+                latestWalletSummary = walletData;
                 saveToCache('stats_wallet', walletData);
 
                 updateWalletBalanceUI(walletData);
+                if (latestStatsPnlData) {
+                    updateSaylorSummary(latestStatsPnlData);
+                }
             } catch (error) {
                 console.error('Error loading wallet balance:', error);
             }
@@ -653,6 +1186,9 @@
                 themeBtn.addEventListener('click', () => {
                     const theme = document.documentElement.getAttribute('data-bs-theme') === 'dark' ? 'light' : 'dark';
                     applyTheme(theme);
+                    if (latestStatsPnlData) {
+                        renderSaylorChart(latestStatsPnlData);
+                    }
                 });
             }
 
@@ -661,6 +1197,11 @@
             loadFees();
             loadWalletBalance();
             loadChart();
+
+            const saylorCanvas = document.getElementById('saylorChart');
+            if (saylorCanvas) {
+                saylorCanvas.addEventListener('dblclick', resetSaylorZoom);
+            }
             
             // Refresh Button Handler
             document.getElementById('refreshStatsBtn').addEventListener('click', async () => {

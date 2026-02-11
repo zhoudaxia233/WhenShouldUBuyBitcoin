@@ -5,6 +5,9 @@ from datetime import datetime, timezone
 import pandas as pd
 import re
 import logging
+import csv
+from pathlib import Path
+from dca_service.config import settings
 
 from dca_service.database import get_session
 from dca_service.models import DCATransaction, GlobalSettings, User
@@ -12,6 +15,87 @@ from dca_service.auth.dependencies import get_current_user
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
+
+
+def _resolve_metrics_csv_path() -> Path:
+    """Resolve metrics CSV path using the same conventions as metrics provider."""
+    csv_path_str = settings.METRICS_CSV_PATH
+    csv_path = Path(csv_path_str)
+    if csv_path.is_absolute():
+        return csv_path
+
+    # dca_service/src/dca_service/api/stats_api.py -> dca_service/
+    dca_service_dir = Path(__file__).resolve().parent.parent.parent.parent
+    if csv_path_str.startswith("../"):
+        relative_part = csv_path_str[3:]
+        resolved = (dca_service_dir.parent / relative_part).resolve()
+    else:
+        resolved = (dca_service_dir / csv_path_str).resolve()
+
+    if not resolved.exists():
+        alt_path = Path(csv_path_str)
+        if alt_path.exists():
+            return alt_path.resolve()
+    return resolved
+
+
+def _build_market_price_series(
+    first_tx_time: datetime,
+    tx_dates: List[str],
+    tx_prices: List[float],
+    tx_avg_prices: List[float],
+) -> Tuple[List[str], List[float], List[float]]:
+    """
+    Build continuous market price series from first buy date to today.
+    Falls back to transaction points if CSV is unavailable.
+    """
+    first_date = first_tx_time.date()
+    today = datetime.now(timezone.utc).date()
+
+    try:
+        csv_path = _resolve_metrics_csv_path()
+        if not csv_path.exists():
+            raise FileNotFoundError(f"Metrics CSV not found: {csv_path}")
+
+        market_dates: List[str] = []
+        market_prices: List[float] = []
+
+        with open(csv_path, "r", encoding="utf-8") as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                date_str = row.get("date")
+                price_str = row.get("close_price")
+                if not date_str or not price_str:
+                    continue
+                try:
+                    d = datetime.strptime(date_str, "%Y-%m-%d").date()
+                    p = float(price_str)
+                except (ValueError, TypeError):
+                    continue
+                if d < first_date or d > today:
+                    continue
+                market_dates.append(d.isoformat())
+                market_prices.append(p)
+
+        if not market_dates:
+            raise ValueError("No market rows in selected range")
+
+        # Build average-cost timeline as step function over market dates.
+        tx_daily_avg: Dict[str, float] = {}
+        for d, avg in zip(tx_dates, tx_avg_prices):
+            tx_daily_avg[d[:10]] = avg
+
+        avg_timeline: List[float] = []
+        running_avg = tx_avg_prices[0] if tx_avg_prices else 0.0
+        for d in market_dates:
+            if d in tx_daily_avg:
+                running_avg = tx_daily_avg[d]
+            avg_timeline.append(running_avg)
+
+        return market_dates, market_prices, avg_timeline
+    except Exception as e:
+        logger.warning(f"Falling back to tx-only price series for stats chart: {e}")
+        return tx_dates, tx_prices, tx_avg_prices
 
 
 
@@ -173,6 +257,10 @@ def get_pnl_data(
         value: List of portfolio value (BTC * Price)
         avg_price: List of average buy price
         fees: List of cumulative fees paid
+        prices: List of BTC price at each transaction point
+        purchase_btc: List of BTC amount purchased per transaction
+        purchase_usd: List of USD amount invested per transaction
+        btc_balance: List of cumulative BTC balance over time
     """
     # Fetch all successful transactions sorted by time
     txs = session.exec(
@@ -182,7 +270,20 @@ def get_pnl_data(
     ).all()
     
     if not txs:
-        return {"dates": [], "invested": [], "value": [], "avg_price": [], "fees": []}
+        return {
+            "dates": [],
+            "invested": [],
+            "value": [],
+            "avg_price": [],
+            "fees": [],
+            "prices": [],
+            "purchase_btc": [],
+            "purchase_usd": [],
+            "btc_balance": [],
+            "market_dates": [],
+            "market_prices": [],
+            "avg_price_timeline": [],
+        }
     
     data = []
     cumulative_btc = 0.0
@@ -212,13 +313,33 @@ def get_pnl_data(
             "value": current_value,
             "btc_balance": cumulative_btc,
             "avg_price": avg_price,
-            "fees": cumulative_fees
+            "fees": cumulative_fees,
+            "current_price": current_price,
+            "purchase_btc": tx.btc_amount or 0.0,
+            "purchase_usd": tx.fiat_amount or 0.0,
         })
+
+    tx_dates = [d["date"] for d in data]
+    tx_prices = [d["current_price"] for d in data]
+    tx_avg_prices = [d["avg_price"] for d in data]
+    market_dates, market_prices, avg_price_timeline = _build_market_price_series(
+        first_tx_time=txs[0].timestamp,
+        tx_dates=tx_dates,
+        tx_prices=tx_prices,
+        tx_avg_prices=tx_avg_prices,
+    )
         
     return {
-        "dates": [d["date"] for d in data],
+        "dates": tx_dates,
         "invested": [d["invested"] for d in data],
         "value": [d["value"] for d in data],
-        "avg_price": [d["avg_price"] for d in data],
-        "fees": [d["fees"] for d in data]
+        "avg_price": tx_avg_prices,
+        "fees": [d["fees"] for d in data],
+        "prices": tx_prices,
+        "purchase_btc": [d["purchase_btc"] for d in data],
+        "purchase_usd": [d["purchase_usd"] for d in data],
+        "btc_balance": [d["btc_balance"] for d in data],
+        "market_dates": market_dates,
+        "market_prices": market_prices,
+        "avg_price_timeline": avg_price_timeline,
     }
