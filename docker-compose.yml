@@ -13,7 +13,7 @@ services:
       - ./.env:/app/.env:ro
     environment:
       - DATABASE_URL=sqlite:////app/data/dca.db
-      - METRICS_CSV_PATH=/app/data/btc_metrics.csv
+      - METRICS_CSV_PATH=/app/docs/data/btc_metrics.csv
       - METRICS_BACKEND=realtime
       - LOG_LEVEL=INFO
       - LOG_FILE_PATH=/app/data/dca_service.log
