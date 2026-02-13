@@ -192,12 +192,18 @@ def calculate_dca_decision(session: Session) -> DCADecision:
     source_backend = metrics.get("source", "unknown")
     source_label = metrics.get("source_label", "Unknown")
 
+    # Keep strategy math pinned to provider metrics (peak180 above).
+    # UI display may use richer multi-window context.
+    display_peak_price = peak180
+    display_drawdown_ratio = drawdown_ratio
+    display_drawdown_snapshot = drawdown_snapshot
+
     context_180d = drawdown_context.get("180d") if drawdown_context else None
     if context_180d:
         nearest_180 = context_180d.get("nearest_match") or {}
-        drawdown_ratio = context_180d.get("current_drawdown_ratio", drawdown_ratio)
-        peak180 = context_180d.get("current_peak", peak180)
-        drawdown_snapshot = {
+        display_drawdown_ratio = context_180d.get("current_drawdown_ratio", display_drawdown_ratio)
+        display_peak_price = context_180d.get("current_peak", display_peak_price)
+        display_drawdown_snapshot = {
             "drawdown_percentile": context_180d.get("percentile_rank"),
             "historical_date": nearest_180.get("date"),
             "historical_peak": nearest_180.get("peak"),
@@ -574,12 +580,12 @@ def calculate_dca_decision(session: Session) -> DCADecision:
                 "remaining_budget": remaining_budget if strategy.enforce_monthly_cap else None,
                 "budget_resets": budget_resets,
                 "time_until_reset": time_until_reset,
-                "peak_price_usd": peak180,
-                "drawdown_ratio": drawdown_ratio,
-                "drawdown_percentile": drawdown_snapshot["drawdown_percentile"] if drawdown_snapshot else None,
-                "drawdown_hist_date": drawdown_snapshot["historical_date"] if drawdown_snapshot else None,
-                "drawdown_hist_peak_price_usd": drawdown_snapshot["historical_peak"] if drawdown_snapshot else None,
-                "drawdown_hist_price_usd": drawdown_snapshot["historical_price"] if drawdown_snapshot else None,
+                "peak_price_usd": display_peak_price,
+                "drawdown_ratio": display_drawdown_ratio,
+                "drawdown_percentile": display_drawdown_snapshot["drawdown_percentile"] if display_drawdown_snapshot else None,
+                "drawdown_hist_date": display_drawdown_snapshot["historical_date"] if display_drawdown_snapshot else None,
+                "drawdown_hist_peak_price_usd": display_drawdown_snapshot["historical_peak"] if display_drawdown_snapshot else None,
+                "drawdown_hist_price_usd": display_drawdown_snapshot["historical_price"] if display_drawdown_snapshot else None,
                 "drawdown_context": drawdown_context,
             }
         )
@@ -633,12 +639,12 @@ def calculate_dca_decision(session: Session) -> DCADecision:
                 "budget_resets": budget_resets,
                 "time_until_reset": time_until_reset,
                 "metrics_source": {"backend": source_backend, "label": source_label},
-                "peak_price_usd": peak180,
-                "drawdown_ratio": drawdown_ratio,
-                "drawdown_percentile": drawdown_snapshot["drawdown_percentile"] if drawdown_snapshot else None,
-                "drawdown_hist_date": drawdown_snapshot["historical_date"] if drawdown_snapshot else None,
-                "drawdown_hist_peak_price_usd": drawdown_snapshot["historical_peak"] if drawdown_snapshot else None,
-                "drawdown_hist_price_usd": drawdown_snapshot["historical_price"] if drawdown_snapshot else None,
+                "peak_price_usd": display_peak_price,
+                "drawdown_ratio": display_drawdown_ratio,
+                "drawdown_percentile": display_drawdown_snapshot["drawdown_percentile"] if display_drawdown_snapshot else None,
+                "drawdown_hist_date": display_drawdown_snapshot["historical_date"] if display_drawdown_snapshot else None,
+                "drawdown_hist_peak_price_usd": display_drawdown_snapshot["historical_peak"] if display_drawdown_snapshot else None,
+                "drawdown_hist_price_usd": display_drawdown_snapshot["historical_price"] if display_drawdown_snapshot else None,
                 "drawdown_context": drawdown_context,
             })
             return DCADecision(**decision_data)
@@ -674,12 +680,12 @@ def calculate_dca_decision(session: Session) -> DCADecision:
                 "remaining_budget": remaining_budget if strategy.enforce_monthly_cap else None,
                 "budget_resets": budget_resets,
                 "time_until_reset": time_until_reset,
-                "peak_price_usd": peak180,
-                "drawdown_ratio": drawdown_ratio,
-                "drawdown_percentile": drawdown_snapshot["drawdown_percentile"] if drawdown_snapshot else None,
-                "drawdown_hist_date": drawdown_snapshot["historical_date"] if drawdown_snapshot else None,
-                "drawdown_hist_peak_price_usd": drawdown_snapshot["historical_peak"] if drawdown_snapshot else None,
-                "drawdown_hist_price_usd": drawdown_snapshot["historical_price"] if drawdown_snapshot else None,
+                "peak_price_usd": display_peak_price,
+                "drawdown_ratio": display_drawdown_ratio,
+                "drawdown_percentile": display_drawdown_snapshot["drawdown_percentile"] if display_drawdown_snapshot else None,
+                "drawdown_hist_date": display_drawdown_snapshot["historical_date"] if display_drawdown_snapshot else None,
+                "drawdown_hist_peak_price_usd": display_drawdown_snapshot["historical_peak"] if display_drawdown_snapshot else None,
+                "drawdown_hist_price_usd": display_drawdown_snapshot["historical_price"] if display_drawdown_snapshot else None,
                 "drawdown_context": drawdown_context,
             }
         )
@@ -702,11 +708,11 @@ def calculate_dca_decision(session: Session) -> DCADecision:
         remaining_budget=remaining_budget if strategy.enforce_monthly_cap else None,
         budget_resets=budget_resets,
         time_until_reset=time_until_reset,
-        peak_price_usd=peak180,
-        drawdown_ratio=drawdown_ratio,
-        drawdown_percentile=drawdown_snapshot["drawdown_percentile"] if drawdown_snapshot else None,
-        drawdown_hist_date=drawdown_snapshot["historical_date"] if drawdown_snapshot else None,
-        drawdown_hist_peak_price_usd=drawdown_snapshot["historical_peak"] if drawdown_snapshot else None,
-        drawdown_hist_price_usd=drawdown_snapshot["historical_price"] if drawdown_snapshot else None,
+        peak_price_usd=display_peak_price,
+        drawdown_ratio=display_drawdown_ratio,
+        drawdown_percentile=display_drawdown_snapshot["drawdown_percentile"] if display_drawdown_snapshot else None,
+        drawdown_hist_date=display_drawdown_snapshot["historical_date"] if display_drawdown_snapshot else None,
+        drawdown_hist_peak_price_usd=display_drawdown_snapshot["historical_peak"] if display_drawdown_snapshot else None,
+        drawdown_hist_price_usd=display_drawdown_snapshot["historical_price"] if display_drawdown_snapshot else None,
         drawdown_context=drawdown_context,
     )
