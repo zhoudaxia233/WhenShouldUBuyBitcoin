@@ -1,5 +1,5 @@
 from datetime import datetime, timezone
-from typing import Optional, Dict
+from typing import Optional, Dict, Any
 from pydantic import BaseModel
 from sqlmodel import Session, select
 
@@ -7,6 +7,8 @@ from dca_service.models import DCAStrategy, DCATransaction
 from dca_service.services.metrics_provider import (
     get_latest_metrics,
     calculate_ahr999_percentile_thresholds,
+    get_drawdown_percentile_snapshot,
+    get_drawdown_context,
 )
 from whenshouldubuybitcoin.strategies.dynamic_ahr999 import (
     calculate_buy_amount,
@@ -31,6 +33,13 @@ class DCADecision(BaseModel):
     time_until_reset: Optional[str] = (
         None  # Human-readable time until reset (e.g., "5 days")
     )
+    peak_price_usd: Optional[float] = None
+    drawdown_ratio: Optional[float] = None
+    drawdown_percentile: Optional[float] = None
+    drawdown_hist_date: Optional[str] = None
+    drawdown_hist_peak_price_usd: Optional[float] = None
+    drawdown_hist_price_usd: Optional[float] = None
+    drawdown_context: Optional[Dict[str, Any]] = None
 
 
 def _check_monthly_inflow(session: Session, strategy: DCAStrategy, now: datetime, month_spent: float):
@@ -133,6 +142,13 @@ def calculate_dca_decision(session: Session) -> DCADecision:
         "remaining_budget": None,
         "budget_resets": False,
         "time_until_reset": None,
+        "peak_price_usd": None,
+        "drawdown_ratio": None,
+        "drawdown_percentile": None,
+        "drawdown_hist_date": None,
+        "drawdown_hist_peak_price_usd": None,
+        "drawdown_hist_price_usd": None,
+        "drawdown_context": None,
     }
 
     if not strategy:
@@ -170,8 +186,23 @@ def calculate_dca_decision(session: Session) -> DCADecision:
     ahr999 = metrics["ahr999"]
     # peak180 might be missing if using old metrics provider mock in tests
     peak180 = metrics.get("peak180", price)
+    drawdown_ratio = (peak180 - price) / peak180 if peak180 > 0 else 0.0
+    drawdown_snapshot = get_drawdown_percentile_snapshot(price, peak180)
+    drawdown_context = get_drawdown_context(price)
     source_backend = metrics.get("source", "unknown")
     source_label = metrics.get("source_label", "Unknown")
+
+    context_180d = drawdown_context.get("180d") if drawdown_context else None
+    if context_180d:
+        nearest_180 = context_180d.get("nearest_match") or {}
+        drawdown_ratio = context_180d.get("current_drawdown_ratio", drawdown_ratio)
+        peak180 = context_180d.get("current_peak", peak180)
+        drawdown_snapshot = {
+            "drawdown_percentile": context_180d.get("percentile_rank"),
+            "historical_date": nearest_180.get("date"),
+            "historical_peak": nearest_180.get("peak"),
+            "historical_price": nearest_180.get("price"),
+        }
 
     # 2. Determine Band & Multiplier
     if strategy.strategy_type == "dynamic_ahr999":
@@ -543,6 +574,13 @@ def calculate_dca_decision(session: Session) -> DCADecision:
                 "remaining_budget": remaining_budget if strategy.enforce_monthly_cap else None,
                 "budget_resets": budget_resets,
                 "time_until_reset": time_until_reset,
+                "peak_price_usd": peak180,
+                "drawdown_ratio": drawdown_ratio,
+                "drawdown_percentile": drawdown_snapshot["drawdown_percentile"] if drawdown_snapshot else None,
+                "drawdown_hist_date": drawdown_snapshot["historical_date"] if drawdown_snapshot else None,
+                "drawdown_hist_peak_price_usd": drawdown_snapshot["historical_peak"] if drawdown_snapshot else None,
+                "drawdown_hist_price_usd": drawdown_snapshot["historical_price"] if drawdown_snapshot else None,
+                "drawdown_context": drawdown_context,
             }
         )
         return DCADecision(**decision_data)
@@ -595,6 +633,13 @@ def calculate_dca_decision(session: Session) -> DCADecision:
                 "budget_resets": budget_resets,
                 "time_until_reset": time_until_reset,
                 "metrics_source": {"backend": source_backend, "label": source_label},
+                "peak_price_usd": peak180,
+                "drawdown_ratio": drawdown_ratio,
+                "drawdown_percentile": drawdown_snapshot["drawdown_percentile"] if drawdown_snapshot else None,
+                "drawdown_hist_date": drawdown_snapshot["historical_date"] if drawdown_snapshot else None,
+                "drawdown_hist_peak_price_usd": drawdown_snapshot["historical_peak"] if drawdown_snapshot else None,
+                "drawdown_hist_price_usd": drawdown_snapshot["historical_price"] if drawdown_snapshot else None,
+                "drawdown_context": drawdown_context,
             })
             return DCADecision(**decision_data)
         else:
@@ -629,6 +674,13 @@ def calculate_dca_decision(session: Session) -> DCADecision:
                 "remaining_budget": remaining_budget if strategy.enforce_monthly_cap else None,
                 "budget_resets": budget_resets,
                 "time_until_reset": time_until_reset,
+                "peak_price_usd": peak180,
+                "drawdown_ratio": drawdown_ratio,
+                "drawdown_percentile": drawdown_snapshot["drawdown_percentile"] if drawdown_snapshot else None,
+                "drawdown_hist_date": drawdown_snapshot["historical_date"] if drawdown_snapshot else None,
+                "drawdown_hist_peak_price_usd": drawdown_snapshot["historical_peak"] if drawdown_snapshot else None,
+                "drawdown_hist_price_usd": drawdown_snapshot["historical_price"] if drawdown_snapshot else None,
+                "drawdown_context": drawdown_context,
             }
         )
         return DCADecision(**decision_data)
@@ -650,5 +702,11 @@ def calculate_dca_decision(session: Session) -> DCADecision:
         remaining_budget=remaining_budget if strategy.enforce_monthly_cap else None,
         budget_resets=budget_resets,
         time_until_reset=time_until_reset,
+        peak_price_usd=peak180,
+        drawdown_ratio=drawdown_ratio,
+        drawdown_percentile=drawdown_snapshot["drawdown_percentile"] if drawdown_snapshot else None,
+        drawdown_hist_date=drawdown_snapshot["historical_date"] if drawdown_snapshot else None,
+        drawdown_hist_peak_price_usd=drawdown_snapshot["historical_peak"] if drawdown_snapshot else None,
+        drawdown_hist_price_usd=drawdown_snapshot["historical_price"] if drawdown_snapshot else None,
+        drawdown_context=drawdown_context,
     )
-
