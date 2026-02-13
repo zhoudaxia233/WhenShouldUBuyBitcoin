@@ -206,6 +206,210 @@ def get_latest_metrics() -> Optional[Dict[str, Any]]:
         
         return None
 
+
+def get_drawdown_percentile_snapshot(
+    current_price: float,
+    current_peak: float,
+    window_days: int = 180,
+) -> Optional[Dict[str, Any]]:
+    """
+    Compute current drawdown percentile against historical rolling-window drawdowns.
+
+    Returns:
+        {
+            "drawdown_ratio": float,         # e.g. 0.42
+            "drawdown_percentile": float,    # 0..100
+            "historical_date": str,          # YYYY-MM-DD
+            "historical_peak": float,        # rolling peak on matched day
+            "historical_price": float,       # close price on matched day
+            "historical_drawdown_ratio": float
+        }
+        or None if unavailable.
+    """
+    try:
+        if current_peak <= 0 or current_price <= 0:
+            return None
+
+        current_drawdown = max(0.0, min(1.0, (current_peak - current_price) / current_peak))
+        file_path = _resolve_csv_path()
+
+        if not file_path.exists():
+            return None
+
+        rows: list[tuple[str, float]] = []
+        with open(file_path, "r", encoding="utf-8") as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                date_str = row.get(COL_DATE)
+                price_str = row.get(COL_PRICE)
+                if not date_str or not price_str:
+                    continue
+                try:
+                    rows.append((date_str, float(price_str)))
+                except (TypeError, ValueError):
+                    continue
+
+        if len(rows) < 2:
+            return None
+
+        drawdowns: list[dict[str, Any]] = []
+        prices_only = [p for _, p in rows]
+        for i, (date_str, price) in enumerate(rows):
+            start = max(0, i - window_days + 1)
+            peak = max(prices_only[start : i + 1])
+            if peak <= 0:
+                continue
+            dd = max(0.0, min(1.0, (peak - price) / peak))
+            drawdowns.append(
+                {
+                    "date": date_str,
+                    "price": price,
+                    "peak": peak,
+                    "drawdown_ratio": dd,
+                }
+            )
+
+        if not drawdowns:
+            return None
+
+        less_or_equal = sum(1 for item in drawdowns if item["drawdown_ratio"] <= current_drawdown)
+        percentile = (less_or_equal / len(drawdowns)) * 100.0
+
+        matched = min(drawdowns, key=lambda item: abs(item["drawdown_ratio"] - current_drawdown))
+
+        return {
+            "drawdown_ratio": current_drawdown,
+            "drawdown_percentile": percentile,
+            "historical_date": matched["date"],
+            "historical_peak": matched["peak"],
+            "historical_price": matched["price"],
+            "historical_drawdown_ratio": matched["drawdown_ratio"],
+        }
+    except Exception as e:
+        logger.warning(f"Failed to compute drawdown percentile snapshot: {e}")
+        return None
+
+
+def get_drawdown_context(current_price: float) -> Optional[Dict[str, Any]]:
+    """
+    Build multi-definition drawdown context for UI:
+    - ATH drawdown
+    - 365-day rolling drawdown
+    - 180-day rolling drawdown
+
+    For each definition, includes:
+    - current_drawdown_ratio
+    - percentile_rank (historical % of points with drawdown <= current)
+    - deeper_than_pct (= percentile_rank)
+    - more_extreme_pct (= 100 - percentile_rank)
+    - nearest_match (historical closest drawdown by value)
+    - last_occurrence (most recent historical day with drawdown >= current)
+    - recent_comparable (most recent day with similar drawdown, +/-2 percentage points;
+      if unavailable, falls back to nearest_match)
+    """
+    try:
+        if current_price <= 0:
+            return None
+
+        file_path = _resolve_csv_path()
+        if not file_path.exists():
+            return None
+
+        rows: list[tuple[str, float]] = []
+        with open(file_path, "r", encoding="utf-8") as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                date_str = row.get(COL_DATE)
+                price_str = row.get(COL_PRICE)
+                if not date_str or not price_str:
+                    continue
+                try:
+                    rows.append((date_str, float(price_str)))
+                except (TypeError, ValueError):
+                    continue
+
+        if len(rows) < 2:
+            return None
+
+        prices = [p for _, p in rows]
+
+        def _hist_drawdowns(window_days: Optional[int]) -> list[dict[str, Any]]:
+            out: list[dict[str, Any]] = []
+            for i, (date_str, price) in enumerate(rows):
+                if window_days is None:
+                    peak = max(prices[: i + 1])
+                else:
+                    start = max(0, i - window_days + 1)
+                    peak = max(prices[start : i + 1])
+                if peak <= 0:
+                    continue
+                dd = max(0.0, min(1.0, (peak - price) / peak))
+                out.append(
+                    {
+                        "date": date_str,
+                        "price": price,
+                        "peak": peak,
+                        "drawdown_ratio": dd,
+                    }
+                )
+            return out
+
+        def _current_peak(window_days: Optional[int]) -> float:
+            if window_days is None:
+                hist_peak = max(prices)
+            else:
+                hist_peak = max(prices[-window_days:])
+            return max(hist_peak, current_price)
+
+        def _compute_one(window_label: str, window_days: Optional[int]) -> Dict[str, Any]:
+            hist = _hist_drawdowns(window_days)
+            if not hist:
+                return {}
+
+            peak_now = _current_peak(window_days)
+            current_dd = max(0.0, min(1.0, (peak_now - current_price) / peak_now))
+
+            less_or_equal = sum(1 for item in hist if item["drawdown_ratio"] <= current_dd)
+            percentile = (less_or_equal / len(hist)) * 100.0
+
+            nearest = min(hist, key=lambda item: abs(item["drawdown_ratio"] - current_dd))
+            last_occurrence = None
+            for item in reversed(hist):
+                if item["drawdown_ratio"] >= current_dd:
+                    last_occurrence = item
+                    break
+
+            comparable_tolerance = 0.02
+            recent_comparable = None
+            for item in reversed(hist):
+                if abs(item["drawdown_ratio"] - current_dd) <= comparable_tolerance:
+                    recent_comparable = item
+                    break
+            if recent_comparable is None:
+                recent_comparable = nearest
+
+            return {
+                "window": window_label,
+                "current_peak": peak_now,
+                "current_price": current_price,
+                "current_drawdown_ratio": current_dd,
+                "percentile_rank": percentile,
+                "deeper_than_pct": percentile,
+                "more_extreme_pct": max(0.0, 100.0 - percentile),
+                "nearest_match": nearest,
+                "last_occurrence": last_occurrence,
+                "recent_comparable": recent_comparable,
+            }
+
+        return {
+            "ath": _compute_one("ATH", None),
+            "365d": _compute_one("365D", 365),
+            "180d": _compute_one("180D", 180),
+        }
+    except Exception as e:
+        logger.warning(f"Failed to compute drawdown context: {e}")
+        return None
+
 def _resolve_csv_path() -> Path:
     """
     Resolve the CSV path from settings, handling relative paths correctly.
