@@ -107,7 +107,7 @@ class StrategyBase(BaseModel):
     time_display_mode: str = "UTC"
     
     # Dynamic Strategy Config
-    strategy_type: str = "legacy_band" # "legacy_band", "ahr999_fixed_range", or "dynamic_ahr999"
+    strategy_type: str = "legacy_band" # "legacy_band", "ahr999_fixed_range", "dynamic_ahr999", or "fixed_dca"
     execution_mode: str = "DRY_RUN"  # "DRY_RUN" or "LIVE"
     dynamic_min_multiplier: Optional[float] = None
     dynamic_max_multiplier: Optional[float] = None

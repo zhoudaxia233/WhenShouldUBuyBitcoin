@@ -349,6 +349,23 @@ def calculate_dca_decision(session: Session) -> DCADecision:
         # If capped by monthly cap in strategy, we should respect that
         # The strategy module already capped 'buy', so suggested_amount is correct.
 
+    elif strategy.strategy_type == "fixed_dca":
+        # Fixed DCA Strategy:
+        # - Uses monthly budget only
+        # - Ignores AHR999 for sizing decisions
+        # - Still reports AHR999 for user reference
+        if strategy.execution_frequency == "daily":
+            base_amount = strategy.total_budget_usd / 30.44
+        elif strategy.execution_frequency == "weekly":
+            base_amount = strategy.total_budget_usd / 4.0
+        else:
+            base_amount = strategy.total_budget_usd / 30.44
+
+        band = "fixed"
+        multiplier = 1.0
+        suggested_amount = base_amount
+        reason = "Fixed DCA: Monthly Budget ÷ Frequency (AHR999 shown for reference only)"
+
     elif strategy.strategy_type == "ahr999_fixed_range":
         # AHR999 Fixed Range Strategy Logic (8-range system matching backtest)
         # Uses fixed AHR999 value thresholds instead of historical percentiles
@@ -491,8 +508,8 @@ def calculate_dca_decision(session: Session) -> DCADecision:
 
     # 4. Calculate base amount based on budget and execution frequency
     # Only needed if not already calculated by dynamic strategy
-    # For ahr999_fixed_range, we need to calculate base_amount here
-    if strategy.strategy_type not in ["dynamic_ahr999"]:
+    # For most non-dynamic strategies, base amount comes from budget/frequency
+    if strategy.strategy_type not in ["dynamic_ahr999", "fixed_dca"]:
         if strategy.execution_frequency == "daily":
             # Use 30.44 days per month (same as backtest framework)
             base_amount = strategy.total_budget_usd / 30.44

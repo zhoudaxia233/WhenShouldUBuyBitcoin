@@ -385,11 +385,24 @@
                             <select class="form-select" id="strategy_type">
                                 <option value="legacy_band">AHR999 Percentile Strategy</option>
                                 <option value="ahr999_fixed_range">AHR999 Fixed Range Strategy</option>
+                                <option value="fixed_dca">Fixed DCA (Budget Only)</option>
                                 <option value="dynamic_ahr999">Dynamic AHR999 Strategy (Advanced)</option>
                             </select>
                             <div class="form-text text-muted">
-                                Choose between percentile-based (uses historical distribution), fixed range (deterministic thresholds), or continuous curve strategy.
+                                Choose percentile-based, fixed-range, fixed DCA (ignores AHR for sizing), or dynamic curve strategy.
                             </div>
+                        </div>
+                    </div>
+
+                    <div id="fixedDcaConfigSection" class="d-none">
+                        <div class="alert alert-info mt-2">
+                            <strong>Fixed DCA:</strong> No extra inputs required. Each execution buys a fixed amount:
+                            <br>
+                            Daily: Monthly Budget / 30.44
+                            <br>
+                            Weekly: Monthly Budget / 4
+                            <br>
+                            AHR999 is still displayed for reference, but does not change buy size.
                         </div>
                     </div>
 
@@ -952,16 +965,20 @@
             const type = document.getElementById('strategy_type').value;
             const legacySection = document.getElementById('legacyConfigSection');
             const fixedRangeSection = document.getElementById('fixedRangeConfigSection');
+            const fixedDcaSection = document.getElementById('fixedDcaConfigSection');
             const dynamicSection = document.getElementById('dynamicConfigSection');
             
             // Hide all sections first
             legacySection.classList.add('d-none');
             fixedRangeSection.classList.add('d-none');
+            fixedDcaSection.classList.add('d-none');
             dynamicSection.classList.add('d-none');
             
             // Show the selected section
             if (type === 'dynamic_ahr999') {
                 dynamicSection.classList.remove('d-none');
+            } else if (type === 'fixed_dca') {
+                fixedDcaSection.classList.remove('d-none');
             } else if (type === 'ahr999_fixed_range') {
                 fixedRangeSection.classList.remove('d-none');
             } else {

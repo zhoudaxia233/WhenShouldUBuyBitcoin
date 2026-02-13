@@ -195,6 +195,60 @@ def test_percentile_strategy_execution(mock_metrics, session: Session, percentil
 # ============================================================================
 
 @pytest.fixture
+def fixed_dca_strategy(session: Session):
+    """Strategy using fixed DCA approach (budget/frequency only)."""
+    strategy = DCAStrategy(
+        is_active=True,
+        total_budget_usd=304.4,  # Exactly $10/day with 30.44 divisor
+        strategy_type="fixed_dca",
+        execution_frequency="daily",
+        enforce_monthly_cap=True,
+        # Required legacy fields
+        ahr999_multiplier_low=0,
+        ahr999_multiplier_mid=0,
+        ahr999_multiplier_high=0
+    )
+    session.add(strategy)
+    session.commit()
+    session.refresh(strategy)
+    return strategy
+
+
+@patch('dca_service.services.dca_engine.get_latest_metrics')
+def test_fixed_dca_ignores_ahr_for_sizing(mock_metrics, session: Session, fixed_dca_strategy: DCAStrategy):
+    """Fixed DCA should use budget/frequency amount regardless of AHR999 level."""
+    mock_metrics.return_value = {
+        "ahr999": 0.25,
+        "price_usd": 70000.0,
+        "peak180": 100000.0,
+        "timestamp": datetime.now(timezone.utc),
+        "source": "csv",
+        "source_label": "Test"
+    }
+    decision_low = calculate_dca_decision(session)
+
+    mock_metrics.return_value = {
+        "ahr999": 1.5,
+        "price_usd": 70000.0,
+        "peak180": 100000.0,
+        "timestamp": datetime.now(timezone.utc),
+        "source": "csv",
+        "source_label": "Test"
+    }
+    decision_high = calculate_dca_decision(session)
+
+    assert decision_low.can_execute is True
+    assert decision_high.can_execute is True
+    assert decision_low.ahr999_value == 0.25  # still reported for reference
+    assert decision_high.ahr999_value == 1.5  # still reported for reference
+    assert abs(decision_low.base_amount_usd - 10.0) < 0.01
+    assert abs(decision_high.base_amount_usd - 10.0) < 0.01
+    assert abs(decision_low.suggested_amount_usd - 10.0) < 0.01
+    assert abs(decision_high.suggested_amount_usd - 10.0) < 0.01
+    assert decision_low.multiplier == 1.0
+    assert decision_high.multiplier == 1.0
+
+@pytest.fixture
 def dynamic_strategy(session: Session):
     """Strategy using dynamic AHR999 approach"""
     strategy = DCAStrategy(
