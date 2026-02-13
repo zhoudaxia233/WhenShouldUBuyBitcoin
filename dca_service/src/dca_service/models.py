@@ -80,7 +80,7 @@ class DCAStrategy(SQLModel, table=True):
     time_display_mode: str = Field(default="UTC")  # "UTC" or "LOCAL"
     
     # Strategy Configuration
-    strategy_type: str = Field(default="legacy_band") # "legacy_band", "dynamic_ahr999", or "ahr999_fixed_range"
+    strategy_type: str = Field(default="legacy_band") # "legacy_band", "dynamic_ahr999", "ahr999_fixed_range", or "fixed_dca"
     
     # Execution Mode (Phase 9: Execution Mode Plumbing)
     execution_mode: str = Field(default="DRY_RUN")  # "DRY_RUN" or "LIVE"
