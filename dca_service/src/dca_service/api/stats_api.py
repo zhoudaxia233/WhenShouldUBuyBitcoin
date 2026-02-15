@@ -20,6 +20,7 @@ from dca_service.services.security import decrypt_text
 router = APIRouter()
 logger = logging.getLogger(__name__)
 TRADING_STYLE_AI_CACHE: Dict[str, Dict[str, Any]] = {}
+TRADING_STYLE_AI_PROMPT_VERSION = "v2_concise_chill"
 
 
 def _normalize_language(language: str | None) -> str:
@@ -806,12 +807,13 @@ def _run_ai_style_analysis(
         "language": normalized_language,
         "cache_hit": False,
         "source_signature": source_signature,
+        "prompt_version": TRADING_STYLE_AI_PROMPT_VERSION,
     }
     if not include_ai:
         status["reason"] = "AI analysis skipped by request."
         return {"status": status, "analysis": None}
 
-    cache_key = f"{normalized_language}:{source_signature}"
+    cache_key = f"{normalized_language}:{source_signature}:{TRADING_STYLE_AI_PROMPT_VERSION}"
     cached = TRADING_STYLE_AI_CACHE.get(cache_key)
     if cached and isinstance(cached.get("analysis"), str) and cached.get("analysis"):
         status["success"] = True
@@ -864,13 +866,15 @@ def _run_ai_style_analysis(
     if normalized_language == "zh":
         system_prompt = (
             "你是BTC买入执行行为分析师。"
+            "语气要简明、chill、像朋友复盘，不要官话。"
             "必须严格避免后视偏差。"
             "每个行为只能基于当时和之前可见信息评价。"
             "只使用提供的指标与诊断数据。"
-            "请用简洁中文输出，包含："
-            "1) 风格判断 "
-            "2) 主要问题(按严重度) "
-            "3) 可执行改进建议(3-5条)。"
+            "输出用中文Markdown，控制在8-12行以内。"
+            "结构固定为："
+            "1) 风格判断（2-3句）"
+            "2) 主要问题（最多3条，按严重度）"
+            "3) 下一步建议（最多4条，可直接执行）。"
         )
         user_prompt = (
             "下面是用户交易行为统计数据（同一订单ID拆单已合并为一个行为事件）。\n"
@@ -880,13 +884,14 @@ def _run_ai_style_analysis(
     else:
         system_prompt = (
             "You are a BTC buy-execution behavior analyst. "
+            "Use a concise, chill, coach-like tone. No corporate fluff. "
             "You must strictly avoid hindsight bias. "
             "Each action can only be judged using information available at that time and earlier history. "
             "Use only the supplied metrics and diagnostics. "
-            "Respond concisely in English with sections: "
-            "1) Style Assessment "
-            "2) Key Issues (ranked by severity) "
-            "3) Actionable Improvements (3-5 items)."
+            "Respond in Markdown in 8-12 lines max with sections: "
+            "1) Style Assessment (2-3 short sentences) "
+            "2) Key Issues (max 3, ranked by severity) "
+            "3) Actionable Improvements (max 4)."
         )
         user_prompt = (
             "Below is the user's trading behavior dataset (split fills with same order ID are merged as one event).\n"
@@ -935,6 +940,7 @@ def _run_ai_style_analysis(
             "model": model,
             "language": normalized_language,
             "source_signature": source_signature,
+            "prompt_version": TRADING_STYLE_AI_PROMPT_VERSION,
             "updated_at": datetime.now(timezone.utc).isoformat(),
         }
         return {"status": status, "analysis": content}
