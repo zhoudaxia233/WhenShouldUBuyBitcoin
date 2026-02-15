@@ -100,3 +100,23 @@ def test_trading_style_supports_language_toggle_and_language_aware_request():
     assert "let tradingStyleLanguage = 'en';" in html
     assert "function applyTradingStyleLanguageUI()" in html
     assert "language=${encodeURIComponent(tradingStyleLanguage)}" in html
+
+
+def test_trading_style_ai_markdown_rendering_is_enabled():
+    html = _load_stats_template()
+    assert 'id="tradingStyleAiText"' in html
+    assert "marked.min.js" in html
+    assert "purify.min.js" in html
+    assert "function renderAiMarkdown(markdownText)" in html
+    assert "window.marked.parse" in html
+    assert "window.DOMPurify.sanitize" in html
+
+
+def test_trading_style_ai_is_scoped_by_language_and_restored_from_language_cache():
+    html = _load_stats_template()
+    assert "function getTradingStyleAiCacheKey(language)" in html
+    assert "function attachAiFromLanguageCache(rulePayload)" in html
+    assert "stats_trading_style_ai_" in html
+    assert "attachAiFromLanguageCache(cached.data)" in html
+    assert "attachAiFromLanguageCache(data)" in html
+    assert "renderAiMarkdown(getTradingStyleText().aiNotRequested);" in html
