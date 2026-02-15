@@ -518,6 +518,37 @@
                 </div>
             </div>
         </div>
+
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-white d-flex justify-content-between align-items-center gap-2">
+                        <h5 class="mb-0" id="tradingStyleTitle">Trading Style Analysis</h5>
+                        <div class="d-flex align-items-center gap-2">
+                            <div class="btn-group btn-group-sm" role="group" aria-label="Trading style language">
+                                <button id="tradingStyleLangEn" class="btn btn-outline-secondary active" type="button">EN</button>
+                                <button id="tradingStyleLangZh" class="btn btn-outline-secondary" type="button">中文</button>
+                            </div>
+                            <button id="runStyleAiBtn" class="btn btn-sm btn-outline-primary">Run AI Review</button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="small text-muted mb-2" id="tradingStyleStatus">Loading analysis...</div>
+                        <div class="mb-2"><strong id="tradingStyleLabelTags">Style Tags:</strong> <span id="tradingStyleTags">--</span></div>
+                        <div class="mb-2"><strong id="tradingStyleLabelStats">Key Stats:</strong> <span id="tradingStyleStats">--</span></div>
+                        <div class="mb-2"><strong id="tradingStyleLabelMethod">Method:</strong> <span id="tradingStyleMethod">--</span></div>
+                        <div class="mb-2">
+                            <strong id="tradingStyleLabelIssues">Potential Issues:</strong>
+                            <ul class="mb-0" id="tradingStyleIssues"></ul>
+                        </div>
+                        <hr />
+                        <div><strong id="tradingStyleLabelAi">AI Review:</strong></div>
+                        <div class="small text-muted mb-1" id="tradingStyleAiSubtext">AI review uses your configured Summary API settings.</div>
+                        <pre id="tradingStyleAiText" class="mb-0" style="white-space: pre-wrap; font-size: 0.92rem;">Not requested yet.</pre>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
@@ -699,6 +730,81 @@
         let saylorInitialXMax = null;
         let latestStatsPnlData = null;
         let latestWalletSummary = null;
+        let latestTradingStyleData = null;
+        let tradingStyleLanguage = 'en';
+
+        const TRADING_STYLE_I18N = {
+            en: {
+                title: 'Trading Style Analysis',
+                runAi: 'Run AI Review',
+                tags: 'Style Tags:',
+                stats: 'Key Stats:',
+                method: 'Method:',
+                issues: 'Potential Issues:',
+                aiReview: 'AI Review:',
+                aiSubtext: 'AI review uses your configured Summary API settings.',
+                aiNotRequested: 'Not requested yet.',
+                loadingRule: 'Loading rule-based analysis...',
+                loadingAi: 'Calling AI review...',
+                loadFailed: 'Failed to load trading style analysis.',
+                statusRule: (t) => `Updated ${t}. Rule-based analysis loaded.`,
+                statusAiDone: (t) => `Updated ${t}. AI review completed.`,
+                statusAiUnavailable: (t, reason) => `Updated ${t}. AI review unavailable: ${reason || 'unknown reason'}`,
+                noIssue: 'No major issue flagged by rule-based diagnostics.',
+                statsEvents: 'Events',
+                statsRawFills: 'Raw fills',
+                statsSplitMerged: 'Split extras merged',
+                statsAvgEvent: 'Avg event',
+                statsMedianInterval: 'Median interval',
+                statsHighZone: 'High-zone ratio',
+                statsLowZone: 'Low-zone ratio',
+                statsBurst: 'Burst ratio',
+                days: 'days',
+                methodSplit: 'Same binance_order_id merged into one event.',
+                methodNoHindsight: 'Each event diagnostics use only event-time and prior events.',
+                cacheHint: 'Data unchanged. Reused cached AI analysis; no API call made.',
+            },
+            zh: {
+                title: '交易风格分析',
+                runAi: '运行AI评估',
+                tags: '风格标签：',
+                stats: '关键统计：',
+                method: '方法说明：',
+                issues: '潜在问题：',
+                aiReview: 'AI评估：',
+                aiSubtext: 'AI评估使用你在 Summary API 设置里的配置。',
+                aiNotRequested: '尚未请求。',
+                loadingRule: '正在加载规则分析...',
+                loadingAi: '正在调用AI评估...',
+                loadFailed: '交易风格分析加载失败。',
+                statusRule: (t) => `更新于 ${t}。规则分析已加载。`,
+                statusAiDone: (t) => `更新于 ${t}。AI评估已完成。`,
+                statusAiUnavailable: (t, reason) => `更新于 ${t}。AI评估不可用：${reason || '未知原因'}`,
+                noIssue: '规则分析未发现明显问题。',
+                statsEvents: '行为事件',
+                statsRawFills: '原始成交',
+                statsSplitMerged: '拆单合并数',
+                statsAvgEvent: '平均单次金额',
+                statsMedianInterval: '中位间隔',
+                statsHighZone: '高位买入占比',
+                statsLowZone: '低位买入占比',
+                statsBurst: '密集交易占比',
+                days: '天',
+                methodSplit: '同一 binance_order_id 的拆分成交会合并为一个行为事件。',
+                methodNoHindsight: '每个事件只使用当时及之前的数据做诊断，不使用后续信息。',
+                cacheHint: '数据源未更新，复用上次AI结果，本次未触发API调用。',
+            }
+        };
+
+        const STYLE_TAG_ZH_MAP = {
+            'Dip Buyer': '逢低买入型',
+            'Momentum Chaser': '追涨型',
+            'Fixed-size DCA': '固定金额定投型',
+            'Burst Trader': '密集交易型',
+            'Manual Dominant': '手动主导型',
+            'Balanced DCA': '均衡定投型',
+            'No Data': '暂无数据'
+        };
 
         function renderChart(data) {
             if (data.dates.length === 0) return;
@@ -1177,10 +1283,181 @@
             }
         }
 
+        function formatPct(value) {
+            if (value === null || value === undefined || Number.isNaN(Number(value))) return '--';
+            return `${(Number(value) * 100).toFixed(1)}%`;
+        }
+
+        function getTradingStyleText() {
+            return TRADING_STYLE_I18N[tradingStyleLanguage] || TRADING_STYLE_I18N.en;
+        }
+
+        function localizeStyleTag(tag) {
+            if (tradingStyleLanguage !== 'zh') return tag;
+            return STYLE_TAG_ZH_MAP[tag] || tag;
+        }
+
+        function localizeIssue(item) {
+            if (tradingStyleLanguage !== 'zh') return item;
+            const titleMap = {
+                'Limited sample size': '样本量有限',
+                'Possible high-price chasing': '可能存在高位追涨',
+                'Larger size at higher prices': '高位加大仓位',
+                'High burst frequency': '交易过于密集',
+                'Concentrated single-event risk': '单笔集中风险偏高',
+                'Inconsistent sizing': '仓位大小波动较大',
+                'Split fills detected': '检测到拆分成交',
+                'No transactions': '暂无交易',
+            };
+            const detailMap = {
+                'Behavior interpretation confidence is limited because the event count is still small.': '行为解读的置信度有限，因为行为事件数量仍然偏少。',
+                'A large share of buys happened near the top of your historical range at the moment of execution.': '有较高比例的买入发生在当时历史区间的高位附近。',
+                'Position size tends to increase when your own observed price range is already in upper zones.': '在你自己历史观察区间偏高时，仓位规模倾向于增大。',
+                'Many trades happen within 48 hours of each other, which may indicate reactive execution.': '很多交易发生在48小时内，可能存在反应式执行。',
+                'Your largest event contributes over 35% of total invested amount.': '你最大的一次行为事件占总投入金额超过35%。',
+                'Sizing volatility is high, making risk and outcome attribution harder.': '仓位波动较大，会增加风险控制和结果归因难度。',
+                'Some orders were split into multiple fills and have been merged into single behavior events for this analysis.': '部分订单被拆分成交，本分析已将其合并为单个行为事件。',
+                'No successful buy transaction found.': '未发现成功买入交易。',
+            };
+            return {
+                ...item,
+                title: titleMap[item.title] || item.title,
+                detail: detailMap[item.detail] || item.detail,
+            };
+        }
+
+        function applyTradingStyleLanguageUI() {
+            const text = getTradingStyleText();
+            const setText = (id, value) => {
+                const el = document.getElementById(id);
+                if (el) el.textContent = value;
+            };
+            setText('tradingStyleTitle', text.title);
+            setText('runStyleAiBtn', text.runAi);
+            setText('tradingStyleLabelTags', text.tags);
+            setText('tradingStyleLabelStats', text.stats);
+            setText('tradingStyleLabelMethod', text.method);
+            setText('tradingStyleLabelIssues', text.issues);
+            setText('tradingStyleLabelAi', text.aiReview);
+            setText('tradingStyleAiSubtext', text.aiSubtext);
+            const aiEl = document.getElementById('tradingStyleAiText');
+            if (aiEl && aiEl.textContent === TRADING_STYLE_I18N.en.aiNotRequested) {
+                aiEl.textContent = text.aiNotRequested;
+            }
+            document.getElementById('tradingStyleLangEn')?.classList.toggle('active', tradingStyleLanguage === 'en');
+            document.getElementById('tradingStyleLangZh')?.classList.toggle('active', tradingStyleLanguage === 'zh');
+        }
+
+        function updateTradingStyleUI(payload, includeAI = false) {
+            latestTradingStyleData = payload;
+            const text = getTradingStyleText();
+            const analysis = payload?.analysis_data || {};
+            const summary = analysis.summary || {};
+            const tags = analysis.style_tags || [];
+            const issues = analysis.issues || [];
+            const method = analysis.method_constraints || {};
+
+            const eventCount = Number(summary.behavior_event_count || 0);
+            const rawFillCount = Number(summary.raw_fill_count || 0);
+            const splitExtras = Number(summary.split_fill_extra_count || 0);
+            const avgEventUsd = Number(summary.avg_event_usd || 0);
+            const medianIntervalDays = summary.median_interval_days;
+
+            document.getElementById('tradingStyleTags').textContent = tags.length ? tags.map(localizeStyleTag).join(', ') : '--';
+            document.getElementById('tradingStyleStats').textContent = [
+                `${text.statsEvents}: ${eventCount}`,
+                `${text.statsRawFills}: ${rawFillCount}`,
+                `${text.statsSplitMerged}: ${splitExtras}`,
+                `${text.statsAvgEvent}: $${avgEventUsd.toLocaleString(undefined, { maximumFractionDigits: 2 })}`,
+                `${text.statsMedianInterval}: ${medianIntervalDays == null ? '--' : Number(medianIntervalDays).toFixed(2)} ${text.days}`,
+                `${text.statsHighZone}: ${formatPct(summary.high_zone_buy_ratio)}`,
+                `${text.statsLowZone}: ${formatPct(summary.low_zone_buy_ratio)}`,
+                `${text.statsBurst}: ${formatPct(summary.burst_trading_ratio)}`
+            ].join(' | ');
+
+            const methodText = [
+                tradingStyleLanguage === 'zh' ? text.methodSplit : (method.split_fill_handling || text.methodSplit),
+                tradingStyleLanguage === 'zh' ? text.methodNoHindsight : (method.no_hindsight || text.methodNoHindsight)
+            ].join(' ');
+            document.getElementById('tradingStyleMethod').textContent = methodText;
+
+            const issuesEl = document.getElementById('tradingStyleIssues');
+            issuesEl.innerHTML = '';
+            if (!issues.length) {
+                const li = document.createElement('li');
+                li.textContent = text.noIssue;
+                issuesEl.appendChild(li);
+            } else {
+                issues.forEach((rawItem) => {
+                    const item = localizeIssue(rawItem);
+                    const li = document.createElement('li');
+                    const severity = item.severity ? `[${String(item.severity).toUpperCase()}] ` : '';
+                    li.textContent = `${severity}${item.title}: ${item.detail}`;
+                    issuesEl.appendChild(li);
+                });
+            }
+
+            const aiTextEl = document.getElementById('tradingStyleAiText');
+            const aiStatus = payload?.ai_status || {};
+            if (payload?.ai_analysis) {
+                aiTextEl.textContent = payload.ai_analysis;
+            } else if (includeAI) {
+                aiTextEl.textContent = aiStatus.reason || 'AI review unavailable.';
+            } else if (!aiTextEl.textContent || aiTextEl.textContent.trim() === '') {
+                aiTextEl.textContent = text.aiNotRequested;
+            }
+
+            const statusEl = document.getElementById('tradingStyleStatus');
+            const generatedAt = payload?.generated_at ? new Date(payload.generated_at).toLocaleString() : '';
+            if (includeAI) {
+                statusEl.textContent = aiStatus.success
+                    ? text.statusAiDone(generatedAt)
+                    : text.statusAiUnavailable(generatedAt, aiStatus.reason);
+            } else {
+                statusEl.textContent = text.statusRule(generatedAt);
+            }
+        }
+
+        async function loadTradingStyle(forceRefresh = false, includeAI = false) {
+            const cacheKey = includeAI
+                ? `stats_trading_style_ai_${tradingStyleLanguage}`
+                : `stats_trading_style_${tradingStyleLanguage}`;
+            const ttlMinutes = includeAI ? 30 : 10;
+
+            try {
+                const cached = loadFromCache(cacheKey);
+                if (!forceRefresh && isCacheValid(cached, ttlMinutes)) {
+                    updateTradingStyleUI(cached.data, includeAI);
+                    return;
+                }
+
+                if (cached) updateTradingStyleUI(cached.data, includeAI);
+
+                const response = await fetch(
+                    `/api/stats/trading-style?include_ai=${includeAI ? 'true' : 'false'}&language=${encodeURIComponent(tradingStyleLanguage)}`
+                );
+                const data = await response.json();
+                saveToCache(cacheKey, data);
+                updateTradingStyleUI(data, includeAI);
+
+                if (includeAI && data?.ai_status?.cache_hit) {
+                    const text = getTradingStyleText();
+                    notyf.success(text.cacheHint);
+                }
+            } catch (error) {
+                console.error('Error loading trading style analysis:', error);
+                const statusEl = document.getElementById('tradingStyleStatus');
+                if (statusEl) {
+                    statusEl.textContent = getTradingStyleText().loadFailed;
+                }
+            }
+        }
+
         // Initialize
         document.addEventListener('DOMContentLoaded', async () => {
             const currentTheme = document.documentElement.getAttribute('data-bs-theme') || 'light';
             updateThemeToggleButton(currentTheme);
+            applyTradingStyleLanguageUI();
             const themeBtn = document.getElementById('themeToggleBtn');
             if (themeBtn) {
                 themeBtn.addEventListener('click', () => {
@@ -1197,6 +1474,32 @@
             loadFees();
             loadWalletBalance();
             loadChart();
+            loadTradingStyle(false, false);
+
+            const langEnBtn = document.getElementById('tradingStyleLangEn');
+            const langZhBtn = document.getElementById('tradingStyleLangZh');
+            if (langEnBtn) {
+                langEnBtn.addEventListener('click', async () => {
+                    if (tradingStyleLanguage === 'en') return;
+                    tradingStyleLanguage = 'en';
+                    applyTradingStyleLanguageUI();
+                    if (latestTradingStyleData) {
+                        updateTradingStyleUI(latestTradingStyleData, false);
+                    }
+                    await loadTradingStyle(false, false);
+                });
+            }
+            if (langZhBtn) {
+                langZhBtn.addEventListener('click', async () => {
+                    if (tradingStyleLanguage === 'zh') return;
+                    tradingStyleLanguage = 'zh';
+                    applyTradingStyleLanguageUI();
+                    if (latestTradingStyleData) {
+                        updateTradingStyleUI(latestTradingStyleData, false);
+                    }
+                    await loadTradingStyle(false, false);
+                });
+            }
 
             const saylorCanvas = document.getElementById('saylorChart');
             if (saylorCanvas) {
@@ -1215,13 +1518,35 @@
                     loadDistribution(true),
                     loadFees(true),
                     loadWalletBalance(true),
-                    loadChart(true)
+                    loadChart(true),
+                    loadTradingStyle(true, false)
                 ]);
                 
                 btn.disabled = false;
                 btn.innerHTML = originalText;
                 notyf.success('Stats refreshed');
             });
+
+            const runStyleAiBtn = document.getElementById('runStyleAiBtn');
+            if (runStyleAiBtn) {
+                runStyleAiBtn.addEventListener('click', async () => {
+                    const originalText = runStyleAiBtn.innerHTML;
+                    runStyleAiBtn.disabled = true;
+                    runStyleAiBtn.innerHTML = tradingStyleLanguage === 'zh' ? '运行中...' : 'Running...';
+                    const statusEl = document.getElementById('tradingStyleStatus');
+                    if (statusEl) statusEl.textContent = getTradingStyleText().loadingAi;
+                    try {
+                        await loadTradingStyle(true, true);
+                        notyf.success(tradingStyleLanguage === 'zh' ? 'AI评估完成' : 'AI review completed');
+                    } catch (error) {
+                        console.error('AI review error:', error);
+                        notyf.error(tradingStyleLanguage === 'zh' ? 'AI评估失败' : 'AI review failed');
+                    } finally {
+                        runStyleAiBtn.disabled = false;
+                        runStyleAiBtn.innerHTML = originalText;
+                    }
+                });
+            }
             
             // Regenerate Static Files Button Handler
             document.getElementById('regenerateStaticBtn').addEventListener('click', async (event) => {
