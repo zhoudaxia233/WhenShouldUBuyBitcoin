@@ -303,8 +303,8 @@
                 </div>
 
                 <div class="d-flex justify-content-end">
-                    <button id="executeSimulatedBtn" class="btn btn-success" disabled>
-                        Test Strategy
+                    <button id="openAddPositionBtn" class="btn btn-success" disabled data-bs-toggle="modal" data-bs-target="#addPositionModal">
+                        Add Position
                     </button>
                 </div>
             </div>
@@ -503,6 +503,49 @@
         </div>
     </div>
 
+    <!-- Add Position Advisory Modal -->
+    <div class="modal fade" id="addPositionModal" tabindex="-1" aria-labelledby="addPositionModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addPositionModalLabel">Add Position</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="addPositionForm" class="row g-3">
+                        <div class="col-md-6">
+                            <label for="addPositionUsdcInput" class="form-label">USDC Amount</label>
+                            <input id="addPositionUsdcInput" type="number" min="1" step="0.01" class="form-control" required>
+                            <div class="form-text">Enter the amount you plan to add right now.</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="addPositionPriceInput" class="form-label">BTC Price (USDC)</label>
+                            <div class="input-group">
+                                <input id="addPositionPriceInput" type="number" min="1" step="0.01" class="form-control" required readonly>
+                                <button id="addPositionRefreshPriceBtn" type="button" class="btn btn-outline-secondary">Refresh</button>
+                            </div>
+                            <div class="form-text" id="addPositionPriceMeta">Price source: --</div>
+                        </div>
+                        <div class="col-12">
+                            <div class="small text-muted" id="addPositionBtcEstimate">Estimated BTC: --</div>
+                        </div>
+                        <div class="col-12 d-grid d-md-flex justify-content-md-end">
+                            <button id="addPositionAnalyzeBtn" type="submit" class="btn btn-primary">Generate Advice</button>
+                        </div>
+                        <div class="col-12">
+                            <div class="small text-muted" id="addPositionActionHint">
+                                Review advice first. Then this button will switch to Buy.
+                            </div>
+                        </div>
+                    </form>
+                    <hr>
+                    <div class="mb-2 small text-muted" id="addPositionAdviceStatus">Waiting for inputs.</div>
+                    <pre id="addPositionAdviceText" class="small mb-0 p-3 border rounded bg-body-tertiary" style="white-space: pre-wrap; min-height: 210px;">No advice yet.</pre>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/notyf@3.10.0/notyf.min.js"></script>
     <script>
@@ -673,6 +716,9 @@
         let currentPage = 1;
         const rowsPerPage = 20;
         let currentDrawdownMode = '180d';
+        const ADD_POSITION_PRICE_POLL_INTERVAL_MS = 3000;
+        let addPositionPricePollTimer = null;
+        let addPositionActionMode = 'advice'; // 'advice' -> 'buy'
         const THEME_STORAGE_KEY = 'dca_theme';
         const THEME_ICON_SUN = '<svg class="theme-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"></circle><line x1="12" y1="2.5" x2="12" y2="5"></line><line x1="12" y1="19" x2="12" y2="21.5"></line><line x1="2.5" y1="12" x2="5" y2="12"></line><line x1="19" y1="12" x2="21.5" y2="12"></line><line x1="5.2" y1="5.2" x2="6.9" y2="6.9"></line><line x1="17.1" y1="17.1" x2="18.8" y2="18.8"></line><line x1="17.1" y1="6.9" x2="18.8" y2="5.2"></line><line x1="5.2" y1="18.8" x2="6.9" y2="17.1"></line></svg>';
         const THEME_ICON_MOON = '<svg class="theme-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M14.5 3.5a8.8 8.8 0 1 0 6 14.9 9.2 9.2 0 0 1-6.8-2.7 9.3 9.3 0 0 1-2.8-6.9 8.9 8.9 0 0 1 3.6-7.3Z"></path></svg>';
@@ -1004,24 +1050,30 @@
                     trigger: 'hover'
                 });
             }
-                // Update Test Strategy Button State
-                const btn = document.getElementById('executeSimulatedBtn');
-                const warningBox = document.getElementById('metricsWarning');
-
+            // Update Add Position Button State
+            const addPositionBtn = document.getElementById('openAddPositionBtn');
+            const warningBox = document.getElementById('metricsWarning');
+            if (addPositionBtn && warningBox) {
                 if (decision.reason.includes("Metrics unavailable") || decision.reason.includes("stale")) {
                     warningBox.classList.remove('d-none');
-                    btn.disabled = true;
-                    btn.textContent = 'Metrics Error';
+                    addPositionBtn.disabled = true;
+                    addPositionBtn.textContent = 'Metrics Error';
                 } else {
                     warningBox.classList.add('d-none');
-                    if (decision.can_execute) {
-                        btn.disabled = false;
-                        btn.textContent = `Test Strategy ($${decision.suggested_amount_usd.toFixed(2)})`;
-                    } else {
-                        btn.disabled = true;
-                        btn.textContent = 'Conditions Not Met';
-                    }
+                    addPositionBtn.disabled = false;
+                    addPositionBtn.textContent = 'Add Position';
                 }
+            }
+
+            const addAmountInput = document.getElementById('addPositionUsdcInput');
+            if (
+                addAmountInput &&
+                decision.suggested_amount_usd !== null &&
+                decision.suggested_amount_usd !== undefined &&
+                decision.suggested_amount_usd > 0
+            ) {
+                addAmountInput.value = Number(decision.suggested_amount_usd).toFixed(2);
+            }
         }
 
         async function loadPreview() {
@@ -1096,33 +1148,291 @@
             }
         });
 
-        document.getElementById('executeSimulatedBtn').addEventListener('click', async () => {
-            const btn = document.getElementById('executeSimulatedBtn');
-            const originalText = btn.textContent;
-            btn.disabled = true;
-            btn.textContent = 'Executing...';
+        function updateAddPositionEstimate() {
+            const amount = Number(document.getElementById('addPositionUsdcInput')?.value);
+            const price = Number(document.getElementById('addPositionPriceInput')?.value);
+            const estimateEl = document.getElementById('addPositionBtcEstimate');
+            if (!estimateEl) return;
+            if (!Number.isFinite(amount) || amount <= 0 || !Number.isFinite(price) || price <= 0) {
+                estimateEl.textContent = 'Estimated BTC: --';
+                return;
+            }
+            estimateEl.textContent = `Estimated BTC: ${(amount / price).toFixed(8)} BTC`;
+        }
+
+        function setAddPositionActionMode(mode) {
+            addPositionActionMode = mode === 'buy' ? 'buy' : 'advice';
+            const btn = document.getElementById('addPositionAnalyzeBtn');
+            const hint = document.getElementById('addPositionActionHint');
+            if (!btn) return;
+
+            if (addPositionActionMode === 'buy') {
+                btn.textContent = 'Buy (Confirm)';
+                btn.classList.remove('btn-primary');
+                btn.classList.add('btn-success');
+                if (hint) {
+                    hint.textContent = 'Advice generated. Click Buy to confirm this add position.';
+                }
+            } else {
+                btn.textContent = 'Generate Advice';
+                btn.classList.remove('btn-success');
+                btn.classList.add('btn-primary');
+                if (hint) {
+                    hint.textContent = 'Review advice first. Then this button will switch to Buy.';
+                }
+            }
+        }
+
+        async function fetchRealtimePriceForAddPosition({ silent = false } = {}) {
+            const priceInput = document.getElementById('addPositionPriceInput');
+            const metaEl = document.getElementById('addPositionPriceMeta');
+            if (!priceInput || !metaEl) return null;
 
             try {
-                const response = await fetch('/api/dca/execute-simulated', {
-                    method: 'POST'
+                const response = await fetch('/api/stats/realtime-price?symbol=BTCUSDC');
+                const payload = await response.json();
+                if (!response.ok) {
+                    throw new Error(payload?.detail || 'Price fetch failed');
+                }
+
+                const price = Number(payload.price);
+                if (Number.isFinite(price) && price > 0) {
+                    priceInput.value = price.toFixed(2);
+                    updateAddPositionEstimate();
+                }
+
+                const sourceText = payload.stale_fallback
+                    ? 'Price source: stale cache'
+                    : payload.cache_hit
+                        ? 'Price source: cache'
+                        : 'Price source: Binance live';
+                metaEl.textContent = sourceText;
+                return payload;
+            } catch (error) {
+                console.error('Failed to fetch realtime BTC price:', error);
+                if (!silent) {
+                    notyf.error('Failed to refresh BTC price');
+                }
+                metaEl.textContent = 'Price source: unavailable';
+                return null;
+            }
+        }
+
+        async function runAddPositionAdvice() {
+            const amount = Number(document.getElementById('addPositionUsdcInput')?.value);
+            const price = Number(document.getElementById('addPositionPriceInput')?.value);
+            const statusEl = document.getElementById('addPositionAdviceStatus');
+            const textEl = document.getElementById('addPositionAdviceText');
+            const submitBtn = document.getElementById('addPositionAnalyzeBtn');
+
+            if (!Number.isFinite(amount) || amount <= 0) {
+                if (statusEl) statusEl.textContent = 'Enter a valid USDC amount first.';
+                return;
+            }
+            if (!Number.isFinite(price) || price <= 0) {
+                if (statusEl) statusEl.textContent = 'Enter a valid BTC price first.';
+                return;
+            }
+
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.textContent = 'Generating...';
+            }
+            if (statusEl) statusEl.textContent = 'Running add-position guidance...';
+
+            try {
+                const response = await fetch('/api/stats/add-position/advice', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        amount_usdc: amount,
+                        current_price_usd: price,
+                        symbol: 'BTCUSDC'
+                    })
                 });
-                const result = await response.json();
-                
-                if (result.transaction) {
-                    notyf.success(`Simulated buy executed: ${result.message}`);
-                    // Auto-refresh after successful execution (Phase 6)
-                    loadTransactions(); // Refresh history
-                    loadPreview();      // Refresh preview (budget might have changed)
-                } else {
-                    notyf.open({ type: 'warning', message: `Skipped: ${result.message}` });
-                    // Don't refresh transactions if skipped, but refresh preview to show updated status
-                    loadPreview();
+                const payload = await response.json();
+                if (!response.ok) {
+                    throw new Error(payload?.detail || 'Advice request failed');
+                }
+
+                const guidanceText = payload?.guidance?.analysis_text || 'No guidance returned.';
+                if (textEl) textEl.textContent = guidanceText;
+                if (statusEl) {
+                    const riskLevel = payload?.guidance?.risk_level || 'unknown';
+                    const riskScore = payload?.guidance?.risk_score ?? '--';
+                    statusEl.textContent = `Risk level: ${riskLevel.toUpperCase()} (${riskScore}/100)`;
+                }
+                setAddPositionActionMode('buy');
+                notyf.success('Advice ready. Click Buy to confirm.');
+            } catch (error) {
+                console.error('Failed to run add-position advice:', error);
+                if (statusEl) statusEl.textContent = 'Guidance request failed.';
+                if (textEl) textEl.textContent = String(error?.message || error || 'Unknown error');
+                notyf.error('Add-position advice failed');
+            } finally {
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    if (addPositionActionMode === 'buy') {
+                        submitBtn.textContent = 'Buy (Confirm)';
+                    } else {
+                        submitBtn.textContent = 'Generate Advice';
+                    }
+                }
+            }
+        }
+
+        async function confirmAddPositionBuy() {
+            const amount = Number(document.getElementById('addPositionUsdcInput')?.value);
+            const price = Number(document.getElementById('addPositionPriceInput')?.value);
+            const statusEl = document.getElementById('addPositionAdviceStatus');
+            const textEl = document.getElementById('addPositionAdviceText');
+            const submitBtn = document.getElementById('addPositionAnalyzeBtn');
+            const modalEl = document.getElementById('addPositionModal');
+
+            if (!Number.isFinite(amount) || amount <= 0 || !Number.isFinite(price) || price <= 0) {
+                if (statusEl) statusEl.textContent = 'Invalid amount or price. Please re-check inputs.';
+                setAddPositionActionMode('advice');
+                return;
+            }
+
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.textContent = 'Buying...';
+            }
+            if (statusEl) statusEl.textContent = 'Recording buy...';
+            let confirmSuccess = false;
+
+            try {
+                const response = await fetch('/api/stats/add-position/confirm', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        amount_usdc: amount,
+                        price_usd: price,
+                        symbol: 'BTCUSDC',
+                        notes: 'Add Position confirmed after advice'
+                    })
+                });
+                const payload = await response.json();
+                if (!response.ok) {
+                    throw new Error(payload?.detail || 'Buy confirmation failed');
+                }
+
+                if (statusEl) statusEl.textContent = 'Buy recorded.';
+                if (textEl && payload?.message) textEl.textContent = payload.message;
+                notyf.success('Buy recorded to transaction history');
+                confirmSuccess = true;
+
+                await Promise.all([
+                    loadTransactions(),
+                    loadPreview(),
+                    loadWalletSummary()
+                ]);
+
+                if (modalEl) {
+                    const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+                    modal.hide();
                 }
             } catch (error) {
-                console.error('Error executing simulated DCA:', error);
-                notyf.error('Execution failed');
-                btn.disabled = false;
-                btn.textContent = originalText;
+                console.error('Failed to confirm add-position buy:', error);
+                if (statusEl) statusEl.textContent = 'Buy failed.';
+                if (textEl) textEl.textContent = String(error?.message || error || 'Unknown error');
+                notyf.error('Buy confirmation failed');
+            } finally {
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                }
+                if (confirmSuccess) {
+                    setAddPositionActionMode('advice');
+                } else {
+                    setAddPositionActionMode('buy');
+                }
+            }
+        }
+
+        function startAddPositionPricePolling() {
+            if (addPositionPricePollTimer !== null) {
+                clearInterval(addPositionPricePollTimer);
+            }
+            addPositionPricePollTimer = setInterval(() => {
+                fetchRealtimePriceForAddPosition({ silent: true });
+            }, ADD_POSITION_PRICE_POLL_INTERVAL_MS);
+        }
+
+        function stopAddPositionPricePolling() {
+            if (addPositionPricePollTimer !== null) {
+                clearInterval(addPositionPricePollTimer);
+                addPositionPricePollTimer = null;
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const addPositionModalEl = document.getElementById('addPositionModal');
+            const addPositionForm = document.getElementById('addPositionForm');
+            const refreshPriceBtn = document.getElementById('addPositionRefreshPriceBtn');
+            const amountInput = document.getElementById('addPositionUsdcInput');
+            const priceInput = document.getElementById('addPositionPriceInput');
+            const adviceStatus = document.getElementById('addPositionAdviceStatus');
+            const adviceText = document.getElementById('addPositionAdviceText');
+            const previewCache = loadFromCache('dca_preview');
+
+            if (amountInput && previewCache && Number.isFinite(Number(previewCache.suggested_amount_usd))) {
+                const suggested = Number(previewCache.suggested_amount_usd);
+                if (suggested > 0) {
+                    amountInput.value = suggested.toFixed(2);
+                }
+            }
+
+            if (refreshPriceBtn) {
+                refreshPriceBtn.addEventListener('click', async () => {
+                    await fetchRealtimePriceForAddPosition();
+                    setAddPositionActionMode('advice');
+                });
+            }
+
+            if (addPositionForm) {
+                addPositionForm.addEventListener('submit', async (event) => {
+                    event.preventDefault();
+                    if (addPositionActionMode === 'buy') {
+                        await confirmAddPositionBuy();
+                    } else {
+                        await runAddPositionAdvice();
+                    }
+                });
+            }
+
+            if (addPositionModalEl) {
+                addPositionModalEl.addEventListener('shown.bs.modal', async () => {
+                    if (adviceStatus) adviceStatus.textContent = 'Loading realtime BTC price...';
+                    if (adviceText) adviceText.textContent = 'No advice yet.';
+                    setAddPositionActionMode('advice');
+                    await fetchRealtimePriceForAddPosition();
+                    updateAddPositionEstimate();
+                    startAddPositionPricePolling();
+                });
+
+                addPositionModalEl.addEventListener('hidden.bs.modal', () => {
+                    stopAddPositionPricePolling();
+                    if (adviceStatus) adviceStatus.textContent = 'Waiting for inputs.';
+                    setAddPositionActionMode('advice');
+                });
+            }
+
+            if (amountInput) {
+                amountInput.addEventListener('input', () => {
+                    updateAddPositionEstimate();
+                    if (addPositionActionMode === 'buy') {
+                        setAddPositionActionMode('advice');
+                    }
+                });
+            }
+            if (priceInput) {
+                priceInput.addEventListener('input', () => {
+                    updateAddPositionEstimate();
+                    if (addPositionActionMode === 'buy') {
+                        setAddPositionActionMode('advice');
+                    }
+                });
             }
         });
 
