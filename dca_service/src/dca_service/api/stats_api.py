@@ -1,7 +1,7 @@
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, HTTPException, BackgroundTasks
 from sqlmodel import Session, select
 from typing import List, Dict, Any, Tuple, Optional
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 import pandas as pd
 import httpx
 import math
@@ -9,23 +9,255 @@ import json
 import hashlib
 import logging
 import csv
+import asyncio
 from pathlib import Path
+from pydantic import BaseModel, Field
 from dca_service.config import settings
 
-from dca_service.database import get_session
-from dca_service.models import DCATransaction, User, SummaryApiSettings
+from dca_service.database import get_session, engine
+from dca_service.models import (
+    DCATransaction,
+    User,
+    SummaryApiSettings,
+    DCAStrategy,
+    BinanceCredentials,
+)
 from dca_service.auth.dependencies import get_current_user
 from dca_service.services.security import decrypt_text
+from dca_service.services.binance_client import BinanceClient
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
 TRADING_STYLE_AI_CACHE: Dict[str, Dict[str, Any]] = {}
 TRADING_STYLE_AI_PROMPT_VERSION = "v2_concise_chill"
+BINANCE_PUBLIC_TICKER_URL = "https://api.binance.com/api/v3/ticker/price"
+BINANCE_PRICE_CACHE_TTL_SECONDS = 3
+BINANCE_SAFE_POLL_SECONDS = 3
+BINANCE_TICKER_REQUEST_WEIGHT = 2
+BINANCE_PRICE_CACHE: Dict[str, Dict[str, Any]] = {}
 
 
 def _normalize_language(language: str | None) -> str:
     lang = (language or "").strip().lower()
     return "zh" if lang.startswith("zh") else "en"
+
+
+class AddPositionAdviceRequest(BaseModel):
+    amount_usdc: float = Field(gt=0)
+    current_price_usd: Optional[float] = Field(default=None, gt=0)
+    symbol: str = Field(default="BTCUSDC", min_length=6, max_length=20)
+
+
+class AddPositionConfirmRequest(BaseModel):
+    amount_usdc: float = Field(gt=0)
+    price_usd: float = Field(gt=0)
+    symbol: str = Field(default="BTCUSDC", min_length=6, max_length=20)
+    notes: Optional[str] = Field(default=None, max_length=300)
+
+
+def _normalize_symbol(symbol: str | None) -> str:
+    normalized = (symbol or "BTCUSDC").strip().upper()
+    return normalized or "BTCUSDC"
+
+
+def _extract_http_error_detail(resp: httpx.Response) -> str:
+    try:
+        data = resp.json()
+        if isinstance(data, dict):
+            msg = data.get("msg")
+            if isinstance(msg, str) and msg.strip():
+                return msg.strip()
+            err = data.get("error")
+            if isinstance(err, dict):
+                err_msg = err.get("message")
+                if isinstance(err_msg, str) and err_msg.strip():
+                    return err_msg.strip()
+            message = data.get("message")
+            if isinstance(message, str) and message.strip():
+                return message.strip()
+    except Exception:
+        pass
+    text = (resp.text or "").strip().replace("\n", " ")
+    return text[:280] if text else ""
+
+
+def _fetch_binance_realtime_price(symbol: str) -> Dict[str, Any]:
+    normalized_symbol = _normalize_symbol(symbol)
+    now_utc = datetime.now(timezone.utc)
+
+    cache_entry = BINANCE_PRICE_CACHE.get(normalized_symbol)
+    if cache_entry and cache_entry.get("expires_at") and cache_entry["expires_at"] > now_utc:
+        return {
+            "symbol": normalized_symbol,
+            "price": float(cache_entry["price"]),
+            "updated_at": cache_entry["updated_at"],
+            "cache_hit": True,
+            "stale_fallback": False,
+            "source": "binance_public_api",
+            "cache_ttl_seconds": BINANCE_PRICE_CACHE_TTL_SECONDS,
+            "poll_recommendation_seconds": BINANCE_SAFE_POLL_SECONDS,
+            "request_weight": BINANCE_TICKER_REQUEST_WEIGHT,
+        }
+
+    try:
+        with httpx.Client(timeout=8.0) as client:
+            response = client.get(BINANCE_PUBLIC_TICKER_URL, params={"symbol": normalized_symbol})
+
+        if response.status_code >= 400:
+            detail = _extract_http_error_detail(response)
+            reason = f"Binance ticker HTTP {response.status_code}"
+            if detail:
+                reason = f"{reason}: {detail}"
+            raise ValueError(reason)
+
+        body = response.json()
+        price = float(body["price"])
+        if price <= 0:
+            raise ValueError("Binance returned non-positive price")
+
+        updated_at = now_utc.isoformat()
+        BINANCE_PRICE_CACHE[normalized_symbol] = {
+            "price": price,
+            "updated_at": updated_at,
+            "expires_at": now_utc + timedelta(seconds=BINANCE_PRICE_CACHE_TTL_SECONDS),
+        }
+        return {
+            "symbol": normalized_symbol,
+            "price": price,
+            "updated_at": updated_at,
+            "cache_hit": False,
+            "stale_fallback": False,
+            "source": "binance_public_api",
+            "cache_ttl_seconds": BINANCE_PRICE_CACHE_TTL_SECONDS,
+            "poll_recommendation_seconds": BINANCE_SAFE_POLL_SECONDS,
+            "request_weight": BINANCE_TICKER_REQUEST_WEIGHT,
+        }
+    except Exception as e:
+        # Use stale cache if available to avoid fully breaking the UI.
+        if cache_entry and cache_entry.get("price"):
+            return {
+                "symbol": normalized_symbol,
+                "price": float(cache_entry["price"]),
+                "updated_at": cache_entry["updated_at"],
+                "cache_hit": False,
+                "stale_fallback": True,
+                "source": "binance_public_api",
+                "cache_ttl_seconds": BINANCE_PRICE_CACHE_TTL_SECONDS,
+                "poll_recommendation_seconds": BINANCE_SAFE_POLL_SECONDS,
+                "request_weight": BINANCE_TICKER_REQUEST_WEIGHT,
+                "warning": f"Using stale price cache due to fetch error: {e}",
+            }
+        raise HTTPException(status_code=502, detail=f"Failed to fetch realtime price: {e}")
+
+
+def _load_recent_market_context(current_price_usd: float) -> Dict[str, Any]:
+    """
+    Build short-horizon market context from metrics CSV.
+    Used to avoid over-penalizing aggressive adds during deep capitulation regimes.
+    """
+    context = {
+        "available": False,
+        "window_days": 180,
+        "low_180d": None,
+        "high_180d": None,
+        "current_vs_180d_low_pct": None,
+        "drop_24h_pct": None,
+        "near_180d_low": False,
+        "new_180d_low": False,
+        "deep_value_regime": False,
+    }
+    try:
+        csv_path = _resolve_metrics_csv_path()
+        if not csv_path.exists():
+            return context
+
+        prices: List[float] = []
+        with open(csv_path, "r", encoding="utf-8") as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                price_str = row.get("close_price")
+                if not price_str:
+                    continue
+                try:
+                    prices.append(float(price_str))
+                except (ValueError, TypeError):
+                    continue
+
+        if len(prices) < 2:
+            return context
+
+        window = prices[-180:] if len(prices) >= 180 else prices
+        low_180d = min(window)
+        high_180d = max(window)
+        prev_close = prices[-1]
+
+        current_vs_low_pct = ((current_price_usd - low_180d) / low_180d) * 100.0 if low_180d > 0 else None
+        drop_24h_pct = ((current_price_usd - prev_close) / prev_close) * 100.0 if prev_close > 0 else None
+
+        near_180d_low = (current_vs_low_pct is not None) and (current_vs_low_pct <= 1.5)
+        new_180d_low = current_price_usd < low_180d
+        deep_value_regime = bool(near_180d_low and drop_24h_pct is not None and drop_24h_pct <= -6.0)
+
+        return {
+            "available": True,
+            "window_days": 180,
+            "low_180d": float(low_180d),
+            "high_180d": float(high_180d),
+            "current_vs_180d_low_pct": float(current_vs_low_pct) if current_vs_low_pct is not None else None,
+            "drop_24h_pct": float(drop_24h_pct) if drop_24h_pct is not None else None,
+            "near_180d_low": bool(near_180d_low),
+            "new_180d_low": bool(new_180d_low),
+            "deep_value_regime": bool(deep_value_regime),
+        }
+    except Exception:
+        return context
+
+
+def _execute_live_add_position_order(
+    session: Session,
+    *,
+    symbol: str,
+    amount_usdc: float,
+) -> Dict[str, Any]:
+    creds = session.exec(
+        select(BinanceCredentials).where(BinanceCredentials.credential_type == "TRADING")
+    ).first()
+    if not creds or not creds.api_key_encrypted:
+        raise ValueError("Trading credentials not configured. Please add TRADING API keys in Binance settings.")
+
+    api_key = decrypt_text(creds.api_key_encrypted)
+    api_secret = decrypt_text(creds.api_secret_encrypted)
+
+    async def _execute() -> Dict[str, Any]:
+        client = BinanceClient(api_key, api_secret)
+        try:
+            return await client.execute_market_order_with_confirmation(
+                symbol=symbol,
+                quote_quantity=amount_usdc,
+                max_wait_seconds=10,
+                poll_interval=1.0,
+            )
+        finally:
+            await client.close()
+
+    return asyncio.run(_execute())
+
+
+def _send_add_position_email_task(transaction_id: int) -> None:
+    """
+    Background email task for add-position confirmations.
+    Uses a fresh DB session to avoid relying on request-scoped objects.
+    """
+    try:
+        with Session(engine) as bg_session:
+            tx = bg_session.get(DCATransaction, transaction_id)
+            if not tx:
+                return
+            from dca_service.services.mailer import send_dca_notification
+            send_dca_notification(tx, decision=None, total_btc=None)
+    except Exception:
+        # Email should never break API flow.
+        pass
 
 
 def _resolve_metrics_csv_path() -> Path:
@@ -789,6 +1021,235 @@ def _build_behavior_analysis(events: List[Dict[str, Any]], aggregate_meta: Dict[
     }
 
 
+def _build_buy_behavior_snapshot(session: Session) -> Tuple[List[DCATransaction], Dict[str, Any], Dict[str, Any], str]:
+    txs = session.exec(
+        select(DCATransaction)
+        .where(DCATransaction.status == "SUCCESS")
+        .order_by(DCATransaction.timestamp)
+    ).all()
+
+    buy_txs = []
+    for tx in txs:
+        amount_usd = _effective_fiat_amount(tx)
+        amount_btc = _effective_btc_amount(tx)
+        if amount_usd > 0 and amount_btc > 0:
+            buy_txs.append(tx)
+
+    aggregate_meta = _aggregate_behavior_events(buy_txs)
+    source_signature = _trading_style_source_signature(aggregate_meta["events"])
+    behavior_data = _build_behavior_analysis(aggregate_meta["events"], aggregate_meta)
+    behavior_data["method_constraints"] = {
+        "split_fill_handling": "Same binance_order_id merged into one event.",
+        "no_hindsight": "Each event diagnostics use only event-time and prior events.",
+    }
+    behavior_data["source_signature"] = source_signature
+    return buy_txs, aggregate_meta, behavior_data, source_signature
+
+
+def _build_add_position_guidance(
+    *,
+    behavior_data: Dict[str, Any],
+    events: List[Dict[str, Any]],
+    amount_usdc: float,
+    current_price_usd: float,
+    market_context: Optional[Dict[str, Any]] = None,
+) -> Dict[str, Any]:
+    summary = behavior_data.get("summary", {}) or {}
+    style_tags = behavior_data.get("style_tags", []) or []
+
+    historical_prices = [float(e.get("avg_price_usd", 0.0)) for e in events if float(e.get("avg_price_usd", 0.0)) > 0]
+    hist_min = min(historical_prices) if historical_prices else current_price_usd
+    hist_max = max(historical_prices) if historical_prices else current_price_usd
+    hist_median = _safe_median(historical_prices, fallback=current_price_usd)
+
+    if hist_max > hist_min:
+        raw_price_position = (current_price_usd - hist_min) / (hist_max - hist_min)
+        price_position = min(max(raw_price_position, 0.0), 1.0)
+    else:
+        price_position = 0.5
+    price_zone_label = _classify_price_position(price_position)
+    price_vs_hist_median_pct = (
+        ((current_price_usd - hist_median) / hist_median) * 100.0 if hist_median > 0 else 0.0
+    )
+    market_ctx = market_context or {}
+    deep_value_regime = bool(market_ctx.get("deep_value_regime"))
+
+    recent_amounts = [float(e.get("amount_usd", 0.0)) for e in events[-10:] if float(e.get("amount_usd", 0.0)) > 0]
+    baseline_amount = _safe_median(recent_amounts, fallback=float(summary.get("avg_event_usd", amount_usdc) or amount_usdc))
+    if baseline_amount <= 0:
+        baseline_amount = amount_usdc
+
+    relative_amount = amount_usdc / baseline_amount if baseline_amount > 0 else 1.0
+    relative_amount_label = _classify_relative_amount(relative_amount)
+
+    now_utc = datetime.now(timezone.utc)
+    recent_48h_count = sum(
+        1
+        for e in events
+        if isinstance(e.get("timestamp"), datetime)
+        and (now_utc - e["timestamp"]).total_seconds() <= 48 * 3600
+    )
+    last_event_ts = events[-1]["timestamp"] if events and isinstance(events[-1].get("timestamp"), datetime) else None
+
+    risk_flags: List[str] = []
+    positive_signals: List[str] = []
+    risk_score = 25
+
+    if price_position >= 0.8:
+        risk_score += 25
+        risk_flags.append("Current price is near the upper end of your own historical execution range.")
+    elif price_position >= 0.6:
+        risk_score += 10
+    elif price_position <= 0.25:
+        risk_score -= 10
+        positive_signals.append("Current price is in your lower historical zone, consistent with dip-buy behavior.")
+
+    if relative_amount >= 2.0:
+        if deep_value_regime:
+            positive_signals.append(
+                "Size is large vs your baseline, but market is in a deep-value regime (near 180d low + sharp drop)."
+            )
+        else:
+            risk_score += 25
+            risk_flags.append("Proposed size is over 2x your recent median event size.")
+    elif relative_amount >= 1.35:
+        risk_score += 4 if deep_value_regime else 10
+    elif relative_amount <= 0.7:
+        risk_score -= 5
+        positive_signals.append("Proposed size stays conservative versus your recent baseline.")
+
+    burst_ratio = float(summary.get("burst_trading_ratio", 0.0) or 0.0)
+    event_count = int(summary.get("behavior_event_count", 0) or 0)
+    if burst_ratio >= 0.45 and event_count >= 8:
+        risk_score += 10
+        if recent_48h_count >= 1:
+            risk_score += 10
+            risk_flags.append("You already had buy activity in the last 48h; this can reinforce burst behavior.")
+    elif recent_48h_count == 0:
+        risk_score -= 5
+        positive_signals.append("No buy in the last 48h, so this is less likely to be a reactive cluster.")
+
+    if float(summary.get("event_amount_cv", 0.0) or 0.0) >= 0.9 and event_count >= 8:
+        risk_score += 10
+        risk_flags.append("Your historical sizing variability is high; this makes performance attribution harder.")
+
+    if deep_value_regime:
+        # In capitulation-like moments, avoid "auto discourage" for bigger adds.
+        risk_score = min(risk_score, 42)
+
+    risk_score = int(min(max(risk_score, 0), 100))
+    if risk_score >= 70:
+        risk_level = "high"
+    elif risk_score >= 40:
+        risk_level = "medium"
+    else:
+        risk_level = "low"
+
+    recommended_min = max(10.0, baseline_amount * 0.6)
+    recommended_max = max(recommended_min, baseline_amount * 1.4)
+    if "Fixed-size DCA" in style_tags:
+        recommended_min = max(10.0, baseline_amount * 0.85)
+        recommended_max = max(recommended_min, baseline_amount * 1.15)
+
+    if price_position >= 0.75:
+        recommended_max *= 0.8
+    elif price_position <= 0.25:
+        recommended_max *= 1.1
+    if recent_48h_count >= 2:
+        recommended_max *= 0.85
+    if risk_level == "high":
+        recommended_max = min(recommended_max, baseline_amount)
+
+    recommended_max = max(recommended_max, recommended_min)
+    recommended_min = round(recommended_min, 2)
+    recommended_max = round(recommended_max, 2)
+
+    if risk_level == "high":
+        quick_take = "This add looks aggressive relative to your recent pattern."
+    elif risk_level == "medium":
+        quick_take = "This add is workable, but size/price context deserves one extra check."
+    else:
+        quick_take = "This add is broadly aligned with your recent behavior pattern."
+
+    if deep_value_regime:
+        quick_take = (
+            "Market is in a deep pullback regime. Larger adds can be reasonable if this matches your plan and liquidity."
+        )
+
+    estimated_btc = amount_usdc / current_price_usd if current_price_usd > 0 else 0.0
+    style_text = ", ".join(style_tags) if style_tags else "No clear tag yet"
+    lines: List[str] = [
+        f"Quick take: {quick_take}",
+        f"Pattern tags: {style_text}",
+        (
+            f"Live BTC: ${current_price_usd:,.2f} "
+            f"({price_zone_label.replace('_', ' ')}, {price_vs_hist_median_pct:+.2f}% vs your historical median fill)."
+        ),
+        f"Proposed add: ${amount_usdc:,.2f} ({relative_amount_label} vs baseline ${baseline_amount:,.2f}).",
+        f"Estimated BTC from this add: {estimated_btc:.8f} BTC.",
+    ]
+    if market_ctx.get("available"):
+        low_180 = market_ctx.get("low_180d")
+        drop_24h = market_ctx.get("drop_24h_pct")
+        if low_180 is not None and drop_24h is not None:
+            lines.append(
+                f"Market regime: 180d low ${low_180:,.2f}, 24h move {drop_24h:+.2f}%."
+            )
+    if risk_flags:
+        lines.append("Watchouts:")
+        for idx, flag in enumerate(risk_flags[:3], start=1):
+            lines.append(f"{idx}. {flag}")
+    if positive_signals:
+        lines.append("What helps:")
+        for idx, item in enumerate(positive_signals[:2], start=1):
+            lines.append(f"{idx}. {item}")
+    lines.append(
+        f"Soft guardrail: keep this add around ${recommended_min:,.2f}-${recommended_max:,.2f} "
+        "if you want tighter consistency."
+    )
+    lines.append(
+        "Execution note: DCA platforms can split fills, so focus on pre-trade size discipline and a short reason tag."
+    )
+
+    return {
+        "risk_score": risk_score,
+        "risk_level": risk_level,
+        "risk_flags": risk_flags,
+        "positive_signals": positive_signals,
+        "price_context": {
+            "historical_min_price": float(hist_min),
+            "historical_median_price": float(hist_median),
+            "historical_max_price": float(hist_max),
+            "price_position_in_historical_range": float(price_position),
+            "price_zone_label": price_zone_label,
+            "price_vs_historical_median_pct": float(price_vs_hist_median_pct),
+        },
+        "sizing_context": {
+            "baseline_event_usd": float(baseline_amount),
+            "relative_size_to_baseline": float(relative_amount),
+            "relative_amount_label": relative_amount_label,
+            "recommended_range_usdc": {
+                "min": recommended_min,
+                "max": recommended_max,
+            },
+        },
+        "behavior_context": {
+            "style_tags": style_tags,
+            "burst_trading_ratio": burst_ratio,
+            "median_interval_days": summary.get("median_interval_days"),
+            "event_amount_cv": float(summary.get("event_amount_cv", 0.0) or 0.0),
+            "recent_events_48h": recent_48h_count,
+            "last_event_time": last_event_ts.isoformat() if isinstance(last_event_ts, datetime) else None,
+        },
+        "market_context": market_ctx,
+        "analysis_text": "\n".join(lines),
+        "method_constraints": {
+            "split_fill_handling": "Same binance_order_id merged into one event.",
+            "no_hindsight": "Guidance is based on historical events plus current price only.",
+        },
+    }
+
+
 def _run_ai_style_analysis(
     session: Session,
     analysis_data: Dict[str, Any],
@@ -854,14 +1315,39 @@ def _run_ai_style_analysis(
     status["attempted"] = True
     endpoint = base_url.rstrip("/") + "/chat/completions"
 
-    payload_for_model = {
+    event_diagnostics = analysis_data.get("event_diagnostics", []) or []
+    compact_event_diagnostics = [
+        {
+            "event_time": item.get("event_time"),
+            "amount_usd": item.get("amount_usd"),
+            "avg_price_usd": item.get("avg_price_usd"),
+            "interval_since_prev_days": item.get("interval_since_prev_days"),
+            "relative_amount_label": item.get("relative_amount_label"),
+            "price_position_label": item.get("price_position_label"),
+        }
+        for item in event_diagnostics[-30:]
+    ]
+
+    payload_for_model_full = {
         "summary": analysis_data.get("summary", {}),
         "style_tags": analysis_data.get("style_tags", []),
         "issues": analysis_data.get("issues", []),
-        "event_diagnostics": analysis_data.get("event_diagnostics", [])[-120:],
+        "event_diagnostics": event_diagnostics[-80:],
         "method_constraints": analysis_data.get("method_constraints", {}),
     }
-    user_payload_text = json.dumps(payload_for_model, ensure_ascii=False)
+    payload_for_model_compact = {
+        "summary": analysis_data.get("summary", {}),
+        "style_tags": analysis_data.get("style_tags", []),
+        "issues": analysis_data.get("issues", []),
+        "event_diagnostics": compact_event_diagnostics,
+        "method_constraints": analysis_data.get("method_constraints", {}),
+    }
+    payload_for_model_minimal = {
+        "summary": analysis_data.get("summary", {}),
+        "style_tags": analysis_data.get("style_tags", []),
+        "issues": analysis_data.get("issues", []),
+        "method_constraints": analysis_data.get("method_constraints", {}),
+    }
 
     if normalized_language == "zh":
         system_prompt = (
@@ -876,10 +1362,10 @@ def _run_ai_style_analysis(
             "2) 主要问题（最多3条，按严重度）"
             "3) 下一步建议（最多4条，可直接执行）。"
         )
-        user_prompt = (
+        user_prompt_template = (
             "下面是用户交易行为统计数据（同一订单ID拆单已合并为一个行为事件）。\n"
             "请基于这些数据分析交易风格与潜在问题，禁止使用未来信息倒推过去决策。\n\n"
-            f"{user_payload_text}"
+            "{payload_json}"
         )
     else:
         system_prompt = (
@@ -893,43 +1379,90 @@ def _run_ai_style_analysis(
             "2) Key Issues (max 3, ranked by severity) "
             "3) Actionable Improvements (max 4)."
         )
-        user_prompt = (
+        user_prompt_template = (
             "Below is the user's trading behavior dataset (split fills with same order ID are merged as one event).\n"
             "Analyze style and potential problems using only these metrics. No hindsight bias.\n\n"
-            f"{user_payload_text}"
+            "{payload_json}"
         )
 
+    def _extract_error_detail(resp: httpx.Response) -> str:
+        try:
+            data = resp.json()
+            if isinstance(data, dict):
+                err = data.get("error")
+                if isinstance(err, dict):
+                    msg = err.get("message")
+                    if isinstance(msg, str) and msg.strip():
+                        return msg.strip()
+                msg = data.get("message")
+                if isinstance(msg, str) and msg.strip():
+                    return msg.strip()
+        except Exception:
+            pass
+        text = (resp.text or "").strip().replace("\n", " ")
+        return text[:280] if text else ""
+
+    def _call_provider_with_payload(payload_obj: Dict[str, Any]) -> Dict[str, Any]:
+        user_payload_text = json.dumps(payload_obj, ensure_ascii=False)
+        user_prompt = user_prompt_template.format(payload_json=user_payload_text)
+        try:
+            with httpx.Client(timeout=45.0) as client:
+                response = client.post(
+                    endpoint,
+                    headers={
+                        "Authorization": f"Bearer {api_key}",
+                        "Content-Type": "application/json",
+                    },
+                    json={
+                        "model": model,
+                        "messages": [
+                            {"role": "system", "content": system_prompt},
+                            {"role": "user", "content": user_prompt},
+                        ],
+                    },
+                )
+
+            if response.status_code >= 400:
+                detail = _extract_error_detail(response)
+                reason = f"AI provider HTTP {response.status_code}"
+                if detail:
+                    reason = f"{reason}: {detail}"
+                return {"ok": False, "reason": reason, "status_code": response.status_code}
+
+            body = response.json()
+            choices = body.get("choices") or []
+            if not choices:
+                return {"ok": False, "reason": "AI response has no choices.", "status_code": None}
+            message = (choices[0] or {}).get("message") or {}
+            content = message.get("content")
+            if not content:
+                return {"ok": False, "reason": "AI response has empty content.", "status_code": None}
+            return {"ok": True, "content": content}
+        except Exception as e:
+            return {"ok": False, "reason": f"AI call failed: {e}", "status_code": None}
+
     try:
-        with httpx.Client(timeout=45.0) as client:
-            response = client.post(
-                endpoint,
-                headers={
-                    "Authorization": f"Bearer {api_key}",
-                    "Content-Type": "application/json",
-                },
-                json={
-                    "model": model,
-                    "temperature": 0.2,
-                    "messages": [
-                        {"role": "system", "content": system_prompt},
-                        {"role": "user", "content": user_prompt},
-                    ],
-                },
-            )
+        attempts = [
+            payload_for_model_full,
+            payload_for_model_compact,
+            payload_for_model_minimal,
+        ]
+        last_reason = ""
+        last_http_status: Optional[int] = None
+        content = None
+        for payload_variant in attempts:
+            result = _call_provider_with_payload(payload_variant)
+            if result.get("ok"):
+                content = result.get("content")
+                break
+            last_reason = result.get("reason", "")
+            last_http_status = result.get("status_code")
+            # Only retry for 400-like payload/request issues; others usually won't benefit.
+            if last_http_status not in (400, 413, 422):
+                break
 
-        if response.status_code >= 400:
-            status["reason"] = f"AI provider HTTP {response.status_code}"
-            return {"status": status, "analysis": None}
-
-        body = response.json()
-        choices = body.get("choices") or []
-        if not choices:
-            status["reason"] = "AI response has no choices."
-            return {"status": status, "analysis": None}
-        message = (choices[0] or {}).get("message") or {}
-        content = message.get("content")
         if not content:
-            status["reason"] = "AI response has empty content."
+            status["reason"] = last_reason or "AI provider request failed."
             return {"status": status, "analysis": None}
 
         status["success"] = True
@@ -949,6 +1482,200 @@ def _run_ai_style_analysis(
         return {"status": status, "analysis": None}
 
 
+@router.get("/stats/realtime-price")
+def get_realtime_price(
+    symbol: str = Query(default="BTCUSDC"),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Return realtime ticker price from Binance public API with a short TTL cache.
+    Cache + client polling guidance are tuned to stay far below Binance limits.
+    """
+    return _fetch_binance_realtime_price(symbol)
+
+
+@router.post("/stats/add-position/advice")
+def get_add_position_advice(
+    payload: AddPositionAdviceRequest,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Generate pre-order add-position guidance based on:
+    - Current input size
+    - Current market price (caller-provided or fetched)
+    - Historical behavior snapshot (split fills merged by order id)
+
+    The guidance avoids hindsight bias by using only past executed events + now.
+    """
+    normalized_symbol = _normalize_symbol(payload.symbol)
+    if payload.current_price_usd is not None and payload.current_price_usd > 0:
+        price_snapshot = {
+            "symbol": normalized_symbol,
+            "price": float(payload.current_price_usd),
+            "updated_at": datetime.now(timezone.utc).isoformat(),
+            "cache_hit": False,
+            "stale_fallback": False,
+            "source": "user_input",
+            "cache_ttl_seconds": BINANCE_PRICE_CACHE_TTL_SECONDS,
+            "poll_recommendation_seconds": BINANCE_SAFE_POLL_SECONDS,
+            "request_weight": BINANCE_TICKER_REQUEST_WEIGHT,
+        }
+    else:
+        price_snapshot = _fetch_binance_realtime_price(normalized_symbol)
+
+    _, aggregate_meta, behavior_data, source_signature = _build_buy_behavior_snapshot(session)
+    market_context = _load_recent_market_context(float(price_snapshot["price"]))
+    guidance = _build_add_position_guidance(
+        behavior_data=behavior_data,
+        events=aggregate_meta.get("events", []) or [],
+        amount_usdc=float(payload.amount_usdc),
+        current_price_usd=float(price_snapshot["price"]),
+        market_context=market_context,
+    )
+
+    return {
+        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "source_signature": source_signature,
+        "symbol": normalized_symbol,
+        "input": {
+            "amount_usdc": float(payload.amount_usdc),
+            "current_price_usd": float(price_snapshot["price"]),
+        },
+        "price_snapshot": price_snapshot,
+        "analysis_data": {
+            "summary": behavior_data.get("summary", {}),
+            "style_tags": behavior_data.get("style_tags", []),
+            "issues": behavior_data.get("issues", []),
+            "method_constraints": behavior_data.get("method_constraints", {}),
+            "source_signature": source_signature,
+        },
+        "guidance": guidance,
+    }
+
+
+@router.post("/stats/add-position/confirm")
+def confirm_add_position(
+    payload: AddPositionConfirmRequest,
+    background_tasks: BackgroundTasks,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Confirm add-position after reviewing advice.
+    This records a simulated buy event for tracking and analytics.
+    """
+    normalized_symbol = _normalize_symbol(payload.symbol)
+    amount_usdc = float(payload.amount_usdc)
+    input_price_usd = float(payload.price_usd)
+    if amount_usdc <= 0 or input_price_usd <= 0:
+        raise HTTPException(status_code=400, detail="Invalid amount or price.")
+
+    strategy = session.exec(select(DCAStrategy)).first()
+    execution_mode = ((strategy.execution_mode if strategy else "DRY_RUN") or "DRY_RUN").upper()
+    if execution_mode not in {"DRY_RUN", "LIVE"}:
+        execution_mode = "DRY_RUN"
+
+    notes = (payload.notes or "").strip() or "Add Position confirmed after advice"
+    notes = f"{notes} [{normalized_symbol}] ({execution_mode})"
+
+    if execution_mode == "LIVE":
+        try:
+            live_result = _execute_live_add_position_order(
+                session,
+                symbol=normalized_symbol,
+                amount_usdc=amount_usdc,
+            )
+            executed_price = float(live_result.get("avg_price") or 0.0)
+            executed_btc = float(live_result.get("total_btc") or 0.0)
+            executed_usd = float(live_result.get("quote_spent") or amount_usdc)
+            fee_amount = float(live_result.get("total_fee") or 0.0)
+            fee_asset = str(live_result.get("fee_asset") or "USDC")
+            binance_order_id = live_result.get("order_id")
+            if executed_price <= 0 or executed_btc <= 0:
+                raise ValueError("Live order returned invalid execution data.")
+
+            tx = DCATransaction(
+                status="SUCCESS",
+                fiat_amount=executed_usd,
+                btc_amount=executed_btc,
+                price=executed_price,
+                ahr999=0.0,
+                notes=notes,
+                intended_amount_usd=amount_usdc,
+                executed_amount_usd=executed_usd,
+                executed_amount_btc=executed_btc,
+                avg_execution_price_usd=executed_price,
+                fee_amount=fee_amount,
+                fee_asset=fee_asset,
+                source="DCA",
+                binance_order_id=binance_order_id,
+            )
+            session.add(tx)
+            session.commit()
+            session.refresh(tx)
+            background_tasks.add_task(_send_add_position_email_task, tx.id)
+
+            return {
+                "success": True,
+                "execution_mode": execution_mode,
+                "message": (
+                    f"LIVE buy executed: ${executed_usd:.2f} -> {executed_btc:.8f} BTC "
+                    f"@ ${executed_price:.2f}"
+                ),
+                "transaction": tx,
+            }
+        except Exception as e:
+            failed_tx = DCATransaction(
+                status="FAILED",
+                fiat_amount=amount_usdc,
+                btc_amount=0.0,
+                price=input_price_usd,
+                ahr999=0.0,
+                notes=f"{notes} | LIVE execution failed: {e}",
+                intended_amount_usd=amount_usdc,
+                executed_amount_usd=0.0,
+                executed_amount_btc=0.0,
+                avg_execution_price_usd=0.0,
+                fee_amount=0.0,
+                fee_asset="USDC",
+                source="DCA",
+            )
+            session.add(failed_tx)
+            session.commit()
+            session.refresh(failed_tx)
+            raise HTTPException(status_code=502, detail=f"LIVE buy failed: {e}")
+
+    # DRY_RUN path
+    btc_amount = amount_usdc / input_price_usd
+    tx = DCATransaction(
+        status="SUCCESS",
+        fiat_amount=amount_usdc,
+        btc_amount=btc_amount,
+        price=input_price_usd,
+        ahr999=0.0,
+        notes=notes,
+        intended_amount_usd=amount_usdc,
+        executed_amount_usd=amount_usdc,
+        executed_amount_btc=btc_amount,
+        avg_execution_price_usd=input_price_usd,
+        fee_amount=0.0,
+        fee_asset="USDC",
+        source="SIMULATED",
+    )
+    session.add(tx)
+    session.commit()
+    session.refresh(tx)
+    background_tasks.add_task(_send_add_position_email_task, tx.id)
+
+    return {
+        "success": True,
+        "execution_mode": execution_mode,
+        "message": f"DRY_RUN buy recorded: ${amount_usdc:.2f} at ${input_price_usd:.2f}",
+        "transaction": tx,
+    }
+
+
 @router.get("/stats/trading-style")
 def get_trading_style_analysis(
     include_ai: bool = Query(default=True),
@@ -963,27 +1690,7 @@ def get_trading_style_analysis(
     - Split fills with same binance_order_id are merged into one behavior event.
     - Diagnostics are built with no hindsight (event-time + prior history only).
     """
-    txs = session.exec(
-        select(DCATransaction)
-        .where(DCATransaction.status == "SUCCESS")
-        .order_by(DCATransaction.timestamp)
-    ).all()
-
-    buy_txs = []
-    for tx in txs:
-        amount_usd = _effective_fiat_amount(tx)
-        amount_btc = _effective_btc_amount(tx)
-        if amount_usd > 0 and amount_btc > 0:
-            buy_txs.append(tx)
-
-    aggregate_meta = _aggregate_behavior_events(buy_txs)
-    source_signature = _trading_style_source_signature(aggregate_meta["events"])
-    behavior_data = _build_behavior_analysis(aggregate_meta["events"], aggregate_meta)
-    behavior_data["method_constraints"] = {
-        "split_fill_handling": "Same binance_order_id merged into one event.",
-        "no_hindsight": "Each event diagnostics use only event-time and prior events.",
-    }
-    behavior_data["source_signature"] = source_signature
+    _, _, behavior_data, source_signature = _build_buy_behavior_snapshot(session)
 
     ai_result = _run_ai_style_analysis(
         session,

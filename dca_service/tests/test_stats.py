@@ -3,7 +3,7 @@ from sqlmodel import Session
 from unittest.mock import MagicMock, patch
 
 from dca_service.api import stats_api
-from dca_service.models import DCATransaction, SummaryApiSettings
+from dca_service.models import DCATransaction, SummaryApiSettings, DCAStrategy, BinanceCredentials
 from dca_service.services.security import encrypt_text
 from datetime import datetime, timezone
 
@@ -265,3 +265,220 @@ def test_trading_style_analysis_reuses_cached_ai_when_source_unchanged(client: T
     assert "Source unchanged" in second_payload["ai_status"]["reason"]
     assert second_payload["ai_analysis"] == first_payload["ai_analysis"]
     assert mock_client.post.call_count == 1
+
+
+def test_realtime_price_endpoint_reuses_cache(client: TestClient):
+    stats_api.BINANCE_PRICE_CACHE.clear()
+
+    mock_response = MagicMock()
+    mock_response.status_code = 200
+    mock_response.json.return_value = {"symbol": "BTCUSDC", "price": "50123.45"}
+
+    mock_client = MagicMock()
+    mock_client.__enter__.return_value = mock_client
+    mock_client.get.return_value = mock_response
+
+    with patch("dca_service.api.stats_api.httpx.Client", return_value=mock_client):
+        first = client.get("/api/stats/realtime-price?symbol=BTCUSDC")
+        second = client.get("/api/stats/realtime-price?symbol=BTCUSDC")
+
+    assert first.status_code == 200
+    assert second.status_code == 200
+    first_payload = first.json()
+    second_payload = second.json()
+
+    assert first_payload["cache_hit"] is False
+    assert second_payload["cache_hit"] is True
+    assert second_payload["price"] == first_payload["price"]
+    assert second_payload["poll_recommendation_seconds"] == 3
+    assert mock_client.get.call_count == 1
+
+
+def test_add_position_advice_uses_split_fill_merged_behavior_events(client: TestClient, session: Session):
+    tx1 = DCATransaction(
+        status="SUCCESS",
+        fiat_amount=60.0,
+        btc_amount=0.0012,
+        price=50000.0,
+        ahr999=0.5,
+        notes="Split fill 1",
+        timestamp=datetime(2024, 1, 1, 0, 0, tzinfo=timezone.utc),
+        source="MANUAL",
+        is_manual=True,
+        binance_order_id=8080,
+        binance_trade_id=1,
+    )
+    tx2 = DCATransaction(
+        status="SUCCESS",
+        fiat_amount=140.0,
+        btc_amount=0.0028,
+        price=50020.0,
+        ahr999=0.5,
+        notes="Split fill 2",
+        timestamp=datetime(2024, 1, 1, 0, 1, tzinfo=timezone.utc),
+        source="MANUAL",
+        is_manual=True,
+        binance_order_id=8080,
+        binance_trade_id=2,
+    )
+    tx3 = DCATransaction(
+        status="SUCCESS",
+        fiat_amount=180.0,
+        btc_amount=0.0035,
+        price=51000.0,
+        ahr999=0.6,
+        notes="Standalone buy",
+        timestamp=datetime(2024, 1, 4, 0, 0, tzinfo=timezone.utc),
+        source="MANUAL",
+        is_manual=True,
+        binance_order_id=9090,
+        binance_trade_id=3,
+    )
+    session.add(tx1)
+    session.add(tx2)
+    session.add(tx3)
+    session.commit()
+
+    response = client.post(
+        "/api/stats/add-position/advice",
+        json={
+            "amount_usdc": 220.0,
+            "current_price_usd": 49500.0,
+            "symbol": "BTCUSDC",
+        },
+    )
+    assert response.status_code == 200
+    payload = response.json()
+
+    assert payload["input"]["amount_usdc"] == 220.0
+    assert payload["input"]["current_price_usd"] == 49500.0
+    assert payload["analysis_data"]["summary"]["raw_fill_count"] == 3
+    assert payload["analysis_data"]["summary"]["behavior_event_count"] == 2
+    assert payload["analysis_data"]["summary"]["split_event_count"] == 1
+    assert payload["guidance"]["risk_level"] in {"low", "medium", "high"}
+    assert payload["guidance"]["analysis_text"]
+    assert "Quick take:" in payload["guidance"]["analysis_text"]
+    assert payload["guidance"]["method_constraints"]["no_hindsight"]
+
+
+def test_add_position_confirm_records_simulated_buy_transaction(client: TestClient, session: Session):
+    with patch("dca_service.api.stats_api._send_add_position_email_task") as mock_email_task:
+        response = client.post(
+            "/api/stats/add-position/confirm",
+            json={
+                "amount_usdc": 120.0,
+                "price_usd": 60000.0,
+                "symbol": "BTCUSDC",
+            },
+        )
+    assert response.status_code == 200
+    payload = response.json()
+
+    assert payload["success"] is True
+    assert payload["transaction"]["status"] == "SUCCESS"
+    assert payload["transaction"]["source"] == "SIMULATED"
+    assert payload["transaction"]["fiat_amount"] == 120.0
+    assert payload["transaction"]["price"] == 60000.0
+    assert payload["transaction"]["btc_amount"] == 0.002
+    assert mock_email_task.call_count == 1
+
+
+def test_add_position_confirm_executes_live_mode_when_strategy_is_live(client: TestClient, session: Session):
+    strategy = DCAStrategy(
+        is_active=True,
+        total_budget_usd=1000.0,
+        ahr999_multiplier_low=0.5,
+        ahr999_multiplier_mid=1.0,
+        ahr999_multiplier_high=1.5,
+        execution_mode="LIVE",
+    )
+    creds = BinanceCredentials(
+        credential_type="TRADING",
+        api_key_encrypted=encrypt_text("live-key"),
+        api_secret_encrypted=encrypt_text("live-secret"),
+    )
+    session.add(strategy)
+    session.add(creds)
+    session.commit()
+
+    with patch("dca_service.api.stats_api._execute_live_add_position_order") as mock_exec:
+        mock_exec.return_value = {
+            "order_id": 99887766,
+            "total_btc": 0.00195,
+            "avg_price": 61538.46,
+            "quote_spent": 120.0,
+            "total_fee": 0.04,
+            "fee_asset": "USDC",
+        }
+        response = client.post(
+            "/api/stats/add-position/confirm",
+            json={
+                "amount_usdc": 120.0,
+                "price_usd": 60000.0,
+                "symbol": "BTCUSDC",
+            },
+        )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["execution_mode"] == "LIVE"
+    assert payload["transaction"]["source"] == "DCA"
+    assert payload["transaction"]["status"] == "SUCCESS"
+    assert payload["transaction"]["binance_order_id"] == 99887766
+    assert payload["transaction"]["executed_amount_btc"] == 0.00195
+    assert payload["transaction"]["fee_amount"] == 0.04
+
+
+def test_add_position_advice_deep_value_regime_does_not_auto_discourage_large_size(client: TestClient, session: Session):
+    tx1 = DCATransaction(
+        status="SUCCESS",
+        fiat_amount=40.0,
+        btc_amount=0.0008,
+        price=50000.0,
+        ahr999=0.5,
+        notes="Baseline 1",
+        timestamp=datetime(2024, 1, 1, 0, 0, tzinfo=timezone.utc),
+        source="MANUAL",
+        is_manual=True,
+    )
+    tx2 = DCATransaction(
+        status="SUCCESS",
+        fiat_amount=36.0,
+        btc_amount=0.00072,
+        price=50000.0,
+        ahr999=0.5,
+        notes="Baseline 2",
+        timestamp=datetime(2024, 1, 3, 0, 0, tzinfo=timezone.utc),
+        source="MANUAL",
+        is_manual=True,
+    )
+    session.add(tx1)
+    session.add(tx2)
+    session.commit()
+
+    with patch("dca_service.api.stats_api._load_recent_market_context") as mock_market:
+        mock_market.return_value = {
+            "available": True,
+            "window_days": 180,
+            "low_180d": 60000.0,
+            "high_180d": 100000.0,
+            "current_vs_180d_low_pct": 0.5,
+            "drop_24h_pct": -9.0,
+            "near_180d_low": True,
+            "new_180d_low": False,
+            "deep_value_regime": True,
+        }
+        response = client.post(
+            "/api/stats/add-position/advice",
+            json={
+                "amount_usdc": 1000.0,
+                "current_price_usd": 60300.0,
+                "symbol": "BTCUSDC",
+            },
+        )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["guidance"]["market_context"]["deep_value_regime"] is True
+    assert payload["guidance"]["risk_level"] in {"low", "medium"}
+    assert "deep pullback regime" in payload["guidance"]["analysis_text"].lower()

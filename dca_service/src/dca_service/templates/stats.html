@@ -323,16 +323,10 @@
                 height: 340px;
             }
         }
-        #tradingStyleAiText p {
-            margin: 0 0 0.55rem 0;
-        }
-        #tradingStyleAiText ul,
-        #tradingStyleAiText ol {
-            margin: 0.25rem 0 0.65rem 1.2rem;
-            padding-left: 0.8rem;
-        }
-        #tradingStyleAiText li {
-            margin-bottom: 0.25rem;
+        #tradingStylePromptPreview {
+            white-space: pre-wrap;
+            margin: 0;
+            font-size: 0.88rem;
         }
     </style>
 </head>
@@ -540,7 +534,7 @@
                                 <button id="tradingStyleLangEn" class="btn btn-outline-secondary active" type="button">EN</button>
                                 <button id="tradingStyleLangZh" class="btn btn-outline-secondary" type="button">中文</button>
                             </div>
-                            <button id="runStyleAiBtn" class="btn btn-sm btn-outline-primary">Run AI Review</button>
+                            <button id="copyStylePromptBtn" class="btn btn-sm btn-outline-primary">Copy Prompt</button>
                         </div>
                     </div>
                     <div class="card-body">
@@ -553,9 +547,9 @@
                             <ul class="mb-0" id="tradingStyleIssues"></ul>
                         </div>
                         <hr />
-                        <div><strong id="tradingStyleLabelAi">AI Review:</strong></div>
-                        <div class="small text-muted mb-1" id="tradingStyleAiSubtext">AI review uses your configured Summary API settings.</div>
-                        <div id="tradingStyleAiText" class="mb-0" style="font-size: 0.92rem;"></div>
+                        <div><strong id="tradingStyleLabelPrompt">Prompt:</strong></div>
+                        <div class="small text-muted mb-1" id="tradingStylePromptSubtext">Copy and paste this prompt to your own AI tool.</div>
+                        <pre id="tradingStylePromptPreview" class="mb-0 p-3 border rounded bg-body-tertiary"></pre>
                     </div>
                 </div>
             </div>
@@ -565,8 +559,6 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/notyf@3.10.0/notyf.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.2.0/dist/chartjs-plugin-zoom.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/marked@13.0.3/marked.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/dompurify@3.1.7/dist/purify.min.js"></script>
     <script>
         window.notyf = new Notyf({ duration: 3000, position: { x: 'right', y: 'top' } });
         const THEME_STORAGE_KEY = 'dca_theme';
@@ -749,20 +741,17 @@
         const TRADING_STYLE_I18N = {
             en: {
                 title: 'Trading Style Analysis',
-                runAi: 'Run AI Review',
+                copyPrompt: 'Copy Prompt',
                 tags: 'Style Tags:',
                 stats: 'Key Stats:',
                 method: 'Method:',
                 issues: 'Potential Issues:',
-                aiReview: 'AI Review:',
-                aiSubtext: 'AI review uses your configured Summary API settings.',
-                aiNotRequested: '',
+                promptLabel: 'Prompt:',
+                promptSubtext: 'Copy and paste this prompt to your own AI tool.',
+                promptEmpty: 'Load trading style analysis first to generate prompt.',
                 loadingRule: 'Loading rule-based analysis...',
-                loadingAi: 'Calling AI review...',
                 loadFailed: 'Failed to load trading style analysis.',
                 statusRule: (t) => `Updated ${t}. Rule-based analysis loaded.`,
-                statusAiDone: (t) => `Updated ${t}. AI review completed.`,
-                statusAiUnavailable: (t, reason) => `Updated ${t}. AI review unavailable: ${reason || 'unknown reason'}`,
                 noIssue: 'No major issue flagged by rule-based diagnostics.',
                 statsEvents: 'Events',
                 statsRawFills: 'Raw fills',
@@ -775,24 +764,22 @@
                 days: 'days',
                 methodSplit: 'Same binance_order_id merged into one event.',
                 methodNoHindsight: 'Each event diagnostics use only event-time and prior events.',
-                cacheHint: 'Data unchanged. Reused cached AI analysis; no API call made.',
+                promptCopied: 'Prompt copied to clipboard.',
+                promptCopyFailed: 'Failed to copy prompt.',
             },
             zh: {
                 title: '交易风格分析',
-                runAi: '运行AI评估',
+                copyPrompt: '复制Prompt',
                 tags: '风格标签：',
                 stats: '关键统计：',
                 method: '方法说明：',
                 issues: '潜在问题：',
-                aiReview: 'AI评估：',
-                aiSubtext: 'AI评估使用你在 Summary API 设置里的配置。',
-                aiNotRequested: '',
+                promptLabel: 'Prompt：',
+                promptSubtext: '复制后粘贴到你自己的AI工具。',
+                promptEmpty: '请先加载交易风格分析以生成Prompt。',
                 loadingRule: '正在加载规则分析...',
-                loadingAi: '正在调用AI评估...',
                 loadFailed: '交易风格分析加载失败。',
                 statusRule: (t) => `更新于 ${t}。规则分析已加载。`,
-                statusAiDone: (t) => `更新于 ${t}。AI评估已完成。`,
-                statusAiUnavailable: (t, reason) => `更新于 ${t}。AI评估不可用：${reason || '未知原因'}`,
                 noIssue: '规则分析未发现明显问题。',
                 statsEvents: '行为事件',
                 statsRawFills: '原始成交',
@@ -805,7 +792,8 @@
                 days: '天',
                 methodSplit: '同一 binance_order_id 的拆分成交会合并为一个行为事件。',
                 methodNoHindsight: '每个事件只使用当时及之前的数据做诊断，不使用后续信息。',
-                cacheHint: '数据源未更新，复用上次AI结果，本次未触发API调用。',
+                promptCopied: 'Prompt 已复制到剪贴板。',
+                promptCopyFailed: '复制 Prompt 失败。',
             }
         };
 
@@ -1301,64 +1289,85 @@
             return `${(Number(value) * 100).toFixed(1)}%`;
         }
 
-        function escapeHtml(value) {
-            return String(value || '')
-                .replace(/&/g, '&amp;')
-                .replace(/</g, '&lt;')
-                .replace(/>/g, '&gt;')
-                .replace(/"/g, '&quot;')
-                .replace(/'/g, '&#39;');
-        }
-
-        function renderAiMarkdown(markdownText) {
-            const el = document.getElementById('tradingStyleAiText');
+        function renderPromptPreview(promptText) {
+            const el = document.getElementById('tradingStylePromptPreview');
             if (!el) return;
-            const raw = String(markdownText || '').trim();
-            if (!raw) {
-                el.innerHTML = '';
-                return;
-            }
-
-            try {
-                if (window.marked && typeof window.marked.parse === 'function') {
-                    const rawHtml = window.marked.parse(raw, {
-                        breaks: true,
-                        gfm: true,
-                    });
-                    if (window.DOMPurify && typeof window.DOMPurify.sanitize === 'function') {
-                        el.innerHTML = window.DOMPurify.sanitize(rawHtml);
-                    } else {
-                        el.innerHTML = rawHtml;
-                    }
-                    return;
-                }
-            } catch (err) {
-                console.warn('Failed to render markdown, fallback to escaped text:', err);
-            }
-
-            el.innerHTML = `<pre style="white-space: pre-wrap; margin:0;">${escapeHtml(raw)}</pre>`;
+            el.textContent = String(promptText || '');
         }
 
-        function getTradingStyleAiCacheKey(language) {
-            return `stats_trading_style_ai_${language}`;
-        }
-
-        function attachAiFromLanguageCache(rulePayload) {
-            if (!rulePayload || !rulePayload.source_signature) return rulePayload;
-            const aiCached = loadFromCache(getTradingStyleAiCacheKey(tradingStyleLanguage));
-            if (!aiCached || !isCacheValid(aiCached, 24 * 60)) return rulePayload;
-            const aiData = aiCached.data || {};
-            if (!aiData.ai_analysis || aiData.source_signature !== rulePayload.source_signature) {
-                return rulePayload;
+        function buildTradingStylePrompt(payload) {
+            const text = getTradingStyleText();
+            if (!payload || !payload.analysis_data) {
+                return text.promptEmpty;
             }
-            return {
-                ...rulePayload,
-                ai_analysis: aiData.ai_analysis,
-                ai_status: {
-                    ...(aiData.ai_status || {}),
-                    restored_from_browser_cache: true,
-                },
+
+            const analysis = payload.analysis_data || {};
+            const promptPayload = {
+                generated_at: payload.generated_at || null,
+                language: tradingStyleLanguage,
+                source_signature: payload.source_signature || null,
+                summary: analysis.summary || {},
+                style_tags: analysis.style_tags || [],
+                issues: analysis.issues || [],
+                method_constraints: analysis.method_constraints || {},
+                event_diagnostics: (analysis.event_diagnostics || []).slice(-40),
             };
+
+            if (tradingStyleLanguage === 'zh') {
+                return [
+                    '你是BTC买入执行行为复盘顾问。语气简明、chill、直接可执行。',
+                    '限制：',
+                    '1) 严格避免后视偏差，只能基于当时及之前信息评价每个行为。',
+                    '2) 已将同一 binance_order_id 的拆单成交合并为一个行为事件。',
+                    '3) 不要给无法执行的建议（例如“强制限制平台订单频率”）。',
+                    '输出结构：',
+                    '- 风格判断（2-3句）',
+                    '- 主要问题（最多3条，按严重度）',
+                    '- 可执行建议（最多4条，贴合DCA平台现实约束）',
+                    '',
+                    '数据如下(JSON)：',
+                    JSON.stringify(promptPayload, null, 2),
+                ].join('\n');
+            }
+
+            return [
+                'You are a BTC buy-execution behavior coach. Keep tone concise, chill, and actionable.',
+                'Constraints:',
+                '1) Strictly avoid hindsight bias. Judge each behavior only with information available at that time.',
+                '2) Split fills with same binance_order_id are already merged into one behavior event.',
+                '3) Do not give impractical advice that user cannot execute on a DCA platform.',
+                'Output format:',
+                '- Style assessment (2-3 short sentences)',
+                '- Key issues (max 3, ranked)',
+                '- Actionable improvements (max 4, realistic under DCA platform constraints)',
+                '',
+                'Data (JSON):',
+                JSON.stringify(promptPayload, null, 2),
+            ].join('\n');
+        }
+
+        async function copyTradingStylePromptToClipboard() {
+            const text = getTradingStyleText();
+            const prompt = buildTradingStylePrompt(latestTradingStyleData);
+            try {
+                if (navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
+                    await navigator.clipboard.writeText(prompt);
+                } else {
+                    const temp = document.createElement('textarea');
+                    temp.value = prompt;
+                    temp.style.position = 'fixed';
+                    temp.style.left = '-9999px';
+                    document.body.appendChild(temp);
+                    temp.focus();
+                    temp.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(temp);
+                }
+                notyf.success(text.promptCopied);
+            } catch (error) {
+                console.error('Failed to copy prompt:', error);
+                notyf.error(text.promptCopyFailed);
+            }
         }
 
         function getTradingStyleText() {
@@ -1406,22 +1415,19 @@
                 if (el) el.textContent = value;
             };
             setText('tradingStyleTitle', text.title);
-            setText('runStyleAiBtn', text.runAi);
+            setText('copyStylePromptBtn', text.copyPrompt);
             setText('tradingStyleLabelTags', text.tags);
             setText('tradingStyleLabelStats', text.stats);
             setText('tradingStyleLabelMethod', text.method);
             setText('tradingStyleLabelIssues', text.issues);
-            setText('tradingStyleLabelAi', text.aiReview);
-            setText('tradingStyleAiSubtext', text.aiSubtext);
-            const aiEl = document.getElementById('tradingStyleAiText');
-            if (aiEl && !aiEl.textContent.trim()) {
-                renderAiMarkdown(text.aiNotRequested);
-            }
+            setText('tradingStyleLabelPrompt', text.promptLabel);
+            setText('tradingStylePromptSubtext', text.promptSubtext);
+            renderPromptPreview(buildTradingStylePrompt(latestTradingStyleData));
             document.getElementById('tradingStyleLangEn')?.classList.toggle('active', tradingStyleLanguage === 'en');
             document.getElementById('tradingStyleLangZh')?.classList.toggle('active', tradingStyleLanguage === 'zh');
         }
 
-        function updateTradingStyleUI(payload, includeAI = false) {
+        function updateTradingStyleUI(payload) {
             latestTradingStyleData = payload;
             const text = getTradingStyleText();
             const analysis = payload?.analysis_data || {};
@@ -1470,57 +1476,33 @@
                 });
             }
 
-            const aiStatus = payload?.ai_status || {};
-            if (payload?.ai_analysis) {
-                renderAiMarkdown(payload.ai_analysis);
-            } else if (includeAI) {
-                renderAiMarkdown(aiStatus.reason || 'AI review unavailable.');
-            } else {
-                renderAiMarkdown(text.aiNotRequested);
-            }
+            renderPromptPreview(buildTradingStylePrompt(payload));
 
             const statusEl = document.getElementById('tradingStyleStatus');
             const generatedAt = payload?.generated_at ? new Date(payload.generated_at).toLocaleString() : '';
-            if (includeAI) {
-                statusEl.textContent = aiStatus.success
-                    ? text.statusAiDone(generatedAt)
-                    : text.statusAiUnavailable(generatedAt, aiStatus.reason);
-            } else {
-                statusEl.textContent = text.statusRule(generatedAt);
-            }
+            statusEl.textContent = text.statusRule(generatedAt);
         }
 
-        async function loadTradingStyle(forceRefresh = false, includeAI = false) {
-            const cacheKey = includeAI
-                ? `stats_trading_style_ai_${tradingStyleLanguage}`
-                : `stats_trading_style_${tradingStyleLanguage}`;
-            const ttlMinutes = includeAI ? 30 : 10;
-
+        async function loadTradingStyle(forceRefresh = false) {
+            const cacheKey = `stats_trading_style_${tradingStyleLanguage}`;
+            const ttlMinutes = 10;
             try {
                 const cached = loadFromCache(cacheKey);
                 if (!forceRefresh && isCacheValid(cached, ttlMinutes)) {
-                    const payloadToRender = includeAI ? cached.data : attachAiFromLanguageCache(cached.data);
-                    updateTradingStyleUI(payloadToRender, includeAI);
+                    updateTradingStyleUI(cached.data);
                     return;
                 }
 
                 if (cached) {
-                    const payloadToRender = includeAI ? cached.data : attachAiFromLanguageCache(cached.data);
-                    updateTradingStyleUI(payloadToRender, includeAI);
+                    updateTradingStyleUI(cached.data);
                 }
 
                 const response = await fetch(
-                    `/api/stats/trading-style?include_ai=${includeAI ? 'true' : 'false'}&language=${encodeURIComponent(tradingStyleLanguage)}`
+                    `/api/stats/trading-style?include_ai=false&language=${encodeURIComponent(tradingStyleLanguage)}`
                 );
                 const data = await response.json();
                 saveToCache(cacheKey, data);
-                const payloadToRender = includeAI ? data : attachAiFromLanguageCache(data);
-                updateTradingStyleUI(payloadToRender, includeAI);
-
-                if (includeAI && data?.ai_status?.cache_hit) {
-                    const text = getTradingStyleText();
-                    notyf.success(text.cacheHint);
-                }
+                updateTradingStyleUI(data);
             } catch (error) {
                 console.error('Error loading trading style analysis:', error);
                 const statusEl = document.getElementById('tradingStyleStatus');
@@ -1535,7 +1517,7 @@
             const currentTheme = document.documentElement.getAttribute('data-bs-theme') || 'light';
             updateThemeToggleButton(currentTheme);
             applyTradingStyleLanguageUI();
-            renderAiMarkdown(getTradingStyleText().aiNotRequested);
+            renderPromptPreview(getTradingStyleText().promptEmpty);
             const themeBtn = document.getElementById('themeToggleBtn');
             if (themeBtn) {
                 themeBtn.addEventListener('click', () => {
@@ -1552,7 +1534,7 @@
             loadFees();
             loadWalletBalance();
             loadChart();
-            loadTradingStyle(false, false);
+            loadTradingStyle(false);
 
             const langEnBtn = document.getElementById('tradingStyleLangEn');
             const langZhBtn = document.getElementById('tradingStyleLangZh');
@@ -1561,8 +1543,7 @@
                     if (tradingStyleLanguage === 'en') return;
                     tradingStyleLanguage = 'en';
                     applyTradingStyleLanguageUI();
-                    renderAiMarkdown(getTradingStyleText().aiNotRequested);
-                    await loadTradingStyle(false, false);
+                    await loadTradingStyle(false);
                 });
             }
             if (langZhBtn) {
@@ -1570,8 +1551,7 @@
                     if (tradingStyleLanguage === 'zh') return;
                     tradingStyleLanguage = 'zh';
                     applyTradingStyleLanguageUI();
-                    renderAiMarkdown(getTradingStyleText().aiNotRequested);
-                    await loadTradingStyle(false, false);
+                    await loadTradingStyle(false);
                 });
             }
 
@@ -1593,7 +1573,7 @@
                     loadFees(true),
                     loadWalletBalance(true),
                     loadChart(true),
-                    loadTradingStyle(true, false)
+                    loadTradingStyle(true)
                 ]);
                 
                 btn.disabled = false;
@@ -1601,24 +1581,10 @@
                 notyf.success('Stats refreshed');
             });
 
-            const runStyleAiBtn = document.getElementById('runStyleAiBtn');
-            if (runStyleAiBtn) {
-                runStyleAiBtn.addEventListener('click', async () => {
-                    const originalText = runStyleAiBtn.innerHTML;
-                    runStyleAiBtn.disabled = true;
-                    runStyleAiBtn.innerHTML = tradingStyleLanguage === 'zh' ? '运行中...' : 'Running...';
-                    const statusEl = document.getElementById('tradingStyleStatus');
-                    if (statusEl) statusEl.textContent = getTradingStyleText().loadingAi;
-                    try {
-                        await loadTradingStyle(true, true);
-                        notyf.success(tradingStyleLanguage === 'zh' ? 'AI评估完成' : 'AI review completed');
-                    } catch (error) {
-                        console.error('AI review error:', error);
-                        notyf.error(tradingStyleLanguage === 'zh' ? 'AI评估失败' : 'AI review failed');
-                    } finally {
-                        runStyleAiBtn.disabled = false;
-                        runStyleAiBtn.innerHTML = originalText;
-                    }
+            const copyStylePromptBtn = document.getElementById('copyStylePromptBtn');
+            if (copyStylePromptBtn) {
+                copyStylePromptBtn.addEventListener('click', async () => {
+                    await copyTradingStylePromptToClipboard();
                 });
             }
             

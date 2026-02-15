@@ -102,21 +102,17 @@ def test_trading_style_supports_language_toggle_and_language_aware_request():
     assert "language=${encodeURIComponent(tradingStyleLanguage)}" in html
 
 
-def test_trading_style_ai_markdown_rendering_is_enabled():
+def test_trading_style_prompt_copy_ui_is_enabled():
     html = _load_stats_template()
-    assert 'id="tradingStyleAiText"' in html
-    assert "marked.min.js" in html
-    assert "purify.min.js" in html
-    assert "function renderAiMarkdown(markdownText)" in html
-    assert "window.marked.parse" in html
-    assert "window.DOMPurify.sanitize" in html
+    assert 'id="copyStylePromptBtn"' in html
+    assert 'id="tradingStylePromptPreview"' in html
+    assert "function buildTradingStylePrompt(payload)" in html
+    assert "function copyTradingStylePromptToClipboard()" in html
+    assert "navigator.clipboard.writeText(prompt)" in html
 
 
-def test_trading_style_ai_is_scoped_by_language_and_restored_from_language_cache():
+def test_trading_style_prompt_uses_rule_data_only_without_ai_call():
     html = _load_stats_template()
-    assert "function getTradingStyleAiCacheKey(language)" in html
-    assert "function attachAiFromLanguageCache(rulePayload)" in html
-    assert "stats_trading_style_ai_" in html
-    assert "attachAiFromLanguageCache(cached.data)" in html
-    assert "attachAiFromLanguageCache(data)" in html
-    assert "renderAiMarkdown(getTradingStyleText().aiNotRequested);" in html
+    assert "/api/stats/trading-style?include_ai=false&language=${encodeURIComponent(tradingStyleLanguage)}" in html
+    assert "const cacheKey = `stats_trading_style_${tradingStyleLanguage}`;" in html
+    assert "renderPromptPreview(buildTradingStylePrompt(payload));" in html
