@@ -30,6 +30,13 @@ describe("Daily Report UI", () => {
         expect(htmlContent).toContain("loadDailyReport();");
     });
 
+    it("shows source-unchanged hint when summary API call is skipped", () => {
+        expect(htmlContent).toContain('id="dailyReportHint"');
+        expect(htmlContent).toContain("apiSkippedSameSource");
+        expect(htmlContent).toContain("summaryGeneration.api_call_skipped");
+        expect(htmlContent).toContain('summaryGeneration.skip_reason === "source_unchanged"');
+    });
+
     it("keeps Valuation Ratios and Price Comparison out of summary scope", () => {
         expect(htmlContent).toContain("Valuation Ratios");
         expect(htmlContent).toContain("Price Comparison");

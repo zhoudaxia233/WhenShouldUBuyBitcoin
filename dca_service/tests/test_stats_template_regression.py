@@ -91,3 +91,12 @@ def test_light_mode_summary_box_uses_light_palette():
     assert "background: linear-gradient(180deg, #f7f9fc 0%, #edf2f8 100%);" in html
     assert "html[data-bs-theme=\"light\"] .saylor-summary-box .metric-value {" in html
     assert "color: #1b2b40;" in html
+
+
+def test_trading_style_supports_language_toggle_and_language_aware_request():
+    html = _load_stats_template()
+    assert 'id="tradingStyleLangEn"' in html
+    assert 'id="tradingStyleLangZh"' in html
+    assert "let tradingStyleLanguage = 'en';" in html
+    assert "function applyTradingStyleLanguageUI()" in html
+    assert "language=${encodeURIComponent(tradingStyleLanguage)}" in html

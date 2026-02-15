@@ -1,6 +1,7 @@
 from pathlib import Path
 
 import pandas as pd
+from unittest.mock import patch
 
 from whenshouldubuybitcoin.daily_report import (
     build_report_payload,
@@ -131,3 +132,85 @@ def test_generate_daily_report_writes_json(tmp_path: Path, monkeypatch):
 
     assert output_path.exists()
     assert report["human_summary"]["items"]
+
+
+def test_generate_daily_report_skips_llm_when_source_unchanged(tmp_path: Path, monkeypatch):
+    output_path = tmp_path / "daily_report.json"
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.delenv("REPORT_SUMMARY_DISABLE_LLM", raising=False)
+    monkeypatch.delenv("REPORT_SUMMARY_API_KEY", raising=False)
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+
+    calls = {"n": 0}
+
+    def fake_llm(_payload, language):
+        calls["n"] += 1
+        if language == "zh":
+            return {
+                "items": [{"chart": "MA Cross Analysis", "summary": "中文摘要"}],
+                "overall_summary": "中文总览",
+            }
+        return {
+            "items": [{"chart": "MA Cross Analysis", "summary": "English summary"}],
+            "overall_summary": "English overview",
+        }
+
+    with patch("whenshouldubuybitcoin.daily_report._call_llm_summary", side_effect=fake_llm):
+        first = generate_daily_report(
+            _sample_btc_df(),
+            macro_df=_sample_macro_df(),
+            output_path=output_path,
+        )
+        first_calls = calls["n"]
+        second = generate_daily_report(
+            _sample_btc_df(),
+            macro_df=_sample_macro_df(),
+            output_path=output_path,
+        )
+
+    assert first_calls == 2  # en + zh
+    assert calls["n"] == 2  # unchanged source: no extra LLM calls
+    assert first["summary_generation"]["api_call_skipped"] is False
+    assert second["summary_generation"]["api_call_skipped"] is True
+    assert second["summary_generation"]["skip_reason"] == "source_unchanged"
+    assert second["summary_generation"]["reused_from_existing"] is True
+    assert second["human_summary"] == first["human_summary"]
+
+
+def test_generate_daily_report_calls_llm_when_source_changes(tmp_path: Path, monkeypatch):
+    output_path = tmp_path / "daily_report.json"
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.delenv("REPORT_SUMMARY_DISABLE_LLM", raising=False)
+    monkeypatch.delenv("REPORT_SUMMARY_API_KEY", raising=False)
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+
+    calls = {"n": 0}
+
+    def fake_llm(_payload, language):
+        calls["n"] += 1
+        marker = f"v{calls['n']}"
+        return {
+            "items": [{"chart": "MA Cross Analysis", "summary": f"{language}-{marker}"}],
+            "overall_summary": f"{language}-overall-{marker}",
+        }
+
+    btc_df_1 = _sample_btc_df()
+    btc_df_2 = _sample_btc_df().copy()
+    btc_df_2.loc[btc_df_2.index[-1], "close_price"] += 999  # force signature change
+
+    with patch("whenshouldubuybitcoin.daily_report._call_llm_summary", side_effect=fake_llm):
+        first = generate_daily_report(
+            btc_df_1,
+            macro_df=_sample_macro_df(),
+            output_path=output_path,
+        )
+        second = generate_daily_report(
+            btc_df_2,
+            macro_df=_sample_macro_df(),
+            output_path=output_path,
+        )
+
+    assert calls["n"] == 4  # en + zh for each run
+    assert first["summary_generation"]["api_call_skipped"] is False
+    assert second["summary_generation"]["api_call_skipped"] is False
+    assert first["summary_source_signature"] != second["summary_source_signature"]

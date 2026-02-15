@@ -6,6 +6,7 @@ import json
 import os
 import re
 import tempfile
+import hashlib
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -562,7 +563,52 @@ def _call_llm_summary(payload: dict[str, Any], language: str) -> dict[str, Any] 
         return None
 
 
-def enrich_with_human_summary(payload: dict[str, Any]) -> dict[str, Any]:
+def _summary_source_payload(payload: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "report_date": payload.get("report_date"),
+        "excluded_charts": payload.get("excluded_charts", []),
+        "sections": payload.get("sections", []),
+    }
+
+
+def _summary_source_signature(payload: dict[str, Any]) -> str:
+    canonical = _summary_source_payload(payload)
+    encoded = json.dumps(canonical, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+    return hashlib.sha256(encoded.encode("utf-8")).hexdigest()
+
+
+def _load_existing_report(path: Path) -> dict[str, Any] | None:
+    if not path.exists():
+        return None
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except Exception:
+        return None
+
+
+def _has_reusable_human_summary(report: dict[str, Any] | None) -> bool:
+    if not isinstance(report, dict):
+        return False
+    summary = report.get("human_summary")
+    if not isinstance(summary, dict):
+        return False
+    if not isinstance(summary.get("items"), list) or not summary.get("items"):
+        return False
+    localized = summary.get("localized")
+    if not isinstance(localized, dict):
+        return False
+    for lang in ("en", "zh"):
+        lang_obj = localized.get(lang)
+        if not isinstance(lang_obj, dict):
+            return False
+        if not isinstance(lang_obj.get("items"), list) or not lang_obj.get("items"):
+            return False
+        if not isinstance(lang_obj.get("overall_summary"), str) or not lang_obj.get("overall_summary").strip():
+            return False
+    return True
+
+
+def enrich_with_human_summary(payload: dict[str, Any], *, source_signature: str | None = None) -> dict[str, Any]:
     """Attach per-chart summary lines and overall summary."""
     deterministic_en_items = [
         {"chart": section["chart"], "summary": _deterministic_en_summary(section)}
@@ -667,6 +713,13 @@ def enrich_with_human_summary(payload: dict[str, Any]) -> dict[str, Any]:
         },
         "generated_by": "llm_api" if llm_en or llm_zh else "deterministic_rules",
     }
+    payload["summary_generation"] = {
+        "source_signature": source_signature,
+        "api_call_skipped": False,
+        "skip_reason": None,
+        "reused_from_existing": False,
+        "summary_generated_at": payload.get("generated_at"),
+    }
     return payload
 
 
@@ -706,6 +759,39 @@ def generate_daily_report(
         yield_df=yield_df,
         oi_df=oi_df,
     )
-    payload = enrich_with_human_summary(payload)
+    source_signature = _summary_source_signature(payload)
+    payload["summary_source_signature"] = source_signature
+
+    existing_report = _load_existing_report(output_path)
+    existing_signature = None
+    if isinstance(existing_report, dict):
+        existing_signature = existing_report.get("summary_source_signature")
+        if not isinstance(existing_signature, str) or not existing_signature:
+            try:
+                existing_signature = _summary_source_signature(existing_report)
+            except Exception:
+                existing_signature = None
+
+    if existing_signature == source_signature and _has_reusable_human_summary(existing_report):
+        payload["human_summary"] = existing_report["human_summary"]
+        previous_summary_generation = (
+            existing_report.get("summary_generation")
+            if isinstance(existing_report.get("summary_generation"), dict)
+            else {}
+        )
+        previous_summary_generated_at = (
+            previous_summary_generation.get("summary_generated_at")
+            or existing_report.get("generated_at")
+        )
+        payload["summary_generation"] = {
+            "source_signature": source_signature,
+            "api_call_skipped": True,
+            "skip_reason": "source_unchanged",
+            "reused_from_existing": True,
+            "summary_generated_at": previous_summary_generated_at,
+        }
+    else:
+        payload = enrich_with_human_summary(payload, source_signature=source_signature)
+
     save_daily_report(payload, output_path=output_path)
     return payload

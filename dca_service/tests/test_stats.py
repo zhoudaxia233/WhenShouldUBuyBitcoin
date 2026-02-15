@@ -1,9 +1,10 @@
 from fastapi.testclient import TestClient
 from sqlmodel import Session
-from dca_service.main import app
-from dca_service.models import DCATransaction, GlobalSettings
-from dca_service.database import get_session
-import pytest
+from unittest.mock import MagicMock, patch
+
+from dca_service.api import stats_api
+from dca_service.models import DCATransaction, SummaryApiSettings
+from dca_service.services.security import encrypt_text
 from datetime import datetime, timezone
 
 def test_stats_distribution(client: TestClient):
@@ -74,3 +75,193 @@ def test_stats_pnl(client: TestClient, session: Session):
     # Yes. So at T2, we have 0.03 BTC, price is 100k, so value is 3000.
     assert data["invested"][1] == 2000.0
     assert data["value"][1] == 3000.0
+
+
+def test_trading_style_analysis_aggregates_split_fills(client: TestClient, session: Session):
+    tx1 = DCATransaction(
+        status="SUCCESS",
+        fiat_amount=50.0,
+        btc_amount=0.001,
+        price=50000.0,
+        ahr999=0.5,
+        notes="Split fill 1",
+        timestamp=datetime(2024, 1, 1, 0, 0, tzinfo=timezone.utc),
+        source="MANUAL",
+        is_manual=True,
+        binance_order_id=123456,
+        binance_trade_id=111,
+    )
+    tx2 = DCATransaction(
+        status="SUCCESS",
+        fiat_amount=150.0,
+        btc_amount=0.003,
+        price=50010.0,
+        ahr999=0.5,
+        notes="Split fill 2",
+        timestamp=datetime(2024, 1, 1, 0, 1, tzinfo=timezone.utc),
+        source="MANUAL",
+        is_manual=True,
+        binance_order_id=123456,
+        binance_trade_id=112,
+    )
+    tx3 = DCATransaction(
+        status="SUCCESS",
+        fiat_amount=200.0,
+        btc_amount=0.004,
+        price=50020.0,
+        ahr999=0.5,
+        notes="Another order",
+        timestamp=datetime(2024, 1, 3, 0, 0, tzinfo=timezone.utc),
+        source="MANUAL",
+        is_manual=True,
+        binance_order_id=999999,
+        binance_trade_id=113,
+    )
+    session.add(tx1)
+    session.add(tx2)
+    session.add(tx3)
+    session.commit()
+
+    response = client.get("/api/stats/trading-style?include_ai=false")
+    assert response.status_code == 200
+    payload = response.json()
+    summary = payload["analysis_data"]["summary"]
+
+    assert summary["raw_fill_count"] == 3
+    assert summary["behavior_event_count"] == 2
+    assert summary["split_event_count"] == 1
+    assert summary["split_fill_extra_count"] == 1
+    assert summary["avg_fills_per_event"] == 1.5
+    assert payload["ai_analysis"] is None
+    assert payload["ai_status"]["attempted"] is False
+
+    diagnostics = payload["analysis_data"]["event_diagnostics"]
+    assert len(diagnostics) == 2
+    assert diagnostics[0]["binance_order_id"] == 123456
+    assert diagnostics[0]["fill_count"] == 2
+    assert diagnostics[0]["amount_usd"] == 200.0
+    assert diagnostics[0]["amount_btc"] == 0.004
+    assert diagnostics[1]["binance_order_id"] == 999999
+    assert diagnostics[1]["fill_count"] == 1
+
+
+def test_trading_style_analysis_ai_disabled_without_settings(client: TestClient, session: Session):
+    tx = DCATransaction(
+        status="SUCCESS",
+        fiat_amount=100.0,
+        btc_amount=0.002,
+        price=50000.0,
+        ahr999=0.5,
+        notes="No AI settings",
+        timestamp=datetime(2024, 1, 1, tzinfo=timezone.utc),
+    )
+    session.add(tx)
+    session.commit()
+
+    response = client.get("/api/stats/trading-style?include_ai=true")
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["ai_analysis"] is None
+    assert payload["ai_status"]["success"] is False
+    assert "not configured" in payload["ai_status"]["reason"].lower()
+
+
+def test_trading_style_analysis_ai_success(client: TestClient, session: Session):
+    stats_api.TRADING_STYLE_AI_CACHE.clear()
+    tx = DCATransaction(
+        status="SUCCESS",
+        fiat_amount=100.0,
+        btc_amount=0.002,
+        price=50000.0,
+        ahr999=0.5,
+        notes="AI settings test",
+        timestamp=datetime(2024, 1, 1, tzinfo=timezone.utc),
+    )
+    session.add(tx)
+    session.add(
+        SummaryApiSettings(
+            is_enabled=True,
+            provider="openai",
+            base_url="https://api.openai.com/v1",
+            model="gpt-4o-mini",
+            api_key_encrypted=encrypt_text("sk-test-key"),
+        )
+    )
+    session.commit()
+
+    mock_response = MagicMock()
+    mock_response.status_code = 200
+    mock_response.json.return_value = {
+        "choices": [
+            {
+                "message": {
+                    "content": "风格判断：偏固定节奏。主要问题：样本偏少。建议：保持一致执行。"
+                }
+            }
+        ]
+    }
+
+    mock_client = MagicMock()
+    mock_client.__enter__.return_value = mock_client
+    mock_client.post.return_value = mock_response
+
+    with patch("dca_service.api.stats_api.httpx.Client", return_value=mock_client):
+        response = client.get("/api/stats/trading-style?include_ai=true&language=zh")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["ai_status"]["attempted"] is True
+    assert payload["ai_status"]["success"] is True
+    assert payload["ai_status"]["language"] == "zh"
+    assert payload["ai_status"]["cache_hit"] is False
+    assert "风格判断" in payload["ai_analysis"]
+
+
+def test_trading_style_analysis_reuses_cached_ai_when_source_unchanged(client: TestClient, session: Session):
+    stats_api.TRADING_STYLE_AI_CACHE.clear()
+    tx = DCATransaction(
+        status="SUCCESS",
+        fiat_amount=300.0,
+        btc_amount=0.006,
+        price=50000.0,
+        ahr999=0.5,
+        notes="Cache test",
+        timestamp=datetime(2024, 1, 2, tzinfo=timezone.utc),
+    )
+    session.add(tx)
+    session.add(
+        SummaryApiSettings(
+            is_enabled=True,
+            provider="openai",
+            base_url="https://api.openai.com/v1",
+            model="gpt-4o-mini",
+            api_key_encrypted=encrypt_text("sk-test-key"),
+        )
+    )
+    session.commit()
+
+    mock_response = MagicMock()
+    mock_response.status_code = 200
+    mock_response.json.return_value = {
+        "choices": [{"message": {"content": "Style Assessment: steady."}}]
+    }
+    mock_client = MagicMock()
+    mock_client.__enter__.return_value = mock_client
+    mock_client.post.return_value = mock_response
+
+    with patch("dca_service.api.stats_api.httpx.Client", return_value=mock_client):
+        first = client.get("/api/stats/trading-style?include_ai=true&language=en")
+        second = client.get("/api/stats/trading-style?include_ai=true&language=en")
+
+    assert first.status_code == 200
+    assert second.status_code == 200
+    first_payload = first.json()
+    second_payload = second.json()
+
+    assert first_payload["ai_status"]["attempted"] is True
+    assert first_payload["ai_status"]["cache_hit"] is False
+    assert second_payload["ai_status"]["attempted"] is False
+    assert second_payload["ai_status"]["cache_hit"] is True
+    assert "Source unchanged" in second_payload["ai_status"]["reason"]
+    assert second_payload["ai_analysis"] == first_payload["ai_analysis"]
+    assert mock_client.post.call_count == 1
