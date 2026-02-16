@@ -356,8 +356,12 @@ def test_add_position_advice_uses_split_fill_merged_behavior_events(client: Test
     assert payload["analysis_data"]["summary"]["behavior_event_count"] == 2
     assert payload["analysis_data"]["summary"]["split_event_count"] == 1
     assert payload["guidance"]["risk_level"] in {"low", "medium", "high"}
+    assert payload["guidance"]["decision"] in {"BUY", "WAIT"}
+    assert payload["guidance"]["final_call"]
+    assert payload["guidance"]["call_reason"]
     assert payload["guidance"]["analysis_text"]
-    assert "Quick take:" in payload["guidance"]["analysis_text"]
+    assert "Call:" in payload["guidance"]["analysis_text"]
+    assert "Short reason:" in payload["guidance"]["analysis_text"]
     assert payload["guidance"]["method_constraints"]["no_hindsight"]
 
 
@@ -468,17 +472,178 @@ def test_add_position_advice_deep_value_regime_does_not_auto_discourage_large_si
             "new_180d_low": False,
             "deep_value_regime": True,
         }
-        response = client.post(
-            "/api/stats/add-position/advice",
-            json={
-                "amount_usdc": 1000.0,
-                "current_price_usd": 60300.0,
-                "symbol": "BTCUSDC",
-            },
-        )
+        with patch("dca_service.api.stats_api._load_macro_context") as mock_macro:
+            mock_macro.return_value = {
+                "available": True,
+                "report_date": "2026-02-08",
+                "report_age_days": 1,
+                "macro_risk_score": 30.0,
+                "macro_risk_regime": "neutral",
+                "stress_flags": 0,
+                "net_liquidity_90d_delta": 80.0,
+                "oi_30d_change_pct": -10.0,
+                "ma_regime": "bearish",
+                "ma_spread": -1000.0,
+                "usdjpy_risk_level": "MODERATE RISK",
+                "overall_summary": "test",
+            }
+            response = client.post(
+                "/api/stats/add-position/advice",
+                json={
+                    "amount_usdc": 1000.0,
+                    "current_price_usd": 60300.0,
+                    "symbol": "BTCUSDC",
+                },
+            )
 
     assert response.status_code == 200
     payload = response.json()
     assert payload["guidance"]["market_context"]["deep_value_regime"] is True
+    assert payload["guidance"]["macro_context"]["available"] is True
+    assert payload["analysis_data"]["macro_context"]["available"] is True
+    assert payload["guidance"]["decision"] == "BUY"
     assert payload["guidance"]["risk_level"] in {"low", "medium"}
-    assert "deep pullback regime" in payload["guidance"]["analysis_text"].lower()
+    assert payload["guidance"]["final_call"].startswith("BUY ")
+    assert "deep pullback zone" in payload["guidance"]["analysis_text"].lower()
+    assert "call: buy " in payload["guidance"]["analysis_text"].lower()
+
+
+def test_add_position_advice_sideways_dense_dca_waits_without_takeoff_macro(client: TestClient, session: Session):
+    # Create dense DCA history: daily cadence, enough events to trigger dense mode.
+    for idx in range(12):
+        tx = DCATransaction(
+            status="SUCCESS",
+            fiat_amount=40.0 + (idx % 3),
+            btc_amount=0.0007,
+            price=68000.0,
+            ahr999=0.6,
+            notes=f"Dense DCA {idx}",
+            timestamp=datetime(2024, 1, 1 + idx, 0, 0, tzinfo=timezone.utc),
+            source="MANUAL",
+            is_manual=True,
+        )
+        session.add(tx)
+    session.commit()
+
+    with patch("dca_service.api.stats_api._load_recent_market_context") as mock_market:
+        mock_market.return_value = {
+            "available": True,
+            "window_days": 180,
+            "low_180d": 65000.0,
+            "high_180d": 72000.0,
+            "ath_price": 109000.0,
+            "current_vs_180d_low_pct": 6.5,
+            "current_vs_180d_high_pct": -3.0,
+            "current_vs_ath_pct": -35.0,
+            "drop_24h_pct": -0.4,
+            "near_180d_low": False,
+            "new_180d_low": False,
+            "near_180d_high": False,
+            "new_180d_high": False,
+            "near_ath": False,
+            "new_ath": False,
+            "deep_value_regime": False,
+            "breakout_high_regime": False,
+            "range_30d_pct": 5.0,
+            "realized_vol_30d_pct": 1.1,
+            "sideways_30d": True,
+        }
+        with patch("dca_service.api.stats_api._load_macro_context") as mock_macro:
+            mock_macro.return_value = {
+                "available": True,
+                "report_date": "2026-02-08",
+                "report_age_days": 1,
+                "macro_risk_score": 45.0,
+                "macro_risk_regime": "neutral",
+                "stress_flags": 0,
+                "net_liquidity_90d_delta": 20.0,
+                "oi_30d_change_pct": 0.0,
+                "ma_regime": "bearish",
+                "ma_spread": -1500.0,
+                "usdjpy_risk_level": "MODERATE RISK",
+                "overall_summary": "test",
+            }
+            response = client.post(
+                "/api/stats/add-position/advice",
+                json={
+                    "amount_usdc": 700.0,
+                    "current_price_usd": 69200.0,
+                    "symbol": "BTCUSDC",
+                },
+            )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["guidance"]["decision"] == "WAIT"
+    assert payload["guidance"]["final_call"] == "NO BUY"
+    assert "sideways market + daily dca" in payload["guidance"]["call_reason"].lower()
+
+
+def test_add_position_advice_sideways_dense_dca_allows_add_with_takeoff_macro(client: TestClient, session: Session):
+    for idx in range(12):
+        tx = DCATransaction(
+            status="SUCCESS",
+            fiat_amount=45.0,
+            btc_amount=0.00072,
+            price=68000.0,
+            ahr999=0.6,
+            notes=f"Dense DCA takeoff {idx}",
+            timestamp=datetime(2024, 2, 1 + idx, 0, 0, tzinfo=timezone.utc),
+            source="MANUAL",
+            is_manual=True,
+        )
+        session.add(tx)
+    session.commit()
+
+    with patch("dca_service.api.stats_api._load_recent_market_context") as mock_market:
+        mock_market.return_value = {
+            "available": True,
+            "window_days": 180,
+            "low_180d": 65000.0,
+            "high_180d": 72000.0,
+            "ath_price": 109000.0,
+            "current_vs_180d_low_pct": 7.0,
+            "current_vs_180d_high_pct": -2.0,
+            "current_vs_ath_pct": -34.0,
+            "drop_24h_pct": 1.8,
+            "near_180d_low": False,
+            "new_180d_low": False,
+            "near_180d_high": False,
+            "new_180d_high": False,
+            "near_ath": False,
+            "new_ath": False,
+            "deep_value_regime": False,
+            "breakout_high_regime": True,
+            "range_30d_pct": 6.0,
+            "realized_vol_30d_pct": 1.4,
+            "sideways_30d": True,
+        }
+        with patch("dca_service.api.stats_api._load_macro_context") as mock_macro:
+            mock_macro.return_value = {
+                "available": True,
+                "report_date": "2026-02-08",
+                "report_age_days": 1,
+                "macro_risk_score": 38.0,
+                "macro_risk_regime": "neutral",
+                "stress_flags": 0,
+                "net_liquidity_90d_delta": 120.0,
+                "oi_30d_change_pct": 9.0,
+                "ma_regime": "bullish",
+                "ma_spread": 1800.0,
+                "usdjpy_risk_level": "MODERATE RISK",
+                "overall_summary": "test",
+            }
+            response = client.post(
+                "/api/stats/add-position/advice",
+                json={
+                    "amount_usdc": 120.0,
+                    "current_price_usd": 69400.0,
+                    "symbol": "BTCUSDC",
+                },
+            )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["guidance"]["decision"] == "BUY"
+    assert payload["guidance"]["final_call"].startswith("BUY ")
+    assert "macro takeoff signals are aligned" in payload["guidance"]["analysis_text"].lower()
