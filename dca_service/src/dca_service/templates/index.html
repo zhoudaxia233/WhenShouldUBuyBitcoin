@@ -1258,9 +1258,13 @@
                 const guidanceText = payload?.guidance?.analysis_text || 'No guidance returned.';
                 if (textEl) textEl.textContent = guidanceText;
                 if (statusEl) {
-                    const riskLevel = payload?.guidance?.risk_level || 'unknown';
-                    const riskScore = payload?.guidance?.risk_score ?? '--';
-                    statusEl.textContent = `Risk level: ${riskLevel.toUpperCase()} (${riskScore}/100)`;
+                    const finalCall = payload?.guidance?.final_call;
+                    if (finalCall) {
+                        statusEl.textContent = `Call: ${finalCall}`;
+                    } else {
+                        const decision = payload?.guidance?.decision || 'UNKNOWN';
+                        statusEl.textContent = `Call: ${decision}`;
+                    }
                 }
                 setAddPositionActionMode('buy');
                 notyf.success('Advice ready. Click Buy to confirm.');

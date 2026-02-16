@@ -160,11 +160,22 @@ def _load_recent_market_context(current_price_usd: float) -> Dict[str, Any]:
         "window_days": 180,
         "low_180d": None,
         "high_180d": None,
+        "ath_price": None,
         "current_vs_180d_low_pct": None,
+        "current_vs_180d_high_pct": None,
+        "current_vs_ath_pct": None,
         "drop_24h_pct": None,
         "near_180d_low": False,
         "new_180d_low": False,
+        "near_180d_high": False,
+        "new_180d_high": False,
+        "near_ath": False,
+        "new_ath": False,
         "deep_value_regime": False,
+        "breakout_high_regime": False,
+        "range_30d_pct": None,
+        "realized_vol_30d_pct": None,
+        "sideways_30d": False,
     }
     try:
         csv_path = _resolve_metrics_csv_path()
@@ -189,25 +200,155 @@ def _load_recent_market_context(current_price_usd: float) -> Dict[str, Any]:
         window = prices[-180:] if len(prices) >= 180 else prices
         low_180d = min(window)
         high_180d = max(window)
+        ath_price = max(prices)
         prev_close = prices[-1]
+        window_30d = prices[-30:] if len(prices) >= 30 else prices
+        low_30d = min(window_30d)
+        high_30d = max(window_30d)
+        range_30d_pct = ((high_30d - low_30d) / low_30d) * 100.0 if low_30d > 0 else None
+        returns_30d: List[float] = []
+        for i in range(1, len(window_30d)):
+            prev_px = window_30d[i - 1]
+            curr_px = window_30d[i]
+            if prev_px > 0:
+                returns_30d.append((curr_px - prev_px) / prev_px)
+        realized_vol_30d_pct = None
+        if len(returns_30d) >= 2:
+            try:
+                realized_vol_30d_pct = float(pd.Series(returns_30d, dtype=float).std(ddof=0) * 100.0)
+            except Exception:
+                realized_vol_30d_pct = None
 
         current_vs_low_pct = ((current_price_usd - low_180d) / low_180d) * 100.0 if low_180d > 0 else None
+        current_vs_high_pct = ((current_price_usd - high_180d) / high_180d) * 100.0 if high_180d > 0 else None
+        current_vs_ath_pct = ((current_price_usd - ath_price) / ath_price) * 100.0 if ath_price > 0 else None
         drop_24h_pct = ((current_price_usd - prev_close) / prev_close) * 100.0 if prev_close > 0 else None
 
         near_180d_low = (current_vs_low_pct is not None) and (current_vs_low_pct <= 1.5)
         new_180d_low = current_price_usd < low_180d
+        near_180d_high = (current_vs_high_pct is not None) and (current_vs_high_pct >= -1.0)
+        new_180d_high = current_price_usd > high_180d
+        near_ath = (current_vs_ath_pct is not None) and (current_vs_ath_pct >= -1.0)
+        new_ath = current_price_usd > ath_price
         deep_value_regime = bool(near_180d_low and drop_24h_pct is not None and drop_24h_pct <= -6.0)
+        breakout_high_regime = bool((near_ath or new_ath) and drop_24h_pct is not None and drop_24h_pct >= 3.5)
+        sideways_30d = bool(
+            range_30d_pct is not None
+            and range_30d_pct <= 8.0
+            and realized_vol_30d_pct is not None
+            and realized_vol_30d_pct <= 2.0
+        )
 
         return {
             "available": True,
             "window_days": 180,
             "low_180d": float(low_180d),
             "high_180d": float(high_180d),
+            "ath_price": float(ath_price),
             "current_vs_180d_low_pct": float(current_vs_low_pct) if current_vs_low_pct is not None else None,
+            "current_vs_180d_high_pct": float(current_vs_high_pct) if current_vs_high_pct is not None else None,
+            "current_vs_ath_pct": float(current_vs_ath_pct) if current_vs_ath_pct is not None else None,
             "drop_24h_pct": float(drop_24h_pct) if drop_24h_pct is not None else None,
             "near_180d_low": bool(near_180d_low),
             "new_180d_low": bool(new_180d_low),
+            "near_180d_high": bool(near_180d_high),
+            "new_180d_high": bool(new_180d_high),
+            "near_ath": bool(near_ath),
+            "new_ath": bool(new_ath),
             "deep_value_regime": bool(deep_value_regime),
+            "breakout_high_regime": bool(breakout_high_regime),
+            "range_30d_pct": float(range_30d_pct) if range_30d_pct is not None else None,
+            "realized_vol_30d_pct": float(realized_vol_30d_pct) if realized_vol_30d_pct is not None else None,
+            "sideways_30d": bool(sideways_30d),
+        }
+    except Exception:
+        return context
+
+
+def _load_macro_context() -> Dict[str, Any]:
+    """
+    Load latest macro snapshot from docs/data/daily_report.json.
+    Used by add-position guidance to ground decisions in current macro stats.
+    """
+    context = {
+        "available": False,
+        "report_date": None,
+        "report_age_days": None,
+        "macro_risk_score": None,
+        "macro_risk_regime": None,
+        "stress_flags": None,
+        "net_liquidity_90d_delta": None,
+        "oi_30d_change_pct": None,
+        "ma_regime": None,
+        "ma_spread": None,
+        "usdjpy_risk_level": None,
+        "overall_summary": None,
+    }
+    try:
+        def _maybe_float(value: Any) -> Optional[float]:
+            if value is None:
+                return None
+            try:
+                return float(value)
+            except (TypeError, ValueError):
+                return None
+
+        dca_service_dir = Path(__file__).resolve().parent.parent.parent.parent
+        report_path = (dca_service_dir.parent / "docs" / "data" / "daily_report.json").resolve()
+        if not report_path.exists():
+            return context
+
+        data = json.loads(report_path.read_text(encoding="utf-8"))
+        sections = data.get("sections", []) or []
+        section_metrics: Dict[str, Dict[str, Any]] = {}
+        for section in sections:
+            chart_name = str(section.get("chart") or "").strip()
+            if chart_name:
+                section_metrics[chart_name] = section.get("metrics", {}) or {}
+
+        macro_metrics = section_metrics.get("Macro Risk Score", {})
+        funding_metrics = section_metrics.get("Funding & Credit Stress", {})
+        liquidity_metrics = section_metrics.get("Net Liquidity", {})
+        futures_metrics = section_metrics.get("Futures OI & Price", {})
+        ma_metrics = section_metrics.get("MA Cross Analysis", {})
+        usdjpy_metrics = section_metrics.get("USD/JPY Risk Map", {})
+
+        human_summary = data.get("human_summary", {}) or {}
+        overall_summary = human_summary.get("overall_summary")
+        if not isinstance(overall_summary, str):
+            overall_summary = None
+
+        report_date = data.get("report_date")
+        report_age_days = None
+        if isinstance(report_date, str):
+            try:
+                report_dt = datetime.fromisoformat(report_date).date()
+                report_age_days = (datetime.now(timezone.utc).date() - report_dt).days
+            except Exception:
+                report_age_days = None
+
+        macro_risk_score = _maybe_float(macro_metrics.get("score"))
+        macro_risk_regime = macro_metrics.get("regime")
+        stress_flags = funding_metrics.get("stress_flags")
+        net_liq_delta = _maybe_float(liquidity_metrics.get("net_liquidity_90d_delta"))
+        oi_30d_change = _maybe_float(futures_metrics.get("oi_30d_change_pct"))
+        ma_regime = ma_metrics.get("regime")
+        ma_spread = _maybe_float(ma_metrics.get("ma_spread"))
+        usdjpy_risk_level = usdjpy_metrics.get("risk_level")
+
+        return {
+            "available": True,
+            "report_date": report_date,
+            "report_age_days": int(report_age_days) if report_age_days is not None else None,
+            "macro_risk_score": macro_risk_score,
+            "macro_risk_regime": str(macro_risk_regime) if macro_risk_regime is not None else None,
+            "stress_flags": int(stress_flags) if stress_flags is not None else None,
+            "net_liquidity_90d_delta": net_liq_delta,
+            "oi_30d_change_pct": oi_30d_change,
+            "ma_regime": str(ma_regime) if ma_regime is not None else None,
+            "ma_spread": ma_spread,
+            "usdjpy_risk_level": str(usdjpy_risk_level) if usdjpy_risk_level is not None else None,
+            "overall_summary": overall_summary,
         }
     except Exception:
         return context
@@ -1053,7 +1194,16 @@ def _build_add_position_guidance(
     amount_usdc: float,
     current_price_usd: float,
     market_context: Optional[Dict[str, Any]] = None,
+    macro_context: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
+    def _as_float(value: Any) -> Optional[float]:
+        if value is None:
+            return None
+        try:
+            return float(value)
+        except (TypeError, ValueError):
+            return None
+
     summary = behavior_data.get("summary", {}) or {}
     style_tags = behavior_data.get("style_tags", []) or []
 
@@ -1071,8 +1221,16 @@ def _build_add_position_guidance(
     price_vs_hist_median_pct = (
         ((current_price_usd - hist_median) / hist_median) * 100.0 if hist_median > 0 else 0.0
     )
+
     market_ctx = market_context or {}
+    macro_ctx = macro_context or {}
     deep_value_regime = bool(market_ctx.get("deep_value_regime"))
+    breakout_high_regime = bool(market_ctx.get("breakout_high_regime"))
+    near_ath = bool(market_ctx.get("near_ath") or market_ctx.get("near_180d_high"))
+    new_ath = bool(market_ctx.get("new_ath"))
+    new_180d_low = bool(market_ctx.get("new_180d_low"))
+    drop_24h_pct = _as_float(market_ctx.get("drop_24h_pct"))
+    current_vs_180d_low_pct = _as_float(market_ctx.get("current_vs_180d_low_pct"))
 
     recent_amounts = [float(e.get("amount_usd", 0.0)) for e in events[-10:] if float(e.get("amount_usd", 0.0)) > 0]
     baseline_amount = _safe_median(recent_amounts, fallback=float(summary.get("avg_event_usd", amount_usdc) or amount_usdc))
@@ -1091,52 +1249,294 @@ def _build_add_position_guidance(
     )
     last_event_ts = events[-1]["timestamp"] if events and isinstance(events[-1].get("timestamp"), datetime) else None
 
-    risk_flags: List[str] = []
-    positive_signals: List[str] = []
-    risk_score = 25
-
-    if price_position >= 0.8:
-        risk_score += 25
-        risk_flags.append("Current price is near the upper end of your own historical execution range.")
-    elif price_position >= 0.6:
-        risk_score += 10
-    elif price_position <= 0.25:
-        risk_score -= 10
-        positive_signals.append("Current price is in your lower historical zone, consistent with dip-buy behavior.")
-
-    if relative_amount >= 2.0:
-        if deep_value_regime:
-            positive_signals.append(
-                "Size is large vs your baseline, but market is in a deep-value regime (near 180d low + sharp drop)."
-            )
-        else:
-            risk_score += 25
-            risk_flags.append("Proposed size is over 2x your recent median event size.")
-    elif relative_amount >= 1.35:
-        risk_score += 4 if deep_value_regime else 10
-    elif relative_amount <= 0.7:
-        risk_score -= 5
-        positive_signals.append("Proposed size stays conservative versus your recent baseline.")
-
     burst_ratio = float(summary.get("burst_trading_ratio", 0.0) or 0.0)
     event_count = int(summary.get("behavior_event_count", 0) or 0)
-    if burst_ratio >= 0.45 and event_count >= 8:
-        risk_score += 10
-        if recent_48h_count >= 1:
-            risk_score += 10
-            risk_flags.append("You already had buy activity in the last 48h; this can reinforce burst behavior.")
-    elif recent_48h_count == 0:
-        risk_score -= 5
-        positive_signals.append("No buy in the last 48h, so this is less likely to be a reactive cluster.")
+    event_amount_cv = float(summary.get("event_amount_cv", 0.0) or 0.0)
+    high_zone_ratio = float(summary.get("high_zone_buy_ratio", 0.0) or 0.0)
+    low_zone_ratio = float(summary.get("low_zone_buy_ratio", 0.0) or 0.0)
 
-    if float(summary.get("event_amount_cv", 0.0) or 0.0) >= 0.9 and event_count >= 8:
-        risk_score += 10
-        risk_flags.append("Your historical sizing variability is high; this makes performance attribution harder.")
+    burst_habit = bool(burst_ratio >= 0.45 and event_count >= 8)
+    inconsistent_habit = bool(event_amount_cv >= 0.9 and event_count >= 8)
+    high_zone_habit = bool(high_zone_ratio >= 0.55 and high_zone_ratio > low_zone_ratio + 0.15 and event_count >= 8)
 
+    macro_available = bool(macro_ctx.get("available"))
+    macro_risk_score = _as_float(macro_ctx.get("macro_risk_score"))
+    macro_risk_regime = str(macro_ctx.get("macro_risk_regime") or "").strip().lower() or None
+    stress_flags = macro_ctx.get("stress_flags")
+    try:
+        stress_flags_int = int(stress_flags) if stress_flags is not None else None
+    except (TypeError, ValueError):
+        stress_flags_int = None
+    net_liquidity_delta = _as_float(macro_ctx.get("net_liquidity_90d_delta"))
+    oi_30d_change_pct = _as_float(macro_ctx.get("oi_30d_change_pct"))
+    ma_regime = str(macro_ctx.get("ma_regime") or "").strip().lower() or None
+    report_age_days = macro_ctx.get("report_age_days")
+    try:
+        report_age_days_int = int(report_age_days) if report_age_days is not None else None
+    except (TypeError, ValueError):
+        report_age_days_int = None
+
+    # Multi-signal capitulation mode:
+    # If price is deeply depressed and several independent stress/deleveraging
+    # signals align, do not auto-downsize solely because of historical sizing habits.
+    capitulation_signals = 0
+    if deep_value_regime or new_180d_low:
+        capitulation_signals += 1
+    if drop_24h_pct is not None and drop_24h_pct <= -8.0:
+        capitulation_signals += 1
+    if (current_vs_180d_low_pct is not None and current_vs_180d_low_pct <= 1.0) or price_position <= 0.18:
+        capitulation_signals += 1
+    if oi_30d_change_pct is not None and oi_30d_change_pct <= -10.0:
+        capitulation_signals += 1
+    if macro_risk_score is not None and macro_risk_score <= 70.0:
+        capitulation_signals += 1
+    if stress_flags_int is not None and stress_flags_int <= 1:
+        capitulation_signals += 1
+    strong_dip_add_mode = bool((deep_value_regime or new_180d_low) and capitulation_signals >= 3)
+    range_30d_pct = _as_float(market_ctx.get("range_30d_pct"))
+    realized_vol_30d_pct = _as_float(market_ctx.get("realized_vol_30d_pct"))
+    sideways_30d = bool(market_ctx.get("sideways_30d"))
+    if not sideways_30d and range_30d_pct is not None and realized_vol_30d_pct is not None:
+        sideways_30d = bool(range_30d_pct <= 8.0 and realized_vol_30d_pct <= 2.0)
+
+    median_interval_days = _as_float(summary.get("median_interval_days"))
+    dense_dca_mode = bool(
+        event_count >= 10
+        and burst_ratio >= 0.60
+        and median_interval_days is not None
+        and median_interval_days <= 1.5
+    )
+
+    macro_takeoff_mode = False
+    if macro_available:
+        macro_takeoff_mode = bool(
+            (ma_regime == "bullish" or breakout_high_regime)
+            and (net_liquidity_delta is None or net_liquidity_delta >= 80.0)
+            and (macro_risk_score is None or macro_risk_score <= 60.0)
+            and (stress_flags_int is None or stress_flags_int <= 1)
+            and (oi_30d_change_pct is None or oi_30d_change_pct >= 5.0)
+        )
+    no_extra_add_needed_mode = bool(
+        dense_dca_mode and sideways_30d and not macro_takeoff_mode and not strong_dip_add_mode
+    )
+
+    reasons: List[str] = []
+    applied_lessons: List[str] = []
+    macro_notes: List[str] = []
+
+    multiplier = 1.0
+    if deep_value_regime or new_180d_low:
+        multiplier *= 1.65
+        reasons.append("Price is in a deep pullback zone, so adding now is allowed with a larger size than baseline.")
+        if strong_dip_add_mode:
+            multiplier *= 1.25
+            reasons.append("Multi-signal capitulation setup confirmed, so larger add size is allowed.")
+    elif no_extra_add_needed_mode:
+        multiplier *= 0.68
+        reasons.append("Market is sideways while your DCA cadence is already dense, so extra add is usually unnecessary.")
+    elif macro_takeoff_mode:
+        multiplier *= 1.15
+        reasons.append("Macro takeoff signals are aligned, so adding above baseline is justified.")
+    elif price_position <= 0.25 or bool(market_ctx.get("near_180d_low")):
+        multiplier *= 1.20
+        reasons.append("Price is in your historical lower zone, which fits your dip-buy edge.")
+    elif breakout_high_regime or new_ath:
+        multiplier *= 0.55
+        reasons.append("Price is in a breakout-high regime, so size should stay defensive.")
+    elif near_ath or price_position >= 0.80:
+        multiplier *= 0.72
+        reasons.append("Price is near historical highs, so this add should be smaller.")
+
+    if macro_available:
+        if report_age_days_int is not None and report_age_days_int > 5:
+            macro_notes.append(f"Macro snapshot is {report_age_days_int} days old, so macro weight is reduced.")
+        if macro_risk_score is not None:
+            if macro_risk_score >= 70:
+                multiplier *= 0.92 if deep_value_regime else 0.82
+                macro_notes.append(f"Macro risk score {macro_risk_score:.1f}/100 is high; size is trimmed.")
+            elif macro_risk_score <= 35:
+                multiplier *= 1.05
+                macro_notes.append(f"Macro risk score {macro_risk_score:.1f}/100 is contained; normal risk budget is acceptable.")
+        if stress_flags_int is not None:
+            if stress_flags_int >= 2:
+                multiplier *= 0.95 if deep_value_regime else 0.88
+                macro_notes.append(f"Funding stress flags = {stress_flags_int}; keep risk tighter.")
+            elif stress_flags_int == 0:
+                macro_notes.append("Funding stress flags are low.")
+        if net_liquidity_delta is not None:
+            if net_liquidity_delta <= -120:
+                multiplier *= 0.96 if deep_value_regime else 0.90
+                macro_notes.append(f"Net liquidity 90d delta is weak ({net_liquidity_delta:+.1f}B), so keep size controlled.")
+            elif net_liquidity_delta >= 80:
+                multiplier *= 1.07
+                macro_notes.append(f"Net liquidity 90d delta is supportive ({net_liquidity_delta:+.1f}B).")
+        if oi_30d_change_pct is not None:
+            if oi_30d_change_pct >= 25:
+                multiplier *= 0.92
+                macro_notes.append(f"Futures OI rose {oi_30d_change_pct:+.1f}% in 30d; avoid chasing crowded risk.")
+            elif oi_30d_change_pct <= -15:
+                multiplier *= 1.05
+                macro_notes.append(f"Futures OI changed {oi_30d_change_pct:+.1f}% in 30d, showing prior deleveraging.")
+        if ma_regime == "bearish" and not deep_value_regime:
+            multiplier *= 0.95
+            macro_notes.append("Trend regime is bearish, so size is capped slightly.")
+        elif ma_regime == "bullish":
+            multiplier *= 1.04
+            macro_notes.append("Trend regime is bullish, which supports risk-taking.")
+        if macro_risk_regime and macro_risk_regime != "neutral":
+            macro_notes.append(f"Macro regime: {macro_risk_regime}.")
+    else:
+        macro_notes.append("Macro snapshot unavailable; decision uses live price + your history only.")
+
+    if burst_habit and recent_48h_count >= 1:
+        if strong_dip_add_mode:
+            multiplier *= 0.98
+            applied_lessons.append("Burst habit penalty is mostly relaxed because this is a confirmed capitulation setup.")
+        else:
+            multiplier *= 0.92 if deep_value_regime else 0.80
+            applied_lessons.append("You often cluster buys within 48h; size is reduced to avoid burst-overtrading.")
+
+    if high_zone_habit and (breakout_high_regime or near_ath or price_position >= 0.75):
+        multiplier *= 0.85
+        applied_lessons.append("You have a high-zone chasing pattern; this call applies an extra size haircut.")
+
+    suggested_amount = max(10.0, baseline_amount * multiplier)
+    if inconsistent_habit:
+        # Keep size executable and stable, but allow wider ranges in deep drawdowns.
+        if strong_dip_add_mode:
+            upper = max(baseline_amount * 10.0, amount_usdc * 1.10)
+        else:
+            upper = baseline_amount * (3.00 if deep_value_regime else 1.20)
+        lower = baseline_amount * 0.85
+        suggested_amount = min(max(suggested_amount, lower), upper)
+        applied_lessons.append("Your historical sizing is unstable; suggestion is anchored to reduce noise in outcomes.")
+
+    if strong_dip_add_mode and amount_usdc > suggested_amount:
+        suggested_amount = amount_usdc
+        applied_lessons.append(
+            "In confirmed capitulation mode, current size is not downscaled just for historical pattern mismatch."
+        )
+
+    suggested_amount = round(max(10.0, suggested_amount), 2)
+    proposed_gap_pct = ((amount_usdc - suggested_amount) / suggested_amount * 100.0) if suggested_amount > 0 else 0.0
+
+    decision = "BUY"
+    if not deep_value_regime:
+        if no_extra_add_needed_mode and amount_usdc > baseline_amount * 1.05:
+            decision = "WAIT"
+            reasons.append("No extra add needed now: ongoing DCA already covers this sideways regime.")
+        elif (breakout_high_regime or new_ath) and recent_48h_count >= 1 and amount_usdc > suggested_amount * 1.10:
+            decision = "WAIT"
+            reasons.append("You already bought recently and price is in a breakout-high state; skip this add now.")
+        elif near_ath and burst_habit and amount_usdc > suggested_amount * 1.30:
+            decision = "WAIT"
+            reasons.append("Near-high price plus your burst habit makes this add low quality right now.")
+        elif macro_risk_score is not None and macro_risk_score >= 80 and amount_usdc > suggested_amount:
+            decision = "WAIT"
+            reasons.append("Macro stress is elevated and your proposed size is above model size.")
+
+    if decision == "BUY":
+        if suggested_amount <= baseline_amount * 0.80:
+            size_bucket = "SMALL"
+        elif suggested_amount <= baseline_amount * 1.35:
+            size_bucket = "NORMAL"
+        else:
+            size_bucket = "LARGE"
+    else:
+        size_bucket = "NONE"
+
+    if decision == "BUY":
+        if deep_value_regime:
+            band = 0.35
+        else:
+            band = 0.10 if inconsistent_habit else 0.15
+        range_min = round(max(10.0, suggested_amount * (1 - band)), 2)
+        range_max = round(max(range_min, suggested_amount * (1 + band)), 2)
+    else:
+        range_min = 0.0
+        range_max = 0.0
+
+    if decision == "BUY":
+        if amount_usdc > suggested_amount * 1.20:
+            if strong_dip_add_mode:
+                input_alignment = "ALIGNED_CAPITULATION"
+                action_now = (
+                    f"Action now: BUY is valid. In this capitulation setup, your planned ${amount_usdc:,.2f} "
+                    "is accepted."
+                )
+            elif deep_value_regime:
+                input_alignment = "ABOVE_SUGGESTED_DEEP_VALUE"
+                action_now = (
+                    f"Action now: BUY is valid. Suggested baseline is ${suggested_amount:,.2f}; "
+                    f"your planned ${amount_usdc:,.2f} is a high-conviction size."
+                )
+            else:
+                input_alignment = "ABOVE_SUGGESTED"
+                action_now = (
+                    f"Action now: BUY smaller. Target around ${suggested_amount:,.2f} "
+                    f"(your input is ${amount_usdc:,.2f})."
+                )
+        elif amount_usdc < suggested_amount * 0.80:
+            input_alignment = "BELOW_SUGGESTED"
+            action_now = (
+                f"Action now: BUY is fine, but this is under-sized. "
+                f"Target around ${suggested_amount:,.2f} if you want full signal size."
+            )
+        else:
+            input_alignment = "ALIGNED"
+            action_now = f"Action now: BUY around ${amount_usdc:,.2f} (aligned with model size)."
+    else:
+        input_alignment = "WAIT"
+        action_now = "Action now: WAIT. Skip this add and reassess on the next setup."
+
+    if not reasons:
+        reasons.append("No major risk signal is active; this setup is close to your normal decision profile.")
+    reasons.extend(macro_notes[:2])
+    reasons = reasons[:4]
+
+    if not applied_lessons:
+        applied_lessons.append("No major bad-habit penalty was triggered in this setup.")
+
+    if decision == "WAIT":
+        if no_extra_add_needed_mode:
+            call_reason = "No extra add needed: sideways market + daily DCA already active."
+        elif breakout_high_regime or near_ath or new_ath:
+            call_reason = "Don't chase breakout highs right now."
+        elif burst_habit and recent_48h_count >= 1:
+            call_reason = "You already bought recently, so skip stacking entries."
+        elif macro_risk_score is not None and macro_risk_score >= 80:
+            call_reason = "Macro stress is elevated for this size."
+        else:
+            call_reason = reasons[0]
+    else:
+        if strong_dip_add_mode:
+            call_reason = "Capitulation setup is confirmed across multiple signals."
+        elif amount_usdc > suggested_amount * 1.20 and not deep_value_regime:
+            call_reason = "Buy smaller than your input."
+        elif amount_usdc < suggested_amount * 0.80:
+            call_reason = "Buy more to match the signal."
+        else:
+            call_reason = "Buy with controlled size."
+
+    final_call = f"BUY ${suggested_amount:,.2f}" if decision == "BUY" else "NO BUY"
+
+    risk_score = 35
+    if breakout_high_regime or new_ath:
+        risk_score += 20
+    if near_ath:
+        risk_score += 10
+    if burst_habit and recent_48h_count >= 1:
+        risk_score += 12
+    if inconsistent_habit:
+        risk_score += 8
+    if macro_risk_score is not None and macro_risk_score >= 70:
+        risk_score += 12
+    if stress_flags_int is not None and stress_flags_int >= 2:
+        risk_score += 8
     if deep_value_regime:
-        # In capitulation-like moments, avoid "auto discourage" for bigger adds.
-        risk_score = min(risk_score, 42)
-
+        risk_score -= 18
+    if decision == "WAIT":
+        risk_score = max(risk_score, 72)
     risk_score = int(min(max(risk_score, 0), 100))
     if risk_score >= 70:
         risk_level = "high"
@@ -1145,77 +1545,56 @@ def _build_add_position_guidance(
     else:
         risk_level = "low"
 
-    recommended_min = max(10.0, baseline_amount * 0.6)
-    recommended_max = max(recommended_min, baseline_amount * 1.4)
-    if "Fixed-size DCA" in style_tags:
-        recommended_min = max(10.0, baseline_amount * 0.85)
-        recommended_max = max(recommended_min, baseline_amount * 1.15)
-
-    if price_position >= 0.75:
-        recommended_max *= 0.8
-    elif price_position <= 0.25:
-        recommended_max *= 1.1
-    if recent_48h_count >= 2:
-        recommended_max *= 0.85
-    if risk_level == "high":
-        recommended_max = min(recommended_max, baseline_amount)
-
-    recommended_max = max(recommended_max, recommended_min)
-    recommended_min = round(recommended_min, 2)
-    recommended_max = round(recommended_max, 2)
-
-    if risk_level == "high":
-        quick_take = "This add looks aggressive relative to your recent pattern."
-    elif risk_level == "medium":
-        quick_take = "This add is workable, but size/price context deserves one extra check."
-    else:
-        quick_take = "This add is broadly aligned with your recent behavior pattern."
-
-    if deep_value_regime:
-        quick_take = (
-            "Market is in a deep pullback regime. Larger adds can be reasonable if this matches your plan and liquidity."
+    estimated_btc = suggested_amount / current_price_usd if (decision == "BUY" and current_price_usd > 0) else 0.0
+    lines: List[str] = [f"Call: {final_call}"]
+    if decision == "BUY":
+        lines.append(
+            f"Input: ${amount_usdc:,.2f} | Suggested now: ${suggested_amount:,.2f} "
+            f"(range ${range_min:,.2f}-${range_max:,.2f}, {size_bucket.lower()})."
         )
-
-    estimated_btc = amount_usdc / current_price_usd if current_price_usd > 0 else 0.0
-    style_text = ", ".join(style_tags) if style_tags else "No clear tag yet"
-    lines: List[str] = [
-        f"Quick take: {quick_take}",
-        f"Pattern tags: {style_text}",
-        (
-            f"Live BTC: ${current_price_usd:,.2f} "
-            f"({price_zone_label.replace('_', ' ')}, {price_vs_hist_median_pct:+.2f}% vs your historical median fill)."
-        ),
-        f"Proposed add: ${amount_usdc:,.2f} ({relative_amount_label} vs baseline ${baseline_amount:,.2f}).",
-        f"Estimated BTC from this add: {estimated_btc:.8f} BTC.",
-    ]
-    if market_ctx.get("available"):
-        low_180 = market_ctx.get("low_180d")
-        drop_24h = market_ctx.get("drop_24h_pct")
-        if low_180 is not None and drop_24h is not None:
-            lines.append(
-                f"Market regime: 180d low ${low_180:,.2f}, 24h move {drop_24h:+.2f}%."
-            )
-    if risk_flags:
-        lines.append("Watchouts:")
-        for idx, flag in enumerate(risk_flags[:3], start=1):
-            lines.append(f"{idx}. {flag}")
-    if positive_signals:
-        lines.append("What helps:")
-        for idx, item in enumerate(positive_signals[:2], start=1):
-            lines.append(f"{idx}. {item}")
+        lines.append(f"Estimated BTC now: {estimated_btc:.8f} BTC")
+    else:
+        lines.append(f"Input: ${amount_usdc:,.2f} | Suggested now: skip this entry.")
+    lines.append(f"Short reason: {call_reason}")
     lines.append(
-        f"Soft guardrail: keep this add around ${recommended_min:,.2f}-${recommended_max:,.2f} "
-        "if you want tighter consistency."
+        "Price context: "
+        f"{price_vs_hist_median_pct:+.2f}% vs your historical median fill, "
+        f"{(market_ctx.get('current_vs_180d_low_pct') if market_ctx.get('current_vs_180d_low_pct') is not None else 0.0):+.2f}% vs 180d low, "
+        f"24h move {(market_ctx.get('drop_24h_pct') if market_ctx.get('drop_24h_pct') is not None else 0.0):+.2f}%."
     )
-    lines.append(
-        "Execution note: DCA platforms can split fills, so focus on pre-trade size discipline and a short reason tag."
-    )
+    if macro_available:
+        macro_parts: List[str] = []
+        if macro_risk_score is not None:
+            macro_parts.append(f"risk {macro_risk_score:.1f}/100")
+        if stress_flags_int is not None:
+            macro_parts.append(f"stress_flags {stress_flags_int}")
+        if net_liquidity_delta is not None:
+            macro_parts.append(f"net_liquidity_90d {net_liquidity_delta:+.1f}B")
+        if oi_30d_change_pct is not None:
+            macro_parts.append(f"oi_30d {oi_30d_change_pct:+.1f}%")
+        if macro_parts:
+            lines.append("Macro context: " + ", ".join(macro_parts) + ".")
+    lines.append("Why:")
+    for idx, reason in enumerate(reasons[:2], start=1):
+        lines.append(f"{idx}. {reason}")
+    lines.append("Applied lesson:")
+    for idx, lesson in enumerate(applied_lessons[:1], start=1):
+        lines.append(f"{idx}. {lesson}")
 
     return {
         "risk_score": risk_score,
         "risk_level": risk_level,
-        "risk_flags": risk_flags,
-        "positive_signals": positive_signals,
+        "decision": decision,
+        "size_bucket": size_bucket,
+        "final_call": final_call,
+        "call_reason": call_reason,
+        "action_now": action_now,
+        "input_alignment": input_alignment,
+        "suggested_amount_usdc": suggested_amount if decision == "BUY" else 0.0,
+        "proposed_amount_usdc": float(amount_usdc),
+        "proposed_gap_pct_vs_suggested": float(proposed_gap_pct),
+        "reasons": reasons,
+        "applied_lessons": applied_lessons,
         "price_context": {
             "historical_min_price": float(hist_min),
             "historical_median_price": float(hist_median),
@@ -1229,23 +1608,25 @@ def _build_add_position_guidance(
             "relative_size_to_baseline": float(relative_amount),
             "relative_amount_label": relative_amount_label,
             "recommended_range_usdc": {
-                "min": recommended_min,
-                "max": recommended_max,
+                "min": range_min,
+                "max": range_max,
             },
+            "suggested_amount_usdc": suggested_amount if decision == "BUY" else 0.0,
         },
         "behavior_context": {
             "style_tags": style_tags,
             "burst_trading_ratio": burst_ratio,
             "median_interval_days": summary.get("median_interval_days"),
-            "event_amount_cv": float(summary.get("event_amount_cv", 0.0) or 0.0),
+            "event_amount_cv": event_amount_cv,
             "recent_events_48h": recent_48h_count,
             "last_event_time": last_event_ts.isoformat() if isinstance(last_event_ts, datetime) else None,
         },
         "market_context": market_ctx,
+        "macro_context": macro_ctx,
         "analysis_text": "\n".join(lines),
         "method_constraints": {
             "split_fill_handling": "Same binance_order_id merged into one event.",
-            "no_hindsight": "Guidance is based on historical events plus current price only.",
+            "no_hindsight": "Guidance is based on current and prior data only. No future information is used.",
         },
     }
 
@@ -1526,12 +1907,14 @@ def get_add_position_advice(
 
     _, aggregate_meta, behavior_data, source_signature = _build_buy_behavior_snapshot(session)
     market_context = _load_recent_market_context(float(price_snapshot["price"]))
+    macro_context = _load_macro_context()
     guidance = _build_add_position_guidance(
         behavior_data=behavior_data,
         events=aggregate_meta.get("events", []) or [],
         amount_usdc=float(payload.amount_usdc),
         current_price_usd=float(price_snapshot["price"]),
         market_context=market_context,
+        macro_context=macro_context,
     )
 
     return {
@@ -1549,6 +1932,7 @@ def get_add_position_advice(
             "issues": behavior_data.get("issues", []),
             "method_constraints": behavior_data.get("method_constraints", {}),
             "source_signature": source_signature,
+            "macro_context": macro_context,
         },
         "guidance": guidance,
     }
