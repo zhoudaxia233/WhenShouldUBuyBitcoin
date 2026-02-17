@@ -1378,14 +1378,6 @@
             const priceInput = document.getElementById('addPositionPriceInput');
             const adviceStatus = document.getElementById('addPositionAdviceStatus');
             const adviceText = document.getElementById('addPositionAdviceText');
-            const previewCache = loadFromCache('dca_preview');
-
-            if (amountInput && previewCache && Number.isFinite(Number(previewCache.suggested_amount_usd))) {
-                const suggested = Number(previewCache.suggested_amount_usd);
-                if (suggested > 0) {
-                    amountInput.value = suggested.toFixed(2);
-                }
-            }
 
             if (refreshPriceBtn) {
                 refreshPriceBtn.addEventListener('click', async () => {
@@ -1409,6 +1401,7 @@
                 addPositionModalEl.addEventListener('shown.bs.modal', async () => {
                     if (adviceStatus) adviceStatus.textContent = 'Loading realtime BTC price...';
                     if (adviceText) adviceText.textContent = 'No advice yet.';
+                    if (amountInput) amountInput.value = '';
                     setAddPositionActionMode('advice');
                     await fetchRealtimePriceForAddPosition();
                     updateAddPositionEstimate();

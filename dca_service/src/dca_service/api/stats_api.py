@@ -1241,13 +1241,39 @@ def _build_add_position_guidance(
     relative_amount_label = _classify_relative_amount(relative_amount)
 
     now_utc = datetime.now(timezone.utc)
+    recent_24h_count = sum(
+        1
+        for e in events
+        if isinstance(e.get("timestamp"), datetime)
+        and (now_utc - e["timestamp"]).total_seconds() <= 24 * 3600
+    )
     recent_48h_count = sum(
         1
         for e in events
         if isinstance(e.get("timestamp"), datetime)
         and (now_utc - e["timestamp"]).total_seconds() <= 48 * 3600
     )
+    recent_72h_count = sum(
+        1
+        for e in events
+        if isinstance(e.get("timestamp"), datetime)
+        and (now_utc - e["timestamp"]).total_seconds() <= 72 * 3600
+    )
     last_event_ts = events[-1]["timestamp"] if events and isinstance(events[-1].get("timestamp"), datetime) else None
+
+    recent_trade_prices = [float(e.get("avg_price_usd", 0.0)) for e in events[-14:] if float(e.get("avg_price_usd", 0.0)) > 0]
+    recent_trade_median_price = _safe_median(recent_trade_prices, fallback=current_price_usd)
+    if recent_trade_prices:
+        recent_trade_min = min(recent_trade_prices)
+        recent_trade_max = max(recent_trade_prices)
+        recent_trade_range_pct = ((recent_trade_max - recent_trade_min) / recent_trade_min) * 100.0 if recent_trade_min > 0 else None
+    else:
+        recent_trade_range_pct = None
+    current_vs_recent_trade_median_pct = (
+        ((current_price_usd - recent_trade_median_price) / recent_trade_median_price) * 100.0
+        if recent_trade_median_price > 0
+        else None
+    )
 
     burst_ratio = float(summary.get("burst_trading_ratio", 0.0) or 0.0)
     event_count = int(summary.get("behavior_event_count", 0) or 0)
@@ -1258,6 +1284,17 @@ def _build_add_position_guidance(
     burst_habit = bool(burst_ratio >= 0.45 and event_count >= 8)
     inconsistent_habit = bool(event_amount_cv >= 0.9 and event_count >= 8)
     high_zone_habit = bool(high_zone_ratio >= 0.55 and high_zone_ratio > low_zone_ratio + 0.15 and event_count >= 8)
+    dca_event_ratio = float(summary.get("dca_event_ratio", 0.0) or 0.0)
+    manual_event_ratio = float(summary.get("manual_event_ratio", 0.0) or 0.0)
+    if dca_event_ratio >= 0.60:
+        cadence_label = "DCA cadence"
+        source_mix_label = "dca_dominant"
+    elif manual_event_ratio >= 0.60:
+        cadence_label = "manual buy cadence"
+        source_mix_label = "manual_dominant"
+    else:
+        cadence_label = "mixed buy cadence"
+        source_mix_label = "mixed"
 
     macro_available = bool(macro_ctx.get("available"))
     macro_risk_score = _as_float(macro_ctx.get("macro_risk_score"))
@@ -1297,10 +1334,17 @@ def _build_add_position_guidance(
     realized_vol_30d_pct = _as_float(market_ctx.get("realized_vol_30d_pct"))
     sideways_30d = bool(market_ctx.get("sideways_30d"))
     if not sideways_30d and range_30d_pct is not None and realized_vol_30d_pct is not None:
-        sideways_30d = bool(range_30d_pct <= 8.0 and realized_vol_30d_pct <= 2.0)
+        sideways_30d = bool(range_30d_pct <= 12.0 and realized_vol_30d_pct <= 3.0)
+
+    local_sideways_by_trades = bool(
+        recent_trade_range_pct is not None
+        and recent_trade_range_pct <= 8.5
+        and current_vs_recent_trade_median_pct is not None
+        and abs(current_vs_recent_trade_median_pct) <= 4.5
+    )
 
     median_interval_days = _as_float(summary.get("median_interval_days"))
-    dense_dca_mode = bool(
+    dense_buy_mode = bool(
         event_count >= 10
         and burst_ratio >= 0.60
         and median_interval_days is not None
@@ -1316,8 +1360,13 @@ def _build_add_position_guidance(
             and (stress_flags_int is None or stress_flags_int <= 1)
             and (oi_30d_change_pct is None or oi_30d_change_pct >= 5.0)
         )
+    ongoing_dense_flow = bool(recent_24h_count >= 1 or recent_72h_count >= 2)
     no_extra_add_needed_mode = bool(
-        dense_dca_mode and sideways_30d and not macro_takeoff_mode and not strong_dip_add_mode
+        dense_buy_mode
+        and ongoing_dense_flow
+        and (local_sideways_by_trades or sideways_30d)
+        and not macro_takeoff_mode
+        and not strong_dip_add_mode
     )
 
     reasons: List[str] = []
@@ -1333,7 +1382,7 @@ def _build_add_position_guidance(
             reasons.append("Multi-signal capitulation setup confirmed, so larger add size is allowed.")
     elif no_extra_add_needed_mode:
         multiplier *= 0.68
-        reasons.append("Market is sideways while your DCA cadence is already dense, so extra add is usually unnecessary.")
+        reasons.append(f"Market is sideways while your {cadence_label} is already dense, so extra add is usually unnecessary.")
     elif macro_takeoff_mode:
         multiplier *= 1.15
         reasons.append("Macro takeoff signals are aligned, so adding above baseline is justified.")
@@ -1422,13 +1471,18 @@ def _build_add_position_guidance(
 
     decision = "BUY"
     if not deep_value_regime:
-        if no_extra_add_needed_mode and amount_usdc > baseline_amount * 1.05:
+        if no_extra_add_needed_mode:
             decision = "WAIT"
-            reasons.append("No extra add needed now: ongoing DCA already covers this sideways regime.")
-        elif (breakout_high_regime or new_ath) and recent_48h_count >= 1 and amount_usdc > suggested_amount * 1.10:
+            reasons.append(f"No extra add needed now: your ongoing {cadence_label} already covers this sideways regime.")
+        elif (
+            (breakout_high_regime or new_ath)
+            and recent_48h_count >= 1
+            and amount_usdc > suggested_amount * 1.10
+            and not macro_takeoff_mode
+        ):
             decision = "WAIT"
             reasons.append("You already bought recently and price is in a breakout-high state; skip this add now.")
-        elif near_ath and burst_habit and amount_usdc > suggested_amount * 1.30:
+        elif near_ath and burst_habit and amount_usdc > suggested_amount * 1.30 and not macro_takeoff_mode:
             decision = "WAIT"
             reasons.append("Near-high price plus your burst habit makes this add low quality right now.")
         elif macro_risk_score is not None and macro_risk_score >= 80 and amount_usdc > suggested_amount:
@@ -1456,39 +1510,6 @@ def _build_add_position_guidance(
         range_min = 0.0
         range_max = 0.0
 
-    if decision == "BUY":
-        if amount_usdc > suggested_amount * 1.20:
-            if strong_dip_add_mode:
-                input_alignment = "ALIGNED_CAPITULATION"
-                action_now = (
-                    f"Action now: BUY is valid. In this capitulation setup, your planned ${amount_usdc:,.2f} "
-                    "is accepted."
-                )
-            elif deep_value_regime:
-                input_alignment = "ABOVE_SUGGESTED_DEEP_VALUE"
-                action_now = (
-                    f"Action now: BUY is valid. Suggested baseline is ${suggested_amount:,.2f}; "
-                    f"your planned ${amount_usdc:,.2f} is a high-conviction size."
-                )
-            else:
-                input_alignment = "ABOVE_SUGGESTED"
-                action_now = (
-                    f"Action now: BUY smaller. Target around ${suggested_amount:,.2f} "
-                    f"(your input is ${amount_usdc:,.2f})."
-                )
-        elif amount_usdc < suggested_amount * 0.80:
-            input_alignment = "BELOW_SUGGESTED"
-            action_now = (
-                f"Action now: BUY is fine, but this is under-sized. "
-                f"Target around ${suggested_amount:,.2f} if you want full signal size."
-            )
-        else:
-            input_alignment = "ALIGNED"
-            action_now = f"Action now: BUY around ${amount_usdc:,.2f} (aligned with model size)."
-    else:
-        input_alignment = "WAIT"
-        action_now = "Action now: WAIT. Skip this add and reassess on the next setup."
-
     if not reasons:
         reasons.append("No major risk signal is active; this setup is close to your normal decision profile.")
     reasons.extend(macro_notes[:2])
@@ -1498,8 +1519,17 @@ def _build_add_position_guidance(
         applied_lessons.append("No major bad-habit penalty was triggered in this setup.")
 
     if decision == "WAIT":
+        action_code = "NO_BUY"
+        advised_amount_usdc = 0.0
+        input_alignment = "WAIT"
+        action_now = "No buy now."
         if no_extra_add_needed_mode:
-            call_reason = "No extra add needed: sideways market + daily DCA already active."
+            if recent_trade_range_pct is not None:
+                call_reason = (
+                    f"No extra add needed: dense {cadence_label} already active and your recent range is only {recent_trade_range_pct:.2f}%."
+                )
+            else:
+                call_reason = f"No extra add needed: your {cadence_label} is already dense in a range market."
         elif breakout_high_regime or near_ath or new_ath:
             call_reason = "Don't chase breakout highs right now."
         elif burst_habit and recent_48h_count >= 1:
@@ -1508,17 +1538,33 @@ def _build_add_position_guidance(
             call_reason = "Macro stress is elevated for this size."
         else:
             call_reason = reasons[0]
+        final_call = "NO BUY"
     else:
+        advised_amount_usdc = suggested_amount
         if strong_dip_add_mode:
+            action_code = "BUY_AS_PLANNED"
+            input_alignment = "ALIGNED_CAPITULATION"
+            action_now = f"Buy ${amount_usdc:,.2f} now."
             call_reason = "Capitulation setup is confirmed across multiple signals."
-        elif amount_usdc > suggested_amount * 1.20 and not deep_value_regime:
-            call_reason = "Buy smaller than your input."
-        elif amount_usdc < suggested_amount * 0.80:
-            call_reason = "Buy more to match the signal."
+            final_call = f"BUY AS PLANNED: ${amount_usdc:,.2f}"
+        elif amount_usdc > suggested_amount * 1.15 and not deep_value_regime:
+            action_code = "BUY_LESS"
+            input_alignment = "ABOVE_SUGGESTED"
+            action_now = f"Buy less: ${suggested_amount:,.2f}."
+            call_reason = "Your input is larger than the rational size for this setup."
+            final_call = f"BUY LESS: ${suggested_amount:,.2f}"
+        elif amount_usdc < suggested_amount * 0.85:
+            action_code = "BUY_MORE"
+            input_alignment = "BELOW_SUGGESTED"
+            action_now = f"Buy more: ${suggested_amount:,.2f}."
+            call_reason = "Your input is below the size implied by current edge."
+            final_call = f"BUY MORE: ${suggested_amount:,.2f}"
         else:
-            call_reason = "Buy with controlled size."
-
-    final_call = f"BUY ${suggested_amount:,.2f}" if decision == "BUY" else "NO BUY"
+            action_code = "BUY_AS_PLANNED"
+            input_alignment = "ALIGNED"
+            action_now = f"Buy ${amount_usdc:,.2f} now."
+            call_reason = "Your plan size is already in the rational range."
+            final_call = f"BUY AS PLANNED: ${amount_usdc:,.2f}"
 
     risk_score = 35
     if breakout_high_regime or new_ath:
@@ -1555,6 +1601,7 @@ def _build_add_position_guidance(
         lines.append(f"Estimated BTC now: {estimated_btc:.8f} BTC")
     else:
         lines.append(f"Input: ${amount_usdc:,.2f} | Suggested now: skip this entry.")
+    lines.append(f"Do now: {action_now}")
     lines.append(f"Short reason: {call_reason}")
     lines.append(
         "Price context: "
@@ -1562,6 +1609,13 @@ def _build_add_position_guidance(
         f"{(market_ctx.get('current_vs_180d_low_pct') if market_ctx.get('current_vs_180d_low_pct') is not None else 0.0):+.2f}% vs 180d low, "
         f"24h move {(market_ctx.get('drop_24h_pct') if market_ctx.get('drop_24h_pct') is not None else 0.0):+.2f}%."
     )
+    if recent_trade_range_pct is not None and current_vs_recent_trade_median_pct is not None:
+        lines.append(
+            "Flow context: "
+            f"recent 14-event range {recent_trade_range_pct:.2f}%, "
+            f"current {current_vs_recent_trade_median_pct:+.2f}% vs your recent median fill, "
+            f"buys in 24h: {recent_24h_count}, in 72h: {recent_72h_count}."
+        )
     if macro_available:
         macro_parts: List[str] = []
         if macro_risk_score is not None:
@@ -1586,6 +1640,8 @@ def _build_add_position_guidance(
         "risk_level": risk_level,
         "decision": decision,
         "size_bucket": size_bucket,
+        "action_code": action_code,
+        "advised_amount_usdc": float(advised_amount_usdc),
         "final_call": final_call,
         "call_reason": call_reason,
         "action_now": action_now,
@@ -1618,7 +1674,20 @@ def _build_add_position_guidance(
             "burst_trading_ratio": burst_ratio,
             "median_interval_days": summary.get("median_interval_days"),
             "event_amount_cv": event_amount_cv,
+            "dense_buy_mode": dense_buy_mode,
+            "dense_dca_mode": dense_buy_mode,
+            "source_mix_label": source_mix_label,
+            "dca_event_ratio": dca_event_ratio,
+            "manual_event_ratio": manual_event_ratio,
+            "no_extra_add_needed_mode": no_extra_add_needed_mode,
+            "recent_sideways_by_trades": local_sideways_by_trades,
+            "recent_trade_range_pct": float(recent_trade_range_pct) if recent_trade_range_pct is not None else None,
+            "current_vs_recent_trade_median_pct": (
+                float(current_vs_recent_trade_median_pct) if current_vs_recent_trade_median_pct is not None else None
+            ),
+            "recent_events_24h": recent_24h_count,
             "recent_events_48h": recent_48h_count,
+            "recent_events_72h": recent_72h_count,
             "last_event_time": last_event_ts.isoformat() if isinstance(last_event_ts, datetime) else None,
         },
         "market_context": market_ctx,

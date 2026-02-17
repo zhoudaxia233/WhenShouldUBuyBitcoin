@@ -18,3 +18,5 @@ def test_dashboard_add_position_modal_and_safe_polling_are_present():
     assert "fetch('/api/stats/add-position/advice'" in html
     assert "Buy (Confirm)" in html
     assert "fetch('/api/stats/add-position/confirm'" in html
+    assert "previewCache.suggested_amount_usd" not in html
+    assert "if (amountInput) amountInput.value = '';" in html
