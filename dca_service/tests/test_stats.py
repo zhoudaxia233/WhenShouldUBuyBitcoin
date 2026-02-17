@@ -5,7 +5,7 @@ from unittest.mock import MagicMock, patch
 from dca_service.api import stats_api
 from dca_service.models import DCATransaction, SummaryApiSettings, DCAStrategy, BinanceCredentials
 from dca_service.services.security import encrypt_text
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 
 def test_stats_distribution(client: TestClient):
     response = client.get("/api/stats/distribution")
@@ -357,10 +357,12 @@ def test_add_position_advice_uses_split_fill_merged_behavior_events(client: Test
     assert payload["analysis_data"]["summary"]["split_event_count"] == 1
     assert payload["guidance"]["risk_level"] in {"low", "medium", "high"}
     assert payload["guidance"]["decision"] in {"BUY", "WAIT"}
+    assert payload["guidance"]["action_code"] in {"NO_BUY", "BUY_LESS", "BUY_MORE", "BUY_AS_PLANNED"}
     assert payload["guidance"]["final_call"]
     assert payload["guidance"]["call_reason"]
     assert payload["guidance"]["analysis_text"]
     assert "Call:" in payload["guidance"]["analysis_text"]
+    assert "Do now:" in payload["guidance"]["analysis_text"]
     assert "Short reason:" in payload["guidance"]["analysis_text"]
     assert payload["guidance"]["method_constraints"]["no_hindsight"]
 
@@ -510,6 +512,8 @@ def test_add_position_advice_deep_value_regime_does_not_auto_discourage_large_si
 
 def test_add_position_advice_sideways_dense_dca_waits_without_takeoff_macro(client: TestClient, session: Session):
     # Create dense DCA history: daily cadence, enough events to trigger dense mode.
+    now_utc = datetime.now(timezone.utc)
+    start_ts = now_utc - timedelta(days=11)
     for idx in range(12):
         tx = DCATransaction(
             status="SUCCESS",
@@ -518,7 +522,7 @@ def test_add_position_advice_sideways_dense_dca_waits_without_takeoff_macro(clie
             price=68000.0,
             ahr999=0.6,
             notes=f"Dense DCA {idx}",
-            timestamp=datetime(2024, 1, 1 + idx, 0, 0, tzinfo=timezone.utc),
+            timestamp=start_ts + timedelta(days=idx),
             source="MANUAL",
             is_manual=True,
         )
@@ -576,10 +580,13 @@ def test_add_position_advice_sideways_dense_dca_waits_without_takeoff_macro(clie
     payload = response.json()
     assert payload["guidance"]["decision"] == "WAIT"
     assert payload["guidance"]["final_call"] == "NO BUY"
-    assert "sideways market + daily dca" in payload["guidance"]["call_reason"].lower()
+    assert payload["guidance"]["action_code"] == "NO_BUY"
+    assert "dense" in payload["guidance"]["call_reason"].lower()
 
 
 def test_add_position_advice_sideways_dense_dca_allows_add_with_takeoff_macro(client: TestClient, session: Session):
+    now_utc = datetime.now(timezone.utc)
+    start_ts = now_utc - timedelta(days=11)
     for idx in range(12):
         tx = DCATransaction(
             status="SUCCESS",
@@ -588,7 +595,7 @@ def test_add_position_advice_sideways_dense_dca_allows_add_with_takeoff_macro(cl
             price=68000.0,
             ahr999=0.6,
             notes=f"Dense DCA takeoff {idx}",
-            timestamp=datetime(2024, 2, 1 + idx, 0, 0, tzinfo=timezone.utc),
+            timestamp=start_ts + timedelta(days=idx),
             source="MANUAL",
             is_manual=True,
         )
@@ -645,5 +652,5 @@ def test_add_position_advice_sideways_dense_dca_allows_add_with_takeoff_macro(cl
     assert response.status_code == 200
     payload = response.json()
     assert payload["guidance"]["decision"] == "BUY"
-    assert payload["guidance"]["final_call"].startswith("BUY ")
+    assert payload["guidance"]["final_call"].startswith("BUY")
     assert "macro takeoff signals are aligned" in payload["guidance"]["analysis_text"].lower()
