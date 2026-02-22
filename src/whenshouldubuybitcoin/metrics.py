@@ -577,7 +577,9 @@ def add_volume_relative_metrics(
     - recent_panic_selloff_7d: whether a panic sell-off happened recently
     - is_post_panic_volume_contraction: recent panic + current volume below 30D avg
     """
+    orig_attrs = dict(getattr(df, "attrs", {}) or {})
     df = df.copy()
+    df.attrs.update(orig_attrs)
 
     if "volume" not in df.columns:
         return df
@@ -614,6 +616,7 @@ def add_volume_relative_metrics(
         & (df[ratio_col] < 1.0)
     )
 
+    df.attrs.update(orig_attrs)
     return df
 
 
@@ -660,7 +663,9 @@ def add_rsi_metrics(
     Weekly RSI is computed from weekly close resampling of the daily series and then
     propagated back to each day until the next weekly close.
     """
+    orig_attrs = dict(getattr(df, "attrs", {}) or {})
     df = df.copy()
+    df.attrs.update(orig_attrs)
     if "close_price" not in df.columns or "date" not in df.columns:
         return df
 
@@ -685,12 +690,14 @@ def add_rsi_metrics(
             on="date",
             direction="backward",
         )
+        df.attrs.update(orig_attrs)
 
     df["is_rsi_daily_oversold"] = df["rsi14"] < 30.0
     if "rsi14w" in df.columns:
         df["is_rsi_weekly_oversold_proxy"] = df["rsi14w"] <= weekly_oversold_threshold
         df["is_rsi_bottoming_signal"] = df["is_rsi_daily_oversold"] & df["is_rsi_weekly_oversold_proxy"]
 
+    df.attrs.update(orig_attrs)
     return df
 
 

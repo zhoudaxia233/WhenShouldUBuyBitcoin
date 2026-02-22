@@ -966,7 +966,12 @@
         }
 
         function renderBottomingSignalPreview(signal) {
-            window.__latestBottomingSignal = signal || null;
+            const hasFreshSignal = !!(signal && signal.available !== false);
+            if (hasFreshSignal) {
+                window.__latestBottomingSignal = signal;
+            }
+            const renderSignal = hasFreshSignal ? signal : (window.__latestBottomingSignal || null);
+            const usingCachedSignal = !hasFreshSignal && !!renderSignal;
             const boxEl = document.getElementById('bottomingSignalBox');
             const dateEl = document.getElementById('bottomingSignalDate');
             const statusEl = document.getElementById('bottomingSignalStatus');
@@ -974,28 +979,28 @@
             const macroEl = document.getElementById('bottomingSignalMacro');
             if (!boxEl || !dateEl || !statusEl || !metricsEl) return;
 
-            if (!signal || signal.available === false) {
+            if (!renderSignal || renderSignal.available === false) {
                 boxEl.style.display = 'none';
                 return;
             }
 
             boxEl.style.display = '';
-            dateEl.textContent = signal.as_of_date ? `As of ${signal.as_of_date}` : 'Daily snapshot';
+            dateEl.textContent = renderSignal.as_of_date ? `As of ${renderSignal.as_of_date}` : 'Daily snapshot';
 
-            const ratioNum = Number(signal.volume_ratio_30);
-            const retNum = Number(signal.daily_return_pct);
+            const ratioNum = Number(renderSignal.volume_ratio_30);
+            const retNum = Number(renderSignal.daily_return_pct);
             const hasRatio = Number.isFinite(ratioNum);
             const hasRet = Number.isFinite(retNum);
-            const contraction = signal.is_post_panic_volume_contraction === true;
-            const recentPanic = signal.recent_panic_selloff_7d === true;
-            const rsiDaily = Number(signal.rsi14);
-            const rsiWeekly = Number(signal.rsi14w);
+            const contraction = renderSignal.is_post_panic_volume_contraction === true;
+            const recentPanic = renderSignal.recent_panic_selloff_7d === true;
+            const rsiDaily = Number(renderSignal.rsi14);
+            const rsiWeekly = Number(renderSignal.rsi14w);
             const hasRsiDaily = Number.isFinite(rsiDaily);
             const hasRsiWeekly = Number.isFinite(rsiWeekly);
-            const rsiBottoming = signal.is_rsi_bottoming_signal === true;
-            const rsiWeeklyOversold = signal.is_rsi_weekly_oversold_proxy === true;
-            const macro = signal.macro_snapshot && signal.macro_snapshot.available !== false
-                ? signal.macro_snapshot
+            const rsiBottoming = renderSignal.is_rsi_bottoming_signal === true;
+            const rsiWeeklyOversold = renderSignal.is_rsi_weekly_oversold_proxy === true;
+            const macro = renderSignal.macro_snapshot && renderSignal.macro_snapshot.available !== false
+                ? renderSignal.macro_snapshot
                 : null;
             const isDarkTheme = document.documentElement.getAttribute('data-bs-theme') === 'dark';
 
@@ -1065,10 +1070,13 @@
             const styleAttr = conclusionColor ? ` style="color: ${conclusionColor}; font-weight: 600;"` : '';
             const classAttr = conclusionClass ? ` class="${conclusionClass}"` : '';
             statusEl.innerHTML = `<span${classAttr}${styleAttr}>${summaryLine}</span>`;
+            if (usingCachedSignal) {
+                statusEl.innerHTML += ` <span class="text-muted" style="font-size: 0.9em;">(showing last snapshot)</span>`;
+            }
 
             const parts = [];
             if (hasRatio) parts.push(`Vol/30D MA: ${ratioNum.toFixed(2)}x`);
-            if (signal.recent_panic_selloff_7d !== null && signal.recent_panic_selloff_7d !== undefined) {
+            if (renderSignal.recent_panic_selloff_7d !== null && renderSignal.recent_panic_selloff_7d !== undefined) {
                 parts.push(`Recent panic (7D): ${recentPanic ? 'yes' : 'no'}`);
             }
             if (hasRet) {
