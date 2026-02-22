@@ -176,6 +176,18 @@ def _load_recent_market_context(current_price_usd: float) -> Dict[str, Any]:
         "range_30d_pct": None,
         "realized_vol_30d_pct": None,
         "sideways_30d": False,
+        # Free-data bottoming helpers from metrics CSV (optional)
+        "ahr999": None,
+        "ahr999_sub_1": None,
+        "ahr999_sub_07": None,
+        "rsi14": None,
+        "rsi14w": None,
+        "is_rsi_daily_oversold": None,
+        "is_rsi_weekly_oversold_proxy": None,
+        "is_rsi_bottoming_signal": None,
+        "volume_ratio_30": None,
+        "is_post_panic_volume_contraction": None,
+        "bottoming_tech_signal_count": 0,
     }
     try:
         csv_path = _resolve_metrics_csv_path()
@@ -183,9 +195,11 @@ def _load_recent_market_context(current_price_usd: float) -> Dict[str, Any]:
             return context
 
         prices: List[float] = []
+        last_row: Optional[Dict[str, Any]] = None
         with open(csv_path, "r", encoding="utf-8") as f:
             reader = csv.DictReader(f)
             for row in reader:
+                last_row = row
                 price_str = row.get("close_price")
                 if not price_str:
                     continue
@@ -239,6 +253,42 @@ def _load_recent_market_context(current_price_usd: float) -> Dict[str, Any]:
             and realized_vol_30d_pct <= 2.0
         )
 
+        def _maybe_float_from_last(key: str) -> Optional[float]:
+            if not last_row:
+                return None
+            raw = last_row.get(key)
+            if raw in (None, "", "nan", "NaN"):
+                return None
+            try:
+                val = float(raw)
+                return val if math.isfinite(val) else None
+            except (TypeError, ValueError):
+                return None
+
+        def _maybe_bool_from_last(key: str) -> Optional[bool]:
+            if not last_row:
+                return None
+            raw = last_row.get(key)
+            if raw in (None, ""):
+                return None
+            return str(raw).strip().lower() in {"1", "true", "yes"}
+
+        ahr999_val = _maybe_float_from_last("ahr999")
+        rsi14_val = _maybe_float_from_last("rsi14")
+        rsi14w_val = _maybe_float_from_last("rsi14w")
+        volume_ratio_30 = _maybe_float_from_last("volume_ratio_30")
+        is_rsi_daily_oversold = _maybe_bool_from_last("is_rsi_daily_oversold")
+        is_rsi_weekly_oversold_proxy = _maybe_bool_from_last("is_rsi_weekly_oversold_proxy")
+        is_rsi_bottoming_signal = _maybe_bool_from_last("is_rsi_bottoming_signal")
+        is_post_panic_volume_contraction = _maybe_bool_from_last("is_post_panic_volume_contraction")
+        bottoming_tech_signal_count = 0
+        if ahr999_val is not None and ahr999_val < 1.0:
+            bottoming_tech_signal_count += 1
+        if is_rsi_bottoming_signal is True:
+            bottoming_tech_signal_count += 1
+        if is_post_panic_volume_contraction is True:
+            bottoming_tech_signal_count += 1
+
         return {
             "available": True,
             "window_days": 180,
@@ -260,6 +310,17 @@ def _load_recent_market_context(current_price_usd: float) -> Dict[str, Any]:
             "range_30d_pct": float(range_30d_pct) if range_30d_pct is not None else None,
             "realized_vol_30d_pct": float(realized_vol_30d_pct) if realized_vol_30d_pct is not None else None,
             "sideways_30d": bool(sideways_30d),
+            "ahr999": float(ahr999_val) if ahr999_val is not None else None,
+            "ahr999_sub_1": bool(ahr999_val < 1.0) if ahr999_val is not None else None,
+            "ahr999_sub_07": bool(ahr999_val < 0.7) if ahr999_val is not None else None,
+            "rsi14": float(rsi14_val) if rsi14_val is not None else None,
+            "rsi14w": float(rsi14w_val) if rsi14w_val is not None else None,
+            "is_rsi_daily_oversold": is_rsi_daily_oversold,
+            "is_rsi_weekly_oversold_proxy": is_rsi_weekly_oversold_proxy,
+            "is_rsi_bottoming_signal": is_rsi_bottoming_signal,
+            "volume_ratio_30": float(volume_ratio_30) if volume_ratio_30 is not None else None,
+            "is_post_panic_volume_contraction": is_post_panic_volume_contraction,
+            "bottoming_tech_signal_count": int(bottoming_tech_signal_count),
         }
     except Exception:
         return context
@@ -283,6 +344,13 @@ def _load_macro_context() -> Dict[str, Any]:
         "ma_spread": None,
         "usdjpy_risk_level": None,
         "overall_summary": None,
+        # Free proxies from daily report snapshot
+        "fear_greed_value": None,
+        "fear_greed_classification": None,
+        "fear_panic_score": None,
+        "is_extreme_fear_proxy": None,
+        "hashrate_30d_change_pct": None,
+        "miner_stress_proxy": None,
     }
     try:
         def _maybe_float(value: Any) -> Optional[float]:
@@ -312,6 +380,12 @@ def _load_macro_context() -> Dict[str, Any]:
         futures_metrics = section_metrics.get("Futures OI & Price", {})
         ma_metrics = section_metrics.get("MA Cross Analysis", {})
         usdjpy_metrics = section_metrics.get("USD/JPY Risk Map", {})
+        free_bottoming_metrics = (
+            section_metrics.get("Supplemental Bottoming Signals", {})
+            or
+            section_metrics.get("Sentiment & Miner Proxies (Free)", {})
+            or section_metrics.get("Free Bottoming Signals", {})
+        )
 
         human_summary = data.get("human_summary", {}) or {}
         overall_summary = human_summary.get("overall_summary")
@@ -335,6 +409,12 @@ def _load_macro_context() -> Dict[str, Any]:
         ma_regime = ma_metrics.get("regime")
         ma_spread = _maybe_float(ma_metrics.get("ma_spread"))
         usdjpy_risk_level = usdjpy_metrics.get("risk_level")
+        fear_greed_value = _maybe_float(free_bottoming_metrics.get("fear_greed_value"))
+        fear_greed_classification = free_bottoming_metrics.get("fear_greed_classification")
+        fear_panic_score = _maybe_float(free_bottoming_metrics.get("fear_panic_score"))
+        is_extreme_fear_proxy = free_bottoming_metrics.get("is_extreme_fear_proxy")
+        hashrate_30d_change_pct = _maybe_float(free_bottoming_metrics.get("hashrate_30d_change_pct"))
+        miner_stress_proxy = free_bottoming_metrics.get("miner_stress_proxy")
 
         return {
             "available": True,
@@ -349,6 +429,12 @@ def _load_macro_context() -> Dict[str, Any]:
             "ma_spread": ma_spread,
             "usdjpy_risk_level": str(usdjpy_risk_level) if usdjpy_risk_level is not None else None,
             "overall_summary": overall_summary,
+            "fear_greed_value": fear_greed_value,
+            "fear_greed_classification": str(fear_greed_classification) if fear_greed_classification is not None else None,
+            "fear_panic_score": fear_panic_score,
+            "is_extreme_fear_proxy": bool(is_extreme_fear_proxy) if is_extreme_fear_proxy is not None else None,
+            "hashrate_30d_change_pct": hashrate_30d_change_pct,
+            "miner_stress_proxy": str(miner_stress_proxy) if miner_stress_proxy is not None else None,
         }
     except Exception:
         return context
@@ -1231,6 +1317,21 @@ def _build_add_position_guidance(
     new_180d_low = bool(market_ctx.get("new_180d_low"))
     drop_24h_pct = _as_float(market_ctx.get("drop_24h_pct"))
     current_vs_180d_low_pct = _as_float(market_ctx.get("current_vs_180d_low_pct"))
+    ahr999_now = _as_float(market_ctx.get("ahr999"))
+    ahr999_sub_1 = bool(market_ctx.get("ahr999_sub_1")) if market_ctx.get("ahr999_sub_1") is not None else False
+    ahr999_sub_07 = bool(market_ctx.get("ahr999_sub_07")) if market_ctx.get("ahr999_sub_07") is not None else False
+    rsi14_now = _as_float(market_ctx.get("rsi14"))
+    rsi14w_now = _as_float(market_ctx.get("rsi14w"))
+    is_rsi_bottoming_signal = (
+        bool(market_ctx.get("is_rsi_bottoming_signal"))
+        if market_ctx.get("is_rsi_bottoming_signal") is not None
+        else False
+    )
+    is_post_panic_volume_contraction = (
+        bool(market_ctx.get("is_post_panic_volume_contraction"))
+        if market_ctx.get("is_post_panic_volume_contraction") is not None
+        else False
+    )
 
     recent_amounts = [float(e.get("amount_usd", 0.0)) for e in events[-10:] if float(e.get("amount_usd", 0.0)) > 0]
     baseline_amount = _safe_median(recent_amounts, fallback=float(summary.get("avg_event_usd", amount_usdc) or amount_usdc))
@@ -1307,6 +1408,15 @@ def _build_add_position_guidance(
     net_liquidity_delta = _as_float(macro_ctx.get("net_liquidity_90d_delta"))
     oi_30d_change_pct = _as_float(macro_ctx.get("oi_30d_change_pct"))
     ma_regime = str(macro_ctx.get("ma_regime") or "").strip().lower() or None
+    fear_greed_value = _as_float(macro_ctx.get("fear_greed_value"))
+    fear_panic_score = _as_float(macro_ctx.get("fear_panic_score"))
+    is_extreme_fear_proxy = (
+        bool(macro_ctx.get("is_extreme_fear_proxy"))
+        if macro_ctx.get("is_extreme_fear_proxy") is not None
+        else False
+    )
+    hashrate_30d_change_pct = _as_float(macro_ctx.get("hashrate_30d_change_pct"))
+    miner_stress_proxy = str(macro_ctx.get("miner_stress_proxy") or "").strip().lower() or None
     report_age_days = macro_ctx.get("report_age_days")
     try:
         report_age_days_int = int(report_age_days) if report_age_days is not None else None
@@ -1372,6 +1482,7 @@ def _build_add_position_guidance(
     reasons: List[str] = []
     applied_lessons: List[str] = []
     macro_notes: List[str] = []
+    tech_notes: List[str] = []
 
     multiplier = 1.0
     if deep_value_regime or new_180d_low:
@@ -1436,6 +1547,71 @@ def _build_add_position_guidance(
             macro_notes.append(f"Macro regime: {macro_risk_regime}.")
     else:
         macro_notes.append("Macro snapshot unavailable; decision uses live price + your history only.")
+
+    # Free-data technical bottoming overlays (advisory only):
+    # Use as small, capped sizing/risk adjustments and never override hard WAIT guards.
+    # AHR999 is read from existing metrics CSV (no reimplementation here).
+    tech_signal_hits = 0
+    tech_signal_labels: List[str] = []
+    tech_multiplier_factor = 1.0
+
+    if ahr999_sub_1:
+        tech_signal_hits += 1
+        tech_signal_labels.append("AHR999<1")
+        tech_multiplier_factor *= 1.05
+        if ahr999_sub_07:
+            tech_multiplier_factor *= 1.05
+            tech_signal_labels.append("AHR999<0.7")
+
+    if is_rsi_bottoming_signal:
+        tech_signal_hits += 1
+        tech_signal_labels.append("RSI bottoming")
+        tech_multiplier_factor *= 1.08
+    elif (rsi14_now is not None and rsi14_now < 30.0) or (rsi14w_now is not None and rsi14w_now <= 35.0):
+        # Partial credit if only one of the two RSI conditions is met.
+        tech_multiplier_factor *= 1.03
+        tech_signal_labels.append("RSI partial")
+
+    if is_post_panic_volume_contraction:
+        tech_signal_hits += 1
+        tech_signal_labels.append("post-panic volume contraction")
+        tech_multiplier_factor *= 1.06
+
+    # Free sentiment/miner proxies from daily_report snapshot
+    if is_extreme_fear_proxy or (fear_greed_value is not None and fear_greed_value <= 25.0):
+        tech_signal_hits += 1
+        tech_signal_labels.append("F&G extreme fear")
+        tech_multiplier_factor *= 1.05
+        if fear_greed_value is not None and fear_greed_value <= 15.0:
+            tech_multiplier_factor *= 1.03
+            tech_signal_labels.append("F&G <=15")
+
+    if hashrate_30d_change_pct is not None and hashrate_30d_change_pct <= -5.0:
+        tech_signal_hits += 1
+        tech_signal_labels.append("hashrate down 30d")
+        tech_multiplier_factor *= 1.03
+        if hashrate_30d_change_pct <= -10.0:
+            tech_multiplier_factor *= 1.02
+            tech_signal_labels.append("hashrate <-10%")
+
+    if tech_signal_hits >= 2:
+        tech_multiplier_factor *= 1.05
+        tech_signal_labels.append("multi-signal confluence")
+
+    # Do not use bottoming overlays to fight breakout/high-chase protections.
+    allow_tech_bottoming_boost = not (breakout_high_regime or near_ath or new_ath)
+    tech_multiplier_applied = 1.0
+    if allow_tech_bottoming_boost and tech_multiplier_factor > 1.0:
+        tech_multiplier_applied = min(tech_multiplier_factor, 1.20)
+        multiplier *= tech_multiplier_applied
+        if tech_signal_labels:
+            tech_notes.append(
+                "Technical bottoming overlays support size: "
+                + ", ".join(tech_signal_labels[:4])
+                + f" (capped factor x{tech_multiplier_applied:.2f})."
+            )
+    elif tech_signal_hits > 0 and not allow_tech_bottoming_boost:
+        tech_notes.append("Bottoming overlays detected but ignored because price is in/near breakout-high regime.")
 
     if burst_habit and recent_48h_count >= 1:
         if strong_dip_add_mode:
@@ -1513,6 +1689,7 @@ def _build_add_position_guidance(
     if not reasons:
         reasons.append("No major risk signal is active; this setup is close to your normal decision profile.")
     reasons.extend(macro_notes[:2])
+    reasons.extend(tech_notes[:1])
     reasons = reasons[:4]
 
     if not applied_lessons:
@@ -1581,6 +1758,8 @@ def _build_add_position_guidance(
         risk_score += 8
     if deep_value_regime:
         risk_score -= 18
+    if allow_tech_bottoming_boost and tech_signal_hits >= 2:
+        risk_score -= min(8, 4 + (tech_signal_hits - 2) * 2)
     if decision == "WAIT":
         risk_score = max(risk_score, 72)
     risk_score = int(min(max(risk_score, 0), 100))
@@ -1628,6 +1807,38 @@ def _build_add_position_guidance(
             macro_parts.append(f"oi_30d {oi_30d_change_pct:+.1f}%")
         if macro_parts:
             lines.append("Macro context: " + ", ".join(macro_parts) + ".")
+    tech_parts: List[str] = []
+    if ahr999_now is not None:
+        tech_parts.append(f"AHR999 {ahr999_now:.3f}")
+    if rsi14_now is not None:
+        tech_parts.append(f"RSI14 {rsi14_now:.1f}")
+    if rsi14w_now is not None:
+        tech_parts.append(f"RSI14W* {rsi14w_now:.1f}")
+    if market_ctx.get("volume_ratio_30") is not None:
+        try:
+            tech_parts.append(f"vol/30D {float(market_ctx['volume_ratio_30']):.2f}x")
+        except (TypeError, ValueError):
+            pass
+    if fear_greed_value is not None:
+        tech_parts.append(f"F&G {fear_greed_value:.0f}")
+    if fear_panic_score is not None:
+        tech_parts.append(f"panic {fear_panic_score:.0f}/100")
+    if hashrate_30d_change_pct is not None:
+        tech_parts.append(f"hashrate30d {hashrate_30d_change_pct:+.1f}%")
+    tech_flags: List[str] = []
+    if ahr999_sub_1:
+        tech_flags.append("AHR999<1")
+    if is_rsi_bottoming_signal:
+        tech_flags.append("RSI bottoming")
+    if is_post_panic_volume_contraction:
+        tech_flags.append("post-panic volume contraction")
+    if is_extreme_fear_proxy:
+        tech_flags.append("F&G extreme fear")
+    if hashrate_30d_change_pct is not None and hashrate_30d_change_pct <= -5.0:
+        tech_flags.append("miner stress proxy")
+    if tech_parts or tech_flags:
+        suffix = f" | flags: {', '.join(tech_flags)}" if tech_flags else ""
+        lines.append("Technical bottoming: " + ", ".join(tech_parts) + suffix + ".")
     lines.append("Why:")
     for idx, reason in enumerate(reasons[:2], start=1):
         lines.append(f"{idx}. {reason}")
@@ -1692,6 +1903,23 @@ def _build_add_position_guidance(
         },
         "market_context": market_ctx,
         "macro_context": macro_ctx,
+        "technical_bottoming_context": {
+            "ahr999": ahr999_now,
+            "ahr999_sub_1": bool(ahr999_sub_1),
+            "ahr999_sub_07": bool(ahr999_sub_07),
+            "rsi14": rsi14_now,
+            "rsi14w": rsi14w_now,
+            "is_rsi_bottoming_signal": bool(is_rsi_bottoming_signal),
+            "is_post_panic_volume_contraction": bool(is_post_panic_volume_contraction),
+            "fear_greed_value": fear_greed_value,
+            "fear_panic_score": fear_panic_score,
+            "is_extreme_fear_proxy": bool(is_extreme_fear_proxy),
+            "hashrate_30d_change_pct": hashrate_30d_change_pct,
+            "miner_stress_proxy": miner_stress_proxy,
+            "tech_signal_hits": int(tech_signal_hits),
+            "tech_multiplier_applied": float(tech_multiplier_applied),
+            "allow_tech_bottoming_boost": bool(allow_tech_bottoming_boost),
+        },
         "analysis_text": "\n".join(lines),
         "method_constraints": {
             "split_fill_handling": "Same binance_order_id merged into one event.",

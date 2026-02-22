@@ -548,6 +548,153 @@ def add_ma_metrics(df: pd.DataFrame) -> pd.DataFrame:
 
 
 # ============================================================================
+# VOLUME RELATIVE METRICS (CAPITULATION / CONTRACTION PROXIES)
+# ============================================================================
+
+
+def add_volume_relative_metrics(
+    df: pd.DataFrame,
+    volume_ma_window: int = 30,
+    panic_lookback_days: int = 7,
+    panic_drop_pct_threshold: float = -5.0,
+    panic_volume_spike_ratio: float = 1.5,
+) -> pd.DataFrame:
+    """
+    Add relative volume metrics and a simple "post-panic contraction" signal.
+
+    This is a pragmatic proxy for the forum heuristic:
+    "panic sell-off followed by shrinking volume (< 30D average)".
+
+    Requirements:
+    - Input DataFrame should include a ``volume`` column.
+    - If ``volume`` is missing, this function returns the DataFrame unchanged.
+
+    Added columns:
+    - volume_ma30 (or generic window): rolling average volume
+    - volume_ratio_30: current volume / 30D average volume
+    - daily_return_pct: daily close-to-close return %
+    - is_panic_selloff_day: large down day + volume spike
+    - recent_panic_selloff_7d: whether a panic sell-off happened recently
+    - is_post_panic_volume_contraction: recent panic + current volume below 30D avg
+    """
+    df = df.copy()
+
+    if "volume" not in df.columns:
+        return df
+
+    volume = pd.to_numeric(df["volume"], errors="coerce")
+    df["volume"] = volume
+
+    volume_ma_col = f"volume_ma{volume_ma_window}"
+    df[volume_ma_col] = volume.rolling(window=volume_ma_window).mean()
+
+    ratio_col = "volume_ratio_30" if volume_ma_window == 30 else f"volume_ratio_{volume_ma_window}"
+    df[ratio_col] = volume / df[volume_ma_col]
+
+    # Price shock proxy for "panic"
+    df["daily_return_pct"] = df["close_price"].pct_change() * 100.0
+
+    df["is_panic_selloff_day"] = (
+        (df["daily_return_pct"] <= panic_drop_pct_threshold)
+        & (df[ratio_col] >= panic_volume_spike_ratio)
+    )
+
+    # "Recent panic" excludes the current day so the contraction signal means
+    # panic happened first, contraction came after.
+    recent_panic = (
+        df["is_panic_selloff_day"]
+        .shift(1)
+        .rolling(window=panic_lookback_days, min_periods=1)
+        .max()
+    )
+    df[f"recent_panic_selloff_{panic_lookback_days}d"] = recent_panic.fillna(0).astype(bool)
+
+    df["is_post_panic_volume_contraction"] = (
+        df[f"recent_panic_selloff_{panic_lookback_days}d"]
+        & (df[ratio_col] < 1.0)
+    )
+
+    return df
+
+
+# ============================================================================
+# RSI METRICS (DAILY + WEEKLY PROXY)
+# ============================================================================
+
+
+def _calculate_rsi(series: pd.Series, period: int = 14) -> pd.Series:
+    """
+    Wilder-style RSI using exponential smoothing.
+    """
+    delta = series.diff()
+    gains = delta.clip(lower=0)
+    losses = (-delta).clip(lower=0)
+
+    avg_gain = gains.ewm(alpha=1 / period, adjust=False, min_periods=period).mean()
+    avg_loss = losses.ewm(alpha=1 / period, adjust=False, min_periods=period).mean()
+
+    rs = avg_gain / avg_loss.replace(0, np.nan)
+    rsi = 100 - (100 / (1 + rs))
+
+    # Handle edge cases where losses are zero (strong trend up).
+    rsi = rsi.where(avg_loss.notna(), np.nan)
+    rsi = rsi.mask((avg_loss == 0) & (avg_gain > 0), 100.0)
+    rsi = rsi.mask((avg_loss == 0) & (avg_gain == 0), 50.0)
+    return rsi
+
+
+def add_rsi_metrics(
+    df: pd.DataFrame,
+    daily_period: int = 14,
+    weekly_period: int = 14,
+    weekly_oversold_threshold: float = 35.0,
+) -> pd.DataFrame:
+    """
+    Add RSI metrics:
+    - rsi14: daily RSI(14)
+    - rsi14w: weekly RSI(14) proxy, mapped back to daily rows
+    - is_rsi_daily_oversold: daily RSI < 30
+    - is_rsi_weekly_oversold_proxy: weekly RSI proxy <= threshold (default 35)
+    - is_rsi_bottoming_signal: both daily and weekly proxy oversold
+
+    Weekly RSI is computed from weekly close resampling of the daily series and then
+    propagated back to each day until the next weekly close.
+    """
+    df = df.copy()
+    if "close_price" not in df.columns or "date" not in df.columns:
+        return df
+
+    df["rsi14"] = _calculate_rsi(pd.to_numeric(df["close_price"], errors="coerce"), period=daily_period)
+
+    weekly_src = df[["date", "close_price"]].copy()
+    weekly_src["date"] = pd.to_datetime(weekly_src["date"])
+    weekly_src = weekly_src.sort_values("date")
+    weekly = (
+        weekly_src.set_index("date")["close_price"]
+        .resample("W-SUN")
+        .last()
+        .dropna()
+        .to_frame(name="close_price")
+        .reset_index()
+    )
+    if not weekly.empty:
+        weekly["rsi14w"] = _calculate_rsi(pd.to_numeric(weekly["close_price"], errors="coerce"), period=weekly_period)
+        df = pd.merge_asof(
+            df.sort_values("date"),
+            weekly[["date", "rsi14w"]].sort_values("date"),
+            on="date",
+            direction="backward",
+        )
+
+    df["is_rsi_daily_oversold"] = df["rsi14"] < 30.0
+    if "rsi14w" in df.columns:
+        df["is_rsi_weekly_oversold_proxy"] = df["rsi14w"] <= weekly_oversold_threshold
+        df["is_rsi_bottoming_signal"] = df["is_rsi_daily_oversold"] & df["is_rsi_weekly_oversold_proxy"]
+
+    return df
+
+
+# ============================================================================
 # COMBINED VALUATION METRICS & DOUBLE UNDERVALUATION
 # ============================================================================
 
@@ -585,6 +732,13 @@ def compute_valuation_metrics(df: pd.DataFrame, dca_window: int = 200) -> pd.Dat
 
     # Add MA metrics (50D/200D)
     df = add_ma_metrics(df)
+
+    # Add relative volume metrics if source data contains volume.
+    # This is optional and should not affect legacy price-only workflows.
+    df = add_volume_relative_metrics(df)
+
+    # Add RSI metrics (free-data technical signal; optional weekly proxy if enough history).
+    df = add_rsi_metrics(df)
     
     # Add double undervaluation flag
     # Both conditions must be met:
@@ -691,4 +845,3 @@ if __name__ == "__main__":
     print(df.tail(10))
     print("\nSummary:")
     print(get_dca_summary(df))
-

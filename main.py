@@ -42,6 +42,8 @@ from whenshouldubuybitcoin.persistence import (
     get_days_to_fetch,
 )
 from whenshouldubuybitcoin.providers.binance_api import fetch_btc_funding_rate, fetch_open_interest_history
+from whenshouldubuybitcoin.providers.alternative_me import fetch_fear_and_greed_index
+from whenshouldubuybitcoin.providers.blockchain_data import fetch_hashrate_trend
 from whenshouldubuybitcoin.visualization import (
     generate_all_charts,
     plot_usdjpy_risk_map,
@@ -52,6 +54,16 @@ from whenshouldubuybitcoin.visualization import (
 )
 from whenshouldubuybitcoin.realtime_check import check_realtime_status
 from whenshouldubuybitcoin.daily_report import generate_daily_report
+
+
+def _fmt_num(value, fmt: str, fallback: str = "N/A") -> str:
+    """Format numeric CLI output safely when upstream summaries contain None."""
+    if value is None or (isinstance(value, float) and pd.isna(value)):
+        return fallback
+    try:
+        return format(value, fmt)
+    except Exception:
+        return fallback
 
 
 def save_oi_cache(oi_data: list, cache_path: Path) -> None:
@@ -218,11 +230,15 @@ def main(strict_update: bool = False):
         print(f"  where t = Bitcoin age (days since genesis: 2009-01-03)")
         print(f"  Data available from: {df['date'].iloc[0].date()}")
         print(f"\nFitted Parameters:")
-        print(f"  a (coefficient):      {trend_summary['trend_coefficient_a']:,.2f}")
-        print(f"  n (power exponent):   {trend_summary['power_law_exponent']:.6f}")
         print(
-            f"  Current growth rate:  {trend_summary['daily_growth_rate_pct']:.4f}% per day"
+            f"  a (coefficient):      {_fmt_num(trend_summary.get('trend_coefficient_a'), ',.2f')}"
         )
+        print(
+            f"  n (power exponent):   {_fmt_num(trend_summary.get('power_law_exponent'), '.6f')}"
+        )
+        growth_rate = _fmt_num(trend_summary.get("daily_growth_rate_pct"), ".4f")
+        growth_rate_suffix = "% per day" if growth_rate != "N/A" else ""
+        print(f"  Current growth rate:  {growth_rate}{growth_rate_suffix}")
         print(f"  Note: Growth rate decreases over time in power law model")
 
         print(f"\nCurrent Status:")
@@ -330,7 +346,7 @@ def main(strict_update: bool = False):
         print("   • Long-term valuation metric (fitted to all historical data)")
         print("   • Ratio < 1.0 = Price below long-term growth trend")
         print(
-            f"   • Power law exponent: {trend_summary['power_law_exponent']:.2f} (models network effects)"
+            f"   • Power law exponent: {_fmt_num(trend_summary.get('power_law_exponent'), '.2f')} (models network effects)"
         )
 
         print("\n3. Double Undervaluation (Buy Zone):")
@@ -519,12 +535,49 @@ def main(strict_update: bool = False):
         print("STEP 8: Generate Daily Report Summary")
         print("=" * 80)
         try:
+            free_signal_snapshot = {}
+            try:
+                fng = fetch_fear_and_greed_index()
+                if fng:
+                    fng_value = fng.get("value")
+                    if isinstance(fng_value, int):
+                        free_signal_snapshot.update(
+                            {
+                                "fear_greed_value": fng_value,
+                                "fear_greed_classification": fng.get("value_classification"),
+                                "fear_panic_score": max(0, min(100, 100 - fng_value)),
+                                "is_extreme_fear_proxy": fng_value <= 25,
+                            }
+                        )
+            except Exception as e:
+                print(f"⚠ Warning: Failed to fetch Fear & Greed snapshot: {e}")
+
+            try:
+                hashrate_change = fetch_hashrate_trend()
+                if hashrate_change is not None:
+                    miner_stress_proxy = (
+                        "elevated"
+                        if hashrate_change <= -8.0
+                        else "mild"
+                        if hashrate_change < 0.0
+                        else "low"
+                    )
+                    free_signal_snapshot.update(
+                        {
+                            "hashrate_30d_change_pct": float(hashrate_change),
+                            "miner_stress_proxy": miner_stress_proxy,
+                        }
+                    )
+            except Exception as e:
+                print(f"⚠ Warning: Failed to fetch hashrate trend snapshot: {e}")
+
             daily_report = generate_daily_report(
                 df,
                 macro_df=macro_df,
                 usdjpy_df=usdjpy_df,
                 yield_df=yield_df,
                 oi_df=oi_df,
+                free_signal_snapshot=free_signal_snapshot or None,
             )
             report_status = daily_report.get("human_summary", {}).get("generated_by", "ok")
             component_status["daily_report"] = True

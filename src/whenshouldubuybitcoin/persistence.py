@@ -143,12 +143,25 @@ def save_metrics(df: pd.DataFrame, filename: str = "btc_metrics.csv") -> bool:
         columns_to_save = [
             "date",
             "close_price",
+            "volume",
             "dca_cost",
             "ratio_dca",
             "trend_value",
             "ratio_trend",
             "is_double_undervalued",
             "ahr999",
+            # Reserved for future relative-volume/bottoming signals
+            "volume_ma30",
+            "volume_ratio_30",
+            "daily_return_pct",
+            "is_panic_selloff_day",
+            "recent_panic_selloff_7d",
+            "is_post_panic_volume_contraction",
+            "rsi14",
+            "rsi14w",
+            "is_rsi_daily_oversold",
+            "is_rsi_weekly_oversold_proxy",
+            "is_rsi_bottoming_signal",
         ]
         
         # Filter to only existing columns
@@ -262,8 +275,5 @@ if __name__ == "__main__":
     if df is not None:
         print(f"\nLoaded data shape: {df.shape}")
         print(f"Columns: {df.columns.tolist()}")
-
-
-
 
 
