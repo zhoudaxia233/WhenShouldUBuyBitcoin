@@ -16,6 +16,47 @@ from .persistence import load_existing_metrics
 from .metrics import get_ahr999_zone, calculate_ahr999_percentile, calculate_ahr999_percentile_below_one
 
 
+def _derive_trend_params_from_trend_series(df: pd.DataFrame) -> Optional[tuple[float, float]]:
+    """
+    Derive power-law params from the historical ``trend_value`` series if metadata attrs are missing.
+
+    Uses a log-log linear regression:
+        log(price) = log(a) + n * log(t)
+    where t is Bitcoin age in days since genesis.
+    """
+    if df is None or "date" not in df.columns or "trend_value" not in df.columns:
+        return None
+
+    tmp = df[["date", "trend_value"]].copy()
+    tmp["date"] = pd.to_datetime(tmp["date"], errors="coerce")
+    tmp["trend_value"] = pd.to_numeric(tmp["trend_value"], errors="coerce")
+    tmp = tmp.dropna(subset=["date", "trend_value"])
+    tmp = tmp[tmp["trend_value"] > 0]
+    if tmp.empty or len(tmp) < 10:
+        return None
+
+    genesis_date = pd.Timestamp("2009-01-03")
+    tmp["bitcoin_age_days"] = (tmp["date"] - genesis_date).dt.days
+    tmp = tmp[tmp["bitcoin_age_days"] > 0]
+    if tmp.empty or len(tmp) < 10:
+        return None
+
+    x = np.log(tmp["bitcoin_age_days"].astype(float).to_numpy())
+    y = np.log(tmp["trend_value"].astype(float).to_numpy())
+    if len(x) < 10:
+        return None
+
+    try:
+        slope, intercept = np.polyfit(x, y, 1)
+        a = float(np.exp(intercept))
+        n = float(slope)
+        if not np.isfinite(a) or a <= 0 or not np.isfinite(n):
+            return None
+        return a, n
+    except Exception:
+        return None
+
+
 def calculate_distance_to_buy_zone(ratio: float) -> Dict[str, float]:
     """
     Calculate how far the price is from entering the buy zone.
@@ -144,10 +185,18 @@ def check_realtime_status(verbose: bool = True) -> Optional[Dict]:
     trend_b = df.attrs.get('trend_b')  # This is now the power law exponent 'n'
     
     if trend_a is None or trend_b is None:
-        if verbose:
-            print(f"\n❌ Error: Trend parameters not found in historical data.")
-            print("   Please run 'python main.py' to calculate trend.")
-        return None
+        derived = _derive_trend_params_from_trend_series(df)
+        if derived is not None:
+            trend_a, trend_b = derived
+            df.attrs["trend_a"] = trend_a
+            df.attrs["trend_b"] = trend_b
+            if verbose:
+                print("\n⚠ Trend parameters missing from metadata; derived fallback from trend_value history.")
+        else:
+            if verbose:
+                print(f"\n❌ Error: Trend parameters not found in historical data.")
+                print("   Please run 'python main.py' to calculate trend.")
+            return None
     
     # Calculate Bitcoin age (days since genesis block: 2009-01-03)
     # This must match the fitting implementation!
@@ -322,4 +371,3 @@ def check_realtime_status(verbose: bool = True) -> Optional[Dict]:
 if __name__ == "__main__":
     # Quick test
     check_realtime_status()
-
