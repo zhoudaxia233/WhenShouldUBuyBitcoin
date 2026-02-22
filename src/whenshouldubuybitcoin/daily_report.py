@@ -22,6 +22,7 @@ from whenshouldubuybitcoin.visualization import (
 
 EXCLUDED_CHARTS = {"Valuation Ratios", "Price Comparison"}
 DEFAULT_REPORT_PATH = Path("docs/data/daily_report.json")
+SUMMARY_TEMPLATE_VERSION = "bottoming-conclusion-v2"
 
 
 def _safe_float(value: Any) -> float | None:
@@ -43,10 +44,80 @@ def _pct(value: float | None) -> str:
     return "N/A" if value is None else f"{value:.2f}%"
 
 
+def _pct_or_nearly_unchanged_en(value: float | None) -> str:
+    if value is None:
+        return "N/A"
+    if abs(value) < 0.005:
+        return "nearly unchanged"
+    if abs(value) < 0.05:
+        return f"{value:.4f}%"
+    return f"{value:.2f}%"
+
+
+def _pct_or_nearly_unchanged_zh(value: float | None) -> str:
+    if value is None:
+        return "N/A"
+    if abs(value) < 0.005:
+        return "几乎没变"
+    if abs(value) < 0.05:
+        return f"{value:.4f}%"
+    return f"{value:.2f}%"
+
+
 def _usd(value: float | None, digits: int = 0) -> str:
     if value is None:
         return "N/A"
     return f"${value:,.{digits}f}"
+
+
+def _build_bottoming_volume_section(btc_df: pd.DataFrame) -> dict[str, Any] | None:
+    """
+    Build a structured section for the volume-based bottoming proxy signal.
+
+    This is intentionally lightweight and free-data only:
+    - panic selloff day (price drop + relative volume spike)
+    - post-panic volume contraction (recent panic + current vol < 30D avg)
+    """
+    required_cols = {"date", "close_price"}
+    if not required_cols.issubset(set(btc_df.columns)):
+        return None
+
+    # Prefer precomputed columns from metrics pipeline, but tolerate missing values.
+    latest = btc_df.sort_values("date").iloc[-1]
+
+    has_volume_context = any(
+        col in btc_df.columns
+        for col in [
+            "volume",
+            "volume_ma30",
+            "volume_ratio_30",
+            "is_panic_selloff_day",
+            "recent_panic_selloff_7d",
+            "is_post_panic_volume_contraction",
+        ]
+    )
+    if not has_volume_context:
+        return None
+
+    recent_panic_col = "recent_panic_selloff_7d"
+    return {
+        "chart": "Supplemental Bottoming Signals",
+        "metrics": {
+            "close_price": _safe_float(latest.get("close_price")),
+            "volume": _safe_float(latest.get("volume")),
+            "volume_ma30": _safe_float(latest.get("volume_ma30")),
+            "volume_ratio_30": _safe_float(latest.get("volume_ratio_30")),
+            "daily_return_pct": _safe_float(latest.get("daily_return_pct")),
+            "is_panic_selloff_day": bool(latest.get("is_panic_selloff_day")) if "is_panic_selloff_day" in btc_df.columns and pd.notna(latest.get("is_panic_selloff_day")) else None,
+            "recent_panic_selloff_7d": bool(latest.get(recent_panic_col)) if recent_panic_col in btc_df.columns and pd.notna(latest.get(recent_panic_col)) else None,
+            "is_post_panic_volume_contraction": bool(latest.get("is_post_panic_volume_contraction")) if "is_post_panic_volume_contraction" in btc_df.columns and pd.notna(latest.get("is_post_panic_volume_contraction")) else None,
+            "rsi14": _safe_float(latest.get("rsi14")),
+            "rsi14w": _safe_float(latest.get("rsi14w")),
+            "is_rsi_daily_oversold": bool(latest.get("is_rsi_daily_oversold")) if "is_rsi_daily_oversold" in btc_df.columns and pd.notna(latest.get("is_rsi_daily_oversold")) else None,
+            "is_rsi_weekly_oversold_proxy": bool(latest.get("is_rsi_weekly_oversold_proxy")) if "is_rsi_weekly_oversold_proxy" in btc_df.columns and pd.notna(latest.get("is_rsi_weekly_oversold_proxy")) else None,
+            "is_rsi_bottoming_signal": bool(latest.get("is_rsi_bottoming_signal")) if "is_rsi_bottoming_signal" in btc_df.columns and pd.notna(latest.get("is_rsi_bottoming_signal")) else None,
+        },
+    }
 
 
 def _calc_macro_score_df(
@@ -90,6 +161,7 @@ def build_report_payload(
     usdjpy_df: pd.DataFrame | None = None,
     yield_df: pd.DataFrame | None = None,
     oi_df: pd.DataFrame | None = None,
+    free_signal_snapshot: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Build structured metrics for daily report sections."""
 
@@ -133,6 +205,29 @@ def build_report_payload(
                 },
             }
         )
+
+    bottoming_volume_section = _build_bottoming_volume_section(btc_df)
+    free_bottoming_metrics = None
+    if isinstance(free_signal_snapshot, dict) and free_signal_snapshot:
+        free_bottoming_metrics = {
+            "fear_greed_value": _safe_float(free_signal_snapshot.get("fear_greed_value")),
+            "fear_greed_classification": free_signal_snapshot.get("fear_greed_classification"),
+            "fear_panic_score": _safe_float(free_signal_snapshot.get("fear_panic_score")),
+            "is_extreme_fear_proxy": (
+                bool(free_signal_snapshot.get("is_extreme_fear_proxy"))
+                if free_signal_snapshot.get("is_extreme_fear_proxy") is not None
+                else None
+            ),
+            "hashrate_30d_change_pct": _safe_float(free_signal_snapshot.get("hashrate_30d_change_pct")),
+            "miner_stress_proxy": free_signal_snapshot.get("miner_stress_proxy"),
+        }
+
+    if bottoming_volume_section is not None or free_bottoming_metrics:
+        if bottoming_volume_section is None:
+            bottoming_volume_section = {"chart": "Supplemental Bottoming Signals", "metrics": {}}
+        if free_bottoming_metrics:
+            bottoming_volume_section["metrics"].update(free_bottoming_metrics)
+        payload["sections"].append(bottoming_volume_section)
 
     if macro_df is not None and not macro_df.empty:
         # Net Liquidity
@@ -382,6 +477,99 @@ def _deterministic_en_summary(section: dict[str, Any]) -> str:
             f" The latest cross dates are golden: {m.get('last_golden_cross') or 'N/A'}, death: {m.get('last_death_cross') or 'N/A'}."
         )
 
+    if chart in {
+        "Bottoming Volume Signal",
+        "Bottoming Checklist (Price/Volume/RSI)",
+        "Supplemental Bottoming Signals",
+    }:
+        ratio = _safe_float(m.get("volume_ratio_30"))
+        ret = _safe_float(m.get("daily_return_pct"))
+        contraction = m.get("is_post_panic_volume_contraction")
+        recent_panic = m.get("recent_panic_selloff_7d")
+        rsi14 = _safe_float(m.get("rsi14"))
+        rsi14w = _safe_float(m.get("rsi14w"))
+        fng = _safe_float(m.get("fear_greed_value"))
+        panic_score = _safe_float(m.get("fear_panic_score"))
+        hashrate_chg = _safe_float(m.get("hashrate_30d_change_pct"))
+        miner_proxy = str(m.get("miner_stress_proxy") or "unknown")
+        has_price_volume_block = ratio is not None or ret is not None or rsi14 is not None or rsi14w is not None
+        has_sentiment_block = fng is not None or hashrate_chg is not None
+        if not has_price_volume_block and not has_sentiment_block:
+            return "Supplemental bottoming signals are unavailable in the current daily snapshot."
+        rsi_bottoming = m.get("is_rsi_bottoming_signal")
+        if rsi_bottoming is None and rsi14 is not None and rsi14w is not None:
+            rsi_bottoming = bool(rsi14 < 30 and rsi14w <= 35)
+        extreme_fear = m.get("is_extreme_fear_proxy")
+        miner_stress_hit = None
+        if hashrate_chg is not None:
+            miner_stress_hit = bool(hashrate_chg <= -5.0)
+        elif m.get("miner_stress_proxy") is not None:
+            miner_stress_hit = str(m.get("miner_stress_proxy")).lower() in {"elevated", "high"}
+        checks = [
+            ("post-panic volume contraction", contraction),
+            ("RSI oversold alignment", rsi_bottoming),
+            ("extreme fear", extreme_fear),
+            ("miner stress proxy", miner_stress_hit),
+        ]
+        available_checks = [name for name, val in checks if val is not None]
+        hit_checks = [name for name, val in checks if val is True]
+        hits = len(hit_checks)
+        available_count = len(available_checks)
+        if hits >= 3:
+            conclusion = "Supplemental bottoming signals are broadly supportive."
+        elif hits == 2:
+            conclusion = "Supplemental bottoming signals are mixed but leaning supportive."
+        elif hits == 1:
+            conclusion = "Supplemental bottoming signals show only limited confirmation."
+        else:
+            conclusion = "Supplemental bottoming signals do not show a clear confirmation yet."
+        rsi_text = (
+            f" Daily RSI(14) is {rsi14:.1f} and weekly RSI proxy is {rsi14w:.1f}."
+            if rsi14 is not None and rsi14w is not None
+            else f" Daily RSI(14) is {rsi14:.1f}."
+            if rsi14 is not None
+            else ""
+        )
+        parts: list[str] = []
+        parts.append(
+            f"{conclusion} ({hits}/{available_count} checks positive)"
+            if available_count > 0
+            else conclusion
+        )
+        if ratio is not None or ret is not None:
+            ratio_text = "N/A" if ratio is None else f"{ratio:.2f}x"
+            parts.append(
+                f"Volume is {ratio_text} vs the 30-day average and the latest daily return is {_pct_or_nearly_unchanged_en(ret)}."
+            )
+            parts.append(f"Recent panic selloff (7D lookback): {'yes' if recent_panic else 'no'}.")
+            if contraction is not None:
+                parts.append(f"Post-panic volume contraction: {'active' if contraction else 'inactive'}.")
+        if rsi_text:
+            parts.append(rsi_text.strip())
+        if has_sentiment_block:
+            fng_text = "N/A" if fng is None else f"{fng:.0f}"
+            panic_text = "N/A" if panic_score is None else f"{panic_score:.0f}/100"
+            parts.append(
+                f"Fear & Greed is {fng_text} ({m.get('fear_greed_classification') or 'N/A'}), panic score proxy {panic_text}."
+            )
+            parts.append(
+                f"Hashrate 30d change is {_pct(hashrate_chg)} and miner stress proxy is {miner_proxy}."
+            )
+        return " ".join(p for p in parts if p).strip()
+
+    if chart in {"Free Bottoming Signals", "Sentiment & Miner Proxies (Free)"}:
+        fng = _safe_float(m.get("fear_greed_value"))
+        panic_score = _safe_float(m.get("fear_panic_score"))
+        hashrate_chg = _safe_float(m.get("hashrate_30d_change_pct"))
+        if fng is None and hashrate_chg is None:
+            return "Free bottoming signal proxies are unavailable in the current daily snapshot."
+        miner_proxy = str(m.get("miner_stress_proxy") or "unknown")
+        return (
+            f"Fear & Greed is {fng:.0f} ({m.get('fear_greed_classification') or 'N/A'}), with a panic score proxy of {panic_score:.0f}/100 (higher = more fear)."
+            f" Hashrate 30d change is {_pct(hashrate_chg)} and miner stress proxy is {miner_proxy}."
+            " These metrics are used to read crowd sentiment and miner pressure."
+        )
+
     return "No usable interpretation is available for this chart today."
 
 
@@ -460,6 +648,94 @@ def _deterministic_zh_summary(section: dict[str, Any]) -> str:
             f"50日与200日均线价差为{spread:,.2f}，中期结构仍偏{regime_cn}。"
             f"当前50日均线{_usd(_safe_float(m.get('ma_50')), 2)}，200日均线{_usd(_safe_float(m.get('ma_200')), 2)}。"
             f"最近一次金叉为{m.get('last_golden_cross') or 'N/A'}，最近一次死叉为{m.get('last_death_cross') or 'N/A'}。"
+        )
+
+    if chart in {
+        "Bottoming Volume Signal",
+        "Bottoming Checklist (Price/Volume/RSI)",
+        "Supplemental Bottoming Signals",
+    }:
+        ratio = _safe_float(m.get("volume_ratio_30"))
+        ret = _safe_float(m.get("daily_return_pct"))
+        rsi14 = _safe_float(m.get("rsi14"))
+        rsi14w = _safe_float(m.get("rsi14w"))
+        fng = _safe_float(m.get("fear_greed_value"))
+        panic_score = _safe_float(m.get("fear_panic_score"))
+        hashrate_chg = _safe_float(m.get("hashrate_30d_change_pct"))
+        has_price_volume_block = ratio is not None or ret is not None or rsi14 is not None or rsi14w is not None
+        has_sentiment_block = fng is not None or hashrate_chg is not None
+        if not has_price_volume_block and not has_sentiment_block:
+            return "补充抄底信号在当前日报快照中不可用。"
+        recent_panic = bool(m.get("recent_panic_selloff_7d")) if m.get("recent_panic_selloff_7d") is not None else None
+        contraction = bool(m.get("is_post_panic_volume_contraction")) if m.get("is_post_panic_volume_contraction") is not None else None
+        rsi_bottoming = m.get("is_rsi_bottoming_signal")
+        if rsi_bottoming is None and rsi14 is not None and rsi14w is not None:
+            rsi_bottoming = bool(rsi14 < 30 and rsi14w <= 35)
+        extreme_fear = m.get("is_extreme_fear_proxy")
+        miner_stress_hit = None
+        if hashrate_chg is not None:
+            miner_stress_hit = bool(hashrate_chg <= -5.0)
+        elif m.get("miner_stress_proxy") is not None:
+            miner_stress_hit = str(m.get("miner_stress_proxy")).lower() in {"elevated", "high"}
+        checks = [
+            contraction if contraction is not None else None,
+            rsi_bottoming if rsi_bottoming is not None else None,
+            extreme_fear if extreme_fear is not None else None,
+            miner_stress_hit if miner_stress_hit is not None else None,
+        ]
+        available_count = sum(v is not None for v in checks)
+        hits = sum(v is True for v in checks)
+        if hits >= 3:
+            conclusion = "补充抄底信号整体偏积极。"
+        elif hits == 2:
+            conclusion = "补充抄底信号偏积极，但仍有分歧。"
+        elif hits == 1:
+            conclusion = "补充抄底信号只有少量确认。"
+        else:
+            conclusion = "补充抄底信号暂未形成明确确认。"
+        recent_panic_text = "是" if recent_panic else "否" if recent_panic is not None else "未知"
+        contraction_text = "已触发" if contraction else "未触发" if contraction is not None else "未知"
+        ratio_text = "N/A" if ratio is None else f"{ratio:.2f}x"
+        parts: list[str] = []
+        parts.append(
+            f"{conclusion}（{hits}/{available_count}项为正）" if available_count > 0 else conclusion
+        )
+        if ratio is not None or ret is not None:
+            parts.append(
+                f"当前成交量约为30日均量的{ratio_text}，最新日涨跌幅为{_pct_or_nearly_unchanged_zh(ret)}。"
+            )
+            parts.append(
+                f"近7日是否出现恐慌抛售日：{recent_panic_text}；“恐慌后缩量”代理信号：{contraction_text}。"
+            )
+        if rsi14 is not None and rsi14w is not None:
+            parts.append(f"日线RSI(14)约为{rsi14:.1f}，周线RSI代理约为{rsi14w:.1f}（由日线聚合估算）。")
+        elif rsi14 is not None:
+            parts.append(f"日线RSI(14)约为{rsi14:.1f}。")
+        if has_sentiment_block:
+            miner_proxy = str(m.get("miner_stress_proxy") or "unknown")
+            fng_text = "N/A" if fng is None else f"{fng:.0f}"
+            panic_text = "N/A" if panic_score is None else f"{panic_score:.0f}/100"
+            hashrate_text = _pct(hashrate_chg)
+            parts.append(
+                f"恐慌贪婪指数为{fng_text}（{m.get('fear_greed_classification') or 'N/A'}），情绪恐慌代理分数约为{panic_text}。"
+            )
+            parts.append(f"全网算力30天变化为{hashrate_text}，矿工压力代理状态为{miner_proxy}。")
+        return "".join(parts)
+
+    if chart in {"Free Bottoming Signals", "Sentiment & Miner Proxies (Free)"}:
+        fng = _safe_float(m.get("fear_greed_value"))
+        panic_score = _safe_float(m.get("fear_panic_score"))
+        hashrate_chg = _safe_float(m.get("hashrate_30d_change_pct"))
+        if fng is None and hashrate_chg is None:
+            return "免费抄底代理信号在当前日报快照中不可用。"
+        miner_proxy = str(m.get("miner_stress_proxy") or "unknown")
+        fng_text = "N/A" if fng is None else f"{fng:.0f}"
+        panic_text = "N/A" if panic_score is None else f"{panic_score:.0f}/100"
+        hashrate_text = _pct(hashrate_chg)
+        return (
+            f"恐慌贪婪指数为{fng_text}（{m.get('fear_greed_classification') or 'N/A'}），情绪恐慌代理分数约为{panic_text}（越高代表市场越恐慌）。"
+            f"全网算力30天变化为{hashrate_text}，矿工压力代理状态为{miner_proxy}。"
+            "这组指标主要用来观察市场情绪与矿工压力。"
         )
 
     return "今日该图表暂无可用解读。"
@@ -565,6 +841,7 @@ def _call_llm_summary(payload: dict[str, Any], language: str) -> dict[str, Any] 
 
 def _summary_source_payload(payload: dict[str, Any]) -> dict[str, Any]:
     return {
+        "summary_template_version": SUMMARY_TEMPLATE_VERSION,
         "report_date": payload.get("report_date"),
         "excluded_charts": payload.get("excluded_charts", []),
         "sections": payload.get("sections", []),
@@ -687,6 +964,9 @@ def enrich_with_human_summary(payload: dict[str, Any], *, source_signature: str 
         # Normalize punctuation artifacts.
         text = re.sub(r"\s+", " ", text).strip()
         text = re.sub(r"\s+([,.!?])", r"\1", text)
+        # Preserve decimal numbers when sentence post-processing inserts a space
+        # after a period (e.g. "0. 36" -> "0.36").
+        text = re.sub(r"(\d)\.\s+(\d)", r"\1.\2", text)
 
         return text
 
@@ -749,6 +1029,7 @@ def generate_daily_report(
     usdjpy_df: pd.DataFrame | None = None,
     yield_df: pd.DataFrame | None = None,
     oi_df: pd.DataFrame | None = None,
+    free_signal_snapshot: dict[str, Any] | None = None,
     output_path: Path = DEFAULT_REPORT_PATH,
 ) -> dict[str, Any]:
     """Build, summarize, and persist daily report payload."""
@@ -758,6 +1039,7 @@ def generate_daily_report(
         usdjpy_df=usdjpy_df,
         yield_df=yield_df,
         oi_df=oi_df,
+        free_signal_snapshot=free_signal_snapshot,
     )
     source_signature = _summary_source_signature(payload)
     payload["summary_source_signature"] = source_signature

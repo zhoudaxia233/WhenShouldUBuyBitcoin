@@ -74,6 +74,25 @@ async function loadMetadata() {
     }
 }
 
+/**
+ * Load daily report snapshot (optional) for free proxy signals (F&G / hashrate).
+ * This keeps the realtime checker browser-only and avoids direct third-party API calls.
+ */
+async function loadDailyReportSnapshot() {
+    try {
+        const response = await fetch(`data/daily_report.json?t=${Date.now()}`, {
+            cache: "no-store",
+        });
+        if (!response.ok) {
+            throw new Error(`daily_report HTTP ${response.status}`);
+        }
+        return await response.json();
+    } catch (error) {
+        console.warn("Failed to load daily_report snapshot for free signals:", error);
+        return null;
+    }
+}
+
 // ============================================================================
 // REAL-TIME PRICE APIs
 // ============================================================================
@@ -289,6 +308,212 @@ function calculateDistance(ratio) {
             direction: "already_below",
         };
     }
+}
+
+/**
+ * Build a free-data volume-based bottoming proxy from CSV rows.
+ * Uses daily close/volume only (no paid on-chain APIs).
+ */
+function calculateBottomingVolumeProxy(csvData) {
+    if (!Array.isArray(csvData) || csvData.length < 35) {
+        return { available: false };
+    }
+
+    const rows = csvData.map((row) => ({
+        date: row.date,
+        close: parseFloat(row.close_price),
+        volume: parseFloat(row.volume),
+    }));
+
+    if (rows.some((r) => !Number.isFinite(r.volume))) {
+        return { available: false };
+    }
+
+    const volumeWindow = 30;
+    const panicLookback = 7;
+    const panicDropPctThreshold = -5.0;
+    const panicVolumeSpikeRatio = 1.5;
+
+    const volumeSeries = rows.map((r) => r.volume);
+    const closeSeries = rows.map((r) => r.close);
+
+    const volumeMA = new Array(rows.length).fill(null);
+    const volumeRatio = new Array(rows.length).fill(null);
+    const dailyReturnPct = new Array(rows.length).fill(null);
+    const panicFlags = new Array(rows.length).fill(false);
+    const recentPanicFlags = new Array(rows.length).fill(false);
+
+    for (let i = 0; i < rows.length; i++) {
+        if (i >= volumeWindow - 1) {
+            const slice = volumeSeries.slice(i - volumeWindow + 1, i + 1);
+            const avg = slice.reduce((a, b) => a + b, 0) / slice.length;
+            volumeMA[i] = avg;
+            volumeRatio[i] = avg > 0 ? volumeSeries[i] / avg : null;
+        }
+        if (i > 0 && closeSeries[i - 1] > 0) {
+            dailyReturnPct[i] = ((closeSeries[i] - closeSeries[i - 1]) / closeSeries[i - 1]) * 100;
+        }
+        if (
+            dailyReturnPct[i] !== null &&
+            volumeRatio[i] !== null &&
+            dailyReturnPct[i] <= panicDropPctThreshold &&
+            volumeRatio[i] >= panicVolumeSpikeRatio
+        ) {
+            panicFlags[i] = true;
+        }
+    }
+
+    for (let i = 0; i < rows.length; i++) {
+        const start = Math.max(0, i - panicLookback);
+        // Exclude current day to preserve "panic first, contraction later"
+        const priorSlice = panicFlags.slice(start, i);
+        recentPanicFlags[i] = priorSlice.some(Boolean);
+    }
+
+    const idx = rows.length - 1;
+    const isPostPanicVolumeContraction =
+        recentPanicFlags[idx] && volumeRatio[idx] !== null && volumeRatio[idx] < 1.0;
+
+    return {
+        available: true,
+        asOfDate: rows[idx].date || null,
+        volume: rows[idx].volume,
+        volumeMA30: volumeMA[idx],
+        volumeRatio30: volumeRatio[idx],
+        dailyReturnPct: dailyReturnPct[idx],
+        isPanicSelloffDay: panicFlags[idx],
+        recentPanicSelloff7d: recentPanicFlags[idx],
+        isPostPanicVolumeContraction,
+    };
+}
+
+function calculateRsiSeries(values, period = 14) {
+    if (!Array.isArray(values) || values.length < period + 1) {
+        return new Array(Array.isArray(values) ? values.length : 0).fill(null);
+    }
+    const out = new Array(values.length).fill(null);
+    let gains = 0;
+    let losses = 0;
+
+    for (let i = 1; i <= period; i++) {
+        const delta = values[i] - values[i - 1];
+        if (!Number.isFinite(delta)) return out;
+        if (delta > 0) gains += delta;
+        else losses -= delta;
+    }
+
+    let avgGain = gains / period;
+    let avgLoss = losses / period;
+    out[period] = avgLoss === 0 ? 100 : 100 - 100 / (1 + avgGain / avgLoss);
+
+    for (let i = period + 1; i < values.length; i++) {
+        const delta = values[i] - values[i - 1];
+        const gain = delta > 0 ? delta : 0;
+        const loss = delta < 0 ? -delta : 0;
+        avgGain = (avgGain * (period - 1) + gain) / period;
+        avgLoss = (avgLoss * (period - 1) + loss) / period;
+
+        if (avgLoss === 0 && avgGain === 0) out[i] = 50;
+        else if (avgLoss === 0) out[i] = 100;
+        else out[i] = 100 - 100 / (1 + avgGain / avgLoss);
+    }
+    return out;
+}
+
+function calculateRsiContext(csvData) {
+    if (!Array.isArray(csvData) || csvData.length < 30) {
+        return { available: false };
+    }
+    const rows = csvData
+        .map((row) => ({
+            date: row.date,
+            close: parseFloat(row.close_price),
+        }))
+        .filter((r) => Number.isFinite(r.close) && r.date);
+
+    if (rows.length < 30) return { available: false };
+
+    const closes = rows.map((r) => r.close);
+    const dailyRsi = calculateRsiSeries(closes, 14);
+    const latestDailyRsi = dailyRsi[dailyRsi.length - 1];
+
+    // Weekly proxy: take last close per ISO-like week using YYYY-WW key via Date.
+    const weeklyRows = [];
+    let lastWeekKey = null;
+    for (const row of rows) {
+        const d = new Date(row.date);
+        if (Number.isNaN(d.getTime())) continue;
+        const weekKey = `${d.getUTCFullYear()}-${Math.floor((d.getUTCDate() - 1) / 7)}-${d.getUTCMonth()}`;
+        if (lastWeekKey === weekKey && weeklyRows.length > 0) {
+            weeklyRows[weeklyRows.length - 1] = row;
+        } else {
+            weeklyRows.push(row);
+            lastWeekKey = weekKey;
+        }
+    }
+    const weeklyCloses = weeklyRows.map((r) => r.close);
+    const weeklyRsiSeries = calculateRsiSeries(weeklyCloses, 14);
+    const latestWeeklyRsi = weeklyRsiSeries[weeklyRsiSeries.length - 1];
+
+    return {
+        available: Number.isFinite(latestDailyRsi) || Number.isFinite(latestWeeklyRsi),
+        rsi14: Number.isFinite(latestDailyRsi) ? latestDailyRsi : null,
+        rsi14w: Number.isFinite(latestWeeklyRsi) ? latestWeeklyRsi : null,
+        isRsiDailyOversold: Number.isFinite(latestDailyRsi) ? latestDailyRsi < 30 : null,
+        isRsiWeeklyOversoldProxy: Number.isFinite(latestWeeklyRsi) ? latestWeeklyRsi <= 35 : null,
+        isRsiBottomingSignal:
+            Number.isFinite(latestDailyRsi) && Number.isFinite(latestWeeklyRsi)
+                ? latestDailyRsi < 30 && latestWeeklyRsi <= 35
+                : null,
+    };
+}
+
+function extractFreeBottomingSignalsFromDailyReport(report) {
+    if (!report || !Array.isArray(report.sections)) {
+        return { available: false };
+    }
+    const section = report.sections.find(
+        (s) =>
+            s &&
+            (s.chart === "Supplemental Bottoming Signals" ||
+                s.chart === "Free Bottoming Signals" ||
+                s.chart === "Sentiment & Miner Proxies (Free)") &&
+            s.metrics
+    );
+    if (!section) return { available: false };
+    const m = section.metrics || {};
+    const fearGreedValue = parseFloat(m.fear_greed_value);
+    const fearPanicScore = parseFloat(m.fear_panic_score);
+    const hashrate30dChangePct = parseFloat(m.hashrate_30d_change_pct);
+    return {
+        available: true,
+        fearGreedValue: Number.isFinite(fearGreedValue) ? fearGreedValue : null,
+        fearGreedClassification:
+            typeof m.fear_greed_classification === "string"
+                ? m.fear_greed_classification
+                : null,
+        fearPanicScore: Number.isFinite(fearPanicScore) ? fearPanicScore : null,
+        isExtremeFearProxy:
+            typeof m.is_extreme_fear_proxy === "boolean"
+                ? m.is_extreme_fear_proxy
+                : null,
+        hashrate30dChangePct: Number.isFinite(hashrate30dChangePct)
+            ? hashrate30dChangePct
+            : null,
+        minerStressProxy:
+            typeof m.miner_stress_proxy === "string" ? m.miner_stress_proxy : null,
+    };
+}
+
+function formatPctCompact(value) {
+    if (!Number.isFinite(value)) return "N/A";
+    if (Math.abs(value) < 0.005) {
+        return "Nearly unchanged";
+    }
+    if (Math.abs(value) < 0.05) {
+        return `${value.toFixed(4)}%`;
+    }
+    return `${value.toFixed(2)}%`;
 }
 
 /**
@@ -508,8 +733,11 @@ async function checkRealtimeStatus() {
 
         // 1. Load historical data
         console.log("Loading historical data...");
-        const csvData = await loadCSVData();
-        const metadata = await loadMetadata();
+        const [csvData, metadata, dailyReportSnapshot] = await Promise.all([
+            loadCSVData(),
+            loadMetadata(),
+            loadDailyReportSnapshot(),
+        ]);
 
         // Extract close prices from CSV
         const historicalPrices = csvData.map((row) =>
@@ -557,6 +785,11 @@ async function checkRealtimeStatus() {
             csvData,
             ahr999
         );
+        const bottomingVolumeProxy = calculateBottomingVolumeProxy(csvData);
+        const rsiContext = calculateRsiContext(csvData);
+        const freeBottomingSignals = extractFreeBottomingSignalsFromDailyReport(
+            dailyReportSnapshot
+        );
 
         // 7. Format timestamps
         const timestamps = formatTimestamps(timestamp);
@@ -577,6 +810,9 @@ async function checkRealtimeStatus() {
             ahr999Zone,
             ahr999Percentile,
             ahr999PercentileBelowOne,
+            bottomingVolumeProxy,
+            rsiContext,
+            freeBottomingSignals,
             lastDataDate: csvData[csvData.length - 1].date,
         });
     } catch (error) {
@@ -752,6 +988,83 @@ function displayResults(data) {
                     < 0.45 = Bottom | < 1.2 = DCA | ≥ 1.2 = Watch
                 </div>
             </div>
+
+            ${
+                data.bottomingVolumeProxy && data.bottomingVolumeProxy.available
+                    ? `
+            <div class="metric-card" style="grid-column: span 2;">
+                <h3>${data.bottomingVolumeProxy.isPostPanicVolumeContraction ? "✓" : "•"} Bottoming Checklist</h3>
+                <div class="metric-detail">
+                    <strong>Status:</strong> ${
+                        data.bottomingVolumeProxy.isPostPanicVolumeContraction
+                            ? "Post-panic volume contraction active"
+                            : "No active post-panic contraction"
+                    }
+                </div>
+                <div class="metric-detail" style="margin-top: 8px;">
+                    Vol/30D MA: ${
+                        Number.isFinite(data.bottomingVolumeProxy.volumeRatio30)
+                            ? data.bottomingVolumeProxy.volumeRatio30.toFixed(2) + "x"
+                            : "N/A"
+                    }
+                    · Daily Return (close/close): ${formatPctCompact(data.bottomingVolumeProxy.dailyReturnPct)}
+                    · Recent Panic (7D): ${data.bottomingVolumeProxy.recentPanicSelloff7d ? "Yes" : "No"}
+                </div>
+                <div class="metric-detail" style="margin-top: 10px;">
+                    <strong>Checklist (combined):</strong>
+                    <br>• DCA condition (${data.ratioDCA.toFixed(3)}): ${data.ratioDCA < 1.0 ? "YES" : "NO"}
+                    <br>• Trend condition (${data.ratioTrend.toFixed(3)}): ${data.ratioTrend < 1.0 ? "YES" : "NO"}
+                    <br>• AHR999 < 1.0 (${data.ahr999.toFixed(3)}): ${data.ahr999 < 1.0 ? "YES" : "NO"}
+                    ${
+                        data.rsiContext && data.rsiContext.available
+                            ? `<br>• RSI oversold (daily<30 & weekly proxy<=35): ${data.rsiContext.isRsiBottomingSignal ? "YES" : "NO"} (RSI14:${Number.isFinite(data.rsiContext.rsi14) ? data.rsiContext.rsi14.toFixed(1) : "N/A"}, RSI14W proxy:${Number.isFinite(data.rsiContext.rsi14w) ? data.rsiContext.rsi14w.toFixed(1) : "N/A"})`
+                            : ""
+                    }
+                    <br>• Post-panic volume contraction: ${data.bottomingVolumeProxy.isPostPanicVolumeContraction ? "YES" : "NO"}
+                    ${
+                        data.freeBottomingSignals && data.freeBottomingSignals.available
+                            ? `<br>• F&G extreme fear proxy: ${
+                                  data.freeBottomingSignals.isExtremeFearProxy ? "YES" : "NO"
+                              } (F&G: ${
+                                  Number.isFinite(data.freeBottomingSignals.fearGreedValue)
+                                      ? data.freeBottomingSignals.fearGreedValue.toFixed(0)
+                                      : "N/A"
+                              })`
+                            : ""
+                    }
+                    ${
+                        data.freeBottomingSignals && data.freeBottomingSignals.available
+                            ? `<br>• Miner stress proxy (hashrate 30d): ${
+                                  Number.isFinite(data.freeBottomingSignals.hashrate30dChangePct) &&
+                                  data.freeBottomingSignals.hashrate30dChangePct <= -5
+                                      ? "YES"
+                                      : "NO"
+                              } (${
+                                  Number.isFinite(data.freeBottomingSignals.hashrate30dChangePct)
+                                      ? data.freeBottomingSignals.hashrate30dChangePct.toFixed(1) + "%"
+                                      : "N/A"
+                              })`
+                            : ""
+                    }
+                </div>
+                <div class="metric-detail" style="margin-top: 8px; font-size: 12px; color: #86868b;">
+                    How to read: Vol/30D MA &lt; 1 = below recent average volume; Recent Panic (7D) = panic selloff detected in the last 7 days; RSI14W proxy = weekly RSI estimated from daily closes.
+                </div>
+                ${
+                    data.freeBottomingSignals && data.freeBottomingSignals.available
+                        ? `<div class="metric-detail" style="margin-top: 8px; font-size: 12px; color: #86868b;">
+                    F&G = crowd sentiment (lower = more fear). Current: ${
+                        data.freeBottomingSignals.fearGreedClassification || "N/A"
+                    } · Miner stress proxy = hashrate trend proxy. Current: ${
+                        data.freeBottomingSignals.minerStressProxy || "N/A"
+                    }
+                </div>`
+                        : ""
+                }
+            </div>
+            `
+                    : ""
+            }
         </div>
 
         ${

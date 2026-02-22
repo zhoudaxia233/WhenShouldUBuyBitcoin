@@ -6,6 +6,8 @@ from sqlmodel import Session, select
 from dca_service.models import DCAStrategy, DCATransaction
 from dca_service.services.metrics_provider import (
     get_latest_metrics,
+    get_latest_bottoming_volume_signal,
+    get_latest_macro_preview_snapshot,
     calculate_ahr999_percentile_thresholds,
     get_drawdown_percentile_snapshot,
     get_drawdown_context,
@@ -40,6 +42,7 @@ class DCADecision(BaseModel):
     drawdown_hist_peak_price_usd: Optional[float] = None
     drawdown_hist_price_usd: Optional[float] = None
     drawdown_context: Optional[Dict[str, Any]] = None
+    bottoming_signal: Optional[Dict[str, Any]] = None
 
 
 def _check_monthly_inflow(session: Session, strategy: DCAStrategy, now: datetime, month_spent: float):
@@ -149,6 +152,7 @@ def calculate_dca_decision(session: Session) -> DCADecision:
         "drawdown_hist_peak_price_usd": None,
         "drawdown_hist_price_usd": None,
         "drawdown_context": None,
+        "bottoming_signal": None,
     }
 
     if not strategy:
@@ -191,6 +195,16 @@ def calculate_dca_decision(session: Session) -> DCADecision:
     drawdown_context = get_drawdown_context(price)
     source_backend = metrics.get("source", "unknown")
     source_label = metrics.get("source_label", "Unknown")
+    bottoming_signal = get_latest_bottoming_volume_signal()
+    macro_preview = get_latest_macro_preview_snapshot()
+    if macro_preview:
+        if bottoming_signal is None:
+            bottoming_signal = {
+                "available": True,
+                "as_of_date": macro_preview.get("report_date"),
+                "source": "daily_report",
+            }
+        bottoming_signal["macro_snapshot"] = macro_preview
 
     # Keep strategy math pinned to provider metrics (peak180 above).
     # UI display may use richer multi-window context.
@@ -604,6 +618,7 @@ def calculate_dca_decision(session: Session) -> DCADecision:
                 "drawdown_hist_peak_price_usd": display_drawdown_snapshot["historical_peak"] if display_drawdown_snapshot else None,
                 "drawdown_hist_price_usd": display_drawdown_snapshot["historical_price"] if display_drawdown_snapshot else None,
                 "drawdown_context": drawdown_context,
+                "bottoming_signal": bottoming_signal,
             }
         )
         return DCADecision(**decision_data)
@@ -663,6 +678,7 @@ def calculate_dca_decision(session: Session) -> DCADecision:
                 "drawdown_hist_peak_price_usd": display_drawdown_snapshot["historical_peak"] if display_drawdown_snapshot else None,
                 "drawdown_hist_price_usd": display_drawdown_snapshot["historical_price"] if display_drawdown_snapshot else None,
                 "drawdown_context": drawdown_context,
+                "bottoming_signal": bottoming_signal,
             })
             return DCADecision(**decision_data)
         else:
@@ -704,6 +720,7 @@ def calculate_dca_decision(session: Session) -> DCADecision:
                 "drawdown_hist_peak_price_usd": display_drawdown_snapshot["historical_peak"] if display_drawdown_snapshot else None,
                 "drawdown_hist_price_usd": display_drawdown_snapshot["historical_price"] if display_drawdown_snapshot else None,
                 "drawdown_context": drawdown_context,
+                "bottoming_signal": bottoming_signal,
             }
         )
         return DCADecision(**decision_data)
@@ -732,4 +749,5 @@ def calculate_dca_decision(session: Session) -> DCADecision:
         drawdown_hist_peak_price_usd=display_drawdown_snapshot["historical_peak"] if display_drawdown_snapshot else None,
         drawdown_hist_price_usd=display_drawdown_snapshot["historical_price"] if display_drawdown_snapshot else None,
         drawdown_context=drawdown_context,
+        bottoming_signal=bottoming_signal,
     )

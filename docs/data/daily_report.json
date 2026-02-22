@@ -1,6 +1,6 @@
 {
-  "report_date": "2026-02-08",
-  "generated_at": "2026-02-09T21:36:24Z",
+  "report_date": "2026-02-21",
+  "generated_at": "2026-02-22T18:13:40Z",
   "excluded_charts": [
     "Price Comparison",
     "Valuation Ratios"
@@ -9,157 +9,201 @@
     {
       "chart": "MA Cross Analysis",
       "metrics": {
-        "close_price": 70264.7265625,
-        "ma_50": 86937.762265625,
-        "ma_200": 102304.66841796874,
-        "ma_spread": -15366.906152343741,
+        "close_price": 68003.765625,
+        "ma_50": 81761.881171875,
+        "ma_200": 99170.45771484375,
+        "ma_spread": -17408.57654296876,
         "regime": "bearish",
         "last_golden_cross": "2025-05-22",
         "last_death_cross": "2025-11-16"
       }
     },
     {
+      "chart": "Supplemental Bottoming Signals",
+      "metrics": {
+        "close_price": 68003.765625,
+        "volume": 18357635642.0,
+        "volume_ma30": 50998967360.46667,
+        "volume_ratio_30": 0.3599609284683371,
+        "daily_return_pct": -0.002435467576455963,
+        "is_panic_selloff_day": false,
+        "recent_panic_selloff_7d": false,
+        "is_post_panic_volume_contraction": false,
+        "rsi14": 37.44542182175094,
+        "rsi14w": 28.379359865630406,
+        "is_rsi_daily_oversold": false,
+        "is_rsi_weekly_oversold_proxy": true,
+        "is_rsi_bottoming_signal": false,
+        "fear_greed_value": 9.0,
+        "fear_greed_classification": "Extreme Fear",
+        "fear_panic_score": 91.0,
+        "is_extreme_fear_proxy": true,
+        "hashrate_30d_change_pct": -13.361840199769679,
+        "miner_stress_proxy": "elevated"
+      }
+    },
+    {
       "chart": "Net Liquidity",
       "metrics": {
-        "net_liquidity_bil": 5694.722,
-        "net_liquidity_90d_delta": 75.78300000000036,
-        "walcl_bil": 6605.909,
-        "tga_bil": 908.773,
-        "rrp_bil": 3.111,
-        "btc_price": 70264.7265625
+        "net_liquidity_bil": 5699.812000000001,
+        "net_liquidity_90d_delta": 87.58400000000074,
+        "walcl_bil": 6613.395,
+        "tga_bil": 912.727,
+        "rrp_bil": 0.496,
+        "btc_price": 68003.765625
       }
     },
     {
       "chart": "Funding & Credit Stress",
       "metrics": {
-        "sofr": 3.64,
-        "move": 63.619998931884766,
-        "hy_oas": 2.87,
+        "sofr": 3.67,
+        "move": 64.2699966430664,
+        "hy_oas": 2.88,
         "stress_flags": 0,
-        "btc_price": 70264.7265625
+        "btc_price": 68003.765625
       }
     },
     {
       "chart": "Macro Risk Score",
       "metrics": {
-        "score": 31.46847023527738,
+        "score": 31.409634481581268,
         "regime": "neutral",
-        "high_risk_hit_rate": 47.23032069970846,
+        "high_risk_hit_rate": 47.093023255813954,
         "fwd_30d_return": null,
-        "btc_price": 70264.7265625
+        "btc_price": 68003.765625
       }
     },
     {
       "chart": "USD/JPY Risk Map",
       "metrics": {
-        "usdjpy": 156.78399658203125,
-        "spread": 2.825000114440918,
-        "us_2y": 3.755000114440918,
-        "jp_2y": 0.93,
-        "usdjpy_30d_change_pct": 0.3893054816001662,
-        "spread_30d_change_pct_pts": 0.03800010681152344,
-        "risk_level": "MODERATE RISK",
-        "risk_description": "Moderate Risk - USD/JPY 156.78, Spread 2.83%"
+        "usdjpy": 155.16000366210938,
+        "spread": 2.205,
+        "us_2y": 3.47,
+        "jp_2y": 1.265,
+        "usdjpy_30d_change_pct": -1.0963801422545494,
+        "spread_30d_change_pct_pts": -0.18400000000000016,
+        "risk_level": "ELEVATED RISK",
+        "risk_description": "Elevated Risk - USD/JPY 155.16 ≥ 150 AND Spread 2.21% between 2.0-2.5%"
       }
     },
     {
       "chart": "Futures OI & Price",
       "metrics": {
-        "oi_usd": 770442938.8956746,
-        "oi_30d_change_pct": -7.975819334399614,
-        "oi_percentile": 9.67741935483871,
-        "quadrant": "Flush-Out (deleveraging)"
+        "oi_usd": 726131857.4152173,
+        "oi_30d_change_pct": -24.42832535956304,
+        "oi_percentile": 35.483870967741936,
+        "quadrant": "Squeeze Setup (crowded)"
       }
     }
   ],
+  "summary_source_signature": "c71acd5f0b0bab7efd632cfd4acb9d265976105e3a0702358187f1989c372e2a",
   "human_summary": {
     "items": [
       {
         "chart": "MA Cross Analysis",
-        "summary": "The current close price is $70,264.73, with the 50-day moving average at $86,937.76 and the 200-day moving average at $102,304.67. This indicates a bearish regime, as the moving averages show a negative spread of -$15,366.91. The last death cross occurred on November 16, 2025, reinforcing the current bearish sentiment."
+        "summary": "MA Spread (50D-200D) is -17,408.58, which keeps the medium-term structure bearish. The 50-day MA is $81,761.88 and the 200-day MA is $99,170.46. The latest cross dates are golden: 2025-05-22, death: 2025-11-16."
+      },
+      {
+        "chart": "Supplemental Bottoming Signals",
+        "summary": "Supplemental bottoming signals are mixed but leaning supportive. (2/4 checks positive) Volume is 0.36x vs the 30-day average and the latest daily return is nearly unchanged. Recent panic selloff (7D lookback): no. Post-panic volume contraction: inactive. Daily RSI(14) is 37.4 and weekly RSI proxy is 28.4. Fear & Greed is 9 (Extreme Fear), panic score proxy 91/100. Hashrate 30d change is -13.36% and miner stress proxy is elevated."
       },
       {
         "chart": "Net Liquidity",
-        "summary": "Net liquidity stands at $5,694. 72 billion, with a 90-day delta increase of $75. 78 billion. This slight increase suggests a modest improvement in liquidity conditions, although it remains to be seen how this will impact market dynamics moving forward."
+        "summary": "Net liquidity is around 5700 bn USD, and the 90-day change is 88 bn USD. WALCL is 6613 bn, TGA is 913 bn, and RRP is 0 bn. The current liquidity direction is rising based on the 90-day delta."
       },
       {
         "chart": "Funding & Credit Stress",
-        "summary": "The SOFR is currently at 3. 64%, with a high-yield option-adjusted spread (HY OAS) of 2. 87%. The absence of stress flags indicates a stable funding environment, suggesting that credit conditions are not under significant pressure at this time."
+        "summary": "SOFR is 3.67%, MOVE is 64.3, and HY OAS is 2.88%. 0 out of 3 indicators are above stress thresholds, so funding and credit conditions are currently loose. This reading is based directly on the three threshold checks in the model."
       },
       {
         "chart": "Macro Risk Score",
-        "summary": "The macro risk score is at 31. 47, indicating a neutral regime with a high-risk hit rate of 47. 23%. This score suggests that while risks are present, they are balanced and not currently skewed towards extreme outcomes."
+        "summary": "The Macro Risk Score is 31.4/100, which sits in the neutral zone. The model's historical high-risk hit rate is about 47.09% for 30-day negative returns. The current forward 30-day return proxy in the payload is N/A."
       },
       {
         "chart": "USD/JPY Risk Map",
-        "summary": "The USD/JPY exchange rate is at 156. 78, with a spread of 2. 83%. This moderate risk level reflects a 30-day change of 0. 39%, indicating relative stability in the currency pair despite the ongoing fluctuations in interest rates."
+        "summary": "USD/JPY is at 155.16, and the US-JP 2Y spread is 2.21%. The model classifies this as ELEVATED RISK. Over the last 30 days, USD/JPY changed -1.10% and the spread changed -0.18pp."
       },
       {
         "chart": "Futures OI & Price",
-        "summary": "Open interest in futures is at $770. 44 million, with a 30-day change of -7. 98%. This decline places open interest in the 9. 68 percentile, suggesting a flush-out or deleveraging phase in the market."
+        "summary": "Futures OI notional is around $726,131,857, with a 30-day change of -24.43%. It sits around the 35.5th historical percentile, and the current quadrant is Squeeze Setup (crowded). The current state is read directly from the percentile and quadrant values."
       }
     ],
-    "overall_summary": "Today's analysis reflects a bearish sentiment in the market, particularly in the MA Cross Analysis, while liquidity conditions show slight improvement. Credit stress remains low, and macro risks are balanced, indicating a cautious but stable environment. The USD/JPY exchange rate and futures open interest suggest ongoing volatility and potential deleveraging.",
+    "overall_summary": "Overall, moving averages remain bearish, liquidity is rising, funding stress is limited, macro risk is neutral, and futures positioning is in a deleveraging regime.",
     "localized": {
       "en": {
         "items": [
           {
             "chart": "MA Cross Analysis",
-            "summary": "The current close price is $70,264.73, with the 50-day moving average at $86,937.76 and the 200-day moving average at $102,304.67. This indicates a bearish regime, as the moving averages show a negative spread of -$15,366.91. The last death cross occurred on November 16, 2025, reinforcing the current bearish sentiment."
+            "summary": "MA Spread (50D-200D) is -17,408.58, which keeps the medium-term structure bearish. The 50-day MA is $81,761.88 and the 200-day MA is $99,170.46. The latest cross dates are golden: 2025-05-22, death: 2025-11-16."
+          },
+          {
+            "chart": "Supplemental Bottoming Signals",
+            "summary": "Supplemental bottoming signals are mixed but leaning supportive. (2/4 checks positive) Volume is 0.36x vs the 30-day average and the latest daily return is nearly unchanged. Recent panic selloff (7D lookback): no. Post-panic volume contraction: inactive. Daily RSI(14) is 37.4 and weekly RSI proxy is 28.4. Fear & Greed is 9 (Extreme Fear), panic score proxy 91/100. Hashrate 30d change is -13.36% and miner stress proxy is elevated."
           },
           {
             "chart": "Net Liquidity",
-            "summary": "Net liquidity stands at $5,694. 72 billion, with a 90-day delta increase of $75. 78 billion. This slight increase suggests a modest improvement in liquidity conditions, although it remains to be seen how this will impact market dynamics moving forward."
+            "summary": "Net liquidity is around 5700 bn USD, and the 90-day change is 88 bn USD. WALCL is 6613 bn, TGA is 913 bn, and RRP is 0 bn. The current liquidity direction is rising based on the 90-day delta."
           },
           {
             "chart": "Funding & Credit Stress",
-            "summary": "The SOFR is currently at 3. 64%, with a high-yield option-adjusted spread (HY OAS) of 2. 87%. The absence of stress flags indicates a stable funding environment, suggesting that credit conditions are not under significant pressure at this time."
+            "summary": "SOFR is 3.67%, MOVE is 64.3, and HY OAS is 2.88%. 0 out of 3 indicators are above stress thresholds, so funding and credit conditions are currently loose. This reading is based directly on the three threshold checks in the model."
           },
           {
             "chart": "Macro Risk Score",
-            "summary": "The macro risk score is at 31. 47, indicating a neutral regime with a high-risk hit rate of 47. 23%. This score suggests that while risks are present, they are balanced and not currently skewed towards extreme outcomes."
+            "summary": "The Macro Risk Score is 31.4/100, which sits in the neutral zone. The model's historical high-risk hit rate is about 47.09% for 30-day negative returns. The current forward 30-day return proxy in the payload is N/A."
           },
           {
             "chart": "USD/JPY Risk Map",
-            "summary": "The USD/JPY exchange rate is at 156. 78, with a spread of 2. 83%. This moderate risk level reflects a 30-day change of 0. 39%, indicating relative stability in the currency pair despite the ongoing fluctuations in interest rates."
+            "summary": "USD/JPY is at 155.16, and the US-JP 2Y spread is 2.21%. The model classifies this as ELEVATED RISK. Over the last 30 days, USD/JPY changed -1.10% and the spread changed -0.18pp."
           },
           {
             "chart": "Futures OI & Price",
-            "summary": "Open interest in futures is at $770. 44 million, with a 30-day change of -7. 98%. This decline places open interest in the 9. 68 percentile, suggesting a flush-out or deleveraging phase in the market."
+            "summary": "Futures OI notional is around $726,131,857, with a 30-day change of -24.43%. It sits around the 35.5th historical percentile, and the current quadrant is Squeeze Setup (crowded). The current state is read directly from the percentile and quadrant values."
           }
         ],
-        "overall_summary": "Today's analysis reflects a bearish sentiment in the market, particularly in the MA Cross Analysis, while liquidity conditions show slight improvement. Credit stress remains low, and macro risks are balanced, indicating a cautious but stable environment. The USD/JPY exchange rate and futures open interest suggest ongoing volatility and potential deleveraging."
+        "overall_summary": "Overall, moving averages remain bearish, liquidity is rising, funding stress is limited, macro risk is neutral, and futures positioning is in a deleveraging regime."
       },
       "zh": {
         "items": [
           {
             "chart": "MA Cross Analysis",
-            "summary": "当前收盘价为70264.73，50日均线为86937.76，200日均线为102304.67。市场处于熊市状态，表明短期内价格走势偏弱。最近一次死亡交叉发生在2025年11月16日，显示出持续的下行压力。"
+            "summary": "50日与200日均线价差为-17,408.58，中期结构仍偏空头。当前50日均线$81,761.88，200日均线$99,170.46。最近一次金叉为2025-05-22，最近一次死叉为2025-11-16。"
+          },
+          {
+            "chart": "Supplemental Bottoming Signals",
+            "summary": "补充抄底信号偏积极，但仍有分歧。（2/4项为正）当前成交量约为30日均量的0.36x，最新日涨跌幅为几乎没变。近7日是否出现恐慌抛售日：否；“恐慌后缩量”代理信号：未触发。日线RSI(14)约为37.4，周线RSI代理约为28.4（由日线聚合估算）。恐慌贪婪指数为9（Extreme Fear），情绪恐慌代理分数约为91/100。全网算力30天变化为-13.36%，矿工压力代理状态为elevated。"
           },
           {
             "chart": "Net Liquidity",
-            "summary": "净流动性为5694.72亿美元，过去90天变化为75.78亿美元。当前流动性水平相对稳定，表明市场资金状况良好。"
+            "summary": "当前净流动性约为5700亿美元，过去90天变化约为88亿美元，当前方向为上行。WALCL约为6613亿美元，TGA约为913亿美元，RRP约为0亿美元。这组数据对应的是流动性边际改善，而不是流动性收缩。"
           },
           {
             "chart": "Funding & Credit Stress",
-            "summary": "SOFR利率为3.64，HY OAS为2.87，当前没有压力信号。整体信贷环境较为宽松，显示出市场流动性充足。"
+            "summary": "SOFR为3.67%，MOVE为64.3，HY OAS为2.88%，三项里有0项触发压力阈值，整体金融条件处于偏松。当前读数显示资金成本和信用利差都在可控区间。现状解读是：融资端未出现系统性紧张，信用压力也未明显扩散。"
           },
           {
             "chart": "Macro Risk Score",
-            "summary": "宏观风险评分为31.47，当前处于中性状态。高风险命中率为47.23%，表明市场面临一定的风险，但整体风险水平可控。"
+            "summary": "当前宏观风险评分为31.4/100，位于中性区间。历史上高风险区间对应的30天负收益命中率约为47.09%。当前样本对应的前瞻30天收益代理值为N/A，说明当前风险温度并不在极端区间。"
           },
           {
             "chart": "USD/JPY Risk Map",
-            "summary": "USD/JPY汇率为156.78，当前利差为2.83%。风险水平为中等风险，表明市场对日元的压力有所增加。过去30天汇率变化为0.39%，显示出一定的波动性。"
+            "summary": "当前USD/JPY为155.16，美日2年期利差约2.21%，模型识别为ELEVATED RISK。过去30天里，USD/JPY约回落-1.10%，利差约收窄-0.18pp。现状解读是：汇率与利差同向走高，套息交易相关风险在抬升，当前处于中等风险偏上的状态。"
           },
           {
             "chart": "Futures OI & Price",
-            "summary": "期货未平仓合约总值为770442938.90美元，过去30天变化为-7.98%。当前未平仓合约处于低位，反映出市场情绪偏向于去杠杆化。"
+            "summary": "期货未平仓名义规模约为$726,131,857，30天变化为-24.43%。当前大约位于历史35.5分位，象限为Squeeze Setup (crowded)。现状解读是：杠杆仓位处在低位且仍在回落，市场结构仍偏去杠杆。"
           }
         ],
-        "overall_summary": "整体来看，市场当前处于熊市状态，流动性相对稳定，信贷环境宽松，但宏观风险水平中性，显示出一定的风险。美元对日元汇率处于中等风险区间，期货市场情绪偏向去杠杆化，需关注后续市场动态。"
+        "overall_summary": "整体看，均线结构仍偏空，流动性继续上行，融资与信用压力不高，宏观风险处于中性，期货仓位处在去杠杆阶段。"
       }
     },
-    "generated_by": "llm_api"
+    "generated_by": "deterministic_rules"
+  },
+  "summary_generation": {
+    "source_signature": "c71acd5f0b0bab7efd632cfd4acb9d265976105e3a0702358187f1989c372e2a",
+    "api_call_skipped": true,
+    "skip_reason": "source_unchanged",
+    "reused_from_existing": true,
+    "summary_generated_at": "2026-02-22T17:47:06Z"
   }
 }

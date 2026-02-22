@@ -1,4 +1,5 @@
 import csv
+import json
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Dict, Optional, Union, Protocol, Any
@@ -204,6 +205,159 @@ def get_latest_metrics() -> Optional[Dict[str, Any]]:
                 logger.warning(f"Fallback CSV backend also failed: {csv_e}")
                 return None
         
+        return None
+
+
+def get_latest_bottoming_volume_signal() -> Optional[Dict[str, Any]]:
+    """
+    Read latest volume-based bottoming proxy signal from metrics CSV.
+
+    This is an advisory-only signal used by UI/analysis layers. It is optional and
+    returns None when the CSV has not been regenerated with the new columns yet.
+    """
+    file_path = _resolve_csv_path()
+    if not file_path.exists():
+        return None
+
+    try:
+        with open(file_path, "r", encoding="utf-8") as f:
+            reader = csv.DictReader(f)
+            rows = list(reader)
+        if not rows:
+            return None
+
+        last_row = rows[-1]
+
+        def _as_float(key: str) -> Optional[float]:
+            value = last_row.get(key)
+            if value in (None, "", "nan", "NaN"):
+                return None
+            try:
+                parsed = float(value)
+                return parsed if parsed == parsed else None
+            except (TypeError, ValueError):
+                return None
+
+        def _as_bool(key: str) -> Optional[bool]:
+            value = last_row.get(key)
+            if value is None or value == "":
+                return None
+            return str(value).strip().lower() in {"1", "true", "yes"}
+
+        ratio = _as_float("volume_ratio_30")
+        available = any(
+            col in (reader.fieldnames or [])
+            for col in [
+                "volume",
+                "volume_ma30",
+                "volume_ratio_30",
+                "is_post_panic_volume_contraction",
+            ]
+        )
+        if not available:
+            return None
+
+        return {
+            "available": True,
+            "as_of_date": last_row.get(COL_DATE),
+            "volume": _as_float("volume"),
+            "volume_ma30": _as_float("volume_ma30"),
+            "volume_ratio_30": ratio,
+            "daily_return_pct": _as_float("daily_return_pct"),
+            "is_panic_selloff_day": _as_bool("is_panic_selloff_day"),
+            "recent_panic_selloff_7d": _as_bool("recent_panic_selloff_7d"),
+            "is_post_panic_volume_contraction": _as_bool("is_post_panic_volume_contraction"),
+            "rsi14": _as_float("rsi14"),
+            "rsi14w": _as_float("rsi14w"),
+            "is_rsi_daily_oversold": _as_bool("is_rsi_daily_oversold"),
+            "is_rsi_weekly_oversold_proxy": _as_bool("is_rsi_weekly_oversold_proxy"),
+            "is_rsi_bottoming_signal": _as_bool("is_rsi_bottoming_signal"),
+            "status_label": (
+                "Post-panic volume contraction"
+                if _as_bool("is_post_panic_volume_contraction")
+                else "No post-panic contraction"
+            ),
+            "source": "metrics_csv",
+        }
+    except Exception as e:
+        logger.warning(f"Failed to read bottoming volume signal from CSV: {e}")
+        return None
+
+
+def get_latest_macro_preview_snapshot() -> Optional[Dict[str, Any]]:
+    """
+    Read a concise macro snapshot from docs/data/daily_report.json for DCA preview UI.
+
+    This is display-only and should never block DCA decisions.
+    """
+    try:
+        # __file__ = dca_service/src/dca_service/services/metrics_provider.py
+        # parents[3] = dca_service/
+        dca_service_dir = Path(__file__).resolve().parents[3]
+        report_path = (dca_service_dir.parent / "docs" / "data" / "daily_report.json").resolve()
+        if not report_path.exists():
+            return None
+
+        data = json.loads(report_path.read_text(encoding="utf-8"))
+        sections = data.get("sections")
+        if not isinstance(sections, list):
+            return None
+
+        section_metrics: Dict[str, Dict[str, Any]] = {}
+        for section in sections:
+            if not isinstance(section, dict):
+                continue
+            chart = str(section.get("chart") or "").strip()
+            metrics = section.get("metrics")
+            if chart and isinstance(metrics, dict):
+                section_metrics[chart] = metrics
+
+        macro_metrics = section_metrics.get("Macro Risk Score", {})
+        funding_metrics = section_metrics.get("Funding & Credit Stress", {})
+        liquidity_metrics = section_metrics.get("Net Liquidity", {})
+        oi_metrics = section_metrics.get("Futures OI & Price", {})
+        usdjpy_metrics = section_metrics.get("USD/JPY Risk Map", {})
+        ma_metrics = section_metrics.get("MA Cross Analysis", {})
+
+        def _as_float(obj: Dict[str, Any], key: str) -> Optional[float]:
+            value = obj.get(key)
+            if value in (None, "", "nan", "NaN"):
+                return None
+            try:
+                parsed = float(value)
+                return parsed if parsed == parsed else None
+            except (TypeError, ValueError):
+                return None
+
+        snapshot = {
+            "available": True,
+            "report_date": data.get("report_date"),
+            "macro_risk_score": _as_float(macro_metrics, "score"),
+            "macro_risk_regime": macro_metrics.get("regime"),
+            "stress_flags": funding_metrics.get("stress_flags"),
+            "funding_stress_level": funding_metrics.get("stress_level"),
+            "net_liquidity_90d_delta": _as_float(liquidity_metrics, "net_liquidity_90d_delta"),
+            "oi_30d_change_pct": _as_float(oi_metrics, "oi_30d_change_pct"),
+            "oi_quadrant": oi_metrics.get("quadrant"),
+            "usdjpy_risk_level": usdjpy_metrics.get("risk_level"),
+            "ma_regime": ma_metrics.get("regime"),
+        }
+
+        has_any = any(
+            snapshot.get(k) is not None
+            for k in [
+                "macro_risk_score",
+                "macro_risk_regime",
+                "stress_flags",
+                "net_liquidity_90d_delta",
+                "oi_30d_change_pct",
+                "usdjpy_risk_level",
+                "ma_regime",
+            ]
+        )
+        return snapshot if has_any else None
+    except Exception as e:
+        logger.warning(f"Failed to read macro preview snapshot from daily_report: {e}")
         return None
 
 

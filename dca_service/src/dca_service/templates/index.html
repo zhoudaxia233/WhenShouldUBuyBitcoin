@@ -290,6 +290,15 @@
                         <strong>Status:</strong> <span id="previewReason" style="white-space: pre-line; font-family: monospace; font-size: 0.9em;">Loading...</span>
                     </div>
                 </div>
+                <div class="alert alert-secondary border mb-3" id="bottomingSignalBox" style="display: none;">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div><strong>Bottoming Checklist</strong></div>
+                        <div class="small text-muted" id="bottomingSignalDate">--</div>
+                    </div>
+                    <div class="small mt-1" id="bottomingSignalStatus">Unavailable</div>
+                    <div class="small text-muted mt-1" id="bottomingSignalMetrics"></div>
+                    <div class="small text-muted mt-1" id="bottomingSignalMacro"></div>
+                </div>
                 <div class="alert alert-info border mb-3">
                     <div class="d-flex align-items-center justify-content-between mb-2">
                         <div class="small"><strong>Drawdown Context</strong></div>
@@ -470,6 +479,7 @@
                         globalRefreshEl.textContent = `${parsedDate.toISOString().replace('T', ' ').substring(0, 16)} UTC`;
                     }
                 }
+                renderBottomingSignalPreview(preview.bottoming_signal || null);
                 window.__latestDrawdownDecision = preview;
                 if (typeof window.renderDrawdownContextCompact === 'function') {
                     window.renderDrawdownContextCompact(preview);
@@ -952,6 +962,142 @@
             }
         }
 
+        function renderBottomingSignalPreview(signal) {
+            const boxEl = document.getElementById('bottomingSignalBox');
+            const dateEl = document.getElementById('bottomingSignalDate');
+            const statusEl = document.getElementById('bottomingSignalStatus');
+            const metricsEl = document.getElementById('bottomingSignalMetrics');
+            const macroEl = document.getElementById('bottomingSignalMacro');
+            if (!boxEl || !dateEl || !statusEl || !metricsEl) return;
+
+            if (!signal || signal.available === false) {
+                boxEl.style.display = 'none';
+                return;
+            }
+
+            boxEl.style.display = '';
+            dateEl.textContent = signal.as_of_date ? `As of ${signal.as_of_date}` : 'Daily snapshot';
+
+            const ratioNum = Number(signal.volume_ratio_30);
+            const retNum = Number(signal.daily_return_pct);
+            const hasRatio = Number.isFinite(ratioNum);
+            const hasRet = Number.isFinite(retNum);
+            const contraction = signal.is_post_panic_volume_contraction === true;
+            const recentPanic = signal.recent_panic_selloff_7d === true;
+            const rsiDaily = Number(signal.rsi14);
+            const rsiWeekly = Number(signal.rsi14w);
+            const hasRsiDaily = Number.isFinite(rsiDaily);
+            const hasRsiWeekly = Number.isFinite(rsiWeekly);
+            const rsiBottoming = signal.is_rsi_bottoming_signal === true;
+            const rsiWeeklyOversold = signal.is_rsi_weekly_oversold_proxy === true;
+            const macro = signal.macro_snapshot && signal.macro_snapshot.available !== false
+                ? signal.macro_snapshot
+                : null;
+
+            let conclusionClass = 'text-muted';
+            let technicalConclusion = 'No clear bottoming confirmation yet';
+            if (contraction && rsiBottoming) {
+                conclusionClass = 'text-success';
+                technicalConclusion = 'bottoming checklist looks supportive';
+            } else if (contraction || rsiBottoming || rsiWeeklyOversold) {
+                conclusionClass = 'text-warning';
+                if (contraction) {
+                    technicalConclusion = 'bottoming checklist is mixed-positive';
+                } else if (rsiBottoming) {
+                    technicalConclusion = 'bottoming checklist is mixed-positive';
+                } else {
+                    technicalConclusion = 'bottoming checklist is early/mixed';
+                }
+            }
+
+            let macroConclusion = null;
+            let macroPositive = 0;
+            let macroNegative = 0;
+            if (macro) {
+                const macroRiskScore = Number(macro.macro_risk_score);
+                const stressFlags = Number(macro.stress_flags);
+                const netLiqDelta = Number(macro.net_liquidity_90d_delta);
+                const oi30d = Number(macro.oi_30d_change_pct);
+                const usdjpyRisk = String(macro.usdjpy_risk_level || '').toLowerCase();
+                const maRegime = String(macro.ma_regime || '').toLowerCase();
+
+                if (Number.isFinite(netLiqDelta)) {
+                    if (netLiqDelta > 0) macroPositive++;
+                    else if (netLiqDelta < 0) macroNegative++;
+                }
+                if (Number.isFinite(stressFlags)) {
+                    if (stressFlags <= 1) macroPositive++;
+                    if (stressFlags >= 2) macroNegative++;
+                }
+                if (Number.isFinite(macroRiskScore)) {
+                    if (macroRiskScore <= 45) macroPositive++;
+                    if (macroRiskScore >= 65) macroNegative++;
+                }
+                if (Number.isFinite(oi30d)) {
+                    if (oi30d <= 0) macroPositive++;
+                    if (oi30d >= 15) macroNegative++;
+                }
+                if (usdjpyRisk.includes('high')) macroNegative++;
+                else if (usdjpyRisk.includes('low') || usdjpyRisk.includes('moderate')) macroPositive++;
+                if (maRegime === 'bullish') macroPositive++;
+                if (maRegime === 'bearish') macroNegative++;
+
+                if (macroNegative >= 3 && macroNegative > macroPositive) {
+                    macroConclusion = 'macro backdrop is cautious';
+                } else if (macroPositive >= 3 && macroPositive >= macroNegative + 1) {
+                    macroConclusion = 'macro backdrop is supportive';
+                } else {
+                    macroConclusion = 'macro backdrop is mixed/neutral';
+                }
+            }
+
+            const summaryLine = macroConclusion
+                ? `${technicalConclusion}; ${macroConclusion}`
+                : technicalConclusion;
+            statusEl.innerHTML = `<span class="${conclusionClass}">${summaryLine}</span>`;
+
+            const parts = [];
+            if (hasRatio) parts.push(`Vol/30D MA: ${ratioNum.toFixed(2)}x`);
+            if (signal.recent_panic_selloff_7d !== null && signal.recent_panic_selloff_7d !== undefined) {
+                parts.push(`Recent panic (7D): ${recentPanic ? 'yes' : 'no'}`);
+            }
+            if (hasRet) {
+                let retText;
+                if (Math.abs(retNum) < 0.005) retText = 'Nearly unchanged';
+                else if (Math.abs(retNum) < 0.05) retText = `${retNum.toFixed(4)}%`;
+                else retText = `${retNum.toFixed(2)}%`;
+                parts.push(`Daily return: ${retText}`);
+            }
+            if (hasRsiDaily) parts.push(`RSI14: ${rsiDaily.toFixed(1)}`);
+            if (hasRsiWeekly) parts.push(`RSI14W proxy: ${rsiWeekly.toFixed(1)}`);
+            metricsEl.textContent = parts.join(' | ');
+
+            if (macro && macroEl) {
+                const macroParts = [];
+                const riskScore = Number(macro.macro_risk_score);
+                const riskRegime = macro.macro_risk_regime ? String(macro.macro_risk_regime) : null;
+                const stressFlags = Number(macro.stress_flags);
+                const liqDelta = Number(macro.net_liquidity_90d_delta);
+                const oi30d = Number(macro.oi_30d_change_pct);
+                const usdjpyRisk = macro.usdjpy_risk_level ? String(macro.usdjpy_risk_level) : null;
+                if (Number.isFinite(riskScore)) {
+                    macroParts.push(`Macro risk: ${riskScore.toFixed(0)}${riskRegime ? ` (${riskRegime})` : ''}`);
+                } else if (riskRegime) {
+                    macroParts.push(`Macro risk: ${riskRegime}`);
+                }
+                if (Number.isFinite(stressFlags)) macroParts.push(`Stress flags: ${stressFlags}`);
+                if (Number.isFinite(liqDelta)) macroParts.push(`Net liq 90D: ${liqDelta >= 0 ? '+' : ''}${liqDelta.toFixed(0)}B`);
+                if (Number.isFinite(oi30d)) macroParts.push(`OI 30D: ${oi30d >= 0 ? '+' : ''}${oi30d.toFixed(1)}%`);
+                if (usdjpyRisk) macroParts.push(`USD/JPY risk: ${usdjpyRisk}`);
+                if (macro.ma_regime) macroParts.push(`MA regime: ${String(macro.ma_regime)}`);
+                macroEl.textContent = macroParts.join(' | ');
+                macroEl.style.display = macroEl.textContent ? '' : 'none';
+            } else if (macroEl) {
+                macroEl.textContent = '';
+                macroEl.style.display = 'none';
+            }
+        }
+
         function updatePreviewUI(decision) {
             // Update metrics display
             document.getElementById('previewAhr').textContent = decision.ahr999_value.toFixed(2);
@@ -975,6 +1121,7 @@
                 // Replace " | " with newlines for better readability
                 reasonElem.textContent = decision.reason.replace(/\s*\|\s*/g, '\n');
             }
+            renderBottomingSignalPreview(decision.bottoming_signal || null);
 
             window.__latestDrawdownDecision = decision;
             window.renderDrawdownContextCompact(decision);

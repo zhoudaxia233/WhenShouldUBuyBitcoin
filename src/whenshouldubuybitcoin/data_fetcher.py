@@ -85,9 +85,14 @@ def fetch_btc_history(
         # Reset index to get date as a column
         df = df.reset_index()
 
-        # Rename columns and keep only what we need
-        df = df.rename(columns={"Date": "date", "Close": "close_price"})
-        df = df[["date", "close_price"]]
+        # Rename columns and keep only what we need.
+        # Keep volume so downstream models can compute relative volume signals
+        # (e.g. capitulation spike followed by volume contraction).
+        df = df.rename(
+            columns={"Date": "date", "Close": "close_price", "Volume": "volume"}
+        )
+        keep_cols = [col for col in ["date", "close_price", "volume"] if col in df.columns]
+        df = df[keep_cols]
 
         # Ensure date is datetime (without timezone for simplicity)
         df["date"] = pd.to_datetime(df["date"]).dt.tz_localize(None)
