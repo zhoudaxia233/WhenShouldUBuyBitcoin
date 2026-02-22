@@ -382,7 +382,8 @@ def test_add_position_confirm_records_simulated_buy_transaction(client: TestClie
 
     assert payload["success"] is True
     assert payload["transaction"]["status"] == "SUCCESS"
-    assert payload["transaction"]["source"] == "SIMULATED"
+    assert payload["transaction"]["source"] == "MANUAL"
+    assert payload["transaction"]["is_manual"] is True
     assert payload["transaction"]["fiat_amount"] == 120.0
     assert payload["transaction"]["price"] == 60000.0
     assert payload["transaction"]["btc_amount"] == 0.002
@@ -428,7 +429,8 @@ def test_add_position_confirm_executes_live_mode_when_strategy_is_live(client: T
     assert response.status_code == 200
     payload = response.json()
     assert payload["execution_mode"] == "LIVE"
-    assert payload["transaction"]["source"] == "DCA"
+    assert payload["transaction"]["source"] == "MANUAL"
+    assert payload["transaction"]["is_manual"] is True
     assert payload["transaction"]["status"] == "SUCCESS"
     assert payload["transaction"]["binance_order_id"] == 99887766
     assert payload["transaction"]["executed_amount_btc"] == 0.00195

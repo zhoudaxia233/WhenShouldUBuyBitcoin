@@ -2289,7 +2289,8 @@ def confirm_add_position(
                 avg_execution_price_usd=executed_price,
                 fee_amount=fee_amount,
                 fee_asset=fee_asset,
-                source="DCA",
+                source="MANUAL",
+                is_manual=True,
                 binance_order_id=binance_order_id,
             )
             session.add(tx)
@@ -2320,7 +2321,8 @@ def confirm_add_position(
                 avg_execution_price_usd=0.0,
                 fee_amount=0.0,
                 fee_asset="USDC",
-                source="DCA",
+                source="MANUAL",
+                is_manual=True,
             )
             session.add(failed_tx)
             session.commit()
@@ -2342,7 +2344,8 @@ def confirm_add_position(
         avg_execution_price_usd=input_price_usd,
         fee_amount=0.0,
         fee_asset="USDC",
-        source="SIMULATED",
+        source="MANUAL",
+        is_manual=True,
     )
     session.add(tx)
     session.commit()

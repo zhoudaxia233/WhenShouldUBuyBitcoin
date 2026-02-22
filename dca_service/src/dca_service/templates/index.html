@@ -786,6 +786,9 @@
             document.documentElement.setAttribute('data-bs-theme', theme);
             localStorage.setItem(THEME_STORAGE_KEY, theme);
             updateThemeToggleButton(theme);
+            if (typeof window.renderBottomingSignalPreview === 'function' && window.__latestBottomingSignal !== undefined) {
+                window.renderBottomingSignalPreview(window.__latestBottomingSignal);
+            }
         }
 
         // Cache Helpers
@@ -963,6 +966,7 @@
         }
 
         function renderBottomingSignalPreview(signal) {
+            window.__latestBottomingSignal = signal || null;
             const boxEl = document.getElementById('bottomingSignalBox');
             const dateEl = document.getElementById('bottomingSignalDate');
             const statusEl = document.getElementById('bottomingSignalStatus');
@@ -993,14 +997,16 @@
             const macro = signal.macro_snapshot && signal.macro_snapshot.available !== false
                 ? signal.macro_snapshot
                 : null;
+            const isDarkTheme = document.documentElement.getAttribute('data-bs-theme') === 'dark';
 
-            let conclusionClass = 'text-muted';
+            let conclusionClass = '';
+            let conclusionColor = null;
             let technicalConclusion = 'No clear bottoming confirmation yet';
             if (contraction && rsiBottoming) {
-                conclusionClass = 'text-success';
+                conclusionColor = isDarkTheme ? '#7ee2a8' : '#146c43';
                 technicalConclusion = 'bottoming checklist looks supportive';
             } else if (contraction || rsiBottoming || rsiWeeklyOversold) {
-                conclusionClass = 'text-warning';
+                conclusionColor = isDarkTheme ? '#ffd166' : '#8a5a00';
                 if (contraction) {
                     technicalConclusion = 'bottoming checklist is mixed-positive';
                 } else if (rsiBottoming) {
@@ -1008,6 +1014,8 @@
                 } else {
                     technicalConclusion = 'bottoming checklist is early/mixed';
                 }
+            } else {
+                conclusionClass = 'text-muted';
             }
 
             let macroConclusion = null;
@@ -1054,7 +1062,9 @@
             const summaryLine = macroConclusion
                 ? `${technicalConclusion}; ${macroConclusion}`
                 : technicalConclusion;
-            statusEl.innerHTML = `<span class="${conclusionClass}">${summaryLine}</span>`;
+            const styleAttr = conclusionColor ? ` style="color: ${conclusionColor}; font-weight: 600;"` : '';
+            const classAttr = conclusionClass ? ` class="${conclusionClass}"` : '';
+            statusEl.innerHTML = `<span${classAttr}${styleAttr}>${summaryLine}</span>`;
 
             const parts = [];
             if (hasRatio) parts.push(`Vol/30D MA: ${ratioNum.toFixed(2)}x`);
@@ -1097,6 +1107,7 @@
                 macroEl.style.display = 'none';
             }
         }
+        window.renderBottomingSignalPreview = renderBottomingSignalPreview;
 
         function updatePreviewUI(decision) {
             // Update metrics display
