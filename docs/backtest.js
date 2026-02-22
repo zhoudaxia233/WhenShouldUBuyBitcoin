@@ -112,9 +112,81 @@ class DataLoader {
 
         this.historicalData = csvData;
         this.metadata = metadata;
+        this.ensurePowerLawMetadata();
 
         // Build price cache for fast lookups
         this.buildPriceCache();
+    }
+
+    /**
+     * Ensure power-law params are available for future-date simulation.
+     * If metadata is missing/null, derive an approximate fit from trend_value history.
+     */
+    ensurePowerLawMetadata() {
+        if (!this.metadata) this.metadata = {};
+        const a = Number(this.metadata.trend_a);
+        const b = Number(this.metadata.trend_b);
+        if (Number.isFinite(a) && a > 0 && Number.isFinite(b)) {
+            return;
+        }
+
+        const derived = this.derivePowerLawParamsFromTrendSeries();
+        if (derived) {
+            this.metadata.trend_a = derived.trend_a;
+            this.metadata.trend_b = derived.trend_b;
+        }
+    }
+
+    /**
+     * Derive power-law params from historical trend_value:
+     * log(price) = log(a) + n * log(t)
+     */
+    derivePowerLawParamsFromTrendSeries() {
+        if (!Array.isArray(this.historicalData) || this.historicalData.length < 30) {
+            return null;
+        }
+
+        const points = [];
+        for (const row of this.historicalData) {
+            const trendValue = parseFloat(row.trend_value);
+            if (!Number.isFinite(trendValue) || trendValue <= 0 || !row.date) continue;
+
+            const d = new Date(row.date);
+            if (Number.isNaN(d.getTime())) continue;
+
+            const tDays = Math.floor(
+                (d - BACKTEST_CONFIG.GENESIS_DATE) / (1000 * 60 * 60 * 24)
+            );
+            if (!Number.isFinite(tDays) || tDays <= 0) continue;
+
+            points.push({ x: Math.log(tDays), y: Math.log(trendValue) });
+        }
+
+        if (points.length < 10) return null;
+
+        let sumX = 0;
+        let sumY = 0;
+        let sumXX = 0;
+        let sumXY = 0;
+        for (const p of points) {
+            sumX += p.x;
+            sumY += p.y;
+            sumXX += p.x * p.x;
+            sumXY += p.x * p.y;
+        }
+
+        const n = points.length;
+        const denom = n * sumXX - sumX * sumX;
+        if (!Number.isFinite(denom) || Math.abs(denom) < 1e-12) return null;
+
+        const slope = (n * sumXY - sumX * sumY) / denom; // exponent
+        const intercept = (sumY - slope * sumX) / n; // ln(a)
+        const trendA = Math.exp(intercept);
+
+        if (!Number.isFinite(trendA) || trendA <= 0 || !Number.isFinite(slope)) {
+            return null;
+        }
+        return { trend_a: trendA, trend_b: slope };
     }
 
     /**
@@ -261,9 +333,20 @@ class DataLoader {
         const bitcoinAgeDays = Math.floor(
             (date - BACKTEST_CONFIG.GENESIS_DATE) / (1000 * 60 * 60 * 24)
         );
+        const trendA = Number(this.metadata?.trend_a);
+        const trendB = Number(this.metadata?.trend_b);
+        if (
+            !Number.isFinite(trendA) ||
+            trendA <= 0 ||
+            !Number.isFinite(trendB) ||
+            !Number.isFinite(bitcoinAgeDays) ||
+            bitcoinAgeDays <= 0
+        ) {
+            return 0;
+        }
         return (
-            this.metadata.trend_a *
-            Math.pow(bitcoinAgeDays, this.metadata.trend_b)
+            trendA *
+            Math.pow(bitcoinAgeDays, trendB)
         );
     }
 
