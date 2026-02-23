@@ -1794,7 +1794,37 @@
                             const result = await response.json();
                             
                             if (response.ok && result.success) {
-                                notyf.success(result.message || 'Simulated transactions cleared');
+                                const netChangedOrders = Number.isFinite(result.state_changed_orders)
+                                    ? result.state_changed_orders
+                                    : null;
+                                const parts = [];
+                                if (Number.isFinite(result.synced_count)) {
+                                    parts.push(`Synced ${result.synced_count} trades`);
+                                }
+                                if (Number.isFinite(result.merged_orders) && result.merged_orders > 0) {
+                                    parts.push(`merged ${result.merged_orders} split orders`);
+                                }
+                                if (Number.isFinite(result.merged_rows_removed) && result.merged_rows_removed > 0) {
+                                    parts.push(`removed ${result.merged_rows_removed} duplicate rows`);
+                                }
+                                if (Number.isFinite(result.metadata_restored) && result.metadata_restored > 0) {
+                                    parts.push(`restored metadata for ${result.metadata_restored} orders`);
+                                }
+                                let successMsg;
+                                if (netChangedOrders === 0) {
+                                    successMsg = Number.isFinite(result.synced_count)
+                                        ? `History reset: no net changes (re-synced ${result.synced_count} trades)`
+                                        : 'History reset: no net changes';
+                                } else if (Number.isFinite(netChangedOrders) && netChangedOrders > 0) {
+                                    successMsg = parts.length > 0
+                                        ? `History reset: changed ${netChangedOrders} orders; ${parts.join(', ')}`
+                                        : `History reset: changed ${netChangedOrders} orders`;
+                                } else {
+                                    successMsg = parts.length > 0
+                                        ? `History reset: ${parts.join(', ')}`
+                                        : (result.message || 'Simulated transactions cleared');
+                                }
+                                notyf.success(successMsg);
                                 loadTransactions();  // Refresh the transaction list
                                 loadPreview();  // Refresh the preview (budget might have changed)
                             } else {

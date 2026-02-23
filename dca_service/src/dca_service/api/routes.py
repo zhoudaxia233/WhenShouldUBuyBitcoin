@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import Any, Dict, List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlmodel import Session, select, col, delete
 from datetime import datetime, timezone
@@ -16,6 +16,259 @@ router = APIRouter()
 _static_generation_process = None
 _static_generation_last_result = None
 _static_generation_log_path = None
+
+
+def _source_restore_priority(source: str | None) -> int:
+    # Prefer app-originated records (DCA/BINANCE) over generic synced MANUAL rows.
+    if source == "DCA":
+        return 3
+    if source == "BINANCE":
+        return 2
+    if source == "MANUAL":
+        return 1
+    return 0
+
+
+def _build_order_metadata_snapshot(session: Session) -> Dict[int, Dict[str, Any]]:
+    """
+    Snapshot metadata that Binance re-sync cannot reconstruct, keyed by order_id.
+
+    This preserves semantic fields such as source / is_manual / ahr999 for orders
+    that will be re-imported from Binance during Reset & Sync.
+    """
+    rows = session.exec(
+        select(DCATransaction)
+        .where(DCATransaction.binance_order_id.is_not(None))
+        .order_by(col(DCATransaction.timestamp).asc(), col(DCATransaction.id).asc())
+    ).all()
+
+    snapshot: Dict[int, Dict[str, Any]] = {}
+    for tx in rows:
+        if tx.binance_order_id is None:
+            continue
+        order_id = int(tx.binance_order_id)
+        existing = snapshot.get(order_id)
+        candidate_priority = _source_restore_priority(tx.source)
+
+        if existing is None:
+            snapshot[order_id] = {
+                "source": tx.source,
+                "is_manual": bool(tx.is_manual),
+                "ahr999": float(tx.ahr999 or 0.0),
+                "notes": tx.notes,
+                "timestamp": tx.timestamp,
+                "intended_amount_usd": tx.intended_amount_usd,
+                "row_count": 1,
+                "sum_quote_usd": float(tx.executed_amount_usd or tx.fiat_amount or 0.0),
+                "sum_btc": float(tx.executed_amount_btc or tx.btc_amount or 0.0),
+                "sum_fee": float(tx.fee_amount or 0.0),
+                "fee_assets": {tx.fee_asset} if tx.fee_asset else set(),
+                "_priority": candidate_priority,
+            }
+            continue
+
+        # Preserve the best semantic source classification.
+        if candidate_priority > existing.get("_priority", -1):
+            existing["source"] = tx.source
+            existing["is_manual"] = bool(tx.is_manual)
+            existing["notes"] = tx.notes
+            existing["timestamp"] = tx.timestamp
+            existing["intended_amount_usd"] = tx.intended_amount_usd
+            existing["_priority"] = candidate_priority
+
+        # Prefer a non-zero AHR999 if present in any prior row for this order.
+        current_ahr = float(existing.get("ahr999") or 0.0)
+        tx_ahr = float(tx.ahr999 or 0.0)
+        if abs(current_ahr) < 1e-12 and abs(tx_ahr) >= 1e-12:
+            existing["ahr999"] = tx_ahr
+
+        # Prefer the earliest known timestamp if we have conflicting duplicates.
+        current_ts = existing.get("timestamp")
+        if current_ts is None or (tx.timestamp and tx.timestamp < current_ts):
+            existing["timestamp"] = tx.timestamp
+
+        if existing.get("notes") in (None, "", "Imported from Binance") and tx.notes:
+            existing["notes"] = tx.notes
+
+        if existing.get("intended_amount_usd") in (None, 0.0) and tx.intended_amount_usd:
+            existing["intended_amount_usd"] = tx.intended_amount_usd
+
+        existing["row_count"] = int(existing.get("row_count") or 0) + 1
+        existing["sum_quote_usd"] = float(existing.get("sum_quote_usd") or 0.0) + float(tx.executed_amount_usd or tx.fiat_amount or 0.0)
+        existing["sum_btc"] = float(existing.get("sum_btc") or 0.0) + float(tx.executed_amount_btc or tx.btc_amount or 0.0)
+        existing["sum_fee"] = float(existing.get("sum_fee") or 0.0) + float(tx.fee_amount or 0.0)
+        fee_assets = existing.get("fee_assets")
+        if not isinstance(fee_assets, set):
+            fee_assets = set(fee_assets or [])
+        if tx.fee_asset:
+            fee_assets.add(tx.fee_asset)
+        existing["fee_assets"] = fee_assets
+
+    for value in snapshot.values():
+        value.pop("_priority", None)
+    return snapshot
+
+
+def _apply_preserved_order_metadata(tx: DCATransaction, metadata: Optional[Dict[str, Any]]) -> bool:
+    if not metadata:
+        return False
+    tx.source = metadata.get("source", tx.source)
+    if "is_manual" in metadata:
+        tx.is_manual = bool(metadata["is_manual"])
+    if "ahr999" in metadata and metadata["ahr999"] is not None:
+        tx.ahr999 = float(metadata["ahr999"])
+    if metadata.get("notes"):
+        tx.notes = metadata["notes"]
+    if metadata.get("timestamp") is not None:
+        tx.timestamp = metadata["timestamp"]
+    if metadata.get("intended_amount_usd") not in (None, 0.0):
+        tx.intended_amount_usd = float(metadata["intended_amount_usd"])
+    return True
+
+
+def _float_close(a: Optional[float], b: Optional[float], tol: float = 1e-12) -> bool:
+    return abs(float(a or 0.0) - float(b or 0.0)) <= tol
+
+
+def _final_order_row_differs_from_snapshot(tx: DCATransaction, snapshot: Dict[str, Any]) -> bool:
+    """
+    Compare final normalized row vs pre-reset persisted state for the same order.
+    This is used for user-facing "did anything actually change?" reporting.
+    """
+    if int(snapshot.get("row_count") or 0) != 1:
+        return True
+
+    if (snapshot.get("source") or None) != (tx.source or None):
+        return True
+    if bool(snapshot.get("is_manual", False)) != bool(tx.is_manual):
+        return True
+    if not _float_close(snapshot.get("ahr999"), tx.ahr999):
+        return True
+
+    if not _float_close(snapshot.get("sum_quote_usd"), tx.executed_amount_usd or tx.fiat_amount):
+        return True
+    if not _float_close(snapshot.get("sum_btc"), tx.executed_amount_btc or tx.btc_amount):
+        return True
+
+    snap_fee_assets = snapshot.get("fee_assets") or set()
+    if not isinstance(snap_fee_assets, set):
+        snap_fee_assets = set(snap_fee_assets)
+    if len(snap_fee_assets) <= 1:
+        expected_asset = next(iter(snap_fee_assets)) if snap_fee_assets else ""
+        if (tx.fee_asset or "") != expected_asset:
+            return True
+        if not _float_close(snapshot.get("sum_fee"), tx.fee_amount):
+            return True
+    else:
+        if (tx.fee_asset or "") != "MIXED":
+            return True
+
+    return False
+
+
+def _merge_split_orders_and_restore_metadata(
+    session: Session,
+    metadata_snapshot: Dict[int, Dict[str, Any]],
+) -> Dict[str, int]:
+    """
+    Collapse split fills imported from Binance into one row per order_id, and restore
+    semantic metadata from the pre-reset snapshot.
+    """
+    rows = session.exec(
+        select(DCATransaction)
+        .where(DCATransaction.binance_order_id.is_not(None))
+        .order_by(col(DCATransaction.timestamp).asc(), col(DCATransaction.id).asc())
+    ).all()
+    if not rows:
+        return {
+            "merged_orders": 0,
+            "removed_rows": 0,
+            "metadata_restored": 0,
+            "state_changed_orders": len(metadata_snapshot),
+        }
+
+    groups: Dict[int, List[DCATransaction]] = {}
+    for tx in rows:
+        if tx.binance_order_id is None:
+            continue
+        groups.setdefault(int(tx.binance_order_id), []).append(tx)
+
+    merged_orders = 0
+    removed_rows = 0
+    metadata_restored = 0
+    state_changed_orders = 0
+
+    for order_id, group in groups.items():
+        group = sorted(group, key=lambda t: (t.timestamp, t.id or 0))
+        base = group[0]
+
+        if len(group) > 1:
+            merged_orders += 1
+            removed_rows += len(group) - 1
+
+            total_quote = 0.0
+            total_btc = 0.0
+            total_fee = 0.0
+            fee_assets = set()
+            trade_ids: List[int] = []
+            earliest_ts = base.timestamp
+
+            for tx in group:
+                total_quote += float(tx.executed_amount_usd or tx.fiat_amount or 0.0)
+                total_btc += float(tx.executed_amount_btc or tx.btc_amount or 0.0)
+                fee_value = float(tx.fee_amount or 0.0)
+                if fee_value:
+                    total_fee += fee_value
+                if tx.fee_asset:
+                    fee_assets.add(tx.fee_asset)
+                if tx.binance_trade_id is not None:
+                    trade_ids.append(int(tx.binance_trade_id))
+                if tx.timestamp < earliest_ts:
+                    earliest_ts = tx.timestamp
+
+            avg_price = (total_quote / total_btc) if total_btc > 0 else float(base.price or 0.0)
+
+            base.timestamp = earliest_ts
+            base.status = "SUCCESS"
+            base.fiat_amount = total_quote
+            base.btc_amount = total_btc
+            base.price = avg_price
+            base.executed_amount_usd = total_quote
+            base.executed_amount_btc = total_btc
+            base.avg_execution_price_usd = avg_price
+            base.binance_trade_id = min(trade_ids) if trade_ids else base.binance_trade_id
+
+            if len(fee_assets) <= 1:
+                base.fee_amount = total_fee
+                if fee_assets:
+                    base.fee_asset = next(iter(fee_assets))
+            else:
+                # Different fee assets cannot be safely summed into one scalar.
+                logger.warning(
+                    f"Mixed fee assets for order {order_id} during reset/sync merge: {sorted(fee_assets)}"
+                )
+                base.fee_amount = None
+                base.fee_asset = "MIXED"
+
+            for extra in group[1:]:
+                session.delete(extra)
+
+        if _apply_preserved_order_metadata(base, metadata_snapshot.get(order_id)):
+            metadata_restored += 1
+        if _final_order_row_differs_from_snapshot(base, metadata_snapshot.get(order_id) or {}):
+            state_changed_orders += 1
+        session.add(base)
+
+    missing_order_ids = set(metadata_snapshot.keys()) - set(groups.keys())
+    state_changed_orders += len(missing_order_ids)
+
+    session.commit()
+    return {
+        "merged_orders": merged_orders,
+        "removed_rows": removed_rows,
+        "metadata_restored": metadata_restored,
+        "state_changed_orders": state_changed_orders,
+    }
 
 
 def _try_collect_static_generation_status() -> Optional[dict]:
@@ -163,6 +416,10 @@ async def clear_simulated_transactions(
     Returns:
         dict: Success status and sync result
     """
+    # Snapshot non-reconstructable metadata (ahr999/source/is_manual/notes) for
+    # Binance-backed orders before reset so we can restore semantics after re-sync.
+    metadata_snapshot = _build_order_metadata_snapshot(session)
+
     # Delete ALL transactions
     # Note: We use delete() with where(True) or just delete(DCATransaction) depending on SQLModel version
     # But session.exec(delete(DCATransaction)) is the standard way
@@ -175,12 +432,20 @@ async def clear_simulated_transactions(
     
     service = TradeSyncService(session)
     count = await service.sync_trades(start_from_scratch=True)
+    merge_stats = _merge_split_orders_and_restore_metadata(session, metadata_snapshot)
     
     return {
         "success": True,
         "deleted_count": "ALL",
         "synced_count": count,
-        "message": f"History reset. Synced {count} trades from Binance."
+        "merged_orders": merge_stats["merged_orders"],
+        "merged_rows_removed": merge_stats["removed_rows"],
+        "metadata_restored": merge_stats["metadata_restored"],
+        "state_changed_orders": merge_stats["state_changed_orders"],
+        "message": (
+            f"History reset. Synced {count} trades from Binance. "
+            f"Merged {merge_stats['merged_orders']} split orders."
+        )
     }
 
 
