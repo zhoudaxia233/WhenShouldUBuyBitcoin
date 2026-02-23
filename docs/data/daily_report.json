@@ -1,6 +1,6 @@
 {
-  "report_date": "2026-02-21",
-  "generated_at": "2026-02-22T18:13:40Z",
+  "report_date": "2026-02-22",
+  "generated_at": "2026-02-23T22:47:33Z",
   "excluded_charts": [
     "Price Comparison",
     "Valuation Ratios"
@@ -9,10 +9,10 @@
     {
       "chart": "MA Cross Analysis",
       "metrics": {
-        "close_price": 68003.765625,
-        "ma_50": 81761.881171875,
-        "ma_200": 99170.45771484375,
-        "ma_spread": -17408.57654296876,
+        "close_price": 67659.390625,
+        "ma_50": 81303.005234375,
+        "ma_200": 98933.61466796875,
+        "ma_spread": -17630.609433593752,
         "regime": "bearish",
         "last_golden_cross": "2025-05-22",
         "last_death_cross": "2025-11-16"
@@ -21,25 +21,25 @@
     {
       "chart": "Supplemental Bottoming Signals",
       "metrics": {
-        "close_price": 68003.765625,
-        "volume": 18357635642.0,
-        "volume_ma30": 50998967360.46667,
-        "volume_ratio_30": 0.3599609284683371,
-        "daily_return_pct": -0.002435467576455963,
+        "close_price": 67659.390625,
+        "volume": 17893536012.0,
+        "volume_ma30": 50295499026.3,
+        "volume_ratio_30": 0.35576813747574704,
+        "daily_return_pct": -0.5064057803784272,
         "is_panic_selloff_day": false,
         "recent_panic_selloff_7d": false,
         "is_post_panic_volume_contraction": false,
-        "rsi14": 37.44542182175094,
-        "rsi14w": 28.379359865630406,
+        "rsi14": 36.80866686057692,
+        "rsi14w": 27.818764522666044,
         "is_rsi_daily_oversold": false,
         "is_rsi_weekly_oversold_proxy": true,
         "is_rsi_bottoming_signal": false,
-        "fear_greed_value": 9.0,
+        "fear_greed_value": 5.0,
         "fear_greed_classification": "Extreme Fear",
-        "fear_panic_score": 91.0,
+        "fear_panic_score": 95.0,
         "is_extreme_fear_proxy": true,
-        "hashrate_30d_change_pct": -13.361840199769679,
-        "miner_stress_proxy": "elevated"
+        "hashrate_30d_change_pct": 70.57212733778832,
+        "miner_stress_proxy": "low"
       }
     },
     {
@@ -50,27 +50,27 @@
         "walcl_bil": 6613.395,
         "tga_bil": 912.727,
         "rrp_bil": 0.496,
-        "btc_price": 68003.765625
+        "btc_price": 67659.390625
       }
     },
     {
       "chart": "Funding & Credit Stress",
       "metrics": {
-        "sofr": 3.67,
+        "sofr": 3.66,
         "move": 64.2699966430664,
-        "hy_oas": 2.88,
+        "hy_oas": 2.86,
         "stress_flags": 0,
-        "btc_price": 68003.765625
+        "btc_price": 67659.390625
       }
     },
     {
       "chart": "Macro Risk Score",
       "metrics": {
-        "score": 31.409634481581268,
+        "score": 31.14433035081172,
         "regime": "neutral",
         "high_risk_hit_rate": 47.093023255813954,
         "fwd_30d_return": null,
-        "btc_price": 68003.765625
+        "btc_price": 67659.390625
       }
     },
     {
@@ -89,23 +89,23 @@
     {
       "chart": "Futures OI & Price",
       "metrics": {
-        "oi_usd": 726131857.4152173,
-        "oi_30d_change_pct": -24.42832535956304,
+        "oi_usd": 725725578.6352,
+        "oi_30d_change_pct": -22.015532408378913,
         "oi_percentile": 35.483870967741936,
-        "quadrant": "Squeeze Setup (crowded)"
+        "quadrant": "Risky Up (leveraged)"
       }
     }
   ],
-  "summary_source_signature": "c71acd5f0b0bab7efd632cfd4acb9d265976105e3a0702358187f1989c372e2a",
+  "summary_source_signature": "7462c64e3765a12e99a913a93dabb75ee625385a677a5f57bdda97a15448d70f",
   "human_summary": {
     "items": [
       {
         "chart": "MA Cross Analysis",
-        "summary": "MA Spread (50D-200D) is -17,408.58, which keeps the medium-term structure bearish. The 50-day MA is $81,761.88 and the 200-day MA is $99,170.46. The latest cross dates are golden: 2025-05-22, death: 2025-11-16."
+        "summary": "MA Spread (50D-200D) is -17,630.61, which keeps the medium-term structure bearish. The 50-day MA is $81,303.01 and the 200-day MA is $98,933.61. The latest cross dates are golden: 2025-05-22, death: 2025-11-16."
       },
       {
         "chart": "Supplemental Bottoming Signals",
-        "summary": "Supplemental bottoming signals are mixed but leaning supportive. (2/4 checks positive) Volume is 0.36x vs the 30-day average and the latest daily return is nearly unchanged. Recent panic selloff (7D lookback): no. Post-panic volume contraction: inactive. Daily RSI(14) is 37.4 and weekly RSI proxy is 28.4. Fear & Greed is 9 (Extreme Fear), panic score proxy 91/100. Hashrate 30d change is -13.36% and miner stress proxy is elevated."
+        "summary": "Supplemental bottoming signals show only limited confirmation. (1/4 checks positive) Volume is 0.36x vs the 30-day average and the latest daily return is -0.51%. Recent panic selloff (7D lookback): no. Post-panic volume contraction: inactive. Daily RSI(14) is 36.8 and weekly RSI proxy is 27.8. Fear & Greed is 5 (Extreme Fear), panic score proxy 95/100. Hashrate 30d change is 70.57% and miner stress proxy is low."
       },
       {
         "chart": "Net Liquidity",
@@ -113,11 +113,11 @@
       },
       {
         "chart": "Funding & Credit Stress",
-        "summary": "SOFR is 3.67%, MOVE is 64.3, and HY OAS is 2.88%. 0 out of 3 indicators are above stress thresholds, so funding and credit conditions are currently loose. This reading is based directly on the three threshold checks in the model."
+        "summary": "SOFR is 3.66%, MOVE is 64.3, and HY OAS is 2.86%. 0 out of 3 indicators are above stress thresholds, so funding and credit conditions are currently loose. This reading is based directly on the three threshold checks in the model."
       },
       {
         "chart": "Macro Risk Score",
-        "summary": "The Macro Risk Score is 31.4/100, which sits in the neutral zone. The model's historical high-risk hit rate is about 47.09% for 30-day negative returns. The current forward 30-day return proxy in the payload is N/A."
+        "summary": "The Macro Risk Score is 31.1/100, which sits in the neutral zone. The model's historical high-risk hit rate is about 47.09% for 30-day negative returns. The current forward 30-day return proxy in the payload is N/A."
       },
       {
         "chart": "USD/JPY Risk Map",
@@ -125,7 +125,7 @@
       },
       {
         "chart": "Futures OI & Price",
-        "summary": "Futures OI notional is around $726,131,857, with a 30-day change of -24.43%. It sits around the 35.5th historical percentile, and the current quadrant is Squeeze Setup (crowded). The current state is read directly from the percentile and quadrant values."
+        "summary": "Futures OI notional is around $725,725,579, with a 30-day change of -22.02%. It sits around the 35.5th historical percentile, and the current quadrant is Risky Up (leveraged). The current state is read directly from the percentile and quadrant values."
       }
     ],
     "overall_summary": "Overall, moving averages remain bearish, liquidity is rising, funding stress is limited, macro risk is neutral, and futures positioning is in a deleveraging regime.",
@@ -134,11 +134,11 @@
         "items": [
           {
             "chart": "MA Cross Analysis",
-            "summary": "MA Spread (50D-200D) is -17,408.58, which keeps the medium-term structure bearish. The 50-day MA is $81,761.88 and the 200-day MA is $99,170.46. The latest cross dates are golden: 2025-05-22, death: 2025-11-16."
+            "summary": "MA Spread (50D-200D) is -17,630.61, which keeps the medium-term structure bearish. The 50-day MA is $81,303.01 and the 200-day MA is $98,933.61. The latest cross dates are golden: 2025-05-22, death: 2025-11-16."
           },
           {
             "chart": "Supplemental Bottoming Signals",
-            "summary": "Supplemental bottoming signals are mixed but leaning supportive. (2/4 checks positive) Volume is 0.36x vs the 30-day average and the latest daily return is nearly unchanged. Recent panic selloff (7D lookback): no. Post-panic volume contraction: inactive. Daily RSI(14) is 37.4 and weekly RSI proxy is 28.4. Fear & Greed is 9 (Extreme Fear), panic score proxy 91/100. Hashrate 30d change is -13.36% and miner stress proxy is elevated."
+            "summary": "Supplemental bottoming signals show only limited confirmation. (1/4 checks positive) Volume is 0.36x vs the 30-day average and the latest daily return is -0.51%. Recent panic selloff (7D lookback): no. Post-panic volume contraction: inactive. Daily RSI(14) is 36.8 and weekly RSI proxy is 27.8. Fear & Greed is 5 (Extreme Fear), panic score proxy 95/100. Hashrate 30d change is 70.57% and miner stress proxy is low."
           },
           {
             "chart": "Net Liquidity",
@@ -146,11 +146,11 @@
           },
           {
             "chart": "Funding & Credit Stress",
-            "summary": "SOFR is 3.67%, MOVE is 64.3, and HY OAS is 2.88%. 0 out of 3 indicators are above stress thresholds, so funding and credit conditions are currently loose. This reading is based directly on the three threshold checks in the model."
+            "summary": "SOFR is 3.66%, MOVE is 64.3, and HY OAS is 2.86%. 0 out of 3 indicators are above stress thresholds, so funding and credit conditions are currently loose. This reading is based directly on the three threshold checks in the model."
           },
           {
             "chart": "Macro Risk Score",
-            "summary": "The Macro Risk Score is 31.4/100, which sits in the neutral zone. The model's historical high-risk hit rate is about 47.09% for 30-day negative returns. The current forward 30-day return proxy in the payload is N/A."
+            "summary": "The Macro Risk Score is 31.1/100, which sits in the neutral zone. The model's historical high-risk hit rate is about 47.09% for 30-day negative returns. The current forward 30-day return proxy in the payload is N/A."
           },
           {
             "chart": "USD/JPY Risk Map",
@@ -158,7 +158,7 @@
           },
           {
             "chart": "Futures OI & Price",
-            "summary": "Futures OI notional is around $726,131,857, with a 30-day change of -24.43%. It sits around the 35.5th historical percentile, and the current quadrant is Squeeze Setup (crowded). The current state is read directly from the percentile and quadrant values."
+            "summary": "Futures OI notional is around $725,725,579, with a 30-day change of -22.02%. It sits around the 35.5th historical percentile, and the current quadrant is Risky Up (leveraged). The current state is read directly from the percentile and quadrant values."
           }
         ],
         "overall_summary": "Overall, moving averages remain bearish, liquidity is rising, funding stress is limited, macro risk is neutral, and futures positioning is in a deleveraging regime."
@@ -167,11 +167,11 @@
         "items": [
           {
             "chart": "MA Cross Analysis",
-            "summary": "50日与200日均线价差为-17,408.58，中期结构仍偏空头。当前50日均线$81,761.88，200日均线$99,170.46。最近一次金叉为2025-05-22，最近一次死叉为2025-11-16。"
+            "summary": "50日与200日均线价差为-17,630.61，中期结构仍偏空头。当前50日均线$81,303.01，200日均线$98,933.61。最近一次金叉为2025-05-22，最近一次死叉为2025-11-16。"
           },
           {
             "chart": "Supplemental Bottoming Signals",
-            "summary": "补充抄底信号偏积极，但仍有分歧。（2/4项为正）当前成交量约为30日均量的0.36x，最新日涨跌幅为几乎没变。近7日是否出现恐慌抛售日：否；“恐慌后缩量”代理信号：未触发。日线RSI(14)约为37.4，周线RSI代理约为28.4（由日线聚合估算）。恐慌贪婪指数为9（Extreme Fear），情绪恐慌代理分数约为91/100。全网算力30天变化为-13.36%，矿工压力代理状态为elevated。"
+            "summary": "补充抄底信号只有少量确认。（1/4项为正）当前成交量约为30日均量的0.36x，最新日涨跌幅为-0.51%。近7日是否出现恐慌抛售日：否；“恐慌后缩量”代理信号：未触发。日线RSI(14)约为36.8，周线RSI代理约为27.8（由日线聚合估算）。恐慌贪婪指数为5（Extreme Fear），情绪恐慌代理分数约为95/100。全网算力30天变化为70.57%，矿工压力代理状态为low。"
           },
           {
             "chart": "Net Liquidity",
@@ -179,11 +179,11 @@
           },
           {
             "chart": "Funding & Credit Stress",
-            "summary": "SOFR为3.67%，MOVE为64.3，HY OAS为2.88%，三项里有0项触发压力阈值，整体金融条件处于偏松。当前读数显示资金成本和信用利差都在可控区间。现状解读是：融资端未出现系统性紧张，信用压力也未明显扩散。"
+            "summary": "SOFR为3.66%，MOVE为64.3，HY OAS为2.86%，三项里有0项触发压力阈值，整体金融条件处于偏松。当前读数显示资金成本和信用利差都在可控区间。现状解读是：融资端未出现系统性紧张，信用压力也未明显扩散。"
           },
           {
             "chart": "Macro Risk Score",
-            "summary": "当前宏观风险评分为31.4/100，位于中性区间。历史上高风险区间对应的30天负收益命中率约为47.09%。当前样本对应的前瞻30天收益代理值为N/A，说明当前风险温度并不在极端区间。"
+            "summary": "当前宏观风险评分为31.1/100，位于中性区间。历史上高风险区间对应的30天负收益命中率约为47.09%。当前样本对应的前瞻30天收益代理值为N/A，说明当前风险温度并不在极端区间。"
           },
           {
             "chart": "USD/JPY Risk Map",
@@ -191,7 +191,7 @@
           },
           {
             "chart": "Futures OI & Price",
-            "summary": "期货未平仓名义规模约为$726,131,857，30天变化为-24.43%。当前大约位于历史35.5分位，象限为Squeeze Setup (crowded)。现状解读是：杠杆仓位处在低位且仍在回落，市场结构仍偏去杠杆。"
+            "summary": "期货未平仓名义规模约为$725,725,579，30天变化为-22.02%。当前大约位于历史35.5分位，象限为Risky Up (leveraged)。现状解读是：杠杆仓位处在低位且仍在回落，市场结构仍偏去杠杆。"
           }
         ],
         "overall_summary": "整体看，均线结构仍偏空，流动性继续上行，融资与信用压力不高，宏观风险处于中性，期货仓位处在去杠杆阶段。"
@@ -200,10 +200,10 @@
     "generated_by": "deterministic_rules"
   },
   "summary_generation": {
-    "source_signature": "c71acd5f0b0bab7efd632cfd4acb9d265976105e3a0702358187f1989c372e2a",
+    "source_signature": "7462c64e3765a12e99a913a93dabb75ee625385a677a5f57bdda97a15448d70f",
     "api_call_skipped": true,
     "skip_reason": "source_unchanged",
     "reused_from_existing": true,
-    "summary_generated_at": "2026-02-22T17:47:06Z"
+    "summary_generated_at": "2026-02-23T22:10:18Z"
   }
 }

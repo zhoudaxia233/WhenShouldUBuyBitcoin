@@ -1,13 +1,6 @@
 {
-  "timestamp": "2026-02-22T19:13:40.037576",
+  "timestamp": "2026-02-23T23:47:33.056287",
   "data": [
-    {
-      "symbol": "BTCUSDC",
-      "sumOpenInterest": "10741.48800000",
-      "sumOpenInterestValue": "960851881.17120000",
-      "CMCCirculatingSupply": "19978984.00000000",
-      "timestamp": 1769126400000
-    },
     {
       "symbol": "BTCUSDC",
       "sumOpenInterest": "10401.35200000",
@@ -217,6 +210,13 @@
       "sumOpenInterestValue": "726131857.41521730",
       "CMCCirculatingSupply": "19992496.00000000",
       "timestamp": 1771718400000
+    },
+    {
+      "symbol": "BTCUSDC",
+      "sumOpenInterest": "10737.42800000",
+      "sumOpenInterestValue": "725725578.63520000",
+      "CMCCirculatingSupply": "19992875.00000000",
+      "timestamp": 1771804800000
     }
   ]
 }
