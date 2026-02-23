@@ -2,100 +2,100 @@
   {
     "tier": "(0 - 0.00001)",
     "balance": "(0 - 0.00001)",
-    "addresses": "7368564",
-    "coins": "43.50 BTC",
-    "usd": "$2,933,268",
+    "addresses": "7369983",
+    "coins": "43.51 BTC",
+    "usd": "$2,821,098",
     "percent_coins": "0% (100%)",
     "percentile": "Top 100%"
   },
   {
     "tier": "[0.00001 - 0.0001)",
     "balance": "[0.00001 - 0.0001)",
-    "addresses": "12314703",
-    "coins": "520.39 BTC",
-    "usd": "$35,091,832",
+    "addresses": "12322089",
+    "coins": "520.78 BTC",
+    "usd": "$33,767,799",
     "percent_coins": "0% (100%)",
-    "percentile": "Top 87.32%"
+    "percentile": "Top 87.31%"
   },
   {
     "tier": "[0.0001 - 0.001)",
     "balance": "[0.0001 - 0.001)",
-    "addresses": "13850431",
-    "coins": "5,198 BTC",
-    "usd": "$350,536,972",
+    "addresses": "13807637",
+    "coins": "5,175 BTC",
+    "usd": "$335,540,397",
     "percent_coins": "0.03% (100%)",
-    "percentile": "Top 66.12%"
+    "percentile": "Top 66.09%"
   },
   {
     "tier": "[0.001 - 0.01)",
     "balance": "[0.001 - 0.01)",
-    "addresses": "11912475",
-    "coins": "43,953 BTC",
-    "usd": "$2,963,935,726",
+    "addresses": "11905629",
+    "coins": "43,952 BTC",
+    "usd": "$2,849,905,621",
     "percent_coins": "0.22% (99.97%)",
-    "percentile": "Top 42.29%"
+    "percentile": "Top 42.31%"
   },
   {
     "tier": "[0.01 - 0.1)",
     "balance": "[0.01 - 0.1)",
-    "addresses": "8182026",
-    "coins": "275,322 BTC",
-    "usd": "$18,566,046,960",
+    "addresses": "8186879",
+    "coins": "275,485 BTC",
+    "usd": "$17,862,869,999",
     "percent_coins": "1.38% (99.75%)",
-    "percentile": "Top 21.78%"
+    "percentile": "Top 21.81%"
   },
   {
     "tier": "[0.1 - 1)",
     "balance": "[0.1 - 1)",
-    "addresses": "3500600",
-    "coins": "1,070,686 BTC",
-    "usd": "$72,200,568,846",
+    "addresses": "3501259",
+    "coins": "1,070,804 BTC",
+    "usd": "$69,432,492,262",
     "percent_coins": "5.36% (98.37%)",
-    "percentile": "Top 7.7%"
+    "percentile": "Top 7.71%"
   },
   {
     "tier": "[1 - 10)",
     "balance": "[1 - 10)",
-    "addresses": "824553",
-    "coins": "2,044,928 BTC",
-    "usd": "$137,897,598,907",
+    "addresses": "824454",
+    "coins": "2,044,236 BTC",
+    "usd": "$132,551,163,182",
     "percent_coins": "10.23% (93.02%)",
     "percentile": "Top 1.68%"
   },
   {
     "tier": "[10 - 100)",
     "balance": "[10 - 100)",
-    "addresses": "130456",
-    "coins": "4,224,236 BTC",
-    "usd": "$284,856,924,556",
-    "percent_coins": "21.13% (82.79%)",
+    "addresses": "130498",
+    "coins": "4,225,423 BTC",
+    "usd": "$273,982,493,187",
+    "percent_coins": "21.14% (82.79%)",
     "percentile": "Top 0.26%"
   },
   {
     "tier": "[100 - 1,000)",
     "balance": "[100 - 1,000)",
-    "addresses": "17778",
-    "coins": "5,105,386 BTC",
-    "usd": "$344,276,343,714",
-    "percent_coins": "25.54% (61.66%)",
+    "addresses": "17793",
+    "coins": "5,113,909 BTC",
+    "usd": "$331,593,189,048",
+    "percent_coins": "25.58% (61.65%)",
     "percentile": "Top 0.03%"
   },
   {
     "tier": "[1,000 - 10,000)",
     "balance": "[1,000 - 10,000)",
-    "addresses": "1927",
-    "coins": "4,255,333 BTC",
-    "usd": "$286,953,907,815",
-    "percent_coins": "21.29% (36.12%)",
+    "addresses": "1924",
+    "coins": "4,244,087 BTC",
+    "usd": "$275,192,677,750",
+    "percent_coins": "21.23% (36.07%)",
     "percentile": "Top 0%"
   },
   {
     "tier": "[10,000 - 100,000)",
     "balance": "[10,000 - 100,000)",
     "addresses": "85",
-    "coins": "2,274,025 BTC",
-    "usd": "$153,346,483,976",
-    "percent_coins": "11.38% (14.83%)",
+    "coins": "2,276,544 BTC",
+    "usd": "$147,614,360,471",
+    "percent_coins": "11.39% (14.84%)",
     "percentile": "Top 0%"
   },
   {
@@ -103,7 +103,7 @@
     "balance": "[100,000 - 1,000,000)",
     "addresses": "4",
     "coins": "690,912 BTC",
-    "usd": "$46,590,937,368",
+    "usd": "$44,799,731,081",
     "percent_coins": "3.46% (3.46%)",
     "percentile": "Top 0%"
   }
