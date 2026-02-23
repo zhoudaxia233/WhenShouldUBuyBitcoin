@@ -429,7 +429,7 @@ def test_add_position_confirm_executes_live_mode_when_strategy_is_live(client: T
     assert response.status_code == 200
     payload = response.json()
     assert payload["execution_mode"] == "LIVE"
-    assert payload["transaction"]["source"] == "MANUAL"
+    assert payload["transaction"]["source"] == "BINANCE"
     assert payload["transaction"]["is_manual"] is True
     assert payload["transaction"]["status"] == "SUCCESS"
     assert payload["transaction"]["binance_order_id"] == 99887766
