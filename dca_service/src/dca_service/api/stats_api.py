@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, Query, HTTPException, BackgroundTasks
-from sqlmodel import Session, select
+from sqlmodel import Session, select, col
 from typing import List, Dict, Any, Tuple, Optional
 from datetime import datetime, timezone, timedelta
 import pandas as pd
@@ -480,8 +480,18 @@ def _send_add_position_email_task(transaction_id: int) -> None:
             tx = bg_session.get(DCATransaction, transaction_id)
             if not tx:
                 return
+            total_btc = None
+            try:
+                # Keep email portfolio stats consistent with the DCA execution path:
+                # prefer real wallet summary (Binance hot wallet + configured cold wallet).
+                from dca_service.api.wallet_api import fetch_wallet_summary
+                wallet_summary = asyncio.run(fetch_wallet_summary(bg_session))
+                total_btc = wallet_summary.total_btc
+            except Exception:
+                # Fall back to mailer-side DB approximation if wallet summary fetch fails.
+                total_btc = None
             from dca_service.services.mailer import send_dca_notification
-            send_dca_notification(tx, decision=None, total_btc=None)
+            send_dca_notification(tx, decision=None, total_btc=total_btc)
     except Exception:
         # Email should never break API flow.
         pass
@@ -2273,27 +2283,73 @@ def confirm_add_position(
             fee_amount = float(live_result.get("total_fee") or 0.0)
             fee_asset = str(live_result.get("fee_asset") or "USDC")
             binance_order_id = live_result.get("order_id")
+            fills = live_result.get("trades") or []
+            fill_trade_ids = []
+            for fill in fills:
+                try:
+                    fill_trade_ids.append(int(fill.get("id")))
+                except (TypeError, ValueError, AttributeError):
+                    continue
+            # We store at most one Binance trade id on the aggregate order row.
+            # For split fills, order_id + source="BINANCE" prevents sync duplicates.
+            primary_trade_id = fill_trade_ids[0] if fill_trade_ids else None
             if executed_price <= 0 or executed_btc <= 0:
                 raise ValueError("Live order returned invalid execution data.")
 
-            tx = DCATransaction(
-                status="SUCCESS",
-                fiat_amount=executed_usd,
-                btc_amount=executed_btc,
-                price=executed_price,
-                ahr999=0.0,
-                notes=notes,
-                intended_amount_usd=amount_usdc,
-                executed_amount_usd=executed_usd,
-                executed_amount_btc=executed_btc,
-                avg_execution_price_usd=executed_price,
-                fee_amount=fee_amount,
-                fee_asset=fee_asset,
-                source="MANUAL",
-                is_manual=True,
-                binance_order_id=binance_order_id,
-            )
-            session.add(tx)
+            # Idempotency guard: sync service may import the same Binance trade in a narrow
+            # race window before this request writes its local transaction row.
+            existing_tx = None
+            if binance_order_id is not None:
+                existing_tx = session.exec(
+                    select(DCATransaction)
+                    .where(DCATransaction.binance_order_id == binance_order_id)
+                    .order_by(col(DCATransaction.timestamp).desc())
+                ).first()
+
+            if existing_tx:
+                tx = existing_tx
+                tx.status = "SUCCESS"
+                tx.fiat_amount = executed_usd
+                tx.btc_amount = executed_btc
+                tx.price = executed_price
+                tx.ahr999 = 0.0
+                tx.notes = notes
+                tx.intended_amount_usd = amount_usdc
+                tx.executed_amount_usd = executed_usd
+                tx.executed_amount_btc = executed_btc
+                tx.avg_execution_price_usd = executed_price
+                tx.fee_amount = fee_amount
+                tx.fee_asset = fee_asset
+                # Distinguish "manual-triggered but app-executed" from "synced manual import"
+                # so incremental sync recognizes this order as already recorded.
+                tx.source = "BINANCE"
+                tx.is_manual = True
+                if tx.binance_order_id is None:
+                    tx.binance_order_id = binance_order_id
+                if tx.binance_trade_id is None and primary_trade_id is not None:
+                    tx.binance_trade_id = primary_trade_id
+                session.add(tx)
+            else:
+                tx = DCATransaction(
+                    status="SUCCESS",
+                    fiat_amount=executed_usd,
+                    btc_amount=executed_btc,
+                    price=executed_price,
+                    ahr999=0.0,
+                    notes=notes,
+                    intended_amount_usd=amount_usdc,
+                    executed_amount_usd=executed_usd,
+                    executed_amount_btc=executed_btc,
+                    avg_execution_price_usd=executed_price,
+                    fee_amount=fee_amount,
+                    fee_asset=fee_asset,
+                    source="BINANCE",
+                    is_manual=True,
+                    binance_order_id=binance_order_id,
+                    binance_trade_id=primary_trade_id,
+                )
+                session.add(tx)
+
             session.commit()
             session.refresh(tx)
             background_tasks.add_task(_send_add_position_email_task, tx.id)

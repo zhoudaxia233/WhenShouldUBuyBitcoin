@@ -174,7 +174,65 @@ class TestDuplicateDCADetection:
         # Verify first fill is linked
         session.refresh(dca_tx)
         assert dca_tx.binance_trade_id == 11111, "Should link to first fill"
-    
+
+    def test_manual_triggered_live_order_not_duplicated(self, session: Session):
+        """
+        add-position LIVE orders are user-triggered but app-executed on Binance.
+        They should not be imported again as MANUAL trades by sync.
+        """
+        live_manual_tx = DCATransaction(
+            timestamp=datetime.now(timezone.utc),
+            status="SUCCESS",
+            fiat_amount=49.37,
+            btc_amount=0.00075,
+            price=65823.0,
+            ahr999=0.0,
+            notes="Add Position confirmed after advice [BTCUSDC] (LIVE)",
+            source="BINANCE",   # bot/app-executed (manual trigger)
+            is_manual=True,     # still shown as MANUAL in UI
+            binance_order_id=8361076027,
+            binance_trade_id=None,
+            fee_amount=0.05,
+            fee_asset="USDC",
+            intended_amount_usd=49.37,
+            executed_amount_usd=49.37,
+            executed_amount_btc=0.00075,
+            avg_execution_price_usd=65823.0,
+        )
+        session.add(live_manual_tx)
+        session.commit()
+        session.refresh(live_manual_tx)
+
+        mock_binance_client = AsyncMock()
+        mock_binance_client._request.return_value = [{
+            "id": 12345678901,
+            "orderId": 8361076027,  # same Binance order
+            "time": int(datetime.now(timezone.utc).timestamp() * 1000),
+            "price": "65823.00",
+            "qty": "0.00075000",
+            "quoteQty": "49.37",
+            "commission": "0.05",
+            "commissionAsset": "USDC",
+            "isBuyer": True
+        }]
+        mock_binance_client.close = AsyncMock()
+
+        sync_service = TradeSyncService(session)
+        with patch.object(sync_service, "_get_client", return_value=mock_binance_client):
+            added = asyncio.run(sync_service.sync_trades())
+
+        assert added == 0, "Should not create duplicate MANUAL row for add-position LIVE order"
+
+        all_txs = session.exec(
+            select(DCATransaction).where(DCATransaction.binance_order_id == 8361076027)
+        ).all()
+        assert len(all_txs) == 1, "Same order should still have exactly one local row"
+
+        session.refresh(live_manual_tx)
+        assert live_manual_tx.binance_trade_id == 12345678901, "Trade ID should be linked to existing row"
+        assert live_manual_tx.source == "BINANCE"
+        assert live_manual_tx.is_manual is True
+
     def test_real_manual_trade_imported(self, session: Session):
         """
         Test that genuine manual trades are still imported correctly.
