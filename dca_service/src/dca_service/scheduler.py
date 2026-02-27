@@ -7,6 +7,7 @@ based on the strategy configuration (execution_time_utc, execution_frequency).
 from datetime import datetime, timezone, timedelta
 from typing import Optional
 import sys
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.cron import CronTrigger
@@ -15,6 +16,7 @@ from sqlmodel import Session, select
 from dca_service.database import engine
 from dca_service.models import DCAStrategy, DCATransaction
 from dca_service.services.dca_engine import calculate_dca_decision
+from dca_service.config import settings
 from dca_service.core.logging import logger
 
 
@@ -24,10 +26,12 @@ class DCAScheduler:
     
     Checks every minute if conditions are met to execute a DCA transaction:
     - Strategy is active
-    - Current time matches execution_time_utc
+    - Current time matches execution_time_utc (with a short grace window)
     - Frequency matches (daily or correct day of week for weekly)
     - No transaction already executed today (for daily) or this week (for weekly)
     """
+
+    EXECUTION_GRACE_MINUTES = 5
     
     def __init__(self):
         self.scheduler = BackgroundScheduler(timezone="UTC")
@@ -103,11 +107,18 @@ class DCAScheduler:
         Get current time in strategy-selected timezone context.
 
         UTC mode: returns UTC now.
-        LOCAL mode: returns server-local timezone now.
+        LOCAL mode: returns configured LOCAL_TIMEZONE clock.
         """
         mode = (strategy.time_display_mode or "UTC").upper()
         if mode == "LOCAL":
-            return datetime.now(timezone.utc).astimezone()
+            try:
+                local_tz = ZoneInfo(settings.LOCAL_TIMEZONE)
+                return datetime.now(timezone.utc).astimezone(local_tz)
+            except ZoneInfoNotFoundError:
+                logger.error(
+                    f"Invalid LOCAL_TIMEZONE '{settings.LOCAL_TIMEZONE}', fallback to system local timezone"
+                )
+                return datetime.now(timezone.utc).astimezone()
         return datetime.now(timezone.utc)
     
     # ... (skipping _should_execute_now and helpers as they use logger.debug/error which is fine) ...
@@ -135,8 +146,9 @@ class DCAScheduler:
             logger.error(f"Invalid execution_time_utc format: {strategy.execution_time_utc}")
             return False
         
-        # Check if current time matches execution time (within the same minute)
-        if now.hour != exec_hour or now.minute != exec_minute:
+        # Check if current time is within the execution window.
+        # This avoids missing a run due to short outages/restarts around the target minute.
+        if not self._is_within_execution_window(now, exec_hour, exec_minute):
             return False
         
         # Check frequency-specific conditions
@@ -147,6 +159,17 @@ class DCAScheduler:
         else:
             logger.error(f"Unknown execution frequency: {strategy.execution_frequency}")
             return False
+
+    def _is_within_execution_window(self, now: datetime, exec_hour: int, exec_minute: int) -> bool:
+        """
+        Return True if `now` is within execution minute + grace period.
+        """
+        scheduled_time = now.replace(hour=exec_hour, minute=exec_minute, second=0, microsecond=0)
+        if now < scheduled_time:
+            return False
+
+        delay = now - scheduled_time
+        return delay <= timedelta(minutes=self.EXECUTION_GRACE_MINUTES)
     
     def _should_execute_daily(self, session: Session, now: datetime) -> bool:
         """
@@ -159,13 +182,19 @@ class DCAScheduler:
         Returns:
             True if no transaction executed today, False otherwise
         """
-        # Start of "today" in strategy timezone, converted back to UTC for DB query.
-        today_start = now.replace(hour=0, minute=0, second=0, microsecond=0).astimezone(timezone.utc)
+        # Start/end of "today" in strategy timezone, converted to UTC for DB query.
+        # End bound prevents future-dated transactions from incorrectly blocking today.
+        today_start_local = now.replace(hour=0, minute=0, second=0, microsecond=0)
+        tomorrow_start_local = today_start_local + timedelta(days=1)
+        today_start = today_start_local.astimezone(timezone.utc)
+        tomorrow_start = tomorrow_start_local.astimezone(timezone.utc)
         
         existing_tx = session.exec(
             select(DCATransaction)
             .where(DCATransaction.timestamp >= today_start)
+            .where(DCATransaction.timestamp < tomorrow_start)
             .where(DCATransaction.status == "SUCCESS")
+            .where(DCATransaction.is_manual == False)
         ).first()
         
         if existing_tx:

@@ -57,6 +57,12 @@ def test_healthz_endpoint(client: TestClient):
     assert data["version"] == settings.APP_VERSION
 
 
+def test_strategy_page_displays_configured_local_timezone(client: TestClient):
+    response = client.get("/strategy")
+    assert response.status_code == 200
+    assert f"Local ({settings.LOCAL_TIMEZONE})" in response.text
+
+
 def test_switch_time_mode_keeps_wall_clock_execution_time(client: TestClient, session: Session):
     strategy = DCAStrategy(
         is_active=True,

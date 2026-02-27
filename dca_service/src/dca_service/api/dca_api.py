@@ -64,7 +64,8 @@ async def execute_simulated_dca(
         avg_execution_price_usd=decision.price_usd,
         fee_amount=0.0,  # No fees in simulation
         fee_asset="USDC",
-        source="SIMULATED"
+        source="SIMULATED",
+        is_manual=True,
     )
     
     session.add(transaction)

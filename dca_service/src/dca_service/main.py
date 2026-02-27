@@ -52,6 +52,7 @@ def build_template_context(**extra):
         "project_name": settings.PROJECT_NAME,
         "app_version": settings.APP_VERSION,
         "app_commit_sha": settings.APP_COMMIT_SHA,
+        "local_timezone": settings.LOCAL_TIMEZONE,
     }
     context.update(extra)
     return context

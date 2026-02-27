@@ -75,6 +75,7 @@ class Settings(BaseSettings):
     SESSION_COOKIE_HTTPS_ONLY: bool = False  # Must be True in production with HTTPS. False for local HTTP development.
     SESSION_COOKIE_SAMESITE: str = "lax"  # "lax" or "strict" for CSRF protection
     SESSION_MAX_AGE: int = 86400  # 24 hours in seconds
+    LOCAL_TIMEZONE: str = "Europe/Berlin"  # Used when strategy time_display_mode is LOCAL
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
