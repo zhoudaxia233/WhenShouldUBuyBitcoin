@@ -422,7 +422,7 @@
                 if (scheduleDisplayEl) {
                     const freq = strategy.execution_frequency.charAt(0).toUpperCase() + strategy.execution_frequency.slice(1);
                     const mode = (strategy.time_display_mode || 'UTC').toUpperCase();
-                    const modeLabel = mode === 'LOCAL' ? 'Local' : 'UTC';
+                    const modeLabel = mode === 'LOCAL' ? LOCAL_TIMEZONE : 'UTC';
                     scheduleDisplayEl.textContent = `Schedule: ${freq} at ${strategy.execution_time_utc} (${modeLabel})`;
                 }
             }
@@ -620,6 +620,7 @@
             return null;
         }
         
+        const LOCAL_TIMEZONE = {{ local_timezone | tojson }};
         // Strategy-selected timestamp display mode: "UTC" or "LOCAL"
         let currentTimeDisplayMode = 'UTC';
 
@@ -958,7 +959,7 @@
             if (strategy) {
                 const freq = strategy.execution_frequency.charAt(0).toUpperCase() + strategy.execution_frequency.slice(1);
                 currentTimeDisplayMode = (strategy.time_display_mode || 'UTC').toUpperCase();
-                const modeLabel = currentTimeDisplayMode === 'LOCAL' ? 'Local' : 'UTC';
+                const modeLabel = currentTimeDisplayMode === 'LOCAL' ? LOCAL_TIMEZONE : 'UTC';
                 document.getElementById('scheduleDisplay').textContent = `Schedule: ${freq} at ${strategy.execution_time_utc} (${modeLabel})`;
                 if (allTransactions.length > 0) {
                     renderTransactionPage();

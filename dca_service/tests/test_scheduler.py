@@ -17,6 +17,7 @@ from dca_service.scheduler import DCAScheduler
 from dca_service.models import DCAStrategy, DCATransaction
 from dca_service.services.dca_engine import DCADecision
 from dca_service.database import get_session
+from dca_service.config import settings
 
 
 @pytest.fixture
@@ -80,8 +81,13 @@ class TestDailyExecution:
         assert scheduler._should_execute_now(daily_strategy, session) is False
     
     @freeze_time("2024-01-15 14:31:00")
-    def test_should_not_execute_after_time(self, scheduler, daily_strategy, session):
-        """Test that DCA doesn't execute after the configured minute"""
+    def test_should_execute_within_grace_window(self, scheduler, daily_strategy, session):
+        """Test that DCA can still execute shortly after the configured minute."""
+        assert scheduler._should_execute_now(daily_strategy, session) is True
+
+    @freeze_time("2024-01-15 14:36:00")
+    def test_should_not_execute_after_grace_window(self, scheduler, daily_strategy, session):
+        """Test that DCA doesn't execute after the grace window."""
         assert scheduler._should_execute_now(daily_strategy, session) is False
     
     @freeze_time("2024-01-15 14:30:00")
@@ -121,6 +127,43 @@ class TestDailyExecution:
         session.add(tx)
         session.commit()
         
+        assert scheduler._should_execute_now(daily_strategy, session) is True
+
+    @freeze_time("2024-01-15 14:30:00")
+    def test_manual_success_today_does_not_block_auto(self, scheduler, daily_strategy, session):
+        """Manual trades should not block scheduled auto execution."""
+        tx = DCATransaction(
+            status="SUCCESS",
+            fiat_amount=100.0,
+            btc_amount=0.001,
+            price=50000.0,
+            ahr999=0.5,
+            notes="Manual transaction",
+            source="MANUAL",
+            is_manual=True,
+            timestamp=datetime.now(timezone.utc)
+        )
+        session.add(tx)
+        session.commit()
+
+        assert scheduler._should_execute_now(daily_strategy, session) is True
+
+    @freeze_time("2024-01-15 14:30:00")
+    def test_future_success_transaction_does_not_block_today(self, scheduler, daily_strategy, session):
+        """Future-dated transactions should not block today's execution."""
+        tx = DCATransaction(
+            status="SUCCESS",
+            fiat_amount=100.0,
+            btc_amount=0.001,
+            price=50000.0,
+            ahr999=0.5,
+            notes="Future transaction",
+            source="SIMULATED",
+            timestamp=datetime(2024, 1, 16, 0, 0, 0, tzinfo=timezone.utc)
+        )
+        session.add(tx)
+        session.commit()
+
         assert scheduler._should_execute_now(daily_strategy, session) is True
 
 
@@ -214,16 +257,17 @@ class TestStrategyConditions:
         now = datetime.now(timezone.utc)
         assert scheduler._should_execute_now(daily_strategy, session) is False
 
-    def test_local_time_mode_uses_strategy_timezone(self, scheduler, daily_strategy, session):
-        """Test LOCAL mode executes based on local timezone clock."""
+    @freeze_time("2024-01-15 08:15:00+00:00")
+    def test_local_time_mode_uses_configured_timezone(self, scheduler, daily_strategy, session, monkeypatch):
+        """Test LOCAL mode executes based on configured LOCAL_TIMEZONE (Europe/Berlin)."""
+        monkeypatch.setattr(settings, "LOCAL_TIMEZONE", "Europe/Berlin")
         daily_strategy.time_display_mode = "LOCAL"
         daily_strategy.execution_time_utc = "09:15"  # Interpreted as local time in LOCAL mode
         session.add(daily_strategy)
         session.commit()
 
-        fake_local_now = datetime(2024, 1, 15, 9, 15, tzinfo=timezone(timedelta(hours=8)))
-        with patch.object(scheduler, "_get_now_in_strategy_timezone", return_value=fake_local_now):
-            assert scheduler._should_execute_now(daily_strategy, session) is True
+        # 08:15 UTC == 09:15 Europe/Berlin (CET in January)
+        assert scheduler._should_execute_now(daily_strategy, session) is True
 
 
 class TestExecutionModes:
