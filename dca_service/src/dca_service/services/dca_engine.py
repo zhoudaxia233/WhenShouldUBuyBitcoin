@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import datetime, timezone, date
 from typing import Optional, Dict, Any
 from pydantic import BaseModel
 from sqlmodel import Session, select
@@ -7,6 +7,7 @@ from dca_service.models import DCAStrategy, DCATransaction
 from dca_service.services.metrics_provider import (
     get_latest_metrics,
     get_latest_bottoming_volume_signal,
+    get_latest_bottoming_signal_from_daily_report,
     get_latest_macro_preview_snapshot,
     calculate_ahr999_percentile_thresholds,
     get_drawdown_percentile_snapshot,
@@ -43,6 +44,44 @@ class DCADecision(BaseModel):
     drawdown_hist_price_usd: Optional[float] = None
     drawdown_context: Optional[Dict[str, Any]] = None
     bottoming_signal: Optional[Dict[str, Any]] = None
+
+
+def _parse_signal_date(value: Any) -> Optional[date]:
+    """Parse YYYY-MM-DD date strings used by preview signal payloads."""
+    if value is None:
+        return None
+    try:
+        return datetime.strptime(str(value), "%Y-%m-%d").date()
+    except Exception:
+        return None
+
+
+def _select_fresher_bottoming_signal(
+    csv_signal: Optional[Dict[str, Any]],
+    report_signal: Optional[Dict[str, Any]],
+) -> Optional[Dict[str, Any]]:
+    """
+    Choose the fresher bottoming signal by `as_of_date`.
+
+    Preference:
+    - newer `as_of_date`
+    - CSV on date tie (keeps metrics CSV as primary source when aligned)
+    - whichever exists when only one source is available
+    """
+    if csv_signal is None:
+        return report_signal
+    if report_signal is None:
+        return csv_signal
+
+    csv_date = _parse_signal_date(csv_signal.get("as_of_date"))
+    report_date = _parse_signal_date(report_signal.get("as_of_date"))
+    if csv_date and report_date:
+        if report_date > csv_date:
+            return report_signal
+        return csv_signal
+    if report_date and not csv_date:
+        return report_signal
+    return csv_signal
 
 
 def _check_monthly_inflow(session: Session, strategy: DCAStrategy, now: datetime, month_spent: float):
@@ -127,6 +166,23 @@ def calculate_dca_decision(session: Session) -> DCADecision:
     # 1. Load Strategy
     strategy = session.exec(select(DCAStrategy)).first()
     metrics = get_latest_metrics()
+    # Bottoming/macro preview is display-only and should still be returned even
+    # when primary trading metrics are stale/unavailable.
+    csv_bottoming_signal = get_latest_bottoming_volume_signal()
+    report_bottoming_signal = get_latest_bottoming_signal_from_daily_report()
+    bottoming_signal = _select_fresher_bottoming_signal(
+        csv_bottoming_signal,
+        report_bottoming_signal,
+    )
+    macro_preview = get_latest_macro_preview_snapshot()
+    if macro_preview:
+        if bottoming_signal is None:
+            bottoming_signal = {
+                "available": True,
+                "as_of_date": macro_preview.get("report_date"),
+                "source": "daily_report",
+            }
+        bottoming_signal["macro_snapshot"] = macro_preview
 
     timestamp = datetime.now(timezone.utc)
 
@@ -158,6 +214,7 @@ def calculate_dca_decision(session: Session) -> DCADecision:
     if not strategy:
         decision_data = base_decision.copy()
         decision_data["reason"] = "No strategy found"
+        decision_data["bottoming_signal"] = bottoming_signal
         return DCADecision(**decision_data)
 
     # 0. Check monthly inflow (accumulate savings)
@@ -184,6 +241,7 @@ def calculate_dca_decision(session: Session) -> DCADecision:
     if not metrics:
         decision_data = base_decision.copy()
         decision_data["reason"] = "Metrics unavailable or stale"
+        decision_data["bottoming_signal"] = bottoming_signal
         return DCADecision(**decision_data)
 
     price = metrics["price_usd"]
@@ -195,17 +253,6 @@ def calculate_dca_decision(session: Session) -> DCADecision:
     drawdown_context = get_drawdown_context(price)
     source_backend = metrics.get("source", "unknown")
     source_label = metrics.get("source_label", "Unknown")
-    bottoming_signal = get_latest_bottoming_volume_signal()
-    macro_preview = get_latest_macro_preview_snapshot()
-    if macro_preview:
-        if bottoming_signal is None:
-            bottoming_signal = {
-                "available": True,
-                "as_of_date": macro_preview.get("report_date"),
-                "source": "daily_report",
-            }
-        bottoming_signal["macro_snapshot"] = macro_preview
-
     # Keep strategy math pinned to provider metrics (peak180 above).
     # UI display may use richer multi-window context.
     display_peak_price = peak180
