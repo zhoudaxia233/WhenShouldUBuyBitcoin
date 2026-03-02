@@ -1,6 +1,6 @@
 {
   "name": "when-should-u-buy-bitcoin",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Bitcoin investment strategy backtesting tool",
   "type": "module",
   "scripts": {
