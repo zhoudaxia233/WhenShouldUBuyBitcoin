@@ -10,6 +10,7 @@ services:
     volumes:
       - ./data:/app/data
       - ./docs/data:/app/docs/data
+      - ./docs/charts:/app/docs/charts
       - ./.env:/app/.env:ro
     environment:
       - DATABASE_URL=sqlite:////app/data/dca.db
