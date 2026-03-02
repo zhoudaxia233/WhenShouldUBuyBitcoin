@@ -284,6 +284,96 @@ def get_latest_bottoming_volume_signal() -> Optional[Dict[str, Any]]:
         return None
 
 
+def get_latest_bottoming_signal_from_daily_report() -> Optional[Dict[str, Any]]:
+    """
+    Read bottoming checklist signal from docs/data/daily_report.json.
+
+    This provides a display-safe fallback/override path when chart/report generation
+    is newer than CSV-derived preview payloads.
+    """
+    try:
+        dca_service_dir = Path(__file__).resolve().parents[3]
+        report_path = (dca_service_dir.parent / "docs" / "data" / "daily_report.json").resolve()
+        if not report_path.exists():
+            return None
+
+        data = json.loads(report_path.read_text(encoding="utf-8"))
+        sections = data.get("sections")
+        if not isinstance(sections, list):
+            return None
+
+        metrics: Optional[Dict[str, Any]] = None
+        for section in sections:
+            if not isinstance(section, dict):
+                continue
+            chart = str(section.get("chart") or "").strip()
+            payload = section.get("metrics")
+            if chart == "Supplemental Bottoming Signals" and isinstance(payload, dict):
+                metrics = payload
+                break
+
+        if not metrics:
+            return None
+
+        def _as_float(obj: Dict[str, Any], key: str) -> Optional[float]:
+            value = obj.get(key)
+            if value in (None, "", "nan", "NaN"):
+                return None
+            try:
+                parsed = float(value)
+                return parsed if parsed == parsed else None
+            except (TypeError, ValueError):
+                return None
+
+        def _as_bool(obj: Dict[str, Any], key: str) -> Optional[bool]:
+            value = obj.get(key)
+            if value is None or value == "":
+                return None
+            if isinstance(value, bool):
+                return value
+            return str(value).strip().lower() in {"1", "true", "yes"}
+
+        signal = {
+            "available": True,
+            "as_of_date": data.get("report_date"),
+            "volume": _as_float(metrics, "volume"),
+            "volume_ma30": _as_float(metrics, "volume_ma30"),
+            "volume_ratio_30": _as_float(metrics, "volume_ratio_30"),
+            "daily_return_pct": _as_float(metrics, "daily_return_pct"),
+            "is_panic_selloff_day": _as_bool(metrics, "is_panic_selloff_day"),
+            "recent_panic_selloff_7d": _as_bool(metrics, "recent_panic_selloff_7d"),
+            "is_post_panic_volume_contraction": _as_bool(metrics, "is_post_panic_volume_contraction"),
+            "rsi14": _as_float(metrics, "rsi14"),
+            "rsi14w": _as_float(metrics, "rsi14w"),
+            "is_rsi_daily_oversold": _as_bool(metrics, "is_rsi_daily_oversold"),
+            "is_rsi_weekly_oversold_proxy": _as_bool(metrics, "is_rsi_weekly_oversold_proxy"),
+            "is_rsi_bottoming_signal": _as_bool(metrics, "is_rsi_bottoming_signal"),
+            "status_label": (
+                "Post-panic volume contraction"
+                if _as_bool(metrics, "is_post_panic_volume_contraction")
+                else "No post-panic contraction"
+            ),
+            "source": "daily_report",
+        }
+
+        has_signal_core = any(
+            signal.get(k) is not None
+            for k in [
+                "volume_ratio_30",
+                "daily_return_pct",
+                "is_post_panic_volume_contraction",
+                "rsi14",
+                "rsi14w",
+            ]
+        )
+        if not has_signal_core and not signal.get("as_of_date"):
+            return None
+        return signal
+    except Exception as e:
+        logger.warning(f"Failed to read bottoming signal from daily_report: {e}")
+        return None
+
+
 def get_latest_macro_preview_snapshot() -> Optional[Dict[str, Any]]:
     """
     Read a concise macro snapshot from docs/data/daily_report.json for DCA preview UI.

@@ -420,3 +420,94 @@ def test_legacy_strategy_execution_no_error(session):
     # AHR999 0.40 falls into p10 tier (bottom 10%) in new percentile strategy
     assert decision.ahr_band in ["p10", "low"]  # Accept either
     assert decision.multiplier == 1.5
+
+
+def test_bottoming_signal_prefers_fresher_daily_report(session: Session, basic_strategy: DCAStrategy):
+    """If daily_report signal is newer than CSV signal, preview should use daily_report."""
+    metrics = {
+        "ahr999": 0.8,
+        "price_usd": 70000.0,
+        "peak180": 90000.0,
+        "timestamp": datetime.now(timezone.utc),
+        "source": "csv",
+        "source_label": "Test",
+    }
+    csv_signal = {
+        "available": True,
+        "as_of_date": "2026-02-26",
+        "source": "metrics_csv",
+    }
+    report_signal = {
+        "available": True,
+        "as_of_date": "2026-03-01",
+        "source": "daily_report",
+    }
+
+    with patch("dca_service.services.dca_engine.get_latest_metrics", return_value=metrics), \
+         patch("dca_service.services.dca_engine.get_latest_bottoming_volume_signal", return_value=csv_signal), \
+         patch("dca_service.services.dca_engine.get_latest_bottoming_signal_from_daily_report", return_value=report_signal), \
+         patch("dca_service.services.dca_engine.get_latest_macro_preview_snapshot", return_value=None):
+        decision = calculate_dca_decision(session)
+
+    assert decision.bottoming_signal is not None
+    assert decision.bottoming_signal.get("as_of_date") == "2026-03-01"
+    assert decision.bottoming_signal.get("source") == "daily_report"
+
+
+def test_bottoming_signal_prefers_csv_on_tie(session: Session, basic_strategy: DCAStrategy):
+    """If CSV and daily_report have same date, keep CSV as primary source."""
+    metrics = {
+        "ahr999": 0.8,
+        "price_usd": 70000.0,
+        "peak180": 90000.0,
+        "timestamp": datetime.now(timezone.utc),
+        "source": "csv",
+        "source_label": "Test",
+    }
+    csv_signal = {
+        "available": True,
+        "as_of_date": "2026-03-01",
+        "source": "metrics_csv",
+    }
+    report_signal = {
+        "available": True,
+        "as_of_date": "2026-03-01",
+        "source": "daily_report",
+    }
+
+    with patch("dca_service.services.dca_engine.get_latest_metrics", return_value=metrics), \
+         patch("dca_service.services.dca_engine.get_latest_bottoming_volume_signal", return_value=csv_signal), \
+         patch("dca_service.services.dca_engine.get_latest_bottoming_signal_from_daily_report", return_value=report_signal), \
+         patch("dca_service.services.dca_engine.get_latest_macro_preview_snapshot", return_value=None):
+        decision = calculate_dca_decision(session)
+
+    assert decision.bottoming_signal is not None
+    assert decision.bottoming_signal.get("as_of_date") == "2026-03-01"
+    assert decision.bottoming_signal.get("source") == "metrics_csv"
+
+
+def test_bottoming_signal_present_when_metrics_unavailable(session: Session, basic_strategy: DCAStrategy):
+    """Even when trading metrics are unavailable, preview should still include latest signal."""
+    report_signal = {
+        "available": True,
+        "as_of_date": "2026-03-01",
+        "source": "daily_report",
+    }
+    macro_preview = {
+        "available": True,
+        "report_date": "2026-03-01",
+        "macro_risk_score": 40.0,
+    }
+
+    with patch("dca_service.services.dca_engine.get_latest_metrics", return_value=None), \
+         patch("dca_service.services.dca_engine.get_latest_bottoming_volume_signal", return_value=None), \
+         patch("dca_service.services.dca_engine.get_latest_bottoming_signal_from_daily_report", return_value=report_signal), \
+         patch("dca_service.services.dca_engine.get_latest_macro_preview_snapshot", return_value=macro_preview):
+        decision = calculate_dca_decision(session)
+
+    assert decision.can_execute is False
+    assert "unavailable or stale" in decision.reason
+    assert decision.bottoming_signal is not None
+    assert decision.bottoming_signal.get("as_of_date") == "2026-03-01"
+    assert decision.bottoming_signal.get("source") == "daily_report"
+    assert decision.bottoming_signal.get("macro_snapshot") == macro_preview
