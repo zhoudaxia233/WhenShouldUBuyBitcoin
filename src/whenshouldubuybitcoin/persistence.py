@@ -8,8 +8,30 @@ and metadata to/from JSON files.
 import json
 from pathlib import Path
 from typing import Optional
+import tempfile
 
 import pandas as pd
+
+
+def _atomic_write_text(path: Path, content: str) -> None:
+    """Write text atomically to avoid partial writes and bypass read-only target files."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp_path: Path | None = None
+    try:
+        with tempfile.NamedTemporaryFile(
+            mode="w",
+            encoding="utf-8",
+            dir=path.parent,
+            prefix=f".{path.name}.",
+            suffix=".tmp",
+            delete=False,
+        ) as tmp:
+            tmp.write(content)
+            tmp_path = Path(tmp.name)
+        tmp_path.replace(path)
+    finally:
+        if tmp_path is not None and tmp_path.exists():
+            tmp_path.unlink(missing_ok=True)
 
 
 def get_data_dir() -> Path:
@@ -88,8 +110,7 @@ def save_metadata(df: pd.DataFrame, filename: str = "btc_metadata.json") -> bool
             "last_updated": pd.Timestamp.now().isoformat()
         }
         
-        with open(filepath, "w") as f:
-            json.dump(metadata, f, indent=2)
+        _atomic_write_text(filepath, json.dumps(metadata, indent=2))
         
         return True
         
@@ -171,8 +192,23 @@ def save_metrics(df: pd.DataFrame, filename: str = "btc_metrics.csv") -> bool:
         # Convert date to string for CSV storage
         df_to_save["date"] = df_to_save["date"].dt.strftime("%Y-%m-%d")
         
-        # Save to CSV
-        df_to_save.to_csv(filepath, index=False)
+        # Save to CSV atomically (handles read-only target file metadata on host mounts).
+        tmp_path: Path | None = None
+        try:
+            with tempfile.NamedTemporaryFile(
+                mode="w",
+                encoding="utf-8",
+                dir=filepath.parent,
+                prefix=f".{filepath.name}.",
+                suffix=".tmp",
+                delete=False,
+            ) as tmp:
+                df_to_save.to_csv(tmp, index=False)
+                tmp_path = Path(tmp.name)
+            tmp_path.replace(filepath)
+        finally:
+            if tmp_path is not None and tmp_path.exists():
+                tmp_path.unlink(missing_ok=True)
         
         print(f"✓ Saved {len(df_to_save)} rows to {filepath}")
         
@@ -275,5 +311,4 @@ if __name__ == "__main__":
     if df is not None:
         print(f"\nLoaded data shape: {df.shape}")
         print(f"Columns: {df.columns.tolist()}")
-
 
