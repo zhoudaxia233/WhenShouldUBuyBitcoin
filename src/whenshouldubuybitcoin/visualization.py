@@ -10,6 +10,8 @@ This module provides interactive charts using Plotly to visualize:
 from pathlib import Path
 from typing import Optional, Tuple
 import json
+import tempfile
+import webbrowser
 
 import numpy as np
 import pandas as pd
@@ -22,6 +24,59 @@ MACRO_RISK_SCORE_WEIGHTS = {
     "move": 0.20,
     "hy_oas": 0.25,
 }
+
+
+def _atomic_write_text(path: Path, content: str) -> None:
+    """Write text via temp file + atomic replace to tolerate read-only target files."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp_path: Path | None = None
+    try:
+        with tempfile.NamedTemporaryFile(
+            mode="w",
+            encoding="utf-8",
+            dir=path.parent,
+            prefix=f".{path.name}.",
+            suffix=".tmp",
+            delete=False,
+        ) as tmp:
+            tmp.write(content)
+            tmp_path = Path(tmp.name)
+        tmp_path.replace(path)
+    finally:
+        if tmp_path is not None and tmp_path.exists():
+            tmp_path.unlink(missing_ok=True)
+
+
+def _write_figure_html_atomic(fig: go.Figure, output_path: Path, **kwargs) -> None:
+    """
+    Persist Plotly HTML via temp file + replace.
+
+    This avoids failures when target html exists but current user lacks direct
+    write permission on that specific file.
+    """
+    output_path = Path(output_path)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    auto_open = bool(kwargs.pop("auto_open", False))
+    tmp_path: Path | None = None
+    try:
+        with tempfile.NamedTemporaryFile(
+            mode="w",
+            encoding="utf-8",
+            dir=output_path.parent,
+            prefix=f".{output_path.name}.",
+            suffix=".tmp",
+            delete=False,
+        ) as tmp:
+            tmp_path = Path(tmp.name)
+
+        fig.write_html(str(tmp_path), auto_open=False, **kwargs)
+        tmp_path.replace(output_path)
+
+        if auto_open:
+            webbrowser.open(output_path.resolve().as_uri())
+    finally:
+        if tmp_path is not None and tmp_path.exists():
+            tmp_path.unlink(missing_ok=True)
 
 
 def get_output_dir() -> Path:
@@ -260,9 +315,7 @@ def add_yaxis_autoscale_script(html_path: Path) -> None:
     # Insert the script before the closing </body> tag
     if "</body>" in html_content:
         html_content = html_content.replace("</body>", autoscale_script + "\n</body>")
-        # Write back to file
-        with open(html_path, "w", encoding="utf-8") as f:
-            f.write(html_content)
+        _atomic_write_text(html_path, html_content)
 
 
 def add_info_modal_script(html_path: Path, title: str, content_html: str) -> None:
@@ -435,8 +488,7 @@ def add_info_modal_script(html_path: Path, title: str, content_html: str) -> Non
 
     if "</body>" in html_content:
         html_content = html_content.replace("</body>", info_script + "\n</body>")
-        with open(html_path, "w", encoding="utf-8") as f:
-            f.write(html_content)
+        _atomic_write_text(html_path, html_content)
 
 
 def plot_valuation_ratios(
@@ -646,7 +698,7 @@ def plot_valuation_ratios(
     # Save to HTML
     output_dir = get_output_dir()
     output_path = output_dir / output_filename
-    fig.write_html(str(output_path), auto_open=auto_open)
+    _write_figure_html_atomic(fig, output_path, auto_open=auto_open)
 
     # Add JavaScript to enable y-axis auto-scaling when x-axis range changes
     add_yaxis_autoscale_script(output_path)
@@ -789,7 +841,7 @@ def plot_price_comparison(
     # Save to HTML
     output_dir = get_output_dir()
     output_path = output_dir / output_filename
-    fig.write_html(str(output_path), auto_open=auto_open)
+    _write_figure_html_atomic(fig, output_path, auto_open=auto_open)
 
     # Add JavaScript to enable y-axis auto-scaling when x-axis range changes
     add_yaxis_autoscale_script(output_path)
@@ -971,7 +1023,7 @@ def plot_double_undervaluation_stats(
     # Save to HTML
     output_dir = get_output_dir()
     output_path = output_dir / output_filename
-    fig.write_html(str(output_path), auto_open=auto_open)
+    _write_figure_html_atomic(fig, output_path, auto_open=auto_open)
 
     print(f"✓ Saved statistics chart to: {output_path}")
     if auto_open:
@@ -1118,7 +1170,7 @@ def plot_usdjpy(
     # Save to HTML
     output_dir = get_output_dir()
     output_path = output_dir / output_filename
-    fig.write_html(str(output_path), auto_open=auto_open)
+    _write_figure_html_atomic(fig, output_path, auto_open=auto_open)
 
     # Add JavaScript to enable y-axis auto-scaling when x-axis range changes
     add_yaxis_autoscale_script(output_path)
@@ -1422,7 +1474,7 @@ def plot_usdjpy_risk_map(
     # Save to HTML
     output_dir = get_output_dir()
     output_path = output_dir / output_filename
-    fig.write_html(str(output_path), auto_open=auto_open)
+    _write_figure_html_atomic(fig, output_path, auto_open=auto_open)
 
     # Add JavaScript to enable y-axis auto-scaling when x-axis range changes
     add_yaxis_autoscale_script(output_path)
@@ -1803,7 +1855,7 @@ def plot_ma_cross_analysis(
     # Save to HTML
     output_dir = get_output_dir()
     output_path = output_dir / output_filename
-    fig.write_html(str(output_path), auto_open=auto_open)
+    _write_figure_html_atomic(fig, output_path, auto_open=auto_open)
 
     # Add auto-scale script
     add_yaxis_autoscale_script(output_path)
@@ -2012,7 +2064,7 @@ def plot_net_liquidity_dashboard(
 
     output_dir = get_output_dir()
     output_path = output_dir / output_filename
-    fig.write_html(str(output_path), auto_open=auto_open)
+    _write_figure_html_atomic(fig, output_path, auto_open=auto_open)
     add_yaxis_autoscale_script(output_path)
     add_info_modal_script(
         output_path,
@@ -2199,7 +2251,7 @@ def plot_funding_credit_stress(
 
     output_dir = get_output_dir()
     output_path = output_dir / output_filename
-    fig.write_html(str(output_path), auto_open=auto_open)
+    _write_figure_html_atomic(fig, output_path, auto_open=auto_open)
     add_yaxis_autoscale_script(output_path)
     add_info_modal_script(
         output_path,
@@ -2443,7 +2495,7 @@ def plot_macro_risk_score(
 
     output_dir = get_output_dir()
     output_path = output_dir / output_filename
-    fig.write_html(str(output_path), auto_open=auto_open)
+    _write_figure_html_atomic(fig, output_path, auto_open=auto_open)
     add_yaxis_autoscale_script(output_path)
     add_info_modal_script(
         output_path,
@@ -2562,7 +2614,7 @@ def generate_all_charts(df: pd.DataFrame, auto_open: bool = True) -> dict:
     # Save
     output_dir = get_output_dir()
     output_path = output_dir / output_filename
-    fig.write_html(str(output_path), auto_open=auto_open)
+    _write_figure_html_atomic(fig, output_path, auto_open=auto_open)
 
     # Add auto-scale script
     add_yaxis_autoscale_script(output_path)
@@ -2842,8 +2894,11 @@ def create_futures_oi_timeseries_chart(
 
     # Save
     output_file = Path(output_path)
-    fig.write_html(
-        output_file, include_plotlyjs="cdn", config={"displayModeBar": False}
+    _write_figure_html_atomic(
+        fig,
+        output_file,
+        include_plotlyjs="cdn",
+        config={"displayModeBar": False},
     )
 
     print(f"✓ Saved Futures OI chart to: {output_file}")
@@ -3100,7 +3155,8 @@ def create_oi_quadrant_chart(
 
     # Save
     output_file = Path(output_path)
-    fig.write_html(
+    _write_figure_html_atomic(
+        fig,
         output_file,
         full_html=False,
         include_plotlyjs="cdn",
@@ -3126,8 +3182,7 @@ def create_oi_quadrant_chart(
         quadrant_info["quadrant_id"] = "q4"  # Bottom-left
 
     info_file = output_file.parent / "oi_quadrant_info.json"
-    with open(info_file, "w") as f:
-        json.dump(quadrant_info, f, indent=2)
+    _atomic_write_text(info_file, json.dumps(quadrant_info, indent=2))
 
     print(f"✓ Saved OI Quadrant chart to: {output_file.resolve()}")
     print(f"✓ Saved quadrant info to: {info_file.resolve()}")

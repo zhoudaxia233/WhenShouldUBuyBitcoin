@@ -6,6 +6,8 @@ This is typically called after a DCA transaction to ensure the website data is u
 """
 import subprocess
 import sys
+import os
+import stat
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
@@ -14,14 +16,48 @@ from dca_service.core.logging import logger
 
 
 def resolve_project_root() -> Path:
-    """Resolve repository root from this module location."""
+    """Resolve repository root robustly across local and production layouts."""
+    env_root = os.getenv("DCA_PROJECT_ROOT", "").strip()
+    if env_root:
+        candidate = Path(env_root).expanduser().resolve()
+        if (candidate / "main.py").exists():
+            return candidate
+
+    for parent in Path(__file__).resolve().parents:
+        if (parent / "main.py").exists() and (parent / "pyproject.toml").exists():
+            return parent
+
+    # Backward-compatible fallback for source-tree layout:
     # dca_service/src/dca_service/services/static_generator.py -> project_root
-    return Path(__file__).parent.parent.parent.parent.parent
+    return Path(__file__).resolve().parent.parent.parent.parent.parent
 
 
 def get_static_generation_log_path() -> Path:
     """Return background static generation log path."""
     return resolve_project_root() / "data" / "static_generation.log"
+
+
+def _assert_static_output_writable(project_root: Path) -> None:
+    """
+    Fail fast when docs output directories/files are not writable.
+
+    This avoids spending 30-120s in main.py only to fail on first write.
+    """
+    docs_dir = project_root / "docs"
+    charts_dir = docs_dir / "charts"
+    data_dir = docs_dir / "data"
+    required_dirs = [docs_dir, charts_dir, data_dir]
+    for path in required_dirs:
+        # Create missing dirs when possible; if bind mounts are misconfigured this
+        # will fail with a clear PermissionError below.
+        path.mkdir(parents=True, exist_ok=True)
+        if not path.is_dir():
+            raise PermissionError(f"Required directory is not a directory: {path}")
+        if not os.access(path, os.W_OK):
+            mode = stat.filemode(path.stat().st_mode)
+            raise PermissionError(
+                f"Directory is not writable: {path} (mode={mode}, uid={os.getuid()}, gid={os.getgid()})"
+            )
 
 
 def trigger_static_generation(background: bool = True) -> Optional[subprocess.Popen]:
@@ -48,14 +84,21 @@ def trigger_static_generation(background: bool = True) -> Optional[subprocess.Po
     try:
         project_root = resolve_project_root()
         main_py_path = project_root / "main.py"
+        _assert_static_output_writable(project_root)
+        strict_update = os.getenv("STATIC_GENERATION_STRICT_UPDATE", "").strip().lower() in {
+            "1", "true", "yes", "on"
+        }
+        command = [sys.executable, str(main_py_path)]
+        if strict_update:
+            command.append("--strict-update")
         
         if not main_py_path.exists():
             raise FileNotFoundError(f"main.py not found at {main_py_path}")
         
-        logger.info(f"Triggering static file generation: {main_py_path}")
-        
-        # Use the same Python interpreter that's running this code
-        python_executable = sys.executable
+        logger.info(
+            f"Triggering static file generation: {main_py_path} "
+            f"(strict_update={strict_update})"
+        )
         
         if background:
             # Run as background process (non-blocking)
@@ -74,7 +117,7 @@ def trigger_static_generation(background: bool = True) -> Optional[subprocess.Po
                 log_file.flush()
             log_handle = log_path.open("a", encoding="utf-8")
             process = subprocess.Popen(
-                [python_executable, str(main_py_path), "--strict-update"],
+                command,
                 cwd=str(project_root),
                 stdout=log_handle,
                 stderr=subprocess.STDOUT,
@@ -89,7 +132,7 @@ def trigger_static_generation(background: bool = True) -> Optional[subprocess.Po
         else:
             # Run synchronously and wait for completion
             result = subprocess.run(
-                [python_executable, str(main_py_path), "--strict-update"],
+                command,
                 cwd=str(project_root),
                 capture_output=True,
                 text=True,

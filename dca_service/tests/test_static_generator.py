@@ -11,7 +11,8 @@ import subprocess
 
 from dca_service.services.static_generator import (
     trigger_static_generation,
-    check_static_generation_status
+    check_static_generation_status,
+    _assert_static_output_writable,
 )
 
 
@@ -39,6 +40,7 @@ class TestStaticGeneratorBasic:
         command = call_args[0][0]
         assert command[0] == '/usr/bin/python3'
         assert str(command[1]).endswith('main.py')
+        assert "--strict-update" not in command
         
         # Check that background options were set
         kwargs = call_args[1]
@@ -70,6 +72,7 @@ class TestStaticGeneratorBasic:
         command = call_args[0][0]
         assert command[0] == '/usr/bin/python3'
         assert str(command[1]).endswith('main.py')
+        assert "--strict-update" not in command
         
         # Check options
         kwargs = call_args[1]
@@ -78,12 +81,28 @@ class TestStaticGeneratorBasic:
         assert kwargs['check'] is True
         assert kwargs['timeout'] == 300
 
+    @patch('subprocess.Popen')
+    @patch('sys.executable', '/usr/bin/python3')
+    def test_trigger_background_strict_mode_enabled_by_env(self, mock_popen, monkeypatch):
+        """Test strict mode can be enabled explicitly via env var."""
+        mock_process = MagicMock()
+        mock_process.pid = 12345
+        mock_popen.return_value = mock_process
+        monkeypatch.setenv("STATIC_GENERATION_STRICT_UPDATE", "true")
+
+        trigger_static_generation(background=True)
+
+        call_args = mock_popen.call_args
+        command = call_args[0][0]
+        assert "--strict-update" in command
+
 
 class TestStaticGeneratorErrorHandling:
     """Tests for error handling in static generator"""
     
+    @patch('dca_service.services.static_generator._assert_static_output_writable')
     @patch('pathlib.Path.exists', return_value=False)
-    def test_main_py_not_found(self, mock_exists):
+    def test_main_py_not_found(self, mock_exists, mock_writable):
         """Test error when main.py doesn't exist"""
         with pytest.raises(FileNotFoundError) as exc_info:
             trigger_static_generation(background=True)
@@ -122,6 +141,20 @@ class TestStaticGeneratorErrorHandling:
             trigger_static_generation(background=False)
         
         assert exc_info.value.timeout == 300
+
+    def test_assert_output_writable_allows_non_writable_existing_csv(self, tmp_path):
+        """Atomic replace allows read-only target files as long as dir is writable."""
+        docs = tmp_path / "docs"
+        charts = docs / "charts"
+        data = docs / "data"
+        charts.mkdir(parents=True)
+        data.mkdir(parents=True)
+
+        metrics = data / "btc_metrics.csv"
+        metrics.write_text("date,close_price\n", encoding="utf-8")
+        metrics.chmod(0o444)
+
+        _assert_static_output_writable(tmp_path)
 
 
 class TestProcessStatusCheck:
