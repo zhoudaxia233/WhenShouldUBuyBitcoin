@@ -34,6 +34,29 @@ def _atomic_write_text(path: Path, content: str) -> None:
             tmp_path.unlink(missing_ok=True)
 
 
+def _sanitize_metrics_rows(df: pd.DataFrame, context: str) -> pd.DataFrame:
+    """
+    Remove rows that cannot safely participate in price-based calculations.
+
+    This self-heals stale CSVs that already contain an incomplete current-day row
+    and keeps merge logic from preferring a newer but unusable close price.
+    """
+    df = df.copy()
+    if "date" in df.columns:
+        df["date"] = pd.to_datetime(df["date"], errors="coerce")
+    if "close_price" in df.columns:
+        df["close_price"] = pd.to_numeric(df["close_price"], errors="coerce")
+
+    invalid_mask = df["date"].isna()
+    if "close_price" in df.columns:
+        invalid_mask |= df["close_price"].isna() | (df["close_price"] <= 0)
+
+    dropped = int(invalid_mask.sum())
+    if dropped:
+        print(f"  Dropped {dropped} invalid row(s) while {context}")
+    return df.loc[~invalid_mask].reset_index(drop=True)
+
+
 def get_data_dir() -> Path:
     """
     Get the data directory path, creating it if it doesn't exist.
@@ -67,10 +90,11 @@ def load_existing_metrics(filename: str = "btc_metrics.csv") -> Optional[pd.Data
     
     try:
         df = pd.read_csv(filepath)
-        
-        # Convert date column to datetime
-        df["date"] = pd.to_datetime(df["date"])
-        
+        df = _sanitize_metrics_rows(df, f"loading {filepath}")
+        if df.empty:
+            print(f"⚠ No usable rows found in {filepath}; treating as no existing data")
+            return None
+
         # Load and restore metadata
         metadata = load_metadata()
         if metadata:
@@ -187,7 +211,11 @@ def save_metrics(df: pd.DataFrame, filename: str = "btc_metrics.csv") -> bool:
         
         # Filter to only existing columns
         save_cols = [col for col in columns_to_save if col in df.columns]
-        df_to_save = df[save_cols].copy()
+        df_to_save = _sanitize_metrics_rows(
+            df[save_cols].copy(), f"saving {filepath}"
+        )
+        if df_to_save.empty:
+            raise ValueError("No usable metric rows available to save")
         
         # Convert date to string for CSV storage
         df_to_save["date"] = df_to_save["date"].dt.strftime("%Y-%m-%d")
@@ -245,6 +273,14 @@ def merge_with_existing(
         print("No existing data to merge, using new data only")
         return new_df
     
+    existing_df = _sanitize_metrics_rows(existing_df, "merging existing metrics")
+    new_df = _sanitize_metrics_rows(new_df, "merging freshly fetched metrics")
+    if new_df.empty:
+        raise ValueError("New price data contains no usable close_price rows")
+    if existing_df.empty:
+        print("  Existing data had no usable rows after sanitization; using new data only")
+        return new_df
+
     print(f"\nMerging data:")
     print(f"  Existing: {len(existing_df)} rows ({existing_df['date'].min().date()} to {existing_df['date'].max().date()})")
     print(f"  New:      {len(new_df)} rows ({new_df['date'].min().date()} to {new_df['date'].max().date()})")
@@ -311,4 +347,3 @@ if __name__ == "__main__":
     if df is not None:
         print(f"\nLoaded data shape: {df.shape}")
         print(f"Columns: {df.columns.tolist()}")
-

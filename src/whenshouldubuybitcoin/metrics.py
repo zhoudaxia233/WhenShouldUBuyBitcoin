@@ -93,8 +93,8 @@ def get_dca_summary(df: pd.DataFrame) -> dict:
     Returns:
         Dictionary with summary statistics
     """
-    # Filter out NaN values (first 199 days)
-    valid_data = df.dropna(subset=["dca_cost"])
+    # Filter out rows that cannot represent a usable "current" state.
+    valid_data = df.dropna(subset=["close_price", "dca_cost", "ratio_dca"])
     
     if valid_data.empty:
         return {
@@ -129,9 +129,9 @@ def get_dca_summary(df: pd.DataFrame) -> dict:
 
 
 def fit_exponential_trend(
-    df: pd.DataFrame, 
+    df: pd.DataFrame,
     price_col: str = "close_price"
-) -> Tuple[pd.Series, float, float]:
+) -> Tuple[pd.Series, Optional[float], Optional[float]]:
     """
     Fit a power law growth model to Bitcoin price history.
     
@@ -174,12 +174,26 @@ def fit_exponential_trend(
     df_copy = df.copy()
     df_copy["bitcoin_age_days"] = (df_copy["date"] - genesis_date).dt.days
     
+    # Use only rows with a usable close for fitting so one incomplete trailing row
+    # does not corrupt the whole power-law estimate.
+    valid_fit_mask = (
+        df_copy["bitcoin_age_days"].notna()
+        & df_copy[price_col].notna()
+        & np.isfinite(df_copy[price_col])
+        & (df_copy[price_col] > 0)
+        & (df_copy["bitcoin_age_days"] > 0)
+    )
+    fit_df = df_copy.loc[valid_fit_mask, ["bitcoin_age_days", price_col]].copy()
+    if len(fit_df) < 2:
+        nan_series = pd.Series(np.nan, index=df.index, name="trend_value")
+        return nan_series, None, None
+
     # Get time (t) = Bitcoin age in days
     # Note: This will be a large number (e.g., 2000+ days even for 2014 data)
     # This is correct! Academic research uses Bitcoin age, not data age
-    t = df_copy["bitcoin_age_days"].values
-    prices = df_copy[price_col].values
-    
+    t = fit_df["bitcoin_age_days"].to_numpy(dtype=float)
+    prices = fit_df[price_col].to_numpy(dtype=float)
+
     # Take log of both time and price for power law fitting
     log_t = np.log(t)
     log_prices = np.log(prices)
@@ -193,8 +207,13 @@ def fit_exponential_trend(
     # Extract power law parameters
     a = np.exp(alpha)  # Scaling coefficient
     
-    # Calculate fitted trend values using power law
-    trend_values = a * np.power(t, n)
+    # Calculate fitted trend values using power law for every valid timeline row.
+    all_t = df_copy["bitcoin_age_days"].to_numpy(dtype=float)
+    trend_values = np.full(len(df_copy), np.nan, dtype=float)
+    valid_projection_mask = np.isfinite(all_t) & (all_t > 0)
+    trend_values[valid_projection_mask] = a * np.power(
+        all_t[valid_projection_mask], n
+    )
     trend_series = pd.Series(trend_values, index=df.index, name="trend_value")
     
     return trend_series, a, n
@@ -244,11 +263,15 @@ def get_trend_summary(df: pd.DataFrame) -> dict:
     Returns:
         Dictionary with trend summary statistics
     """
-    latest = df.iloc[-1]
-    
+    valid_data = df.dropna(subset=["close_price", "trend_value", "ratio_trend"])
+    if valid_data.empty:
+        return {"error": "Not enough data for trend analysis"}
+
+    latest = valid_data.iloc[-1]
+
     # Count how many times price was below trend
-    below_trend = (df["ratio_trend"] < 1.0).sum()
-    total_days = len(df)
+    below_trend = (valid_data["ratio_trend"] < 1.0).sum()
+    total_days = len(valid_data)
     
     # Get power law parameters
     a = df.attrs.get("trend_a", None)
@@ -269,9 +292,9 @@ def get_trend_summary(df: pd.DataFrame) -> dict:
         "latest_status": "Below Trend (Undervalued)" if latest["ratio_trend"] < 1.0 else "Above Trend",
         "days_below_trend": below_trend,
         "pct_days_below_trend": (below_trend / total_days) * 100,
-        "min_ratio": df["ratio_trend"].min(),
-        "max_ratio": df["ratio_trend"].max(),
-        "mean_ratio": df["ratio_trend"].mean(),
+        "min_ratio": valid_data["ratio_trend"].min(),
+        "max_ratio": valid_data["ratio_trend"].max(),
+        "mean_ratio": valid_data["ratio_trend"].mean(),
         "trend_coefficient_a": a,
         "trend_growth_rate_b": n,  # This is now power law exponent (not growth rate)
         "daily_growth_rate_pct": current_growth_rate_pct,  # Current instantaneous growth rate
@@ -769,8 +792,10 @@ def get_double_undervaluation_summary(df: pd.DataFrame) -> dict:
     Returns:
         Dictionary with double undervaluation summary
     """
-    # Filter to valid data (where DCA is available)
-    valid_data = df.dropna(subset=["dca_cost", "trend_value"])
+    # Filter to rows with a complete valuation snapshot.
+    valid_data = df.dropna(
+        subset=["close_price", "dca_cost", "trend_value", "ratio_dca", "ratio_trend"]
+    )
     
     if valid_data.empty:
         return {"error": "Not enough data for analysis"}
