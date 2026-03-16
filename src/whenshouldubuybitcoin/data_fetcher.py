@@ -25,6 +25,31 @@ env_path = Path(__file__).parent.parent.parent / ".env"
 load_dotenv(dotenv_path=env_path)
 
 
+def _sanitize_price_history(df: pd.DataFrame, source_name: str) -> pd.DataFrame:
+    """
+    Drop rows that cannot be used as end-of-day price history.
+
+    Yahoo Finance can return an in-progress current-day candle with volume but no
+    final close price yet. Keeping that row poisons downstream metrics/trend fits,
+    so we remove any rows missing date/close or with non-positive closes.
+    """
+    df = df.copy()
+    if "close_price" in df.columns:
+        df["close_price"] = pd.to_numeric(df["close_price"], errors="coerce")
+    if "volume" in df.columns:
+        df["volume"] = pd.to_numeric(df["volume"], errors="coerce")
+
+    before = len(df)
+    valid_close = df["close_price"].notna() & (df["close_price"] > 0)
+    df = df[df["date"].notna() & valid_close].reset_index(drop=True)
+    dropped = before - len(df)
+    if dropped:
+        print(
+            f"  Skipped {dropped} incomplete {source_name} row(s) without a usable close price"
+        )
+    return df
+
+
 def fetch_btc_history(
     days: Optional[int] = None, start_date: Optional[str] = None
 ) -> pd.DataFrame:
@@ -99,6 +124,10 @@ def fetch_btc_history(
 
         # Sort by date ascending
         df = df.sort_values("date").reset_index(drop=True)
+        df = _sanitize_price_history(df, "Yahoo Finance")
+
+        if df.empty:
+            raise ValueError("No usable daily close data returned from Yahoo Finance")
 
         print(f"✓ Successfully fetched {len(df)} days of data")
         print(f"  Date range: {df['date'].min().date()} to {df['date'].max().date()}")

@@ -1,6 +1,6 @@
 {
-  "current_quadrant": "Risky Up (leveraged)",
-  "price_change": 2.5874804649531624,
-  "oi_change": 5.378410289438662,
-  "quadrant_id": "q1"
+  "current_quadrant": "Healthy Up (spot-led)",
+  "price_change": 4.094263140336474,
+  "oi_change": -5.359734644621328,
+  "quadrant_id": "q2"
 }
