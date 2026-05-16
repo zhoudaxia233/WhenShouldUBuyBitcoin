@@ -96,8 +96,8 @@ jobs:
         run: npm ci
 
       - name: Check for syntax errors
-        run: node --check docs/backtest.js
-
+        run: |
+          node --check docs/backtest.js
           node -e "JSON.parse(require('fs').readFileSync('docs/data/btc_metadata.json', 'utf8'))"
           echo "✓ All JSON files are valid"
 

@@ -1,7 +1,11 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from pathlib import Path
+import os
 import subprocess
+import sys
 import tomllib
+
+DEV_SESSION_SECRET_DEFAULT = "dev-secret-change-in-production-12345678901234567890"
 
 
 def _find_repo_root() -> Path:
@@ -70,7 +74,7 @@ class Settings(BaseSettings):
     # Session Settings (for authentication)
     # WARNING: In production, MUST set a strong random SESSION_SECRET
     # Generate with: python -c "import secrets; print(secrets.token_urlsafe(32))"
-    SESSION_SECRET: str = "dev-secret-change-in-production-12345678901234567890"  # Insecure default for dev/test
+    SESSION_SECRET: str = DEV_SESSION_SECRET_DEFAULT  # Insecure default for dev/test
     SESSION_COOKIE_NAME: str = "dca_session"
     SESSION_COOKIE_HTTPS_ONLY: bool = False  # Must be True in production with HTTPS. False for local HTTP development.
     SESSION_COOKIE_SAMESITE: str = "lax"  # "lax" or "strict" for CSRF protection
@@ -80,4 +84,24 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
 
+def _enforce_secure_session_secret(settings: "Settings") -> None:
+    """Refuse to boot with the insecure default SESSION_SECRET when secure mode is required.
+
+    Set DCA_REQUIRE_SECURE_SESSION=true (or 1/yes) in production to enforce; otherwise we
+    only print a loud warning so dev/test workflows keep working.
+    """
+    if settings.SESSION_SECRET != DEV_SESSION_SECRET_DEFAULT:
+        return
+
+    require_secure = os.environ.get("DCA_REQUIRE_SECURE_SESSION", "").strip().lower() in {"1", "true", "yes"}
+    msg = (
+        "SESSION_SECRET is the insecure dev default. Generate one with "
+        "`python -c \"import secrets; print(secrets.token_urlsafe(32))\"` and set it in .env."
+    )
+    if require_secure:
+        raise RuntimeError(msg)
+    print(f"WARNING: {msg}", file=sys.stderr)
+
+
 settings = Settings()
+_enforce_secure_session_secret(settings)
