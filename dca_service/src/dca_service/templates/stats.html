@@ -605,11 +605,6 @@
             } catch (e) { console.error('Error removing cache', e); }
         }
 
-        function clearLegacyStatsCaches() {
-            removeFromCache('stats_percentile');
-            removeFromCache('stats_distribution');
-        }
-
         function loadFromCache(key) {
             try {
                 const item = localStorage.getItem(key);
@@ -622,6 +617,28 @@
             if (!cacheItem || !cacheItem.timestamp) return false;
             const ageMinutes = (Date.now() - cacheItem.timestamp) / (1000 * 60);
             return ageMinutes < ttlMinutes;
+        }
+
+        function formatDataAsOf(asOf) {
+            if (!asOf) return '';
+            try {
+                const date = new Date(asOf);
+                if (Number.isNaN(date.getTime())) {
+                    return String(asOf);
+                }
+                return date.toLocaleString();
+            } catch (e) {
+                return String(asOf);
+            }
+        }
+
+        function cacheTimestampAsOf(cacheItem) {
+            return cacheItem?.timestamp ? new Date(cacheItem.timestamp).toISOString() : null;
+        }
+
+        function staleCacheMessage(asOf) {
+            const formatted = formatDataAsOf(asOf);
+            return formatted ? `Cached BitInfoCharts data as of ${formatted}.` : 'Cached BitInfoCharts data.';
         }
 
         // UI Updaters
@@ -646,7 +663,11 @@
             }
             
             document.getElementById('percentileText').textContent = percentileDisplay;
-            document.getElementById('percentileSubtext').textContent = "of all Bitcoin holders globally";
+            if (data.data_status === 'stale' || data.data_status === 'cached') {
+                document.getElementById('percentileSubtext').textContent = `of all Bitcoin holders globally. ${staleCacheMessage(data.as_of)}`;
+            } else {
+                document.getElementById('percentileSubtext').textContent = "of all Bitcoin holders globally";
+            }
             document.getElementById('totalBtc').textContent = data.total_btc ? data.total_btc.toFixed(8) : '--';
         }
 
@@ -661,30 +682,53 @@
                 updatePercentileUI(data);
 
                 if (data.data_status === 'unavailable') {
+                    const cached = loadFromCache(PERCENTILE_CACHE_KEY) || loadFromCache('stats_percentile');
+                    if (cached?.data) {
+                        const staleData = {
+                            ...cached.data,
+                            data_status: 'stale',
+                            as_of: cached.data.as_of || cacheTimestampAsOf(cached),
+                        };
+                        updatePercentileUI(staleData);
+                        return { ok: true, stale: true, data: staleData };
+                    }
                     removeFromCache(PERCENTILE_CACHE_KEY);
                     return { ok: false, data, error: data.message || 'Percentile unavailable' };
                 }
 
                 saveToCache(PERCENTILE_CACHE_KEY, data);
-                return { ok: true, data };
+                return { ok: true, stale: data.data_status === 'stale' || data.data_status === 'cached', data };
             } catch (error) {
                 console.error('Error loading percentile:', error);
-                removeFromCache(PERCENTILE_CACHE_KEY);
+                const cached = loadFromCache(PERCENTILE_CACHE_KEY) || loadFromCache('stats_percentile');
+                if (cached?.data) {
+                    const staleData = {
+                        ...cached.data,
+                        data_status: 'stale',
+                        as_of: cached.data.as_of || cacheTimestampAsOf(cached),
+                    };
+                    updatePercentileUI(staleData);
+                    return { ok: true, stale: true, data: staleData };
+                }
                 updatePercentileUI({ data_status: 'unavailable' });
                 return { ok: false, error };
             }
         }
 
         // Load Distribution Table
-        function updateDistributionSourceUI(status) {
+        function updateDistributionSourceUI(status, asOf) {
             const sourceEl = document.getElementById('distributionSourceText');
             if (!sourceEl) return;
-            sourceEl.textContent = status === 'unavailable'
-                ? 'Source: BitInfoCharts (currently unavailable)'
-                : 'Source: BitInfoCharts (updated daily)';
+            if (status === 'unavailable') {
+                sourceEl.textContent = 'Source: BitInfoCharts (currently unavailable)';
+            } else if (status === 'stale' || status === 'cached') {
+                sourceEl.textContent = `Source: BitInfoCharts cached data${formatDataAsOf(asOf) ? ` (as of ${formatDataAsOf(asOf)})` : ''}`;
+            } else {
+                sourceEl.textContent = 'Source: BitInfoCharts (updated daily)';
+            }
         }
 
-        function updateDistributionUI(data) {
+        function updateDistributionUI(data, meta = {}) {
             const tbody = document.getElementById('distributionTable');
             tbody.innerHTML = '';
 
@@ -692,11 +736,11 @@
                 const tr = document.createElement('tr');
                 tr.innerHTML = '<td colspan="2" class="text-muted py-3">Data unavailable</td>';
                 tbody.appendChild(tr);
-                updateDistributionSourceUI('unavailable');
+                updateDistributionSourceUI('unavailable', null);
                 return;
             }
 
-            updateDistributionSourceUI('live');
+            updateDistributionSourceUI(meta.data_status || 'live', meta.as_of || null);
             data.forEach(row => {
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
@@ -718,12 +762,27 @@
                 if (!Array.isArray(data)) {
                     throw new Error('Distribution response was not a table');
                 }
-                saveToCache(DISTRIBUTION_CACHE_KEY, data);
-                updateDistributionUI(data);
-                return { ok: true, data };
+                const meta = {
+                    data_status: response.headers.get('x-data-status') || 'live',
+                    source: response.headers.get('x-data-source') || 'bitinfocharts',
+                    as_of: response.headers.get('x-data-as-of') || null,
+                };
+                saveToCache(DISTRIBUTION_CACHE_KEY, { data, meta });
+                updateDistributionUI(data, meta);
+                return { ok: true, stale: meta.data_status === 'stale' || meta.data_status === 'cached', data };
             } catch (error) {
                 console.error('Error loading distribution:', error);
-                removeFromCache(DISTRIBUTION_CACHE_KEY);
+                const cached = loadFromCache(DISTRIBUTION_CACHE_KEY) || loadFromCache('stats_distribution');
+                if (cached?.data) {
+                    const cachedData = Array.isArray(cached.data) ? cached.data : cached.data.data;
+                    const cachedMeta = {
+                        ...(cached.data?.meta || {}),
+                        data_status: 'stale',
+                        as_of: cached.data?.meta?.as_of || cacheTimestampAsOf(cached),
+                    };
+                    updateDistributionUI(cachedData, cachedMeta);
+                    return { ok: true, stale: true, data: cachedData };
+                }
                 updateDistributionUI(null);
                 return { ok: false, error };
             }
@@ -1482,7 +1541,6 @@
         document.addEventListener('DOMContentLoaded', async () => {
             const currentTheme = document.documentElement.getAttribute('data-bs-theme') || 'light';
             updateThemeToggleButton(currentTheme);
-            clearLegacyStatsCaches();
             applyTradingStyleLanguageUI();
             const themeBtn = document.getElementById('themeToggleBtn');
             if (themeBtn) {
@@ -1551,6 +1609,8 @@
                 });
                 if (failed.length) {
                     notyf.error('Some stats failed to refresh');
+                } else if (refreshResults.some((result) => result.status === 'fulfilled' && result.value?.stale)) {
+                    notyf.error('Stats refreshed with stale BitInfoCharts data');
                 } else {
                     notyf.success('Stats refreshed');
                 }

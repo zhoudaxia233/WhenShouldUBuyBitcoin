@@ -114,15 +114,19 @@ def test_trading_style_csv_export_ui_is_enabled():
     assert "window.location.href = url" not in html
 
 
-def test_distribution_and_percentile_do_not_use_browser_cache_as_live_data():
+def test_distribution_and_percentile_label_browser_cache_as_stale_data():
     html = _load_stats_template()
     assert "const STATS_CACHE_VERSION = 'v2';" in html
     assert "const PERCENTILE_CACHE_KEY = `stats_percentile_${STATS_CACHE_VERSION}`;" in html
     assert "const DISTRIBUTION_CACHE_KEY = `stats_distribution_${STATS_CACHE_VERSION}`;" in html
-    assert "loadFromCache('stats_percentile')" not in html
-    assert "loadFromCache('stats_distribution')" not in html
+    assert "loadFromCache(PERCENTILE_CACHE_KEY) || loadFromCache('stats_percentile')" in html
+    assert "loadFromCache(DISTRIBUTION_CACHE_KEY) || loadFromCache('stats_distribution')" in html
+    assert "clearLegacyStatsCaches();" not in html
+    assert "data_status: 'stale'" in html
+    assert "Cached BitInfoCharts data" in html
+    assert "stale BitInfoCharts data" in html
     assert "Distribution request failed" in html
-    assert "return { ok: false" in html
+    assert "return { ok: true, stale: true" in html
     assert "Promise.allSettled" in html
 
 

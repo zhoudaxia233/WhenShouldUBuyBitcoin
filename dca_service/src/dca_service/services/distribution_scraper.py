@@ -146,6 +146,68 @@ def _load_static_distribution() -> List[Dict[str, str]]:
         raise ValueError("Failed to load fallback distribution data") from load_err
 
 
+def _cache_as_of() -> Optional[str]:
+    timestamp = _cache.get("timestamp")
+    if isinstance(timestamp, datetime):
+        return timestamp.isoformat()
+    return None
+
+
+def fetch_distribution_with_status(
+    use_cache: bool = True,
+    allow_static_fallback: bool = False,
+    allow_stale_cache: bool = False,
+) -> Dict[str, object]:
+    """
+    Fetch distribution data with provenance for callers that need to label stale data.
+    """
+    if use_cache and _cache["data"] is not None and _cache["timestamp"] is not None:
+        age = datetime.now() - _cache["timestamp"]
+        if age < timedelta(hours=24):
+            logger.info(f"Using cached distribution data (age: {age})")
+            return {
+                "data": _cache["data"],
+                "data_status": "cached",
+                "source": "bitinfocharts_cache",
+                "as_of": _cache_as_of(),
+            }
+
+    try:
+        data = fetch_distribution(
+            use_cache=False,
+            allow_static_fallback=False,
+            allow_stale_cache=False,
+        )
+        return {
+            "data": data,
+            "data_status": "live",
+            "source": "bitinfocharts",
+            "as_of": _cache_as_of(),
+        }
+    except ValueError:
+        if allow_stale_cache and _cache["data"] is not None:
+            age = (
+                datetime.now() - _cache["timestamp"]
+                if _cache["timestamp"]
+                else timedelta(days=999)
+            )
+            logger.warning(f"Using stale cached distribution data (age: {age})")
+            return {
+                "data": _cache["data"],
+                "data_status": "stale",
+                "source": "bitinfocharts_cache",
+                "as_of": _cache_as_of(),
+            }
+        if allow_static_fallback:
+            return {
+                "data": _load_static_distribution(),
+                "data_status": "static",
+                "source": "bundled_static",
+                "as_of": None,
+            }
+        raise
+
+
 def fetch_distribution(
     use_cache: bool = True,
     allow_static_fallback: bool = False,

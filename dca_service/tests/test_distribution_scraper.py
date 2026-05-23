@@ -2,6 +2,7 @@
 import pytest
 from dca_service.services.distribution_scraper import (
     fetch_distribution,
+    fetch_distribution_with_status,
     clear_cache,
     _parse_percentile
 )
@@ -81,6 +82,23 @@ def test_fetch_distribution_can_use_stale_cache_when_explicitly_enabled():
         result2 = fetch_distribution(use_cache=False, allow_stale_cache=True)
         assert len(result2) > 0
         assert result2 == result1
+
+
+def test_fetch_distribution_with_status_labels_stale_cache_on_failure():
+    """Status-aware callers can use stale cache without presenting it as live."""
+    from unittest.mock import patch
+
+    clear_cache()
+
+    result1 = fetch_distribution(use_cache=False)
+    assert len(result1) > 0
+
+    with patch('requests.get', side_effect=Exception("Network error")):
+        snapshot = fetch_distribution_with_status(use_cache=False, allow_stale_cache=True)
+        assert snapshot["data"] == result1
+        assert snapshot["data_status"] == "stale"
+        assert snapshot["source"] == "bitinfocharts_cache"
+        assert snapshot["as_of"]
 
 
 def test_fetch_distribution_raises_on_failure_without_cache_by_default():

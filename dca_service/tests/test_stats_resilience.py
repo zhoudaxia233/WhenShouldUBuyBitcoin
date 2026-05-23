@@ -62,7 +62,7 @@ def test_percentile_api_resilience(client):
     the distribution scraper fails (simulating the Vultr blocking issue).
     """
     # Mock the scraper to raise ValueError
-    with patch("dca_service.services.distribution_scraper.fetch_distribution") as mock_fetch:
+    with patch("dca_service.services.distribution_scraper.fetch_distribution_with_status") as mock_fetch:
         mock_fetch.side_effect = ValueError("Scraper blocked!")
         
         # Mock wallet summary to return a known BTC amount
@@ -88,12 +88,17 @@ def test_percentile_api_resilience(client):
 
 def test_percentile_api_success(client):
     """Test happy path when scraper works."""
-    with patch("dca_service.services.distribution_scraper.fetch_distribution") as mock_fetch:
+    with patch("dca_service.services.distribution_scraper.fetch_distribution_with_status") as mock_fetch:
         # Mock successful distribution data
-        mock_fetch.return_value = [
-            {"tier": "100+", "percentile": "Top 0.01%"},
-            {"tier": "1-10", "percentile": "Top 2%"},
-        ]
+        mock_fetch.return_value = {
+            "data": [
+                {"tier": "100+", "percentile": "Top 0.01%"},
+                {"tier": "1-10", "percentile": "Top 2%"},
+            ],
+            "data_status": "live",
+            "source": "bitinfocharts",
+            "as_of": "2026-05-23T23:20:00+00:00",
+        }
         
         with patch("dca_service.api.wallet_api.get_wallet_summary") as mock_wallet:
             mock_wallet.return_value = MagicMock(total_btc=1.5)
@@ -107,3 +112,53 @@ def test_percentile_api_success(client):
             assert data["percentile_display"] == "Top 2%"
             assert data["data_status"] == "live"
             assert data["source"] == "bitinfocharts"
+
+
+def test_percentile_api_uses_stale_cache_with_status(client):
+    """Stale cached distribution should be usable but clearly labeled."""
+    with patch("dca_service.services.distribution_scraper.fetch_distribution_with_status") as mock_fetch:
+        mock_fetch.return_value = {
+            "data": [
+                {"tier": "100+", "percentile": "Top 0.01%"},
+                {"tier": "1-10", "percentile": "Top 2%"},
+            ],
+            "data_status": "stale",
+            "source": "bitinfocharts_cache",
+            "as_of": "2026-05-22T23:20:00+00:00",
+        }
+
+        with patch("dca_service.api.wallet_api.get_wallet_summary") as mock_wallet:
+            mock_wallet.return_value = MagicMock(total_btc=1.5)
+
+            response = client.get("/api/stats/percentile")
+
+            assert response.status_code == 200
+            data = response.json()
+            assert data["total_btc"] == 1.5
+            assert data["percentile_display"] == "Top 2%"
+            assert data["data_status"] == "stale"
+            assert data["source"] == "bitinfocharts_cache"
+            assert data["as_of"] == "2026-05-22T23:20:00+00:00"
+
+
+def test_distribution_api_returns_stale_cache_headers(client):
+    """Distribution endpoint exposes stale cache provenance for the browser."""
+    cached_distribution = [
+        {"tier": "100+", "percentile": "Top 0.01%"},
+        {"tier": "1-10", "percentile": "Top 2%"},
+    ]
+    with patch("dca_service.services.distribution_scraper.fetch_distribution_with_status") as mock_fetch:
+        mock_fetch.return_value = {
+            "data": cached_distribution,
+            "data_status": "stale",
+            "source": "bitinfocharts_cache",
+            "as_of": "2026-05-22T23:20:00+00:00",
+        }
+
+        response = client.get("/api/stats/distribution")
+
+        assert response.status_code == 200
+        assert response.json() == cached_distribution
+        assert response.headers["x-data-status"] == "stale"
+        assert response.headers["x-data-source"] == "bitinfocharts_cache"
+        assert response.headers["x-data-as-of"] == "2026-05-22T23:20:00+00:00"

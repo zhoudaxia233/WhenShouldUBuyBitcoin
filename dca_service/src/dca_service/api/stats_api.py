@@ -13,6 +13,7 @@ import io
 import asyncio
 from pathlib import Path
 from pydantic import BaseModel, Field
+from fastapi.responses import JSONResponse
 from dca_service.config import settings
 
 from dca_service.database import get_session, engine
@@ -582,9 +583,9 @@ def _build_market_price_series(
 
 
 
-def _build_wealth_distribution_from_live_data(force_refresh: bool = False) -> List[Tuple[float, float, float, str]]:
+def _build_wealth_distribution_from_live_data(force_refresh: bool = False) -> Tuple[List[Tuple[float, float, float, str]], Dict[str, Any]]:
     """
-    Build wealth distribution list from live scraped data.
+    Build wealth distribution list from BitInfoCharts data with provenance.
     
     Behavior:
     - Fresh cache (< 24h): Returns cached data instantly
@@ -592,24 +593,25 @@ def _build_wealth_distribution_from_live_data(force_refresh: bool = False) -> Li
     - No cache: Raises error (won't show bad data)
     
     Returns:
-        List of (min_btc, max_btc, percentile_top, percentile_str) tuples, sorted by min_btc descending.
+        Tuple of wealth distribution tiers and source metadata.
+        Tiers are (min_btc, max_btc, percentile_top, percentile_str), sorted by min_btc descending.
         percentile_top is float for comparison, percentile_str preserves original formatting.
         
     Raises:
         ValueError: If no distribution data is available (no cache and fetch failed)
     """
-    from dca_service.services.distribution_scraper import fetch_distribution, parse_tier_range, parse_percentile_value
-    
-    # fetch_distribution handles:
-    # - Fresh cache: returns immediately
-    # - Expired cache + fetch fails: returns stale cache
-    # - No cache + fetch fails: raises ValueError. Do not use packaged static
-    #   fallback here because the page labels this as live BitInfoCharts data.
-    distribution_data = fetch_distribution(
+    from dca_service.services.distribution_scraper import (
+        fetch_distribution_with_status,
+        parse_tier_range,
+        parse_percentile_value,
+    )
+
+    snapshot = fetch_distribution_with_status(
         use_cache=not force_refresh,
         allow_static_fallback=False,
-        allow_stale_cache=False,
+        allow_stale_cache=True,
     )
+    distribution_data = snapshot.get("data") or []
     
     if not distribution_data:
         raise ValueError("No distribution data available")
@@ -636,21 +638,28 @@ def _build_wealth_distribution_from_live_data(force_refresh: bool = False) -> Li
     wealth_dist.sort(key=lambda x: x[0], reverse=True)
     
     logger.info(f"Built wealth distribution from live data: {len(wealth_dist)} tiers")
-    return wealth_dist
+    return wealth_dist, snapshot
 
 @router.get("/stats/distribution")
 def get_wealth_distribution(
     force_refresh: bool = Query(default=False),
     current_user: User = Depends(get_current_user),
 ):
-    """Return the live wealth distribution table from BitInfoCharts."""
-    from dca_service.services.distribution_scraper import fetch_distribution
+    """Return the wealth distribution table with data freshness headers."""
+    from dca_service.services.distribution_scraper import fetch_distribution_with_status
     try:
-        return fetch_distribution(
+        snapshot = fetch_distribution_with_status(
             use_cache=not force_refresh,
             allow_static_fallback=False,
-            allow_stale_cache=False,
+            allow_stale_cache=True,
         )
+        headers = {
+            "X-Data-Status": str(snapshot.get("data_status") or "live"),
+            "X-Data-Source": str(snapshot.get("source") or "bitinfocharts"),
+        }
+        if snapshot.get("as_of"):
+            headers["X-Data-As-Of"] = str(snapshot["as_of"])
+        return JSONResponse(content=snapshot["data"], headers=headers)
     except ValueError as e:
         raise HTTPException(
             status_code=503,
@@ -666,7 +675,7 @@ async def get_user_percentile(
     """
     Calculate the user's wealth percentile based on total BTC holdings.
     
-    Uses live distribution data from BitInfoCharts:
+    Uses BitInfoCharts distribution data:
     - Fresh cache (< 24h): Returns cached data instantly
     - Expired cache (> 24h): Fetches new data, falls back to stale cache if fetch fails
     - No cache: Raises HTTP 503 error (won't show bad data)
@@ -680,7 +689,7 @@ async def get_user_percentile(
     
     try:
         # Get wealth distribution (raises ValueError if no data available)
-        wealth_distribution = _build_wealth_distribution_from_live_data(force_refresh=force_refresh)
+        wealth_distribution, distribution_meta = _build_wealth_distribution_from_live_data(force_refresh=force_refresh)
         
         # Determine Percentile
         # Find the first tier where total_btc falls within the range [min_btc, max_btc)
@@ -699,8 +708,9 @@ async def get_user_percentile(
             "total_btc": total_btc,
             "percentile_top": percentile_value,
             "percentile_display": percentile_str,
-            "data_status": "live",
-            "source": "bitinfocharts",
+            "data_status": distribution_meta.get("data_status", "live"),
+            "source": distribution_meta.get("source", "bitinfocharts"),
+            "as_of": distribution_meta.get("as_of"),
             "message": f"You are in the {percentile_str} of Bitcoin Holders"
         }
         
@@ -714,6 +724,7 @@ async def get_user_percentile(
             "percentile_display": "Data Unavailable",
             "data_status": "unavailable",
             "source": "unavailable",
+            "as_of": None,
             "message": "Wealth distribution data is currently unavailable"
         }
 
