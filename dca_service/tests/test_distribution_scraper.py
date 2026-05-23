@@ -1,11 +1,53 @@
 """Tests for Bitcoin distribution scraper."""
 import pytest
+from unittest.mock import MagicMock, patch
 from dca_service.services.distribution_scraper import (
     fetch_distribution,
     fetch_distribution_with_status,
     clear_cache,
     _parse_percentile
 )
+
+
+SAMPLE_DISTRIBUTION_HTML = """
+<table>
+  <thead>
+    <tr>
+      <th>Balance, BTC</th>
+      <th>Addresses</th>
+      <th>% Addresses (Total)</th>
+      <th>BTC</th>
+      <th>USD</th>
+      <th>% BTC (Total)</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>[0.1 - 1)</td>
+      <td>1000000</td>
+      <td>5.99% (7.65%)</td>
+      <td>250000</td>
+      <td>$19100000000</td>
+      <td>1.25%</td>
+    </tr>
+    <tr>
+      <td>[1 - 10)</td>
+      <td>200000</td>
+      <td>1.40% (1.66%)</td>
+      <td>500000</td>
+      <td>$38200000000</td>
+      <td>2.50%</td>
+    </tr>
+  </tbody>
+</table>
+"""
+
+
+def _mock_distribution_response(html: str = SAMPLE_DISTRIBUTION_HTML):
+    response = MagicMock()
+    response.text = html
+    response.raise_for_status.return_value = None
+    return response
 
 
 def test_parse_percentile():
@@ -21,16 +63,19 @@ def test_parse_percentile():
     assert _parse_percentile("invalid") == "Unknown"
 
 
-def test_fetch_distribution_live():
-    """Test fetching live distribution data from BitInfoCharts."""
+def test_fetch_distribution_parses_bitinfocharts_table_response():
+    """Test parsing a BitInfoCharts distribution table response."""
     clear_cache()  # Ensure fresh fetch
-    
-    # This makes a real network call
-    result = fetch_distribution(use_cache=False)
+
+    with patch("requests.get", return_value=_mock_distribution_response()) as mock_get:
+        result = fetch_distribution(use_cache=False)
     
     # Should return a list of dicts
     assert isinstance(result, list)
-    assert len(result) >0
+    assert len(result) > 0
+    assert result[0]["tier"] == "[0.1 - 1)"
+    assert result[0]["percentile"] == "Top 7.65%"
+    mock_get.assert_called_once()
     
     # Check structure
     for item in result:
@@ -43,42 +88,42 @@ def test_fetch_distribution_live():
 def test_fetch_distribution_caching():
     """Test that caching works correctly."""
     clear_cache()
-    
-    # First call should fetch from network
-    result1 = fetch_distribution(use_cache=True)
-    
-    # Second call should use cache (no network call)
-    result2 = fetch_distribution(use_cache=True)
+
+    with patch("requests.get", return_value=_mock_distribution_response()) as mock_get:
+        # First call should fetch from network
+        result1 = fetch_distribution(use_cache=True)
+
+        # Second call should use cache (no network call)
+        result2 = fetch_distribution(use_cache=True)
     
     # Should return same data
     assert result1 == result2
+    mock_get.assert_called_once()
 
 
 def test_fetch_distribution_does_not_use_stale_cache_on_failure_by_default():
     """Runtime callers should not silently show stale runtime cache as live data."""
-    from unittest.mock import patch
-    
     clear_cache()
     
-    # First, populate cache with real data
-    result1 = fetch_distribution(use_cache=False)
+    # First, populate cache with parsed BitInfoCharts data
+    with patch("requests.get", return_value=_mock_distribution_response()):
+        result1 = fetch_distribution(use_cache=False)
     assert len(result1) > 0
     
-    with patch('requests.get', side_effect=Exception("Network error")):
+    with patch("requests.get", side_effect=Exception("Network error")):
         with pytest.raises(ValueError, match="Failed to fetch distribution data"):
             fetch_distribution(use_cache=False)
 
 
 def test_fetch_distribution_can_use_stale_cache_when_explicitly_enabled():
     """Stale runtime cache is only used when a caller opts into it."""
-    from unittest.mock import patch
-
     clear_cache()
 
-    result1 = fetch_distribution(use_cache=False)
+    with patch("requests.get", return_value=_mock_distribution_response()):
+        result1 = fetch_distribution(use_cache=False)
     assert len(result1) > 0
 
-    with patch('requests.get', side_effect=Exception("Network error")):
+    with patch("requests.get", side_effect=Exception("Network error")):
         result2 = fetch_distribution(use_cache=False, allow_stale_cache=True)
         assert len(result2) > 0
         assert result2 == result1
@@ -86,14 +131,13 @@ def test_fetch_distribution_can_use_stale_cache_when_explicitly_enabled():
 
 def test_fetch_distribution_with_status_labels_stale_cache_on_failure():
     """Status-aware callers can use stale cache without presenting it as live."""
-    from unittest.mock import patch
-
     clear_cache()
 
-    result1 = fetch_distribution(use_cache=False)
+    with patch("requests.get", return_value=_mock_distribution_response()):
+        result1 = fetch_distribution(use_cache=False)
     assert len(result1) > 0
 
-    with patch('requests.get', side_effect=Exception("Network error")):
+    with patch("requests.get", side_effect=Exception("Network error")):
         snapshot = fetch_distribution_with_status(use_cache=False, allow_stale_cache=True)
         assert snapshot["data"] == result1
         assert snapshot["data_status"] == "stale"
@@ -103,22 +147,18 @@ def test_fetch_distribution_with_status_labels_stale_cache_on_failure():
 
 def test_fetch_distribution_raises_on_failure_without_cache_by_default():
     """Runtime callers should not silently show stale static data as if it were live."""
-    from unittest.mock import patch
-    
     clear_cache()
     
-    with patch('requests.get', side_effect=Exception("Network error")):
+    with patch("requests.get", side_effect=Exception("Network error")):
         with pytest.raises(ValueError, match="Failed to fetch distribution data"):
             fetch_distribution(use_cache=False)
 
 
 def test_fetch_distribution_can_use_static_fallback_when_explicitly_enabled():
     """Static bundled data is only used when a caller opts into offline fallback."""
-    from unittest.mock import patch
-    
     clear_cache()
     
-    with patch('requests.get', side_effect=Exception("Network error")):
+    with patch("requests.get", side_effect=Exception("Network error")):
         result = fetch_distribution(use_cache=False, allow_static_fallback=True)
         assert len(result) > 0
         tiers = [item['tier'] for item in result]
