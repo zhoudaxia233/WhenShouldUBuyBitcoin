@@ -102,17 +102,35 @@ def test_trading_style_supports_language_toggle_and_language_aware_request():
     assert "language=${encodeURIComponent(tradingStyleLanguage)}" in html
 
 
-def test_trading_style_prompt_copy_ui_is_enabled():
+def test_trading_style_csv_export_ui_is_enabled():
     html = _load_stats_template()
-    assert 'id="copyStylePromptBtn"' in html
-    assert 'id="tradingStylePromptPreview"' in html
-    assert "function buildTradingStylePrompt(payload)" in html
-    assert "function copyTradingStylePromptToClipboard()" in html
-    assert "navigator.clipboard.writeText(prompt)" in html
+    assert 'id="exportStyleCsvBtn"' in html
+    assert 'id="tradingStylePromptPreview"' not in html
+    assert "function downloadTradingStyleCsv()" in html
+    assert "/api/stats/trading-style.csv?language=${encodeURIComponent(tradingStyleLanguage)}" in html
+    assert "await fetch(url)" in html
+    assert "if (!response.ok)" in html
+    assert "URL.createObjectURL(blob)" in html
+    assert "window.location.href = url" not in html
 
 
-def test_trading_style_prompt_uses_rule_data_only_without_ai_call():
+def test_distribution_and_percentile_label_browser_cache_as_stale_data():
+    html = _load_stats_template()
+    assert "const STATS_CACHE_VERSION = 'v2';" in html
+    assert "const PERCENTILE_CACHE_KEY = `stats_percentile_${STATS_CACHE_VERSION}`;" in html
+    assert "const DISTRIBUTION_CACHE_KEY = `stats_distribution_${STATS_CACHE_VERSION}`;" in html
+    assert "loadFromCache(PERCENTILE_CACHE_KEY) || loadFromCache('stats_percentile')" in html
+    assert "loadFromCache(DISTRIBUTION_CACHE_KEY) || loadFromCache('stats_distribution')" in html
+    assert "clearLegacyStatsCaches();" not in html
+    assert "data_status: 'stale'" in html
+    assert "Cached BitInfoCharts data" in html
+    assert "stale BitInfoCharts data" in html
+    assert "Distribution request failed" in html
+    assert "return { ok: true, stale: true" in html
+    assert "Promise.allSettled" in html
+
+
+def test_trading_style_uses_rule_data_only_without_ai_call():
     html = _load_stats_template()
     assert "/api/stats/trading-style?include_ai=false&language=${encodeURIComponent(tradingStyleLanguage)}" in html
     assert "const cacheKey = `stats_trading_style_${tradingStyleLanguage}`;" in html
-    assert "renderPromptPreview(buildTradingStylePrompt(payload));" in html
