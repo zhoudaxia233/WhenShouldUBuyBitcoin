@@ -326,11 +326,6 @@
                 height: 340px;
             }
         }
-        #tradingStylePromptPreview {
-            white-space: pre-wrap;
-            margin: 0;
-            font-size: 0.88rem;
-        }
     </style>
 </head>
 <body>
@@ -477,7 +472,7 @@
                             </table>
                         </div>
                         <div class="card-footer text-muted small text-center">
-                            Source: BitInfoCharts (Live, updated daily)
+                            <span id="distributionSourceText">Source: BitInfoCharts (updated daily)</span>
                         </div>
                     </div>
                 </div>
@@ -537,7 +532,7 @@
                                 <button id="tradingStyleLangEn" class="btn btn-outline-secondary active" type="button">EN</button>
                                 <button id="tradingStyleLangZh" class="btn btn-outline-secondary" type="button">中文</button>
                             </div>
-                            <button id="copyStylePromptBtn" class="btn btn-sm btn-outline-primary">Copy Prompt</button>
+                            <button id="exportStyleCsvBtn" class="btn btn-sm btn-outline-primary">Export CSV</button>
                         </div>
                     </div>
                     <div class="card-body">
@@ -549,10 +544,6 @@
                             <strong id="tradingStyleLabelIssues">Potential Issues:</strong>
                             <ul class="mb-0" id="tradingStyleIssues"></ul>
                         </div>
-                        <hr />
-                        <div><strong id="tradingStyleLabelPrompt">Prompt:</strong></div>
-                        <div class="small text-muted mb-1" id="tradingStylePromptSubtext">Copy and paste this prompt to your own AI tool.</div>
-                        <pre id="tradingStylePromptPreview" class="mb-0 p-3 border rounded bg-body-tertiary"></pre>
                     </div>
                 </div>
             </div>
@@ -596,12 +587,22 @@
         }
 
         // Load Wealth Percentile
+        const STATS_CACHE_VERSION = 'v2';
+        const PERCENTILE_CACHE_KEY = `stats_percentile_${STATS_CACHE_VERSION}`;
+        const DISTRIBUTION_CACHE_KEY = `stats_distribution_${STATS_CACHE_VERSION}`;
+
         // Cache Helpers
         function saveToCache(key, data) {
             try {
                 const cacheItem = { timestamp: Date.now(), data: data };
                 localStorage.setItem(key, JSON.stringify(cacheItem));
             } catch (e) { console.error('Error saving to cache', e); }
+        }
+
+        function removeFromCache(key) {
+            try {
+                localStorage.removeItem(key);
+            } catch (e) { console.error('Error removing cache', e); }
         }
 
         function loadFromCache(key) {
@@ -618,8 +619,38 @@
             return ageMinutes < ttlMinutes;
         }
 
+        function formatDataAsOf(asOf) {
+            if (!asOf) return '';
+            try {
+                const date = new Date(asOf);
+                if (Number.isNaN(date.getTime())) {
+                    return String(asOf);
+                }
+                return date.toLocaleString();
+            } catch (e) {
+                return String(asOf);
+            }
+        }
+
+        function cacheTimestampAsOf(cacheItem) {
+            return cacheItem?.timestamp ? new Date(cacheItem.timestamp).toISOString() : null;
+        }
+
+        function staleCacheMessage(asOf) {
+            const formatted = formatDataAsOf(asOf);
+            return formatted ? `Cached BitInfoCharts data as of ${formatted}.` : 'Cached BitInfoCharts data.';
+        }
+
         // UI Updaters
         function updatePercentileUI(data) {
+            const unavailable = !data || data.data_status === 'unavailable';
+            if (unavailable) {
+                document.getElementById('percentileText').textContent = 'Data Unavailable';
+                document.getElementById('percentileSubtext').textContent = 'BitInfoCharts distribution is currently unavailable.';
+                document.getElementById('totalBtc').textContent = data?.total_btc ? data.total_btc.toFixed(8) : '--';
+                return;
+            }
+
             // Use percentile_display if available (preserves original decimal precision), 
             // otherwise fall back to percentile_top
             let percentileDisplay;
@@ -632,44 +663,84 @@
             }
             
             document.getElementById('percentileText').textContent = percentileDisplay;
-            document.getElementById('percentileSubtext').textContent = "of all Bitcoin holders globally";
+            if (data.data_status === 'stale' || data.data_status === 'cached') {
+                document.getElementById('percentileSubtext').textContent = `of all Bitcoin holders globally. ${staleCacheMessage(data.as_of)}`;
+            } else {
+                document.getElementById('percentileSubtext').textContent = "of all Bitcoin holders globally";
+            }
             document.getElementById('totalBtc').textContent = data.total_btc ? data.total_btc.toFixed(8) : '--';
         }
 
-        // Load Wealth Percentile (TTL: 24 hours = 1440 mins)
         async function loadPercentile(forceRefresh = false) {
             try {
-                const cached = loadFromCache('stats_percentile');
-                
-                // If valid and not forcing refresh, use cache and RETURN (skip fetch)
-                if (!forceRefresh && isCacheValid(cached, 1440)) {
-                    updatePercentileUI(cached.data);
-                    return cached.data.percentile_top;
+                const url = forceRefresh ? '/api/stats/percentile?force_refresh=true' : '/api/stats/percentile';
+                const response = await fetch(url);
+                if (!response.ok) {
+                    throw new Error(`Percentile request failed: ${response.status}`);
                 }
-                
-                // If expired or forcing refresh, show cached data first (if exists) then fetch
-                if (cached) updatePercentileUI(cached.data);
-
-                const response = await fetch('/api/stats/percentile');
                 const data = await response.json();
-                saveToCache('stats_percentile', data);
                 updatePercentileUI(data);
-                
-                return data.percentile_top; 
+
+                if (data.data_status === 'unavailable') {
+                    const cached = loadFromCache(PERCENTILE_CACHE_KEY) || loadFromCache('stats_percentile');
+                    if (cached?.data) {
+                        const staleData = {
+                            ...cached.data,
+                            data_status: 'stale',
+                            as_of: cached.data.as_of || cacheTimestampAsOf(cached),
+                        };
+                        updatePercentileUI(staleData);
+                        return { ok: true, stale: true, data: staleData };
+                    }
+                    removeFromCache(PERCENTILE_CACHE_KEY);
+                    return { ok: false, data, error: data.message || 'Percentile unavailable' };
+                }
+
+                saveToCache(PERCENTILE_CACHE_KEY, data);
+                return { ok: true, stale: data.data_status === 'stale' || data.data_status === 'cached', data };
             } catch (error) {
                 console.error('Error loading percentile:', error);
-                const cached = loadFromCache('stats_percentile');
-                if (!cached) {
-                    document.getElementById('percentileText').textContent = "Error";
+                const cached = loadFromCache(PERCENTILE_CACHE_KEY) || loadFromCache('stats_percentile');
+                if (cached?.data) {
+                    const staleData = {
+                        ...cached.data,
+                        data_status: 'stale',
+                        as_of: cached.data.as_of || cacheTimestampAsOf(cached),
+                    };
+                    updatePercentileUI(staleData);
+                    return { ok: true, stale: true, data: staleData };
                 }
+                updatePercentileUI({ data_status: 'unavailable' });
+                return { ok: false, error };
             }
         }
 
         // Load Distribution Table
-        function updateDistributionUI(data) {
+        function updateDistributionSourceUI(status, asOf) {
+            const sourceEl = document.getElementById('distributionSourceText');
+            if (!sourceEl) return;
+            if (status === 'unavailable') {
+                sourceEl.textContent = 'Source: BitInfoCharts (currently unavailable)';
+            } else if (status === 'stale' || status === 'cached') {
+                sourceEl.textContent = `Source: BitInfoCharts cached data${formatDataAsOf(asOf) ? ` (as of ${formatDataAsOf(asOf)})` : ''}`;
+            } else {
+                sourceEl.textContent = 'Source: BitInfoCharts (updated daily)';
+            }
+        }
+
+        function updateDistributionUI(data, meta = {}) {
             const tbody = document.getElementById('distributionTable');
             tbody.innerHTML = '';
-            
+
+            if (!Array.isArray(data)) {
+                const tr = document.createElement('tr');
+                tr.innerHTML = '<td colspan="2" class="text-muted py-3">Data unavailable</td>';
+                tbody.appendChild(tr);
+                updateDistributionSourceUI('unavailable', null);
+                return;
+            }
+
+            updateDistributionSourceUI(meta.data_status || 'live', meta.as_of || null);
             data.forEach(row => {
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
@@ -680,24 +751,40 @@
             });
         }
 
-        // Load Distribution Table (TTL: 24 hours = 1440 mins)
         async function loadDistribution(forceRefresh = false) {
             try {
-                const cached = loadFromCache('stats_distribution');
-                
-                if (!forceRefresh && isCacheValid(cached, 1440)) {
-                    updateDistributionUI(cached.data);
-                    return;
+                const url = forceRefresh ? '/api/stats/distribution?force_refresh=true' : '/api/stats/distribution';
+                const response = await fetch(url);
+                if (!response.ok) {
+                    throw new Error(`Distribution request failed: ${response.status}`);
                 }
-
-                if (cached) updateDistributionUI(cached.data);
-
-                const response = await fetch('/api/stats/distribution');
                 const data = await response.json();
-                saveToCache('stats_distribution', data);
-                updateDistributionUI(data);
+                if (!Array.isArray(data)) {
+                    throw new Error('Distribution response was not a table');
+                }
+                const meta = {
+                    data_status: response.headers.get('x-data-status') || 'live',
+                    source: response.headers.get('x-data-source') || 'bitinfocharts',
+                    as_of: response.headers.get('x-data-as-of') || null,
+                };
+                saveToCache(DISTRIBUTION_CACHE_KEY, { data, meta });
+                updateDistributionUI(data, meta);
+                return { ok: true, stale: meta.data_status === 'stale' || meta.data_status === 'cached', data };
             } catch (error) {
                 console.error('Error loading distribution:', error);
+                const cached = loadFromCache(DISTRIBUTION_CACHE_KEY) || loadFromCache('stats_distribution');
+                if (cached?.data) {
+                    const cachedData = Array.isArray(cached.data) ? cached.data : cached.data.data;
+                    const cachedMeta = {
+                        ...(cached.data?.meta || {}),
+                        data_status: 'stale',
+                        as_of: cached.data?.meta?.as_of || cacheTimestampAsOf(cached),
+                    };
+                    updateDistributionUI(cachedData, cachedMeta);
+                    return { ok: true, stale: true, data: cachedData };
+                }
+                updateDistributionUI(null);
+                return { ok: false, error };
             }
         }
 
@@ -745,14 +832,11 @@
         const TRADING_STYLE_I18N = {
             en: {
                 title: 'Trading Style Analysis',
-                copyPrompt: 'Copy Prompt',
+                exportCsv: 'Export CSV',
                 tags: 'Style Tags:',
                 stats: 'Key Stats:',
                 method: 'Method:',
                 issues: 'Potential Issues:',
-                promptLabel: 'Prompt:',
-                promptSubtext: 'Copy and paste this prompt to your own AI tool.',
-                promptEmpty: 'Load trading style analysis first to generate prompt.',
                 loadingRule: 'Loading rule-based analysis...',
                 loadFailed: 'Failed to load trading style analysis.',
                 statusRule: (t) => `Updated ${t}. Rule-based analysis loaded.`,
@@ -768,19 +852,15 @@
                 days: 'days',
                 methodSplit: 'Same binance_order_id merged into one event.',
                 methodNoHindsight: 'Each event diagnostics use only event-time and prior events.',
-                promptCopied: 'Prompt copied to clipboard.',
-                promptCopyFailed: 'Failed to copy prompt.',
+                csvExportStarted: 'CSV download started.',
             },
             zh: {
                 title: '交易风格分析',
-                copyPrompt: '复制Prompt',
+                exportCsv: '导出CSV',
                 tags: '风格标签：',
                 stats: '关键统计：',
                 method: '方法说明：',
                 issues: '潜在问题：',
-                promptLabel: 'Prompt：',
-                promptSubtext: '复制后粘贴到你自己的AI工具。',
-                promptEmpty: '请先加载交易风格分析以生成Prompt。',
                 loadingRule: '正在加载规则分析...',
                 loadFailed: '交易风格分析加载失败。',
                 statusRule: (t) => `更新于 ${t}。规则分析已加载。`,
@@ -796,8 +876,7 @@
                 days: '天',
                 methodSplit: '同一 binance_order_id 的拆分成交会合并为一个行为事件。',
                 methodNoHindsight: '每个事件只使用当时及之前的数据做诊断，不使用后续信息。',
-                promptCopied: 'Prompt 已复制到剪贴板。',
-                promptCopyFailed: '复制 Prompt 失败。',
+                csvExportStarted: 'CSV 下载已开始。',
             }
         };
 
@@ -1293,84 +1372,31 @@
             return `${(Number(value) * 100).toFixed(1)}%`;
         }
 
-        function renderPromptPreview(promptText) {
-            const el = document.getElementById('tradingStylePromptPreview');
-            if (!el) return;
-            el.textContent = String(promptText || '');
-        }
-
-        function buildTradingStylePrompt(payload) {
+        async function downloadTradingStyleCsv() {
             const text = getTradingStyleText();
-            if (!payload || !payload.analysis_data) {
-                return text.promptEmpty;
-            }
-
-            const analysis = payload.analysis_data || {};
-            const promptPayload = {
-                generated_at: payload.generated_at || null,
-                language: tradingStyleLanguage,
-                source_signature: payload.source_signature || null,
-                summary: analysis.summary || {},
-                style_tags: analysis.style_tags || [],
-                issues: analysis.issues || [],
-                method_constraints: analysis.method_constraints || {},
-                event_diagnostics: (analysis.event_diagnostics || []).slice(-40),
-            };
-
-            if (tradingStyleLanguage === 'zh') {
-                return [
-                    '你是BTC买入执行行为复盘顾问。语气简明、chill、直接可执行。',
-                    '限制：',
-                    '1) 严格避免后视偏差，只能基于当时及之前信息评价每个行为。',
-                    '2) 已将同一 binance_order_id 的拆单成交合并为一个行为事件。',
-                    '3) 不要给无法执行的建议（例如“强制限制平台订单频率”）。',
-                    '输出结构：',
-                    '- 风格判断（2-3句）',
-                    '- 主要问题（最多3条，按严重度）',
-                    '- 可执行建议（最多4条，贴合DCA平台现实约束）',
-                    '',
-                    '数据如下(JSON)：',
-                    JSON.stringify(promptPayload, null, 2),
-                ].join('\n');
-            }
-
-            return [
-                'You are a BTC buy-execution behavior coach. Keep tone concise, chill, and actionable.',
-                'Constraints:',
-                '1) Strictly avoid hindsight bias. Judge each behavior only with information available at that time.',
-                '2) Split fills with same binance_order_id are already merged into one behavior event.',
-                '3) Do not give impractical advice that user cannot execute on a DCA platform.',
-                'Output format:',
-                '- Style assessment (2-3 short sentences)',
-                '- Key issues (max 3, ranked)',
-                '- Actionable improvements (max 4, realistic under DCA platform constraints)',
-                '',
-                'Data (JSON):',
-                JSON.stringify(promptPayload, null, 2),
-            ].join('\n');
-        }
-
-        async function copyTradingStylePromptToClipboard() {
-            const text = getTradingStyleText();
-            const prompt = buildTradingStylePrompt(latestTradingStyleData);
+            const url = `/api/stats/trading-style.csv?language=${encodeURIComponent(tradingStyleLanguage)}`;
             try {
-                if (navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
-                    await navigator.clipboard.writeText(prompt);
-                } else {
-                    const temp = document.createElement('textarea');
-                    temp.value = prompt;
-                    temp.style.position = 'fixed';
-                    temp.style.left = '-9999px';
-                    document.body.appendChild(temp);
-                    temp.focus();
-                    temp.select();
-                    document.execCommand('copy');
-                    document.body.removeChild(temp);
+                const response = await fetch(url);
+                if (!response.ok) {
+                    throw new Error(`CSV request failed: ${response.status}`);
                 }
-                notyf.success(text.promptCopied);
+                const contentType = response.headers.get('content-type') || '';
+                if (!contentType.includes('text/csv')) {
+                    throw new Error('CSV response was not a CSV file');
+                }
+                const blob = await response.blob();
+                const downloadUrl = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = downloadUrl;
+                link.download = 'trading-style-analysis.csv';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(downloadUrl);
+                notyf.success(text.csvExportStarted);
             } catch (error) {
-                console.error('Failed to copy prompt:', error);
-                notyf.error(text.promptCopyFailed);
+                console.error('Failed to export CSV:', error);
+                notyf.error(text.loadFailed);
             }
         }
 
@@ -1419,14 +1445,11 @@
                 if (el) el.textContent = value;
             };
             setText('tradingStyleTitle', text.title);
-            setText('copyStylePromptBtn', text.copyPrompt);
+            setText('exportStyleCsvBtn', text.exportCsv);
             setText('tradingStyleLabelTags', text.tags);
             setText('tradingStyleLabelStats', text.stats);
             setText('tradingStyleLabelMethod', text.method);
             setText('tradingStyleLabelIssues', text.issues);
-            setText('tradingStyleLabelPrompt', text.promptLabel);
-            setText('tradingStylePromptSubtext', text.promptSubtext);
-            renderPromptPreview(buildTradingStylePrompt(latestTradingStyleData));
             document.getElementById('tradingStyleLangEn')?.classList.toggle('active', tradingStyleLanguage === 'en');
             document.getElementById('tradingStyleLangZh')?.classList.toggle('active', tradingStyleLanguage === 'zh');
         }
@@ -1480,8 +1503,6 @@
                 });
             }
 
-            renderPromptPreview(buildTradingStylePrompt(payload));
-
             const statusEl = document.getElementById('tradingStyleStatus');
             const generatedAt = payload?.generated_at ? new Date(payload.generated_at).toLocaleString() : '';
             statusEl.textContent = text.statusRule(generatedAt);
@@ -1521,7 +1542,6 @@
             const currentTheme = document.documentElement.getAttribute('data-bs-theme') || 'light';
             updateThemeToggleButton(currentTheme);
             applyTradingStyleLanguageUI();
-            renderPromptPreview(getTradingStyleText().promptEmpty);
             const themeBtn = document.getElementById('themeToggleBtn');
             if (themeBtn) {
                 themeBtn.addEventListener('click', () => {
@@ -1571,7 +1591,7 @@
                 btn.disabled = true;
                 btn.innerHTML = '🔄 Refreshing...';
                 
-                await Promise.all([
+                const refreshResults = await Promise.allSettled([
                     loadPercentile(true),
                     loadDistribution(true),
                     loadFees(true),
@@ -1582,13 +1602,24 @@
                 
                 btn.disabled = false;
                 btn.innerHTML = originalText;
-                notyf.success('Stats refreshed');
+
+                const failed = refreshResults.filter((result) => {
+                    if (result.status === 'rejected') return true;
+                    return result.value && result.value.ok === false;
+                });
+                if (failed.length) {
+                    notyf.error('Some stats failed to refresh');
+                } else if (refreshResults.some((result) => result.status === 'fulfilled' && result.value?.stale)) {
+                    notyf.error('Stats refreshed with stale BitInfoCharts data');
+                } else {
+                    notyf.success('Stats refreshed');
+                }
             });
 
-            const copyStylePromptBtn = document.getElementById('copyStylePromptBtn');
-            if (copyStylePromptBtn) {
-                copyStylePromptBtn.addEventListener('click', async () => {
-                    await copyTradingStylePromptToClipboard();
+            const exportStyleCsvBtn = document.getElementById('exportStyleCsvBtn');
+            if (exportStyleCsvBtn) {
+                exportStyleCsvBtn.addEventListener('click', async () => {
+                    await downloadTradingStyleCsv();
                 });
             }
             

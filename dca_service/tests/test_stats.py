@@ -1,6 +1,8 @@
 from fastapi.testclient import TestClient
 from sqlmodel import Session
 from unittest.mock import MagicMock, patch
+import csv
+import io
 
 from dca_service.api import stats_api
 from dca_service.models import DCATransaction, SummaryApiSettings, DCAStrategy, BinanceCredentials
@@ -143,6 +145,70 @@ def test_trading_style_analysis_aggregates_split_fills(client: TestClient, sessi
     assert diagnostics[0]["amount_btc"] == 0.004
     assert diagnostics[1]["binance_order_id"] == 999999
     assert diagnostics[1]["fill_count"] == 1
+
+
+def test_trading_style_csv_export_contains_behavior_event_rows(client: TestClient, session: Session):
+    tx1 = DCATransaction(
+        status="SUCCESS",
+        fiat_amount=50.0,
+        btc_amount=0.001,
+        price=50000.0,
+        ahr999=0.5,
+        notes="Split fill 1",
+        timestamp=datetime(2024, 1, 1, 0, 0, tzinfo=timezone.utc),
+        source="MANUAL",
+        is_manual=True,
+        binance_order_id=123456,
+        binance_trade_id=111,
+    )
+    tx2 = DCATransaction(
+        status="SUCCESS",
+        fiat_amount=150.0,
+        btc_amount=0.003,
+        price=50010.0,
+        ahr999=0.5,
+        notes="Split fill 2",
+        timestamp=datetime(2024, 1, 1, 0, 1, tzinfo=timezone.utc),
+        source="MANUAL",
+        is_manual=True,
+        binance_order_id=123456,
+        binance_trade_id=112,
+    )
+    tx3 = DCATransaction(
+        status="SUCCESS",
+        fiat_amount=200.0,
+        btc_amount=0.004,
+        price=50020.0,
+        ahr999=0.5,
+        notes="Another order",
+        timestamp=datetime(2024, 1, 3, 0, 0, tzinfo=timezone.utc),
+        source="MANUAL",
+        is_manual=True,
+        binance_order_id=999999,
+        binance_trade_id=113,
+    )
+    session.add(tx1)
+    session.add(tx2)
+    session.add(tx3)
+    session.commit()
+
+    response = client.get("/api/stats/trading-style.csv?language=en")
+
+    assert response.status_code == 200
+    assert response.headers["content-type"].startswith("text/csv")
+    assert 'attachment; filename="trading-style-analysis.csv"' in response.headers["content-disposition"]
+
+    rows = list(csv.DictReader(io.StringIO(response.text)))
+    assert len(rows) == 2
+    assert rows[0]["binance_order_id"] == "123456"
+    assert rows[0]["fill_count"] == "2"
+    assert rows[0]["amount_usd"] == "200.0"
+    assert rows[0]["source_types"] == "MANUAL"
+    assert rows[0]["style_tags"]
+    assert "behavior_event_count" in rows[0]
+    assert "issues" in rows[0]
+    assert "method_constraints" in rows[0]
+    assert rows[1]["binance_order_id"] == "999999"
 
 
 def test_trading_style_analysis_ai_disabled_without_settings(client: TestClient, session: Session):

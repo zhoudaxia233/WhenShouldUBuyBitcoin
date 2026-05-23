@@ -496,7 +496,10 @@ def main(strict_update: bool = False):
                 
                 print("Fetching latest wealth distribution data...")
                 # Force fetch (use_cache=False) to get fresh data
-                distribution_data = fetch_distribution(use_cache=False)
+                distribution_data = fetch_distribution(
+                    use_cache=False,
+                    allow_static_fallback=False,
+                )
                 
                 if distribution_data:
                     # Define path to save
