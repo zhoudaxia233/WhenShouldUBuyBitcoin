@@ -502,10 +502,19 @@ def main(strict_update: bool = False):
                     # Define path to save
                     json_path = Path("dca_service/src/dca_service/data/wealth_distribution.json")
                     json_path.parent.mkdir(parents=True, exist_ok=True)
-                    
-                    with open(json_path, 'w') as f:
-                        json.dump(distribution_data, f, indent=2)
-                    
+
+                    with tempfile.NamedTemporaryFile(
+                        mode="w",
+                        encoding="utf-8",
+                        dir=json_path.parent,
+                        prefix=f".{json_path.name}.",
+                        suffix=".tmp",
+                        delete=False,
+                    ) as tmp:
+                        json.dump(distribution_data, tmp, indent=2)
+                        tmp_path = Path(tmp.name)
+                    tmp_path.replace(json_path)
+
                     print(f"✓ Updated wealth distribution data: {json_path}")
                     
                     # Verify one data point

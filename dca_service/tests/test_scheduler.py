@@ -203,7 +203,26 @@ class TestWeeklyExecution:
         session.commit()
         
         assert scheduler._should_execute_now(weekly_strategy, session) is False
-    
+
+    @freeze_time("2024-01-15 09:00:00")  # Monday
+    def test_manual_trade_does_not_block_weekly_auto(self, scheduler, weekly_strategy, session):
+        """Manual trades synced from Binance should not block scheduled weekly auto execution."""
+        tx = DCATransaction(
+            status="SUCCESS",
+            fiat_amount=100.0,
+            btc_amount=0.001,
+            price=50000.0,
+            ahr999=0.5,
+            notes="Manual transaction earlier this week",
+            source="MANUAL",
+            is_manual=True,
+            timestamp=datetime.now(timezone.utc),
+        )
+        session.add(tx)
+        session.commit()
+
+        assert scheduler._should_execute_now(weekly_strategy, session) is True
+
     @freeze_time("2024-01-22 09:00:00")  # Next Monday
     def test_should_execute_next_week(self, scheduler, weekly_strategy, session):
         """Test that weekly DCA executes again next week"""

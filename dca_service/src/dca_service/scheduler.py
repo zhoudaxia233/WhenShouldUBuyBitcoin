@@ -239,6 +239,7 @@ class DCAScheduler:
             select(DCATransaction)
             .where(DCATransaction.timestamp >= week_start)
             .where(DCATransaction.status == "SUCCESS")
+            .where(DCATransaction.is_manual == False)
         ).first()
         
         if existing_tx:

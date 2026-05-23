@@ -1692,10 +1692,11 @@ class BacktestUI {
                     break;
 
                 case "monthly-dca":
-                    const dayOfMonth =
+                    const rawDayOfMonth =
                         parseInt(
                             document.getElementById("monthlyDcaDay").value
                         ) || 1;
+                    const dayOfMonth = Math.min(28, Math.max(1, rawDayOfMonth));
                     strategy = new MonthlyDCAStrategy(monthlyBudget, {
                         dayOfMonth,
                     });
