@@ -1,7 +1,10 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
-from pathlib import Path
 import subprocess
+import sys
 import tomllib
+from pathlib import Path
+
+DEV_SESSION_SECRET_DEFAULT = "dev-secret-change-in-production-12345678901234567890"
 
 
 def _find_repo_root() -> Path:
@@ -70,14 +73,34 @@ class Settings(BaseSettings):
     # Session Settings (for authentication)
     # WARNING: In production, MUST set a strong random SESSION_SECRET
     # Generate with: python -c "import secrets; print(secrets.token_urlsafe(32))"
-    SESSION_SECRET: str = "dev-secret-change-in-production-12345678901234567890"  # Insecure default for dev/test
+    SESSION_SECRET: str = DEV_SESSION_SECRET_DEFAULT  # Insecure default for dev/test
     SESSION_COOKIE_NAME: str = "dca_session"
     SESSION_COOKIE_HTTPS_ONLY: bool = False  # Must be True in production with HTTPS. False for local HTTP development.
     SESSION_COOKIE_SAMESITE: str = "lax"  # "lax" or "strict" for CSRF protection
     SESSION_MAX_AGE: int = 86400  # 24 hours in seconds
+    DCA_REQUIRE_SECURE_SESSION: bool = False
     LOCAL_TIMEZONE: str = "Europe/Berlin"  # Used when strategy time_display_mode is LOCAL
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
 
+def _enforce_secure_session_secret(settings: "Settings") -> None:
+    """Refuse to boot with the insecure default SESSION_SECRET when secure mode is required.
+
+    Set DCA_REQUIRE_SECURE_SESSION=true (or 1/yes) in production to enforce; otherwise we
+    only print a loud warning so dev/test workflows keep working.
+    """
+    if settings.SESSION_SECRET != DEV_SESSION_SECRET_DEFAULT:
+        return
+
+    msg = (
+        "SESSION_SECRET is the insecure dev default. Generate one with "
+        "`python -c \"import secrets; print(secrets.token_urlsafe(32))\"` and set it in .env."
+    )
+    if settings.DCA_REQUIRE_SECURE_SESSION:
+        raise RuntimeError(msg)
+    print(f"WARNING: {msg}", file=sys.stderr)
+
+
 settings = Settings()
+_enforce_secure_session_secret(settings)
