@@ -82,6 +82,8 @@ def test_percentile_api_resilience(client):
             # Should indicate data unavailability
             assert data["percentile_top"] is None
             assert data["percentile_display"] == "Data Unavailable"
+            assert data["data_status"] == "unavailable"
+            assert data["source"] == "unavailable"
             assert "unavailable" in data["message"].lower()
 
 def test_percentile_api_success(client):
@@ -103,3 +105,5 @@ def test_percentile_api_success(client):
             
             assert data["total_btc"] == 1.5
             assert data["percentile_display"] == "Top 2%"
+            assert data["data_status"] == "live"
+            assert data["source"] == "bitinfocharts"

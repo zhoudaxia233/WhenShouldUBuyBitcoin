@@ -53,10 +53,9 @@ def test_fetch_distribution_caching():
     assert result1 == result2
 
 
-def test_fetch_distribution_uses_stale_cache_on_failure():
-    """Test that stale cache is used when fetching fails."""
+def test_fetch_distribution_does_not_use_stale_cache_on_failure_by_default():
+    """Runtime callers should not silently show stale runtime cache as live data."""
     from unittest.mock import patch
-    import pandas as pd
     
     clear_cache()
     
@@ -64,30 +63,45 @@ def test_fetch_distribution_uses_stale_cache_on_failure():
     result1 = fetch_distribution(use_cache=False)
     assert len(result1) > 0
     
-    # Now simulate a network failure
-    with patch('pandas.read_html', side_effect=Exception("Network error")):
-        # Should return STATIC data now, not the stale cache (logic changed to prefer static fallback over complex cache logic for simplicity)
-        # Or if the implementation prefers static fallback immediately on error
-        result2 = fetch_distribution(use_cache=False)
-        assert len(result2) > 0
-        # The actual scraped data format might vary, but based on latest scrape:
-        # The actual scraped data format might vary, but ensure we have the top tier
-        tiers = [item['tier'] for item in result2]
-        assert '[100,000 - 1,000,000)' in tiers
+    with patch('requests.get', side_effect=Exception("Network error")):
+        with pytest.raises(ValueError, match="Failed to fetch distribution data"):
+            fetch_distribution(use_cache=False)
 
 
-def test_fetch_distribution_returns_static_on_failure_without_cache():
-    """Test that static data is returned if fetching fails and no cache exists."""
+def test_fetch_distribution_can_use_stale_cache_when_explicitly_enabled():
+    """Stale runtime cache is only used when a caller opts into it."""
     from unittest.mock import patch
-    import pandas as pd
-    import pytest
+
+    clear_cache()
+
+    result1 = fetch_distribution(use_cache=False)
+    assert len(result1) > 0
+
+    with patch('requests.get', side_effect=Exception("Network error")):
+        result2 = fetch_distribution(use_cache=False, allow_stale_cache=True)
+        assert len(result2) > 0
+        assert result2 == result1
+
+
+def test_fetch_distribution_raises_on_failure_without_cache_by_default():
+    """Runtime callers should not silently show stale static data as if it were live."""
+    from unittest.mock import patch
     
     clear_cache()
     
-    # Simulate network failure with no cache
-    with patch('pandas.read_html', side_effect=Exception("Network error")):
-        # Should NOT raise ValueError anymore, should return static data
-        result = fetch_distribution(use_cache=False)
+    with patch('requests.get', side_effect=Exception("Network error")):
+        with pytest.raises(ValueError, match="Failed to fetch distribution data"):
+            fetch_distribution(use_cache=False)
+
+
+def test_fetch_distribution_can_use_static_fallback_when_explicitly_enabled():
+    """Static bundled data is only used when a caller opts into offline fallback."""
+    from unittest.mock import patch
+    
+    clear_cache()
+    
+    with patch('requests.get', side_effect=Exception("Network error")):
+        result = fetch_distribution(use_cache=False, allow_static_fallback=True)
         assert len(result) > 0
         tiers = [item['tier'] for item in result]
         assert '[100,000 - 1,000,000)' in tiers

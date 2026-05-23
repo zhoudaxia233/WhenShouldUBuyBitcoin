@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Query, HTTPException, BackgroundTasks
+from fastapi import APIRouter, Depends, Query, HTTPException, BackgroundTasks, Response
 from sqlmodel import Session, select, col
 from typing import List, Dict, Any, Tuple, Optional
 from datetime import datetime, timezone, timedelta
@@ -9,6 +9,7 @@ import json
 import hashlib
 import logging
 import csv
+import io
 import asyncio
 from pathlib import Path
 from pydantic import BaseModel, Field
@@ -581,7 +582,7 @@ def _build_market_price_series(
 
 
 
-def _build_wealth_distribution_from_live_data() -> List[Tuple[float, float, float, str]]:
+def _build_wealth_distribution_from_live_data(force_refresh: bool = False) -> List[Tuple[float, float, float, str]]:
     """
     Build wealth distribution list from live scraped data.
     
@@ -602,8 +603,13 @@ def _build_wealth_distribution_from_live_data() -> List[Tuple[float, float, floa
     # fetch_distribution handles:
     # - Fresh cache: returns immediately
     # - Expired cache + fetch fails: returns stale cache
-    # - No cache + fetch fails: raises ValueError
-    distribution_data = fetch_distribution(use_cache=True)
+    # - No cache + fetch fails: raises ValueError. Do not use packaged static
+    #   fallback here because the page labels this as live BitInfoCharts data.
+    distribution_data = fetch_distribution(
+        use_cache=not force_refresh,
+        allow_static_fallback=False,
+        allow_stale_cache=False,
+    )
     
     if not distribution_data:
         raise ValueError("No distribution data available")
@@ -633,13 +639,27 @@ def _build_wealth_distribution_from_live_data() -> List[Tuple[float, float, floa
     return wealth_dist
 
 @router.get("/stats/distribution")
-def get_wealth_distribution(current_user: User = Depends(get_current_user)):
+def get_wealth_distribution(
+    force_refresh: bool = Query(default=False),
+    current_user: User = Depends(get_current_user),
+):
     """Return the live wealth distribution table from BitInfoCharts."""
     from dca_service.services.distribution_scraper import fetch_distribution
-    return fetch_distribution()
+    try:
+        return fetch_distribution(
+            use_cache=not force_refresh,
+            allow_static_fallback=False,
+            allow_stale_cache=False,
+        )
+    except ValueError as e:
+        raise HTTPException(
+            status_code=503,
+            detail="Wealth distribution data is currently unavailable",
+        ) from e
 
 @router.get("/stats/percentile")
 async def get_user_percentile(
+    force_refresh: bool = Query(default=False),
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_user)
 ):
@@ -660,7 +680,7 @@ async def get_user_percentile(
     
     try:
         # Get wealth distribution (raises ValueError if no data available)
-        wealth_distribution = _build_wealth_distribution_from_live_data()
+        wealth_distribution = _build_wealth_distribution_from_live_data(force_refresh=force_refresh)
         
         # Determine Percentile
         # Find the first tier where total_btc falls within the range [min_btc, max_btc)
@@ -679,6 +699,8 @@ async def get_user_percentile(
             "total_btc": total_btc,
             "percentile_top": percentile_value,
             "percentile_display": percentile_str,
+            "data_status": "live",
+            "source": "bitinfocharts",
             "message": f"You are in the {percentile_str} of Bitcoin Holders"
         }
         
@@ -690,6 +712,8 @@ async def get_user_percentile(
             "total_btc": total_btc,
             "percentile_top": None,
             "percentile_display": "Data Unavailable",
+            "data_status": "unavailable",
+            "source": "unavailable",
             "message": "Wealth distribution data is currently unavailable"
         }
 
@@ -2416,6 +2440,110 @@ def confirm_add_position(
     }
 
 
+TRADING_STYLE_SUMMARY_CSV_FIELDS = [
+    "raw_fill_count",
+    "behavior_event_count",
+    "split_event_count",
+    "split_fill_extra_count",
+    "avg_fills_per_event",
+    "total_invested_usd",
+    "total_btc",
+    "analysis_window_days",
+    "events_per_30d",
+    "median_interval_days",
+    "avg_event_usd",
+    "event_amount_cv",
+    "high_zone_buy_ratio",
+    "low_zone_buy_ratio",
+    "burst_trading_ratio",
+    "size_price_position_corr",
+    "largest_event_share",
+    "top3_event_share",
+    "weekend_ratio",
+    "manual_event_ratio",
+    "dca_event_ratio",
+]
+
+
+TRADING_STYLE_CSV_FIELDS = [
+    "generated_at",
+    "language",
+    "source_signature",
+    "style_tags",
+    "issues",
+    "method_constraints",
+    *TRADING_STYLE_SUMMARY_CSV_FIELDS,
+    "event_time",
+    "event_key",
+    "event_type",
+    "binance_order_id",
+    "amount_usd",
+    "amount_btc",
+    "avg_price_usd",
+    "fill_count",
+    "fee_usd",
+    "source_types",
+    "interval_since_prev_days",
+    "relative_amount_to_past_median",
+    "relative_amount_label",
+    "price_position_in_past_range",
+    "price_position_label",
+    "price_vs_past_median_pct",
+]
+
+
+def _csv_cell(value: Any) -> Any:
+    if value is None:
+        return ""
+    if isinstance(value, list):
+        return "|".join(str(item) for item in value)
+    return value
+
+
+def _csv_json_cell(value: Any) -> str:
+    if value in (None, "", [], {}):
+        return ""
+    return json.dumps(value, ensure_ascii=False, sort_keys=True)
+
+
+def _build_trading_style_csv(
+    *,
+    behavior_data: Dict[str, Any],
+    generated_at: str,
+    language: str,
+    source_signature: str,
+) -> str:
+    output = io.StringIO()
+    writer = csv.DictWriter(
+        output,
+        fieldnames=TRADING_STYLE_CSV_FIELDS,
+        lineterminator="\n",
+    )
+    writer.writeheader()
+
+    summary = behavior_data.get("summary", {}) or {}
+    base_row = {
+        "generated_at": generated_at,
+        "language": language,
+        "source_signature": source_signature,
+        "style_tags": _csv_cell(behavior_data.get("style_tags", []) or []),
+        "issues": _csv_json_cell(behavior_data.get("issues", []) or []),
+        "method_constraints": _csv_json_cell(behavior_data.get("method_constraints", {}) or {}),
+    }
+    for field in TRADING_STYLE_SUMMARY_CSV_FIELDS:
+        base_row[field] = _csv_cell(summary.get(field))
+
+    for item in behavior_data.get("event_diagnostics", []) or []:
+        row = dict(base_row)
+        for field in TRADING_STYLE_CSV_FIELDS:
+            if field in row:
+                continue
+            row[field] = _csv_cell(item.get(field))
+        writer.writerow(row)
+
+    return output.getvalue()
+
+
 @router.get("/stats/trading-style")
 def get_trading_style_analysis(
     include_ai: bool = Query(default=True),
@@ -2448,3 +2576,32 @@ def get_trading_style_analysis(
         "ai_status": ai_result["status"],
         "ai_analysis": ai_result["analysis"],
     }
+
+
+@router.get("/stats/trading-style.csv")
+def download_trading_style_csv(
+    language: str = Query(default="en"),
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Export behavior-event diagnostics as CSV.
+
+    Split fills with the same binance_order_id are already merged into one row.
+    """
+    _, _, behavior_data, source_signature = _build_buy_behavior_snapshot(session)
+    normalized_language = _normalize_language(language)
+    generated_at = datetime.now(timezone.utc).isoformat()
+    csv_text = _build_trading_style_csv(
+        behavior_data=behavior_data,
+        generated_at=generated_at,
+        language=normalized_language,
+        source_signature=source_signature,
+    )
+    return Response(
+        content=csv_text,
+        media_type="text/csv; charset=utf-8",
+        headers={
+            "Content-Disposition": 'attachment; filename="trading-style-analysis.csv"',
+        },
+    )
