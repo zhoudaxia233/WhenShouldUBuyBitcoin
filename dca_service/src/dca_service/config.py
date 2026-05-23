@@ -1,9 +1,8 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
-from pathlib import Path
-import os
 import subprocess
 import sys
 import tomllib
+from pathlib import Path
 
 DEV_SESSION_SECRET_DEFAULT = "dev-secret-change-in-production-12345678901234567890"
 
@@ -79,6 +78,7 @@ class Settings(BaseSettings):
     SESSION_COOKIE_HTTPS_ONLY: bool = False  # Must be True in production with HTTPS. False for local HTTP development.
     SESSION_COOKIE_SAMESITE: str = "lax"  # "lax" or "strict" for CSRF protection
     SESSION_MAX_AGE: int = 86400  # 24 hours in seconds
+    DCA_REQUIRE_SECURE_SESSION: bool = False
     LOCAL_TIMEZONE: str = "Europe/Berlin"  # Used when strategy time_display_mode is LOCAL
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
@@ -93,12 +93,11 @@ def _enforce_secure_session_secret(settings: "Settings") -> None:
     if settings.SESSION_SECRET != DEV_SESSION_SECRET_DEFAULT:
         return
 
-    require_secure = os.environ.get("DCA_REQUIRE_SECURE_SESSION", "").strip().lower() in {"1", "true", "yes"}
     msg = (
         "SESSION_SECRET is the insecure dev default. Generate one with "
         "`python -c \"import secrets; print(secrets.token_urlsafe(32))\"` and set it in .env."
     )
-    if require_secure:
+    if settings.DCA_REQUIRE_SECURE_SESSION:
         raise RuntimeError(msg)
     print(f"WARNING: {msg}", file=sys.stderr)
 
