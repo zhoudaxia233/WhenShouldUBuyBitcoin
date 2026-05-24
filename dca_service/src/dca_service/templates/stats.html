@@ -32,6 +32,10 @@
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
         }
+        .pnl-chart-wrap {
+            height: 400px;
+            position: relative;
+        }
         .highlight-row {
             background-color: #e8f4ff;
             font-weight: bold;
@@ -190,6 +194,34 @@
         .saylor-meta strong {
             color: #d97821;
         }
+        .saylor-mobile-kpis {
+            display: none;
+        }
+        .saylor-mobile-kpi {
+            min-width: 0;
+            border-top: 1px solid rgba(96, 111, 130, 0.18);
+            padding-top: 10px;
+        }
+        .saylor-mobile-kpi .label {
+            display: block;
+            color: #5f7188;
+            font-size: 0.68rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            font-weight: 700;
+            line-height: 1.2;
+        }
+        .saylor-mobile-kpi strong {
+            display: block;
+            margin-top: 4px;
+            color: #122238;
+            font-size: 1rem;
+            line-height: 1.2;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            font-variant-numeric: tabular-nums;
+        }
         .saylor-negative {
             color: #ff7f7f;
             font-weight: 600;
@@ -266,6 +298,15 @@
             height: 460px;
             position: relative;
         }
+        .saylor-chart-toolbar {
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 8px;
+        }
+        .saylor-reset-btn {
+            border-radius: 999px;
+            min-height: 36px;
+        }
         #saylorChart {
             touch-action: none;
         }
@@ -322,8 +363,33 @@
             }
         }
         @media (max-width: 575px) {
-            .saylor-chart-wrap {
+            .pnl-chart-wrap {
                 height: 340px;
+            }
+            .saylor-desktop-meta {
+                display: none !important;
+            }
+            .saylor-mobile-kpis {
+                display: grid;
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 10px 14px;
+                margin-top: 14px;
+            }
+            .saylor-main-value {
+                font-size: 2rem;
+            }
+            .saylor-chart-toolbar {
+                justify-content: stretch;
+            }
+            .saylor-reset-btn {
+                width: 100%;
+            }
+            .saylor-chart-wrap {
+                height: 380px;
+                min-height: 380px;
+            }
+            #saylorChart {
+                touch-action: pan-y;
             }
         }
     </style>
@@ -446,7 +512,7 @@
                         <h5 class="mb-0">Performance Over Time</h5>
                     </div>
                     <div class="card-body">
-                        <div style="height: 400px; position: relative;">
+                        <div class="pnl-chart-wrap">
                             <canvas id="pnlChart"></canvas>
                         </div>
                     </div>
@@ -489,13 +555,31 @@
                             <div class="col-lg-8">
                                 <div class="saylor-header-kicker">Bitcoin Reserve Value</div>
                                 <div class="saylor-main-value" id="saylorReserveValue">$--</div>
-                                <div class="saylor-meta d-flex flex-wrap gap-3">
+                                <div class="saylor-meta saylor-desktop-meta d-flex flex-wrap gap-3">
                                     <span><strong id="saylorTotalBtc">--</strong> BTC</span>
                                     <span>Avg Cost: <strong id="saylorAvgCost">$--</strong></span>
                                     <span id="saylorPnlPercent">--</span>
                                     <span id="saylorPnlUsd">--</span>
                                 </div>
                                 <div class="small mt-2 text-secondary" id="saylorAsOf">As of --</div>
+                                <div class="saylor-mobile-kpis" aria-label="Bitcoin reserve summary">
+                                    <div class="saylor-mobile-kpi">
+                                        <span class="label">Reserve Value</span>
+                                        <strong id="saylorReserveValueMobile">$--</strong>
+                                    </div>
+                                    <div class="saylor-mobile-kpi">
+                                        <span class="label">BTC</span>
+                                        <strong id="saylorTotalBtcMobile">--</strong>
+                                    </div>
+                                    <div class="saylor-mobile-kpi">
+                                        <span class="label">Avg Cost</span>
+                                        <strong id="saylorAvgCostMobile">$--</strong>
+                                    </div>
+                                    <div class="saylor-mobile-kpi">
+                                        <span class="label">P&L</span>
+                                        <strong id="saylorPnlMobile">--</strong>
+                                    </div>
+                                </div>
                             </div>
                             <div class="col-lg-4">
                                 <div class="saylor-summary-box">
@@ -516,6 +600,9 @@
                         </div>
                     </div>
                     <div class="card-body pt-2">
+                        <div class="saylor-chart-toolbar">
+                            <button id="resetSaylorZoomBtn" class="btn btn-sm btn-outline-secondary saylor-reset-btn" type="button">Reset view</button>
+                        </div>
                         <div class="saylor-chart-wrap">
                             <canvas id="saylorChart"></canvas>
                         </div>
@@ -892,8 +979,23 @@
             'No Data': '暂无数据'
         };
 
+        function setTextIfPresent(id, value) {
+            const el = document.getElementById(id);
+            if (el) el.textContent = value;
+        }
+
+        function setRequiredText(id, value) {
+            document.getElementById(id).textContent = value;
+        }
+
+        function setClassIfPresent(id, value) {
+            const el = document.getElementById(id);
+            if (el) el.className = value;
+        }
+
         function renderChart(data) {
             if (data.dates.length === 0) return;
+            const isMobileViewport = window.matchMedia('(max-width: 575px)').matches;
 
             const ctx = document.getElementById('pnlChart').getContext('2d');
             
@@ -935,6 +1037,7 @@
                     plugins: {
                         title: { display: false }, // Remove title to save space
                         legend: {
+                            display: !isMobileViewport,
                             position: 'top',
                             labels: { boxWidth: 12, font: { size: 11 } }
                         },
@@ -1000,20 +1103,31 @@
             const reserveValue = totalBtc * walletPrice;
             const pnlUsd = totalBtc * (walletPrice - walletAvg);
             const pnlPct = walletAvg > 0 ? ((walletPrice - walletAvg) / walletAvg) * 100 : 0;
+            const reserveValueText = `$${reserveValue.toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
+            const totalBtcText = Number(totalBtc).toFixed(8);
+            const avgCostText = `$${walletAvg.toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
 
-            document.getElementById('saylorReserveValue').textContent = `$${reserveValue.toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
-            document.getElementById('saylorTotalBtc').textContent = Number(totalBtc).toFixed(8);
-            document.getElementById('saylorAvgCost').textContent = `$${walletAvg.toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
+            setRequiredText('saylorReserveValue', reserveValueText);
+            setTextIfPresent('saylorReserveValueMobile', reserveValueText);
+            setRequiredText('saylorTotalBtc', totalBtcText);
+            setTextIfPresent('saylorTotalBtcMobile', totalBtcText);
+            setRequiredText('saylorAvgCost', avgCostText);
+            setTextIfPresent('saylorAvgCostMobile', avgCostText);
 
             const pnlPctEl = document.getElementById('saylorPnlPercent');
             const pnlUsdEl = document.getElementById('saylorPnlUsd');
             const sign = pnlUsd >= 0 ? '+' : '-';
             const cls = pnlUsd >= 0 ? 'saylor-positive' : 'saylor-negative';
+            const pnlPercentText = `${sign}${Math.abs(pnlPct).toFixed(2)}%`;
+            const pnlUsdText = `(${sign}$${Math.abs(pnlUsd).toLocaleString(undefined, { maximumFractionDigits: 0 })})`;
+            const pnlMobileText = `${pnlPercentText} ${pnlUsdText}`;
 
             pnlPctEl.className = cls;
             pnlUsdEl.className = cls;
-            pnlPctEl.textContent = `${sign}${Math.abs(pnlPct).toFixed(2)}%`;
-            pnlUsdEl.textContent = `(${sign}$${Math.abs(pnlUsd).toLocaleString(undefined, { maximumFractionDigits: 0 })})`;
+            pnlPctEl.textContent = pnlPercentText;
+            pnlUsdEl.textContent = pnlUsdText;
+            setTextIfPresent('saylorPnlMobile', pnlMobileText);
+            setClassIfPresent('saylorPnlMobile', cls);
 
             document.getElementById('saylorAsOf').textContent = `As of ${lastDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`;
             const purchaseEvents = purchaseBtc.filter((v) => (v || 0) > 0).length;
@@ -1041,6 +1155,7 @@
             const nowTs = Date.now();
             const monthMs = 1000 * 60 * 60 * 24 * 30;
             const isDark = (document.documentElement.getAttribute('data-bs-theme') || 'light') === 'dark';
+            const isMobileViewport = window.matchMedia('(max-width: 575px)').matches;
             const axisColor = isDark ? '#93a2b8' : '#4f6278';
             const gridColor = isDark ? 'rgba(126, 150, 180, 0.16)' : 'rgba(69, 95, 123, 0.14)';
             const legendColor = isDark ? '#b8c4d6' : '#42566d';
@@ -1144,9 +1259,10 @@
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    interaction: { mode: 'nearest', intersect: true, axis: 'xy' },
+                    interaction: { mode: 'nearest', intersect: !isMobileViewport, axis: 'xy' },
                     plugins: {
                         legend: {
+                            display: !isMobileViewport,
                             position: 'top',
                             labels: {
                                 color: legendColor,
@@ -1196,14 +1312,14 @@
                             },
                             zoom: {
                                 wheel: {
-                                    enabled: true,
+                                    enabled: !isMobileViewport,
                                     speed: 0.04
                                 },
                                 pinch: {
-                                    enabled: true
+                                    enabled: !isMobileViewport
                                 },
                                 drag: {
-                                    enabled: true,
+                                    enabled: !isMobileViewport,
                                     threshold: 12,
                                     borderColor: dragBorderColor,
                                     borderWidth: 1,
@@ -1222,7 +1338,8 @@
                             ticks: {
                                 color: axisColor,
                                 stepSize: monthMs,
-                                autoSkip: false,
+                                autoSkip: isMobileViewport,
+                                ...(isMobileViewport ? { maxTicksLimit: 4 } : {}),
                                 maxRotation: 0,
                                 callback(value) {
                                     const d = new Date(value);
@@ -1584,6 +1701,10 @@
             const saylorCanvas = document.getElementById('saylorChart');
             if (saylorCanvas) {
                 saylorCanvas.addEventListener('dblclick', resetSaylorZoom);
+            }
+            const resetSaylorZoomBtn = document.getElementById('resetSaylorZoomBtn');
+            if (resetSaylorZoomBtn) {
+                resetSaylorZoomBtn.addEventListener('click', resetSaylorZoom);
             }
             
             // Refresh Button Handler
