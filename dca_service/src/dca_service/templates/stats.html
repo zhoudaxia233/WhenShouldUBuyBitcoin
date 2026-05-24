@@ -358,9 +358,11 @@
                         <button id="refreshStatsBtn" class="btn btn-outline-primary text-nowrap" title="Force Refresh Data">
                             <span class="btn-icon">🔄</span><span class="btn-text">Refresh</span>
                         </button>
+                        {% if user and user.is_admin %}
                         <button id="regenerateStaticBtn" class="btn btn-outline-success text-nowrap" title="Regenerate static files (charts, data)">
                             <span class="btn-icon">📊</span><span class="btn-text">Update Charts</span>
                         </button>
+                        {% endif %}
                         <button id="themeToggleBtn" type="button" class="btn text-nowrap theme-toggle-btn" aria-label="Toggle theme" title="Toggle theme"></button>
                     </div>
                     <!-- User section -->
@@ -1624,10 +1626,12 @@
             }
             
             // Regenerate Static Files Button Handler
-            document.getElementById('regenerateStaticBtn').addEventListener('click', async (event) => {
+            const regenerateStaticBtn = document.getElementById('regenerateStaticBtn');
+            if (regenerateStaticBtn) {
+            regenerateStaticBtn.addEventListener('click', async (event) => {
                 event.preventDefault(); // Prevent any default behavior
                 
-                const btn = document.getElementById('regenerateStaticBtn');
+                const btn = regenerateStaticBtn;
                 const originalText = btn.innerHTML;
                 btn.disabled = true;
                 btn.innerHTML = '📊 Updating...';
@@ -1666,13 +1670,8 @@
                                         loadChart(true)
                                     ]);
                                 } else {
-                                    const details = statusData.log_tail || statusData.stderr_preview || statusData.stdout_preview || 'No error details available.';
-                                    console.error('Update Charts failed details:', {
-                                        logPath: statusData.log_path,
-                                        details,
-                                    });
-                                    const shortDetails = String(details).slice(-220).replace(/\n/g, ' ');
-                                    notyf.error(`Update Charts failed. Check logs: ${statusData.log_path || '/app/data/static_generation.log'} | ${shortDetails}`);
+                                    console.error('Update Charts failed.');
+                                    notyf.error('Update Charts failed. Please ask an admin to check server logs.');
                                 }
                                 break;
                             }
@@ -1691,6 +1690,7 @@
                     btn.innerHTML = originalText;
                 }
             });
+            }
         });
     </script>
     <div class="version-badge">

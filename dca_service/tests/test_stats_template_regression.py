@@ -130,6 +130,20 @@ def test_distribution_and_percentile_label_browser_cache_as_stale_data():
     assert "Promise.allSettled" in html
 
 
+def test_update_charts_button_is_admin_only_and_does_not_show_raw_logs():
+    html = _load_stats_template()
+    assert "{% if user and user.is_admin %}" in html
+    assert 'id="regenerateStaticBtn"' in html
+    assert "const regenerateStaticBtn = document.getElementById('regenerateStaticBtn');" in html
+    assert "if (regenerateStaticBtn)" in html
+    assert "statusData.log_tail" not in html
+    assert "stderr_preview" not in html
+    assert "stdout_preview" not in html
+    assert "shortDetails" not in html
+    assert "Check logs:" not in html
+    assert "Update Charts failed. Please ask an admin to check server logs." in html
+
+
 def test_trading_style_uses_rule_data_only_without_ai_call():
     html = _load_stats_template()
     assert "/api/stats/trading-style?include_ai=false&language=${encodeURIComponent(tradingStyleLanguage)}" in html
