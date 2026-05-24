@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Data Sources</title>
+    <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: #fff;
+            color: #000;
+            font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            padding: 32px 16px;
+        }
+        .container {
+            max-width: 920px;
+        }
+        h1 {
+            font-family: "SF Pro Rounded", ui-rounded, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            font-size: 32px;
+            font-weight: 600;
+            letter-spacing: 0;
+        }
+        .admin-panel {
+            border: 1px solid #e5e5e5;
+            border-radius: 12px;
+            padding: 24px;
+        }
+        .btn-pill {
+            border-radius: 9999px;
+            padding: 8px 18px;
+            font-weight: 500;
+        }
+        .btn-primary-black {
+            background: #000;
+            border-color: #000;
+            color: #fff;
+        }
+        .btn-primary-black:active,
+        .btn-primary-black:hover {
+            background: #090909;
+            border-color: #090909;
+            color: #fff;
+        }
+        .diagnostics-grid {
+            display: grid;
+            grid-template-columns: minmax(180px, 0.45fr) minmax(0, 1fr);
+            border-top: 1px solid #e5e5e5;
+        }
+        .diagnostics-grid dt,
+        .diagnostics-grid dd {
+            margin: 0;
+            padding: 12px 0;
+            border-bottom: 1px solid #e5e5e5;
+        }
+        .diagnostics-grid dt {
+            color: #737373;
+            padding-right: 16px;
+        }
+        .diagnostics-grid dd {
+            color: #000;
+            overflow-wrap: anywhere;
+        }
+        code {
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+            color: #000;
+        }
+        @media (max-width: 640px) {
+            body {
+                padding: 20px 12px;
+            }
+            .admin-panel {
+                padding: 18px;
+            }
+            .diagnostics-grid {
+                grid-template-columns: 1fr;
+            }
+            .diagnostics-grid dt {
+                padding-bottom: 2px;
+                border-bottom: 0;
+            }
+            .diagnostics-grid dd {
+                padding-top: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <main class="container">
+        <div class="d-flex flex-column flex-sm-row justify-content-between align-items-start gap-3 mb-4">
+            <div>
+                <h1 class="mb-2">Data sources</h1>
+                <p class="text-muted mb-0">Admin-only diagnostics for live market data dependencies.</p>
+            </div>
+            <a class="btn btn-outline-secondary btn-pill" href="/stats">Back to stats</a>
+        </div>
+
+        <section class="admin-panel">
+            <div class="d-flex flex-column flex-sm-row justify-content-between align-items-start gap-3 mb-4">
+                <div>
+                    <h2 class="h5 mb-1">BitInfoCharts</h2>
+                    <p class="text-muted mb-0">Bitcoin wealth distribution scrape diagnostics.</p>
+                </div>
+                <button id="refreshBitinfochartsBtn" class="btn btn-primary-black btn-pill" type="button">Refresh now</button>
+            </div>
+
+            <div id="bitinfochartsStatus" class="small text-muted mb-3">Loading diagnostics...</div>
+            <dl class="diagnostics-grid" id="bitinfochartsDiagnostics"></dl>
+        </section>
+    </main>
+
+    <script>
+        const fields = [
+            'last_attempt_at',
+            'last_success_at',
+            'last_status',
+            'last_source',
+            'last_as_of',
+            'last_error_type',
+            'last_error_message_sanitized',
+            'last_http_status',
+            'elapsed_ms',
+            'target_url',
+            'cache_age_seconds'
+        ];
+
+        function formatValue(value) {
+            if (value === null || value === undefined || value === '') return '--';
+            return String(value);
+        }
+
+        function renderDiagnostics(diagnostics) {
+            const list = document.getElementById('bitinfochartsDiagnostics');
+            list.innerHTML = '';
+            fields.forEach((field) => {
+                const term = document.createElement('dt');
+                term.textContent = field;
+                const detail = document.createElement('dd');
+                if (field === 'target_url') {
+                    const code = document.createElement('code');
+                    code.textContent = formatValue(diagnostics[field]);
+                    detail.appendChild(code);
+                } else {
+                    detail.textContent = formatValue(diagnostics[field]);
+                }
+                list.appendChild(term);
+                list.appendChild(detail);
+            });
+        }
+
+        async function loadDiagnostics() {
+            const status = document.getElementById('bitinfochartsStatus');
+            const response = await fetch('/api/admin/data-sources/bitinfocharts');
+            if (!response.ok) {
+                status.textContent = 'Diagnostics are unavailable.';
+                return;
+            }
+            const data = await response.json();
+            renderDiagnostics(data.diagnostics || {});
+            status.textContent = `Current status: ${formatValue(data.diagnostics?.last_status)}`;
+        }
+
+        async function refreshNow() {
+            const btn = document.getElementById('refreshBitinfochartsBtn');
+            const status = document.getElementById('bitinfochartsStatus');
+            const original = btn.textContent;
+            btn.disabled = true;
+            btn.textContent = 'Refreshing...';
+            status.textContent = 'Refreshing BitInfoCharts...';
+            try {
+                const response = await fetch('/api/admin/data-sources/bitinfocharts/refresh', { method: 'POST' });
+                const data = await response.json();
+                renderDiagnostics(data.diagnostics || {});
+                status.textContent = data.message || (data.success ? 'Refresh completed.' : 'Refresh failed.');
+            } catch (error) {
+                status.textContent = 'Refresh failed. Diagnostics may not be current.';
+            } finally {
+                btn.disabled = false;
+                btn.textContent = original;
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadDiagnostics();
+            document.getElementById('refreshBitinfochartsBtn')?.addEventListener('click', refreshNow);
+        });
+    </script>
+</body>
+</html>
