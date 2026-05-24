@@ -16,7 +16,9 @@ def _load_stats_template() -> str:
 def test_saylor_btc_shows_8_decimals():
     html = _load_stats_template()
     # Keep BTC display precision consistent across summary fields.
-    assert "saylorTotalBtc').textContent = Number(totalBtc).toFixed(8);" in html
+    assert "const totalBtcText = Number(totalBtc).toFixed(8);" in html
+    assert "setRequiredText('saylorTotalBtc', totalBtcText);" in html
+    assert "setTextIfPresent('saylorTotalBtcMobile', totalBtcText);" in html
     assert "saylorRangeBtc').textContent = Number(totalBtc).toFixed(8);" in html
 
 
@@ -91,6 +93,59 @@ def test_light_mode_summary_box_uses_light_palette():
     assert "background: linear-gradient(180deg, #f7f9fc 0%, #edf2f8 100%);" in html
     assert "html[data-bs-theme=\"light\"] .saylor-summary-box .metric-value {" in html
     assert "color: #1b2b40;" in html
+
+
+def test_saylor_mobile_summary_kpis_are_above_chart():
+    html = _load_stats_template()
+    assert 'class="saylor-mobile-kpis"' in html
+    assert 'id="saylorReserveValueMobile"' in html
+    assert 'id="saylorTotalBtcMobile"' in html
+    assert 'id="saylorAvgCostMobile"' in html
+    assert 'id="saylorPnlMobile"' in html
+    assert "function setTextIfPresent(id, value)" in html
+    assert "saylorReserveValueMobile" in html
+    assert ".saylor-mobile-kpis {" in html
+    assert "grid-template-columns: repeat(2, minmax(0, 1fr));" in html
+    assert "white-space: nowrap;" in html
+
+
+def test_saylor_required_summary_fields_use_strict_setters():
+    html = _load_stats_template()
+    assert "function setRequiredText(id, value)" in html
+    assert "setRequiredText('saylorReserveValue', reserveValueText);" in html
+    assert "setRequiredText('saylorTotalBtc', totalBtcText);" in html
+    assert "setRequiredText('saylorAvgCost', avgCostText);" in html
+    assert "setTextIfPresent('saylorReserveValue', reserveValueText);" not in html
+    assert "setTextIfPresent('saylorTotalBtc', totalBtcText);" not in html
+    assert "setTextIfPresent('saylorAvgCost', avgCostText);" not in html
+
+
+def test_saylor_mobile_chart_disables_precision_zoom_and_has_reset_button():
+    html = _load_stats_template()
+    assert 'id="resetSaylorZoomBtn"' in html
+    assert "resetSaylorZoomBtn.addEventListener('click', resetSaylorZoom)" in html
+    assert "const isMobileViewport = window.matchMedia('(max-width: 575px)').matches;" in html
+    assert "display: !isMobileViewport" in html
+    assert "enabled: !isMobileViewport" in html
+    assert "#saylorChart {" in html
+    assert "touch-action: none;" in html
+    assert "touch-action: pan-y;" in html
+
+
+def test_saylor_desktop_x_axis_does_not_get_mobile_tick_limit():
+    html = _load_stats_template()
+    assert "maxTicksLimit: isMobileViewport ? 4 : 8" not in html
+    assert "...(isMobileViewport ? { maxTicksLimit: 4 } : {})" in html
+
+
+def test_performance_chart_has_mobile_safe_wrapper_and_legend_config():
+    html = _load_stats_template()
+    assert 'class="pnl-chart-wrap"' in html
+    assert ".pnl-chart-wrap {" in html
+    assert "height: 400px;" in html
+    assert "height: 340px;" in html
+    assert "const isMobileViewport = window.matchMedia('(max-width: 575px)').matches;" in html
+    assert "display: !isMobileViewport" in html
 
 
 def test_trading_style_supports_language_toggle_and_language_aware_request():
