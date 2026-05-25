@@ -78,6 +78,23 @@ body.login-body {
     min-width: 0;
 }
 
+.shared-header-layout {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 18px;
+    min-width: 0;
+}
+
+.shared-header-right {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 14px;
+    min-width: 0;
+    flex: 1 1 auto;
+}
+
 .page-title-block {
     margin-bottom: 24px;
 }
@@ -134,10 +151,13 @@ body.login-body {
     flex-wrap: nowrap !important;
 }
 
-.app-shell-narrow .user-chip,
-.app-shell-settings .user-chip {
-    border-left: 0 !important;
-    padding-left: 0 !important;
+.header-utility {
+    display: inline-flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 10px;
+    min-width: 0;
+    flex: 0 1 auto;
 }
 
 .nav-actions > .btn,
@@ -230,21 +250,67 @@ body.login-body {
     stroke-linejoin: round;
 }
 
-.user-chip {
-    min-height: 42px;
-    padding: 0 0 0 1rem;
+.header-utility .theme-toggle-btn {
     flex: 0 0 auto;
 }
 
-.logout-btn {
-    border-color: var(--dashboard-border-strong);
-    border-radius: 10px;
-    color: var(--dashboard-accent-strong);
+.header-utility .user-chip {
+    min-height: 42px;
+    max-width: 260px;
+    padding: 0.22rem 0.24rem 0.22rem 0.34rem;
+    border: 1px solid var(--dashboard-border);
+    border-radius: 999px;
+    background: var(--dashboard-card-bg);
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    flex: 0 1 auto;
+    min-width: 0;
+    box-shadow: 0 10px 24px rgba(130, 84, 33, 0.06);
+}
+
+.user-avatar {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
     background: var(--dashboard-accent-softer);
+    color: var(--dashboard-accent-strong);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+    font-size: 0.95rem;
+}
+
+.user-email {
+    max-width: 145px;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--dashboard-muted);
+    font-size: 0.82rem;
     font-weight: 650;
 }
 
-.logout-btn:hover {
+.logout-form {
+    display: inline-flex;
+    margin: 0;
+    flex: 0 0 auto;
+}
+
+.header-utility .logout-btn {
+    border-color: var(--dashboard-border-strong);
+    border-radius: 999px;
+    color: var(--dashboard-accent-strong);
+    background: var(--dashboard-accent-softer);
+    font-size: 0.78rem;
+    font-weight: 650;
+    line-height: 1;
+    padding: 0.43rem 0.58rem;
+}
+
+.header-utility .logout-btn:hover {
     background: var(--dashboard-accent);
     border-color: var(--dashboard-accent);
     color: #fff;
@@ -604,6 +670,20 @@ html[data-bs-theme="dark"] .satsflow-page .card-footer {
         height: 44px;
     }
 
+    .header-utility {
+        width: 100%;
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+
+    .header-utility .user-chip {
+        max-width: min(100%, 320px);
+    }
+
+    .user-email {
+        max-width: 170px;
+    }
+
     .dashboard-panel-header,
     .card-header.dashboard-panel-header,
     .satsflow-page .card-header,
@@ -631,8 +711,25 @@ html[data-bs-theme="dark"] .satsflow-page .card-footer {
 }
 
 @media (max-width: 991.98px) {
+    .shared-header-layout,
+    .shared-header-right {
+        flex-direction: column;
+        align-items: center;
+        width: 100%;
+    }
+
+    .dashboard-nav,
     .app-shell-narrow .dashboard-nav,
     .app-shell-settings .dashboard-nav {
+        width: 100%;
+        justify-content: center !important;
+        overflow-x: visible;
         flex-wrap: wrap !important;
+    }
+
+    .header-utility {
+        width: 100%;
+        justify-content: center;
+        flex-wrap: wrap;
     }
 }
