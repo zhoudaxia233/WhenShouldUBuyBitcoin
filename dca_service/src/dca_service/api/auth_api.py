@@ -45,6 +45,7 @@ async def login_page(request: Request):
         context={
             "csrf_token": csrf_token,
             "error": None,
+            "project_name": settings.PROJECT_NAME,
             "app_version": settings.APP_VERSION,
             "app_commit_sha": settings.APP_COMMIT_SHA,
         }
@@ -84,6 +85,7 @@ async def login(
             context={
                 "csrf_token": csrf_token,
                 "error": "Security check failed. Please try again.",
+                "project_name": settings.PROJECT_NAME,
                 "app_version": settings.APP_VERSION,
                 "app_commit_sha": settings.APP_COMMIT_SHA,
             },
@@ -104,6 +106,7 @@ async def login(
             context={
                 "csrf_token": csrf_token,
                 "error": "Invalid email or password",
+                "project_name": settings.PROJECT_NAME,
                 "app_version": settings.APP_VERSION,
                 "app_commit_sha": settings.APP_COMMIT_SHA,
             },
@@ -120,6 +123,7 @@ async def login(
             context={
                 "csrf_token": csrf_token,
                 "error": "Account is disabled",
+                "project_name": settings.PROJECT_NAME,
                 "app_version": settings.APP_VERSION,
                 "app_commit_sha": settings.APP_COMMIT_SHA,
             },

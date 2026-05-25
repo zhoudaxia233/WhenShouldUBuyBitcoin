@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - DCA Service</title>
+    <title>Login - {{ project_name }}</title>
     <script>
         (function () {
             const savedTheme = localStorage.getItem('dca_theme');
@@ -239,7 +239,7 @@
     <button id="themeToggleBtn" type="button" class="theme-toggle-btn" aria-label="Toggle theme" title="Toggle theme"></button>
     <div class="login-container">
         <div class="login-header">
-            <h1>DCA Service</h1>
+            <h1>{{ project_name }}</h1>
             <p>Sign in to your account</p>
         </div>
         
