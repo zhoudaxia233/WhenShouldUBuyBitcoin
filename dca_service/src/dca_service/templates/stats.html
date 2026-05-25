@@ -19,6 +19,7 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/notyf@3.10.0/notyf.min.css">
+    <link rel="stylesheet" href="/static/app.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         body {
@@ -29,7 +30,7 @@
         .container { max-width: 1200px; }
         .card { margin-bottom: 20px; }
         .percentile-card {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, var(--dashboard-accent) 0%, var(--dashboard-accent-strong) 100%);
             color: white;
         }
         .pnl-chart-wrap {
@@ -101,18 +102,8 @@
             .nav-actions > .dropdown > .btn {
                 min-height: 40px;
             }
-            .nav-actions > .btn .bi,
-            .nav-actions > .dropdown > .btn .bi {
-                margin-right: 0;
-            }
-            .nav-actions > .btn .btn-icon {
-                margin-right: 0;
-            }
             .display-4 {
                 font-size: 2.5rem;
-            }
-            .btn .btn-text {
-                display: none;
             }
             .theme-toggle-btn {
                 width: 44px;
@@ -122,61 +113,49 @@
         }
 
         html[data-bs-theme="dark"] body {
-            background-color: #121820;
-            color: #e5e7eb;
+            background-color: var(--dashboard-bg);
+            color: var(--dashboard-text);
         }
         html[data-bs-theme="dark"] .card {
-            border-color: #2f3a49;
+            border-color: var(--dashboard-border);
         }
         html[data-bs-theme="dark"] .card-header.bg-white,
         html[data-bs-theme="dark"] .card-footer {
-            background-color: #1b2430 !important;
-            border-color: #2f3a49;
+            background-color: var(--dashboard-card-bg-solid) !important;
+            border-color: var(--dashboard-border);
         }
         html[data-bs-theme="dark"] .table-light {
-            --bs-table-bg: #1b2430;
-            --bs-table-color: #e5e7eb;
-            --bs-table-border-color: #2f3a49;
+            --bs-table-bg: var(--dashboard-card-bg-solid);
+            --bs-table-color: var(--dashboard-text);
+            --bs-table-border-color: var(--dashboard-border);
         }
         html[data-bs-theme="dark"] .highlight-row {
-            background-color: #1f2d40;
+            background-color: var(--dashboard-accent-softer);
         }
         html[data-bs-theme="dark"] .text-muted {
-            color: #9ba7b7 !important;
+            color: var(--dashboard-muted) !important;
         }
         html[data-bs-theme="dark"] .theme-toggle-btn {
-            border-color: #2f3a49;
-            background: #1b2430;
-            color: #d8deea;
+            border-color: var(--dashboard-border);
+            background: var(--dashboard-card-bg);
+            color: var(--dashboard-muted);
         }
         html[data-bs-theme="dark"] .theme-toggle-btn:hover {
             background: #233043;
             color: #eef2f8;
             border-color: #3a4a5f;
         }
-        .version-badge {
-            position: fixed;
-            right: 10px;
-            bottom: 8px;
-            z-index: 9999;
-            font-size: 12px;
-            color: #6c757d;
-            background: rgba(255, 255, 255, 0.92);
-            border: 1px solid #d9dee3;
-            border-radius: 999px;
-            padding: 3px 10px;
-        }
         .saylor-card {
-            background: linear-gradient(180deg, #f7fbff 0%, #edf3fa 100%);
-            border: 1px solid #d7e0ec;
-            color: #1a2737;
+            background: linear-gradient(180deg, var(--dashboard-card-bg-solid) 0%, var(--dashboard-accent-softer) 100%);
+            border: 1px solid var(--dashboard-border);
+            color: var(--dashboard-text);
         }
         .saylor-card .card-header {
             background: transparent !important;
-            border-bottom: 1px solid #d7e0ec;
+            border-bottom: 1px solid var(--dashboard-border);
         }
         .saylor-header-kicker {
-            color: #5f7188;
+            color: var(--dashboard-muted);
             font-size: 0.78rem;
             text-transform: uppercase;
             letter-spacing: 0.08em;
@@ -185,26 +164,26 @@
             font-size: clamp(2rem, 4.5vw, 3.2rem);
             line-height: 1.1;
             font-weight: 700;
-            color: #122238;
+            color: var(--dashboard-text);
         }
         .saylor-meta {
-            color: #4f6278;
+            color: var(--dashboard-muted);
             font-size: 0.95rem;
         }
         .saylor-meta strong {
-            color: #d97821;
+            color: var(--dashboard-accent-strong);
         }
         .saylor-mobile-kpis {
             display: none;
         }
         .saylor-mobile-kpi {
             min-width: 0;
-            border-top: 1px solid rgba(96, 111, 130, 0.18);
+            border-top: 1px solid var(--dashboard-border);
             padding-top: 10px;
         }
         .saylor-mobile-kpi .label {
             display: block;
-            color: #5f7188;
+            color: var(--dashboard-muted);
             font-size: 0.68rem;
             text-transform: uppercase;
             letter-spacing: 0.08em;
@@ -214,7 +193,7 @@
         .saylor-mobile-kpi strong {
             display: block;
             margin-top: 4px;
-            color: #122238;
+            color: var(--dashboard-text);
             font-size: 1rem;
             line-height: 1.2;
             white-space: nowrap;
@@ -223,18 +202,18 @@
             font-variant-numeric: tabular-nums;
         }
         .saylor-negative {
-            color: #ff7f7f;
+            color: var(--dashboard-danger);
             font-weight: 600;
         }
         .saylor-positive {
-            color: #6fd8a9;
+            color: var(--dashboard-success);
             font-weight: 600;
         }
         .saylor-summary-box {
-            border: 1px solid #234267;
+            border: 1px solid var(--dashboard-border-strong);
             border-radius: 15px;
-            background: linear-gradient(180deg, rgba(20, 37, 61, 0.92) 0%, rgba(17, 31, 50, 0.92) 100%);
-            box-shadow: inset 0 0 0 1px rgba(60, 88, 120, 0.14);
+            background: linear-gradient(180deg, rgba(255, 138, 0, 0.13) 0%, rgba(255, 255, 255, 0.72) 100%);
+            box-shadow: inset 0 0 0 1px rgba(255, 138, 0, 0.08);
             padding: 12px 14px 10px;
             width: 100%;
             max-width: 420px;
@@ -252,7 +231,7 @@
             align-items: start;
         }
         .saylor-summary-box .label {
-            color: #8f9fb4;
+            color: var(--dashboard-muted);
             font-size: 0.68rem;
             text-transform: uppercase;
             letter-spacing: 0.09em;
@@ -261,7 +240,7 @@
         }
         .saylor-summary-box .metric-value {
             margin-top: 0;
-            color: #eef4fb;
+            color: var(--dashboard-text);
             line-height: 1;
             font-weight: 700;
             letter-spacing: 0;
@@ -277,13 +256,13 @@
         }
         .saylor-summary-box .metric-sub {
             margin-top: 0;
-            color: #8f9fb4;
+            color: var(--dashboard-muted);
             font-size: 0.75rem;
             font-weight: 600;
             line-height: 1.18;
         }
         .saylor-summary-box .metric-value .btc-symbol {
-            color: #f59a3d;
+            color: var(--dashboard-accent-strong);
             font-size: 1.22rem;
             margin-right: 2px;
             line-height: 1;
@@ -311,51 +290,51 @@
             touch-action: none;
         }
         html[data-bs-theme="dark"] .saylor-card {
-            background: linear-gradient(180deg, #071323 0%, #030a16 100%);
-            border-color: #1c2d46;
-            color: #d8e0f0;
+            background: linear-gradient(180deg, var(--dashboard-card-bg-solid) 0%, rgba(255, 138, 0, 0.08) 100%);
+            border-color: var(--dashboard-border);
+            color: var(--dashboard-text);
         }
         html[data-bs-theme="dark"] .saylor-card .card-header {
-            border-bottom-color: #16263d;
+            border-bottom-color: var(--dashboard-border);
         }
         html[data-bs-theme="dark"] .saylor-header-kicker {
-            color: #7f8aa0;
+            color: var(--dashboard-muted);
         }
         html[data-bs-theme="dark"] .saylor-main-value {
-            color: #f4f7ff;
+            color: var(--dashboard-text);
         }
         html[data-bs-theme="dark"] .saylor-meta {
-            color: #9ea9bd;
+            color: var(--dashboard-muted);
         }
         html[data-bs-theme="dark"] .saylor-meta strong {
-            color: #ffb056;
+            color: var(--dashboard-accent);
         }
         html[data-bs-theme="dark"] .saylor-summary-box {
-            border-color: #253a59;
-            background: rgba(16, 27, 44, 0.82);
+            border-color: var(--dashboard-border-strong);
+            background: linear-gradient(180deg, rgba(255, 138, 0, 0.16) 0%, rgba(24, 21, 18, 0.88) 100%);
         }
         html[data-bs-theme="dark"] .saylor-summary-box .label {
-            color: #8491a7;
+            color: var(--dashboard-muted);
         }
         html[data-bs-theme="dark"] .saylor-summary-box .metric-sub {
-            color: #96a1b6;
+            color: var(--dashboard-muted);
         }
         html[data-bs-theme="light"] .saylor-summary-box {
-            border-color: #c8d3e2;
-            background: linear-gradient(180deg, #f7f9fc 0%, #edf2f8 100%);
-            box-shadow: inset 0 0 0 1px rgba(148, 165, 184, 0.20);
+            border-color: var(--dashboard-border-strong);
+            background: linear-gradient(180deg, rgba(255, 138, 0, 0.12) 0%, rgba(255, 255, 255, 0.82) 100%);
+            box-shadow: inset 0 0 0 1px rgba(255, 138, 0, 0.08);
         }
         html[data-bs-theme="light"] .saylor-summary-box .label {
-            color: #5e7189;
+            color: var(--dashboard-muted);
         }
         html[data-bs-theme="light"] .saylor-summary-box .metric-sub {
-            color: #667b95;
+            color: var(--dashboard-muted);
         }
         html[data-bs-theme="light"] .saylor-summary-box .metric-value {
-            color: #1b2b40;
+            color: var(--dashboard-text);
         }
         html[data-bs-theme="light"] .saylor-summary-box .metric-value .btc-symbol {
-            color: #df7c1f;
+            color: var(--dashboard-accent-strong);
         }
         @media (max-width: 991px) {
             .saylor-chart-wrap {
@@ -394,66 +373,35 @@
         }
     </style>
 </head>
-<body>
-    <div class="container">
-        <header class="mb-4">
-            <div class="d-flex flex-column flex-md-row justify-content-between align-items-center gap-3">
-                <h1 class="mb-0 text-center text-md-start">Stats & Analytics</h1>
-                <div class="d-flex flex-column flex-md-row align-items-center gap-3">
-                    <!-- Navigation buttons -->
-                    <div class="nav-actions d-flex flex-wrap flex-md-nowrap justify-content-center gap-2">
-                        <a href="/" class="btn btn-outline-secondary text-nowrap"><i class="bi bi-house-fill"></i> <span class="btn-text">Dashboard</span></a>
-                        <!-- Settings Dropdown -->
-                        <div class="dropdown">
-                            <button class="btn btn-outline-secondary dropdown-toggle text-nowrap" type="button" id="settingsDropdown" data-bs-toggle="dropdown" aria-expanded="false">
-                                <i class="bi bi-gear-fill"></i> <span class="btn-text">Settings</span>
-                            </button>
-                            <ul class="dropdown-menu" aria-labelledby="settingsDropdown">
-                                <li>
-                                    <a class="dropdown-item" href="/settings/binance">
-                                        <i class="bi bi-currency-bitcoin"></i> Binance Settings
-                                    </a>
-                                </li>
-                                <li>
-                                    <a class="dropdown-item" href="/strategy">
-                                        <i class="bi bi-sliders"></i> Strategy Config
-                                    </a>
-                                </li>
-	                            </ul>
-	                        </div>
-	                        {% if user and user.is_admin %}
-	                        <a href="/admin/data-sources" class="btn btn-outline-warning text-nowrap admin-diagnostics-link"><i class="bi bi-database-check"></i> <span class="btn-text">Diagnostics</span></a>
-	                        {% endif %}
-	                        <button id="refreshStatsBtn" class="btn btn-outline-primary text-nowrap" title="Force Refresh Data">
-                            <span class="btn-icon">🔄</span><span class="btn-text">Refresh</span>
-                        </button>
-                        {% if user and user.is_admin %}
-                        <button id="regenerateStaticBtn" class="btn btn-outline-success text-nowrap" title="Regenerate static files (charts, data)">
-                            <span class="btn-icon">📊</span><span class="btn-text">Update Charts</span>
-                        </button>
-                        {% endif %}
-                        <button id="themeToggleBtn" type="button" class="btn text-nowrap theme-toggle-btn" aria-label="Toggle theme" title="Toggle theme"></button>
-                    </div>
-                    <!-- User section -->
-                    {% if user %}
-                    <div class="d-flex align-items-center gap-2 border-start-md ps-md-3 mt-2 mt-md-0 pt-2 pt-md-0 border-top border-top-md-0">
-                        <span class="text-muted small">{{ user.email }}</span>
-                        <form method="POST" action="/api/auth/logout" class="d-inline">
-                            <button type="submit" class="btn btn-sm btn-outline-danger">Logout</button>
-                        </form>
-                    </div>
-                    {% endif %}
-                </div>
+<body class="satsflow-page">
+    <div class="container app-shell">
+        {% set active_page = 'stats' %}
+        {% include "_shared_header.html" %}
+
+        <div class="page-title-block d-flex flex-column flex-md-row justify-content-between gap-3">
+            <div>
+                <h1>Stats & Analytics</h1>
+                <p class="text-muted mb-0">Portfolio performance, rankings, and trading behavior.</p>
             </div>
-        </header>
+            <div class="d-flex flex-wrap gap-2">
+                <button id="refreshStatsBtn" class="btn btn-outline-primary text-nowrap" title="Force Refresh Data">
+                    <i class="bi bi-arrow-clockwise"></i> <span class="btn-text">Refresh</span>
+                </button>
+                {% if user and user.is_admin %}
+                <button id="regenerateStaticBtn" class="btn btn-outline-success text-nowrap" title="Regenerate static files (charts, data)">
+                    <i class="bi bi-bar-chart-line"></i> <span class="btn-text">Update Charts</span>
+                </button>
+                {% endif %}
+            </div>
+        </div>
 
         <!-- Wealth Percentile Section -->
-        <div class="card shadow-sm percentile-card mb-4">
+        <div class="card dashboard-panel percentile-card mb-4">
             <div class="card-body text-center py-5">
                 <h2 class="display-4 fw-bold text-break" id="percentileText">Loading...</h2>
                 <p class="lead" id="percentileSubtext">Calculating your global rank...</p>
                 <div class="mt-3">
-                    <span class="badge bg-light text-dark fs-6">Total Balance: <span id="totalBtc">--</span> BTC</span>
+                    <span class="badge stats-balance-badge fs-6">Total Balance: <span id="totalBtc">--</span> BTC</span>
                 </div>
             </div>
         </div>
@@ -461,7 +409,7 @@
         <!-- Summary Stats Row -->
         <div class="row row-cols-2 row-cols-md-3 row-cols-xl-5 g-3 mb-4">
             <div class="col">
-                <div class="card shadow-sm h-100">
+                <div class="card dashboard-panel h-100">
                     <div class="card-body text-center">
                         <div class="text-muted small">Portfolio Value</div>
                         <div class="h3 text-success mb-0" id="portfolioValueUSD">--</div>
@@ -470,7 +418,7 @@
                 </div>
             </div>
             <div class="col">
-                <div class="card shadow-sm h-100">
+                <div class="card dashboard-panel h-100">
                     <div class="card-body text-center">
                         <div class="text-muted small">Avg Buy Price</div>
                         <div class="h3 text-primary mb-0" id="avgBuyPrice">--</div>
@@ -479,7 +427,7 @@
                 </div>
             </div>
             <div class="col">
-                <div class="card shadow-sm h-100">
+                <div class="card dashboard-panel h-100">
                     <div class="card-body text-center">
                         <div class="text-muted small">Profit & Loss</div>
                         <div class="h3 mb-0" id="pnlAmount">--</div>
@@ -488,7 +436,7 @@
                 </div>
             </div>
             <div class="col">
-                <div class="card shadow-sm h-100">
+                <div class="card dashboard-panel h-100">
                     <div class="card-body text-center">
                         <div class="text-muted small">Total Fees</div>
                         <div class="h3 text-danger mb-0" id="totalFeesUSD">--</div>
@@ -497,7 +445,7 @@
                 </div>
             </div>
             <div class="col">
-                <div class="card shadow-sm h-100">
+                <div class="card dashboard-panel h-100">
                     <div class="card-body text-center">
                         <div class="text-muted small">Transactions</div>
                         <div class="h3 text-secondary mb-0" id="transactionCount">--</div>
@@ -510,8 +458,8 @@
         <div class="row">
             <!-- PnL Chart -->
             <div class="col-lg-8">
-                <div class="card shadow-sm h-100">
-                    <div class="card-header bg-white">
+                <div class="card dashboard-panel h-100">
+                    <div class="card-header dashboard-panel-header">
                         <h5 class="mb-0">Performance Over Time</h5>
                     </div>
                     <div class="card-body">
@@ -524,8 +472,8 @@
 
             <!-- Wealth Distribution Table -->
             <div class="col-lg-4">
-                <div class="card shadow-sm h-100">
-                    <div class="card-header bg-white">
+                <div class="card dashboard-panel h-100">
+                    <div class="card-header dashboard-panel-header">
                         <h5 class="mb-0">Global Wealth Distribution</h5>
                     </div>
                     <div class="card-body p-0">
@@ -552,7 +500,7 @@
 
         <div class="row mt-2">
             <div class="col-12">
-                <div class="card shadow-sm saylor-card">
+                <div class="card dashboard-panel saylor-card">
                     <div class="card-header px-4 pt-4 pb-3">
                         <div class="row g-3 align-items-start">
                             <div class="col-lg-8">
@@ -616,8 +564,8 @@
 
         <div class="row mt-4">
             <div class="col-12">
-                <div class="card shadow-sm">
-                    <div class="card-header bg-white d-flex justify-content-between align-items-center gap-2">
+                <div class="card dashboard-panel">
+                    <div class="card-header dashboard-panel-header d-flex justify-content-between align-items-center gap-2">
                         <h5 class="mb-0" id="tradingStyleTitle">Trading Style Analysis</h5>
                         <div class="d-flex align-items-center gap-2">
                             <div class="btn-group btn-group-sm" role="group" aria-label="Trading style language">

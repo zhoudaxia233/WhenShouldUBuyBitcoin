@@ -87,12 +87,15 @@ def test_saylor_summary_box_has_max_width_to_avoid_overflow():
     assert "margin-left: auto;" in html
 
 
-def test_light_mode_summary_box_uses_light_palette():
+def test_light_mode_summary_box_uses_satsflow_palette():
     html = _load_stats_template()
     assert "html[data-bs-theme=\"light\"] .saylor-summary-box {" in html
-    assert "background: linear-gradient(180deg, #f7f9fc 0%, #edf2f8 100%);" in html
+    assert (
+        "background: linear-gradient(180deg, rgba(255, 138, 0, 0.12) 0%, "
+        "rgba(255, 255, 255, 0.82) 100%);"
+    ) in html
     assert "html[data-bs-theme=\"light\"] .saylor-summary-box .metric-value {" in html
-    assert "color: #1b2b40;" in html
+    assert "color: var(--dashboard-text);" in html
 
 
 def test_saylor_mobile_summary_kpis_are_above_chart():
