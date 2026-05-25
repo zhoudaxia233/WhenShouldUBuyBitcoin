@@ -211,8 +211,47 @@
             }
         }
 
+        html[data-bs-theme="dark"] body {
+            background-color: #121820;
+            color: #e5e7eb;
+        }
+        html[data-bs-theme="dark"] .card {
+            border-color: #2f3a49;
+        }
+        html[data-bs-theme="dark"] .card-header.bg-white {
+            background-color: #1b2430 !important;
+            border-color: #2f3a49;
+        }
+        html[data-bs-theme="dark"] .tier-row {
+            border-bottom-color: #2f3a49;
+        }
+        html[data-bs-theme="dark"] .tier-row.tier-header {
+            background: #1b2430;
+            color: #9ba7b7;
+        }
+        html[data-bs-theme="dark"] .tier-row.tier-header .tier-daily,
+        html[data-bs-theme="dark"] .ahr999-range {
+            color: #9ba7b7;
+        }
+        html[data-bs-theme="dark"] .tier-input {
+            background-color: #111827;
+            border-color: #374151;
+            color: #e5e7eb;
+        }
+        html[data-bs-theme="dark"] .text-muted {
+            color: #9ba7b7 !important;
+        }
+        html[data-bs-theme="dark"] .theme-toggle-btn {
+            border-color: #2f3a49;
+            background: #1b2430;
+            color: #d8deea;
+        }
+        html[data-bs-theme="dark"] .theme-toggle-btn:hover {
+            background: #233043;
+            color: #eef2f8;
+            border-color: #3a4a5f;
+        }
     </style>
-    <link rel="stylesheet" href="/static/app.css">
 </head>
 <body>
     <div class="container">
@@ -222,10 +261,13 @@
                 <div class="d-flex flex-column flex-md-row align-items-center gap-3">
                     <!-- Navigation buttons -->
                     <div class="nav-actions d-flex flex-wrap flex-md-nowrap justify-content-center gap-2">
-                        <a href="/" class="btn btn-outline-secondary text-nowrap"><i class="bi bi-house-fill"></i> <span class="btn-text">Dashboard</span></a>
-                        <a href="/settings/binance" class="btn btn-outline-secondary text-nowrap"><i class="bi bi-currency-bitcoin"></i> <span class="btn-text">Binance Settings</span></a>
-                        <a href="/stats" class="btn btn-outline-secondary text-nowrap"><i class="bi bi-graph-up"></i> <span class="btn-text">Stats</span></a>
-                        <button id="themeToggleBtn" type="button" class="btn text-nowrap theme-toggle-btn" aria-label="Toggle theme" title="Toggle theme"></button>
+	                        <a href="/" class="btn btn-outline-secondary text-nowrap"><i class="bi bi-house-fill"></i> <span class="btn-text">Dashboard</span></a>
+	                        <a href="/settings/binance" class="btn btn-outline-secondary text-nowrap"><i class="bi bi-currency-bitcoin"></i> <span class="btn-text">Binance Settings</span></a>
+	                        <a href="/stats" class="btn btn-outline-secondary text-nowrap"><i class="bi bi-graph-up"></i> <span class="btn-text">Stats</span></a>
+	                        {% if user and user.is_admin %}
+	                        <a href="/admin/data-sources" class="btn btn-outline-warning text-nowrap admin-diagnostics-link"><i class="bi bi-database-check"></i> <span class="btn-text">Diagnostics</span></a>
+	                        {% endif %}
+	                        <button id="themeToggleBtn" type="button" class="btn text-nowrap theme-toggle-btn" aria-label="Toggle theme" title="Toggle theme"></button>
                     </div>
                     <!-- User section -->
                     {% if user %}
@@ -240,7 +282,7 @@
             </div>
         </header>
 
-        <div class="card">
+        <div class="card shadow-sm">
             <div class="card-header bg-white">
                 <h5 class="mb-0">DCA Strategy Configuration</h5>
             </div>
@@ -603,7 +645,7 @@
     </div>
 
     <div class="container mt-4">
-        <div class="card">
+        <div class="card shadow-sm">
             <div class="card-header bg-white">
                 <h5 class="mb-0">🤖 OpenAI Summary API Settings</h5>
             </div>

@@ -3,116 +3,230 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Data Sources</title>
+    <title>Admin Diagnostics</title>
+    <script>
+        (function () {
+            const savedTheme = localStorage.getItem('dca_theme');
+            const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+            const initialTheme = savedTheme || (prefersDark ? 'dark' : 'light');
+            document.documentElement.setAttribute('data-bs-theme', initialTheme);
+        })();
+    </script>
     <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     <style>
         body {
-            background: #fff;
-            color: #000;
-            font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-            padding: 32px 16px;
+            padding-top: 20px;
+            background-color: var(--bs-body-bg);
+            color: var(--bs-body-color);
+            transition: background-color 0.2s ease, color 0.2s ease;
         }
         .container {
-            max-width: 920px;
+            max-width: 1200px;
         }
-        h1 {
-            font-family: "SF Pro Rounded", ui-rounded, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-            font-size: 32px;
-            font-weight: 600;
-            letter-spacing: 0;
+        .nav-actions {
+            align-items: center;
         }
-        .admin-panel {
-            border: 1px solid #e5e5e5;
-            border-radius: 12px;
-            padding: 24px;
+        .nav-actions > .btn {
+            min-height: 44px;
+            display: inline-flex;
+            align-items: center;
         }
-        .btn-pill {
-            border-radius: 9999px;
-            padding: 8px 18px;
-            font-weight: 500;
+        .nav-actions > .btn .bi {
+            margin-right: 0.45rem;
         }
-        .btn-primary-black {
-            background: #000;
-            border-color: #000;
-            color: #fff;
+        .theme-toggle-btn {
+            width: 46px;
+            height: 46px;
+            padding: 0;
+            border: 1px solid var(--bs-border-color);
+            border-radius: 14px;
+            background: var(--bs-tertiary-bg);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--bs-secondary-color);
+            transition: all 0.2s ease;
         }
-        .btn-primary-black:active,
-        .btn-primary-black:hover {
-            background: #090909;
-            border-color: #090909;
-            color: #fff;
+        .theme-toggle-btn:hover {
+            background: var(--bs-secondary-bg);
+            color: var(--bs-body-color);
+            border-color: var(--bs-border-color);
+        }
+        .theme-toggle-btn .theme-icon {
+            width: 22px;
+            height: 22px;
+            stroke: currentColor;
+            fill: none;
+            stroke-width: 2.2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
         }
         .diagnostics-grid {
             display: grid;
-            grid-template-columns: minmax(180px, 0.45fr) minmax(0, 1fr);
-            border-top: 1px solid #e5e5e5;
+            grid-template-columns: minmax(190px, 0.42fr) minmax(0, 1fr);
+            gap: 0;
+            min-width: 0;
         }
         .diagnostics-grid dt,
         .diagnostics-grid dd {
+            border-top: 1px solid var(--bs-border-color);
             margin: 0;
-            padding: 12px 0;
-            border-bottom: 1px solid #e5e5e5;
-        }
-        .diagnostics-grid dt {
-            color: #737373;
-            padding-right: 16px;
-        }
-        .diagnostics-grid dd {
-            color: #000;
+            padding: 0.65rem 0;
+            min-width: 0;
             overflow-wrap: anywhere;
         }
-        code {
-            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-            color: #000;
+        .diagnostics-grid dt {
+            color: var(--bs-secondary-color);
+            padding-right: 1rem;
         }
-        @media (max-width: 640px) {
-            body {
-                padding: 20px 12px;
+        .diagnostics-grid dd {
+            overflow-wrap: anywhere;
+        }
+        .log-tail {
+            max-height: 360px;
+            overflow: auto;
+            white-space: pre-wrap;
+            font-size: 0.82rem;
+        }
+        code {
+            white-space: normal;
+            overflow-wrap: anywhere;
+            word-break: break-word;
+        }
+        .summary-list li {
+            margin-bottom: 0.25rem;
+        }
+        @media (max-width: 576px) {
+            .nav-actions {
+                width: 100%;
             }
-            .admin-panel {
-                padding: 18px;
+            .nav-actions > .btn {
+                min-height: 40px;
+            }
+            .nav-actions > .btn .bi {
+                margin-right: 0;
+            }
+            .btn .btn-text {
+                display: none;
+            }
+            .theme-toggle-btn {
+                width: 44px;
+                height: 44px;
+                border-radius: 12px;
             }
             .diagnostics-grid {
                 grid-template-columns: 1fr;
             }
             .diagnostics-grid dt {
-                padding-bottom: 2px;
+                padding-bottom: 0.15rem;
                 border-bottom: 0;
             }
             .diagnostics-grid dd {
+                border-top: 0;
                 padding-top: 0;
             }
         }
+
     </style>
-    <link rel="stylesheet" href="/static/app.css">
 </head>
 <body>
-    <main class="container">
-        <div class="d-flex flex-column flex-sm-row justify-content-between align-items-start gap-3 mb-4">
-            <div>
-                <h1 class="mb-2">Data sources</h1>
-                <p class="text-muted mb-0">Admin-only diagnostics for live market data dependencies.</p>
-            </div>
-            <a class="btn btn-outline-secondary btn-pill" href="/stats">Back to stats</a>
-        </div>
-
-        <section class="admin-panel">
-            <div class="d-flex flex-column flex-sm-row justify-content-between align-items-start gap-3 mb-4">
+    <div class="container">
+        <header class="mb-4">
+            <div class="d-flex flex-column flex-md-row justify-content-between align-items-center gap-3">
                 <div>
-                    <h2 class="h5 mb-1">BitInfoCharts</h2>
-                    <p class="text-muted mb-0">Bitcoin wealth distribution scrape diagnostics.</p>
+                    <h1 class="mb-1">Admin diagnostics</h1>
+                    <p class="text-muted mb-0">Production-oriented data source and log diagnostics.</p>
                 </div>
-                <button id="refreshBitinfochartsBtn" class="btn btn-primary-black btn-pill" type="button">Refresh now</button>
+                <div class="d-flex flex-column flex-md-row align-items-center gap-3">
+                    <div class="nav-actions d-flex flex-wrap flex-md-nowrap justify-content-center gap-2">
+                        <a href="/" class="btn btn-outline-secondary text-nowrap"><i class="bi bi-house-fill"></i> <span class="btn-text">Dashboard</span></a>
+                        <a href="/stats" class="btn btn-outline-secondary text-nowrap"><i class="bi bi-graph-up"></i> <span class="btn-text">Stats</span></a>
+                        {% if user and user.is_admin %}
+                        <a href="/admin/data-sources" class="btn btn-warning text-nowrap admin-diagnostics-link"><i class="bi bi-database-check"></i> <span class="btn-text">Diagnostics</span></a>
+                        {% endif %}
+                        <button id="themeToggleBtn" type="button" class="btn text-nowrap theme-toggle-btn" aria-label="Toggle theme" title="Toggle theme"></button>
+                    </div>
+                    {% if user %}
+                    <div class="d-flex align-items-center gap-2 border-start-md ps-md-3 mt-2 mt-md-0 pt-2 pt-md-0 border-top border-top-md-0">
+                        <span class="text-muted small">{{ user.email }}</span>
+                        <form method="POST" action="/api/auth/logout" class="d-inline">
+                            <button type="submit" class="btn btn-sm btn-outline-danger">Logout</button>
+                        </form>
+                    </div>
+                    {% endif %}
+                </div>
             </div>
+        </header>
 
-            <div id="bitinfochartsStatus" class="small text-muted mb-3">Loading diagnostics...</div>
-            <dl class="diagnostics-grid" id="bitinfochartsDiagnostics"></dl>
+        <section class="card shadow-sm mb-4">
+            <div class="card-header bg-body d-flex flex-column flex-md-row justify-content-between gap-2">
+                <div>
+                    <h2 class="h5 mb-1">Quick read</h2>
+                    <div id="bitinfochartsStatus" class="small text-muted">Loading diagnostics...</div>
+                </div>
+                <div class="d-flex gap-2">
+                    <button id="copyDiagnosticsBtn" class="btn btn-outline-secondary btn-sm" type="button">Copy report</button>
+                    <button id="refreshBitinfochartsBtn" class="btn btn-primary btn-sm" type="button">Refresh now</button>
+                </div>
+            </div>
+            <div class="card-body">
+                <ul class="summary-list mb-0" id="debugSummary"></ul>
+            </div>
         </section>
-    </main>
+
+        <section class="card shadow-sm mb-4">
+            <div class="card-header bg-body">
+                <h2 class="h5 mb-1">BitInfoCharts scrape state</h2>
+                <p class="text-muted small mb-0">These fields explain whether data is live, cached, stale, static, or unavailable.</p>
+            </div>
+            <div class="card-body">
+                <dl class="diagnostics-grid mb-0" id="bitinfochartsDiagnostics"></dl>
+            </div>
+        </section>
+
+        <section class="card shadow-sm mb-4">
+            <div class="card-header bg-body">
+                <h2 class="h5 mb-1">Runtime</h2>
+                <p class="text-muted small mb-0">App version, commit, server time, and log file status.</p>
+            </div>
+            <div class="card-body">
+                <dl class="diagnostics-grid mb-0" id="runtimeDiagnostics"></dl>
+            </div>
+        </section>
+
+        <section class="card shadow-sm mb-4">
+            <div class="card-header bg-body">
+                <h2 class="h5 mb-1">Service log tail</h2>
+                <p class="text-muted small mb-0" id="serviceLogMeta">Loading service log...</p>
+            </div>
+            <div class="card-body">
+                <pre class="log-tail bg-body-tertiary border rounded p-3 mb-0" id="serviceLogTail">Loading...</pre>
+            </div>
+        </section>
+
+        <section class="card shadow-sm mb-5">
+            <div class="card-header bg-body">
+                <h2 class="h5 mb-1">Static generation log tail</h2>
+                <p class="text-muted small mb-0" id="staticLogMeta">Loading static generation log...</p>
+            </div>
+            <div class="card-body">
+                <pre class="log-tail bg-body-tertiary border rounded p-3 mb-0" id="staticLogTail">Loading...</pre>
+            </div>
+        </section>
+    </div>
+
+    <div class="version-badge position-fixed end-0 bottom-0 m-3 small text-muted bg-body-tertiary border rounded-pill px-3 py-1">
+        v{{ app_version }}{% if app_commit_sha %} ({{ app_commit_sha[:7] }}){% endif %}
+    </div>
 
     <script>
-        const fields = [
+        const THEME_STORAGE_KEY = 'dca_theme';
+        const THEME_ICON_SUN = '<svg class="theme-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"></circle><line x1="12" y1="2.5" x2="12" y2="5"></line><line x1="12" y1="19" x2="12" y2="21.5"></line><line x1="2.5" y1="12" x2="5" y2="12"></line><line x1="19" y1="12" x2="21.5" y2="12"></line><line x1="5.2" y1="5.2" x2="6.9" y2="6.9"></line><line x1="17.1" y1="17.1" x2="18.8" y2="18.8"></line><line x1="17.1" y1="6.9" x2="18.8" y2="5.2"></line><line x1="5.2" y1="18.8" x2="6.9" y2="17.1"></line></svg>';
+        const THEME_ICON_MOON = '<svg class="theme-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M14.5 3.5a8.8 8.8 0 1 0 6 14.9 9.2 9.2 0 0 1-6.8-2.7 9.3 9.3 0 0 1-2.8-6.9 8.9 8.9 0 0 1 3.6-7.3Z"></path></svg>';
+
+        const diagnosticsFields = [
             'last_attempt_at',
             'last_success_at',
             'last_status',
@@ -125,29 +239,120 @@
             'target_url',
             'cache_age_seconds'
         ];
+        const runtimeFields = [
+            'server_time_utc',
+            'app_version',
+            'app_commit_sha',
+            'log_level',
+            'service_log.path',
+            'service_log.exists',
+            'service_log.modified_at',
+            'service_log.size_bytes',
+            'static_generation_log.path',
+            'static_generation_log.exists',
+            'static_generation_log.modified_at',
+            'static_generation_log.size_bytes'
+        ];
+        let latestDiagnosticsReport = null;
+
+        function updateThemeToggleButton(theme) {
+            const btn = document.getElementById('themeToggleBtn');
+            if (!btn) return;
+            const isDark = theme === 'dark';
+            btn.innerHTML = isDark ? THEME_ICON_SUN : THEME_ICON_MOON;
+            btn.setAttribute('aria-label', isDark ? 'Switch to light mode' : 'Switch to dark mode');
+            btn.setAttribute('title', isDark ? 'Switch to light mode' : 'Switch to dark mode');
+        }
+
+        function applyTheme(theme) {
+            document.documentElement.setAttribute('data-bs-theme', theme);
+            localStorage.setItem(THEME_STORAGE_KEY, theme);
+            updateThemeToggleButton(theme);
+        }
 
         function formatValue(value) {
             if (value === null || value === undefined || value === '') return '--';
             return String(value);
         }
 
-        function renderDiagnostics(diagnostics) {
-            const list = document.getElementById('bitinfochartsDiagnostics');
+        function getPathValue(object, path) {
+            return path.split('.').reduce((current, part) => {
+                if (current === null || current === undefined) return undefined;
+                return current[part];
+            }, object);
+        }
+
+        function renderKeyValues(listId, source, fields) {
+            const list = document.getElementById(listId);
             list.innerHTML = '';
             fields.forEach((field) => {
                 const term = document.createElement('dt');
                 term.textContent = field;
                 const detail = document.createElement('dd');
-                if (field === 'target_url') {
+                const value = getPathValue(source, field);
+                if (field.includes('path') || field === 'target_url') {
                     const code = document.createElement('code');
-                    code.textContent = formatValue(diagnostics[field]);
+                    code.textContent = formatValue(value);
                     detail.appendChild(code);
                 } else {
-                    detail.textContent = formatValue(diagnostics[field]);
+                    detail.textContent = formatValue(value);
                 }
                 list.appendChild(term);
                 list.appendChild(detail);
             });
+        }
+
+        function renderSummary(summary) {
+            const list = document.getElementById('debugSummary');
+            list.innerHTML = '';
+            (summary || []).forEach((item) => {
+                const li = document.createElement('li');
+                li.textContent = item;
+                list.appendChild(li);
+            });
+            if (!list.children.length) {
+                const li = document.createElement('li');
+                li.textContent = 'No diagnostics summary available.';
+                list.appendChild(li);
+            }
+        }
+
+        function renderLogSnapshot(metaId, tailId, snapshot) {
+            const meta = document.getElementById(metaId);
+            const tail = document.getElementById(tailId);
+            if (!snapshot || !snapshot.exists) {
+                meta.textContent = `Missing: ${formatValue(snapshot?.path)}`;
+                tail.textContent = 'Log file is not present or not readable from this process.';
+                return;
+            }
+            if (snapshot.read_error) {
+                meta.textContent = `Read error: ${snapshot.read_error}`;
+                tail.textContent = snapshot.read_error;
+                return;
+            }
+            meta.textContent = `${snapshot.path} | ${formatValue(snapshot.line_count)} sampled lines | modified ${formatValue(snapshot.modified_at)}`;
+            tail.textContent = (snapshot.tail || []).join('\n') || 'Log file is empty.';
+        }
+
+        function buildCopyableReport(data) {
+            const lines = [];
+            lines.push(`# ${data.name || 'Admin diagnostics'}`);
+            lines.push('');
+            lines.push('## Quick read');
+            (data.debug_summary || []).forEach((item) => lines.push(`- ${item}`));
+            lines.push('');
+            lines.push('## BitInfoCharts');
+            diagnosticsFields.forEach((field) => lines.push(`${field}: ${formatValue(data.diagnostics?.[field])}`));
+            lines.push('');
+            lines.push('## Runtime');
+            runtimeFields.forEach((field) => lines.push(`${field}: ${formatValue(getPathValue(data.runtime || {}, field))}`));
+            lines.push('');
+            lines.push('## Service log tail');
+            lines.push(...((data.runtime?.service_log?.tail || ['--']).slice(-80)));
+            lines.push('');
+            lines.push('## Static generation log tail');
+            lines.push(...((data.runtime?.static_generation_log?.tail || ['--']).slice(-80)));
+            return lines.join('\n');
         }
 
         async function loadDiagnostics() {
@@ -158,8 +363,13 @@
                 return;
             }
             const data = await response.json();
-            renderDiagnostics(data.diagnostics || {});
-            status.textContent = `Current status: ${formatValue(data.diagnostics?.last_status)}`;
+            latestDiagnosticsReport = buildCopyableReport(data);
+            renderSummary(data.debug_summary || []);
+            renderKeyValues('bitinfochartsDiagnostics', data.diagnostics || {}, diagnosticsFields);
+            renderKeyValues('runtimeDiagnostics', data.runtime || {}, runtimeFields);
+            renderLogSnapshot('serviceLogMeta', 'serviceLogTail', data.runtime?.service_log || {});
+            renderLogSnapshot('staticLogMeta', 'staticLogTail', data.runtime?.static_generation_log || {});
+            status.textContent = `Current status: ${formatValue(data.diagnostics?.last_status)} | last attempt ${formatValue(data.diagnostics?.last_attempt_at)}`;
         }
 
         async function refreshNow() {
@@ -172,7 +382,7 @@
             try {
                 const response = await fetch('/api/admin/data-sources/bitinfocharts/refresh', { method: 'POST' });
                 const data = await response.json();
-                renderDiagnostics(data.diagnostics || {});
+                await loadDiagnostics();
                 status.textContent = data.message || (data.success ? 'Refresh completed.' : 'Refresh failed.');
             } catch (error) {
                 status.textContent = 'Refresh failed. Diagnostics may not be current.';
@@ -182,9 +392,37 @@
             }
         }
 
+        async function copyReport() {
+            if (!latestDiagnosticsReport) {
+                await loadDiagnostics();
+            }
+            try {
+                await navigator.clipboard.writeText(latestDiagnosticsReport || '');
+                document.getElementById('copyDiagnosticsBtn').textContent = 'Copied';
+            } catch (error) {
+                const textarea = document.createElement('textarea');
+                textarea.value = latestDiagnosticsReport || '';
+                document.body.appendChild(textarea);
+                textarea.select();
+                document.execCommand('copy');
+                textarea.remove();
+                document.getElementById('copyDiagnosticsBtn').textContent = 'Copied';
+            }
+            setTimeout(() => {
+                document.getElementById('copyDiagnosticsBtn').textContent = 'Copy report';
+            }, 1600);
+        }
+
         document.addEventListener('DOMContentLoaded', () => {
-            loadDiagnostics();
+            const currentTheme = document.documentElement.getAttribute('data-bs-theme') || 'light';
+            updateThemeToggleButton(currentTheme);
+            document.getElementById('themeToggleBtn')?.addEventListener('click', () => {
+                const theme = document.documentElement.getAttribute('data-bs-theme') === 'dark' ? 'light' : 'dark';
+                applyTheme(theme);
+            });
             document.getElementById('refreshBitinfochartsBtn')?.addEventListener('click', refreshNow);
+            document.getElementById('copyDiagnosticsBtn')?.addEventListener('click', copyReport);
+            loadDiagnostics();
         });
     </script>
 </body>
