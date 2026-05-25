@@ -19,6 +19,7 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/notyf@3.10.0/notyf.min.css">
+    <link rel="stylesheet" href="/static/app.css">
     <style>
         body { 
             padding-top: 20px; 
@@ -197,13 +198,6 @@
             .nav-actions > .dropdown > .btn {
                 min-height: 40px;
             }
-            .nav-actions > .btn .bi,
-            .nav-actions > .dropdown > .btn .bi {
-                margin-right: 0;
-            }
-            .btn .btn-text {
-                display: none;
-            }
             .theme-toggle-btn {
                 width: 44px;
                 height: 44px;
@@ -253,37 +247,18 @@
         }
     </style>
 </head>
-<body>
-    <div class="container">
-        <header class="mb-4">
-            <div class="d-flex flex-column flex-md-row justify-content-between align-items-center gap-3">
-                <h1 class="mb-0 text-center text-md-start">Strategy Configuration</h1>
-                <div class="d-flex flex-column flex-md-row align-items-center gap-3">
-                    <!-- Navigation buttons -->
-                    <div class="nav-actions d-flex flex-wrap flex-md-nowrap justify-content-center gap-2">
-	                        <a href="/" class="btn btn-outline-secondary text-nowrap"><i class="bi bi-house-fill"></i> <span class="btn-text">Dashboard</span></a>
-	                        <a href="/settings/binance" class="btn btn-outline-secondary text-nowrap"><i class="bi bi-currency-bitcoin"></i> <span class="btn-text">Binance Settings</span></a>
-	                        <a href="/stats" class="btn btn-outline-secondary text-nowrap"><i class="bi bi-graph-up"></i> <span class="btn-text">Stats</span></a>
-	                        {% if user and user.is_admin %}
-	                        <a href="/admin/data-sources" class="btn btn-outline-warning text-nowrap admin-diagnostics-link"><i class="bi bi-database-check"></i> <span class="btn-text">Diagnostics</span></a>
-	                        {% endif %}
-	                        <button id="themeToggleBtn" type="button" class="btn text-nowrap theme-toggle-btn" aria-label="Toggle theme" title="Toggle theme"></button>
-                    </div>
-                    <!-- User section -->
-                    {% if user %}
-                    <div class="d-flex align-items-center gap-2 border-start-md ps-md-3 mt-2 mt-md-0 pt-2 pt-md-0 border-top border-top-md-0">
-                        <span class="text-muted small">{{ user.email }}</span>
-                        <form method="POST" action="/api/auth/logout" class="d-inline">
-                            <button type="submit" class="btn btn-sm btn-outline-danger">Logout</button>
-                        </form>
-                    </div>
-                    {% endif %}
-                </div>
-            </div>
-        </header>
+<body class="satsflow-page">
+    <div class="container app-shell app-shell-narrow">
+        {% set active_page = 'strategy' %}
+        {% include "_shared_header.html" %}
 
-        <div class="card shadow-sm">
-            <div class="card-header bg-white">
+        <div class="page-title-block">
+            <h1>Strategy Configuration</h1>
+            <p class="text-muted mb-0">Configure recurring DCA behavior and summary integrations.</p>
+        </div>
+
+        <div class="card dashboard-panel">
+            <div class="card-header dashboard-panel-header">
                 <h5 class="mb-0">DCA Strategy Configuration</h5>
             </div>
             <div class="card-body">
@@ -398,7 +373,7 @@
                     </div>
 
                     <div id="fixedDcaConfigSection" class="d-none">
-                        <div class="alert alert-info mt-2">
+                        <div class="alert alert-satsflow mt-2">
                             <strong>Fixed DCA:</strong> No extra inputs required. Each execution buys a fixed amount:
                             <br>
                             Daily: Monthly Budget / 30.44
@@ -484,7 +459,7 @@
                                 <div class="tier-daily" id="tier-p100-amount">-</div>
                             </div>
                         </div>
-                        <div class="alert alert-info mt-3">
+                        <div class="alert alert-satsflow mt-3">
                             <strong>Note:</strong> Percentile thresholds (p10, p25, p50, p75, p90) are calculated from historical AHR999 data and update automatically.
                         </div>
                     </div>
@@ -578,7 +553,7 @@
                                 <div class="tier-daily" id="tier-r999-amount">-</div>
                             </div>
                         </div>
-                        <div class="alert alert-info mt-3">
+                        <div class="alert alert-satsflow mt-3">
                             <strong>Note:</strong> Fixed Range Strategy uses absolute AHR999 value thresholds (not percentiles). This provides deterministic behavior regardless of historical data.
                         </div>
                     </div>
@@ -644,9 +619,9 @@
         </div>
     </div>
 
-    <div class="container mt-4">
-        <div class="card shadow-sm">
-            <div class="card-header bg-white">
+    <div class="container app-shell app-shell-narrow mt-4">
+        <div class="card dashboard-panel">
+            <div class="card-header dashboard-panel-header">
                 <h5 class="mb-0">🤖 OpenAI Summary API Settings</h5>
             </div>
             <div class="card-body">
@@ -1216,7 +1191,7 @@
         }
 
     </script>
-    <div style="position: fixed; right: 10px; bottom: 8px; z-index: 9999; font-size: 12px; color: #6c757d; background: rgba(255,255,255,0.92); border: 1px solid #d9dee3; border-radius: 999px; padding: 3px 10px;">
+    <div class="version-badge">
         v{{ app_version }}{% if app_commit_sha %} ({{ app_commit_sha[:7] }}){% endif %}
     </div>
 </body>

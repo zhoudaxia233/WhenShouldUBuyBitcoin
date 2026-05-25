@@ -15,6 +15,7 @@
     <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="/static/app.css">
     <style>
         body {
             padding-top: 20px;
@@ -105,12 +106,6 @@
             .nav-actions > .btn {
                 min-height: 40px;
             }
-            .nav-actions > .btn .bi {
-                margin-right: 0;
-            }
-            .btn .btn-text {
-                display: none;
-            }
             .theme-toggle-btn {
                 width: 44px;
                 height: 44px;
@@ -131,37 +126,18 @@
 
     </style>
 </head>
-<body>
-    <div class="container">
-        <header class="mb-4">
-            <div class="d-flex flex-column flex-md-row justify-content-between align-items-center gap-3">
-                <div>
-                    <h1 class="mb-1">Admin diagnostics</h1>
-                    <p class="text-muted mb-0">Production-oriented data source and log diagnostics.</p>
-                </div>
-                <div class="d-flex flex-column flex-md-row align-items-center gap-3">
-                    <div class="nav-actions d-flex flex-wrap flex-md-nowrap justify-content-center gap-2">
-                        <a href="/" class="btn btn-outline-secondary text-nowrap"><i class="bi bi-house-fill"></i> <span class="btn-text">Dashboard</span></a>
-                        <a href="/stats" class="btn btn-outline-secondary text-nowrap"><i class="bi bi-graph-up"></i> <span class="btn-text">Stats</span></a>
-                        {% if user and user.is_admin %}
-                        <a href="/admin/data-sources" class="btn btn-warning text-nowrap admin-diagnostics-link"><i class="bi bi-database-check"></i> <span class="btn-text">Diagnostics</span></a>
-                        {% endif %}
-                        <button id="themeToggleBtn" type="button" class="btn text-nowrap theme-toggle-btn" aria-label="Toggle theme" title="Toggle theme"></button>
-                    </div>
-                    {% if user %}
-                    <div class="d-flex align-items-center gap-2 border-start-md ps-md-3 mt-2 mt-md-0 pt-2 pt-md-0 border-top border-top-md-0">
-                        <span class="text-muted small">{{ user.email }}</span>
-                        <form method="POST" action="/api/auth/logout" class="d-inline">
-                            <button type="submit" class="btn btn-sm btn-outline-danger">Logout</button>
-                        </form>
-                    </div>
-                    {% endif %}
-                </div>
-            </div>
-        </header>
+<body class="satsflow-page">
+    <div class="container app-shell">
+        {% set active_page = 'admin' %}
+        {% include "_shared_header.html" %}
 
-        <section class="card shadow-sm mb-4">
-            <div class="card-header bg-body d-flex flex-column flex-md-row justify-content-between gap-2">
+        <div class="page-title-block">
+            <h1>Admin diagnostics</h1>
+            <p class="text-muted mb-0">Production-oriented data source and log diagnostics.</p>
+        </div>
+
+        <section class="card dashboard-panel mb-4">
+            <div class="card-header dashboard-panel-header d-flex flex-column flex-md-row justify-content-between gap-2">
                 <div>
                     <h2 class="h5 mb-1">Quick read</h2>
                     <div id="bitinfochartsStatus" class="small text-muted">Loading diagnostics...</div>
@@ -176,8 +152,8 @@
             </div>
         </section>
 
-        <section class="card shadow-sm mb-4">
-            <div class="card-header bg-body">
+        <section class="card dashboard-panel mb-4">
+            <div class="card-header dashboard-panel-header">
                 <h2 class="h5 mb-1">BitInfoCharts scrape state</h2>
                 <p class="text-muted small mb-0">These fields explain whether data is live, cached, stale, static, or unavailable.</p>
             </div>
@@ -186,8 +162,8 @@
             </div>
         </section>
 
-        <section class="card shadow-sm mb-4">
-            <div class="card-header bg-body">
+        <section class="card dashboard-panel mb-4">
+            <div class="card-header dashboard-panel-header">
                 <h2 class="h5 mb-1">Runtime</h2>
                 <p class="text-muted small mb-0">App version, commit, server time, and log file status.</p>
             </div>
@@ -196,8 +172,8 @@
             </div>
         </section>
 
-        <section class="card shadow-sm mb-4">
-            <div class="card-header bg-body">
+        <section class="card dashboard-panel mb-4">
+            <div class="card-header dashboard-panel-header">
                 <h2 class="h5 mb-1">Service log tail</h2>
                 <p class="text-muted small mb-0" id="serviceLogMeta">Loading service log...</p>
             </div>
@@ -206,8 +182,8 @@
             </div>
         </section>
 
-        <section class="card shadow-sm mb-5">
-            <div class="card-header bg-body">
+        <section class="card dashboard-panel mb-5">
+            <div class="card-header dashboard-panel-header">
                 <h2 class="h5 mb-1">Static generation log tail</h2>
                 <p class="text-muted small mb-0" id="staticLogMeta">Loading static generation log...</p>
             </div>
@@ -217,7 +193,7 @@
         </section>
     </div>
 
-    <div class="version-badge position-fixed end-0 bottom-0 m-3 small text-muted bg-body-tertiary border rounded-pill px-3 py-1">
+    <div class="version-badge">
         v{{ app_version }}{% if app_commit_sha %} ({{ app_commit_sha[:7] }}){% endif %}
     </div>
 
