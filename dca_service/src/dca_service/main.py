@@ -1,11 +1,11 @@
-from fastapi import FastAPI, Request, Depends, HTTPException
+from fastapi import FastAPI, Request, Depends, HTTPException, Response
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 from pathlib import Path
 from contextlib import asynccontextmanager
 
 from dca_service.config import settings
-from dca_service.database import create_db_and_tables
+from dca_service.database import create_db_and_tables, get_session
 from dca_service.api import (
     routes,
     strategy_api,
@@ -115,8 +115,15 @@ app.include_router(admin_api.router, prefix=settings.API_V1_STR)
 from dca_service.sse import sse_manager
 
 @app.get("/api/events")
-async def events(request: Request, user: User = Depends(get_current_user)):
-    """Server-Sent Events endpoint for real-time updates"""
+async def events(request: Request, db: Session = Depends(get_session)):
+    """Server-Sent Events endpoint for real-time updates."""
+    try:
+        get_current_user(request, db)
+    except HTTPException as exc:
+        if exc.status_code == 401:
+            return Response(status_code=204)
+        raise
+
     return await sse_manager.connect(request)
 
 

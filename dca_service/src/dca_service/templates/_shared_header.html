@@ -1,0 +1,39 @@
+<header class="dashboard-header">
+    <div class="shared-header-layout">
+        <a href="/" class="brand-lockup">
+            <span class="brand-mark" aria-hidden="true">₿</span>
+            <span class="brand-title">{{ project_name }}</span>
+        </a>
+        <div class="shared-header-right">
+            <nav class="nav-actions dashboard-nav d-flex flex-wrap flex-md-nowrap justify-content-center gap-2" aria-label="Primary navigation">
+                <a href="/" class="btn dashboard-nav-btn{% if active_page == 'dashboard' %} active{% endif %}" aria-label="Dashboard" title="Dashboard"{% if active_page == 'dashboard' %} aria-current="page"{% endif %}><i class="bi bi-window-sidebar"></i> <span class="btn-text">Dashboard</span></a>
+                <div class="dropdown">
+                    <button class="btn dashboard-nav-btn dropdown-toggle{% if active_page in ['strategy', 'settings'] %} active{% endif %}" type="button" id="settingsDropdown" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Settings" title="Settings">
+                        <i class="bi bi-sliders"></i> <span class="btn-text">Settings</span>
+                    </button>
+                    <ul class="dropdown-menu" aria-labelledby="settingsDropdown">
+                        <li><a class="dropdown-item" href="/strategy"><i class="bi bi-sliders"></i> Strategy</a></li>
+                        <li><a class="dropdown-item" href="/settings/binance"><i class="bi bi-currency-bitcoin"></i> Binance</a></li>
+                    </ul>
+                </div>
+                {% if user and user.is_admin %}
+                <a href="/admin/data-sources" class="btn dashboard-nav-btn nav-accent admin-diagnostics-link{% if active_page == 'admin' %} active{% endif %}" aria-label="Diagnostics" title="Diagnostics"{% if active_page == 'admin' %} aria-current="page"{% endif %}><i class="bi bi-database-check"></i> <span class="btn-text">Diagnostics</span></a>
+                {% endif %}
+                <a href="/stats" class="btn dashboard-nav-btn{% if active_page == 'stats' %} active{% endif %}" aria-label="Analytics" title="Analytics"{% if active_page == 'stats' %} aria-current="page"{% endif %}><i class="bi bi-graph-up"></i> <span class="btn-text">Analytics</span></a>
+                <a href="/analysis/" class="btn dashboard-nav-btn" target="_blank" aria-label="WSUB" title="WSUB"><i class="bi bi-journal-code"></i> <span class="btn-text">WSUB₿</span></a>
+            </nav>
+            <div class="header-utility">
+                <button id="themeToggleBtn" type="button" class="btn text-nowrap theme-toggle-btn" aria-label="Toggle theme" title="Toggle theme"></button>
+                {% if user %}
+                <div class="user-chip" aria-label="Signed in account">
+                    <span class="user-avatar" aria-hidden="true"><i class="bi bi-person-circle"></i></span>
+                    <span class="user-email" title="{{ user.email }}">{{ user.email }}</span>
+                    <form method="POST" action="/api/auth/logout" class="logout-form">
+                        <button type="submit" class="btn btn-sm logout-btn">Logout</button>
+                    </form>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</header>

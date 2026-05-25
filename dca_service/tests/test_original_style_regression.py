@@ -16,20 +16,28 @@ TEMPLATE_NAMES = [
 ]
 
 
-def test_shared_design_override_is_not_loaded():
+def test_shared_satsflow_design_system_is_loaded_by_all_templates():
     for template_name in TEMPLATE_NAMES:
         html = (TEMPLATE_DIR / template_name).read_text(encoding="utf-8")
-        assert 'href="/static/app.css"' not in html
+        assert 'href="/static/app.css"' in html, template_name
 
 
-def test_shared_design_override_file_is_removed():
-    assert not (STATIC_DIR / "app.css").exists()
+def test_shared_satsflow_design_system_file_exists():
+    css = (STATIC_DIR / "app.css").read_text(encoding="utf-8")
+    assert "--dashboard-accent: #ff8a00;" in css
+    assert "--dashboard-accent-strong: #f97316;" in css
+    assert ".app-shell" in css
+    assert ".brand-lockup" in css
+    assert ".dashboard-panel" in css
+    assert ".login-shell" in css
 
 
-def test_login_uses_original_gradient_card_style():
+def test_login_uses_satsflow_brand_style_not_legacy_purple_gradient():
     html = (TEMPLATE_DIR / "login.html").read_text(encoding="utf-8")
-    assert "linear-gradient(135deg, #667eea 0%, #764ba2 100%)" in html
-    assert "box-shadow:" in html
+    assert "linear-gradient(135deg, #667eea 0%, #764ba2 100%)" not in html
+    assert 'class="login-shell"' in html
+    assert 'class="brand-mark"' in html
+    assert 'class="login-card dashboard-panel"' in html
 
 
 def test_dashboard_preview_does_not_call_late_renderer_before_defined():
@@ -44,3 +52,14 @@ def test_dashboard_preview_does_not_call_late_renderer_before_defined():
     )
     assert "typeof window.renderBottomingSignalPreview === 'function'" in early_preview_script
     assert "window.__latestBottomingSignal = preview.bottoming_signal || null;" in early_preview_script
+
+
+def test_dashboard_cache_hydration_does_not_use_local_timezone_before_definition():
+    html = (TEMPLATE_DIR / "index.html").read_text(encoding="utf-8")
+    early_preview_script = html[
+        html.index("// Hydrate wallet and DCA preview from cache") :
+        html.index("<!-- Set Cold Wallet Balance Modal -->")
+    ]
+
+    assert "mode === 'LOCAL' ? LOCAL_TIMEZONE : 'UTC'" not in early_preview_script
+    assert "mode === 'LOCAL' ? window.LOCAL_TIMEZONE : 'UTC'" in early_preview_script

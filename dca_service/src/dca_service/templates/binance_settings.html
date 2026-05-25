@@ -19,6 +19,7 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/notyf@3.10.0/notyf.min.css">
+    <link rel="stylesheet" href="/static/app.css">
     <style>
         body { 
             padding-top: 20px; 
@@ -26,7 +27,6 @@
             background-color: #f8f9fa; 
             transition: background-color 0.2s ease, color 0.2s ease;
         }
-        .container { max-width: 900px; }
         .masked-key { font-family: monospace; letter-spacing: 2px; }
         /* Settings dropdown styling */
         .dropdown-menu {
@@ -85,13 +85,6 @@
             .nav-actions > .dropdown > .btn {
                 min-height: 40px;
             }
-            .nav-actions > .btn .bi,
-            .nav-actions > .dropdown > .btn .bi {
-                margin-right: 0;
-            }
-            .btn .btn-text {
-                display: none;
-            }
             .theme-toggle-btn {
                 width: 44px;
                 height: 44px;
@@ -110,10 +103,6 @@
             background-color: #1b2430 !important;
             border-color: #2f3a49;
         }
-        html[data-bs-theme="dark"] .bg-light {
-            background-color: #1b2430 !important;
-            border-color: #2f3a49;
-        }
         html[data-bs-theme="dark"] .text-muted {
             color: #9ba7b7 !important;
         }
@@ -129,41 +118,22 @@
         }
     </style>
 </head>
-<body>
-    <div class="container">
-        <header class="mb-4">
-            <div class="d-flex flex-column flex-md-row justify-content-between align-items-center gap-3">
-                <h1 class="mb-0 text-center text-md-start">Binance Settings</h1>
-                <div class="d-flex flex-column flex-md-row align-items-center gap-3">
-                    <!-- Navigation buttons -->
-                    <div class="nav-actions d-flex flex-wrap flex-md-nowrap justify-content-center gap-2">
-	                        <a href="/" class="btn btn-outline-secondary text-nowrap"><i class="bi bi-house-fill"></i> <span class="btn-text">Dashboard</span></a>
-	                        <a href="/strategy" class="btn btn-outline-secondary text-nowrap"><i class="bi bi-sliders"></i> <span class="btn-text">Strategy Config</span></a>
-	                        <a href="/stats" class="btn btn-outline-secondary text-nowrap"><i class="bi bi-graph-up"></i> <span class="btn-text">Stats</span></a>
-	                        {% if user and user.is_admin %}
-	                        <a href="/admin/data-sources" class="btn btn-outline-warning text-nowrap admin-diagnostics-link"><i class="bi bi-database-check"></i> <span class="btn-text">Diagnostics</span></a>
-	                        {% endif %}
-	                        <button id="themeToggleBtn" type="button" class="btn text-nowrap theme-toggle-btn" aria-label="Toggle theme" title="Toggle theme"></button>
-                    </div>
-                    <!-- User section -->
-                    {% if user %}
-                    <div class="d-flex align-items-center gap-2 border-start-md ps-md-3 mt-2 mt-md-0 pt-2 pt-md-0 border-top border-top-md-0">
-                        <span class="text-muted small">{{ user.email }}</span>
-                        <form method="POST" action="/api/auth/logout" class="d-inline">
-                            <button type="submit" class="btn btn-sm btn-outline-danger">Logout</button>
-                        </form>
-                    </div>
-                    {% endif %}
-                </div>
-            </div>
-        </header>
+<body class="satsflow-page">
+    <div class="container app-shell app-shell-settings">
+        {% set active_page = 'settings' %}
+        {% include "_shared_header.html" %}
 
-        <div class="card shadow-sm">
-            <div class="card-header bg-white">
+        <div class="page-title-block">
+            <h1>Binance Settings</h1>
+            <p class="text-muted mb-0">Read-only exchange connection and notification settings.</p>
+        </div>
+
+        <div class="card dashboard-panel">
+            <div class="card-header dashboard-panel-header">
                 <h5 class="mb-0">Binance Settings (Read-Only)</h5>
             </div>
             <div class="card-body">
-                <div class="alert alert-info mb-4">
+                <div class="alert alert-satsflow mb-4">
                     <strong>ℹ️ About this connection:</strong>
                     <ul class="mb-0 mt-2">
                         <li>This connection is <strong>read-only</strong> - no trading or withdrawal permissions.</li>
@@ -195,7 +165,7 @@
 
                     <!-- Right: Status Panel -->
                     <div class="col-md-6">
-                        <div class="card bg-light h-100">
+                        <div class="card satsflow-soft-panel h-100">
                             <div class="card-body">
                                 <h6>Connection Status</h6>
                                 
@@ -220,12 +190,12 @@
 
                 <!-- Help Section -->
                 <div class="mt-4">
-                    <button class="btn btn-sm btn-info text-white" type="button" data-bs-toggle="collapse" data-bs-target="#helpSection">
+                    <button class="btn btn-sm btn-outline-primary" type="button" data-bs-toggle="collapse" data-bs-target="#helpSection">
                         ℹ️ How to get API Key
                     </button>
                     
                     <div class="collapse mt-3" id="helpSection">
-                        <div class="card card-body bg-light">
+                        <div class="card card-body satsflow-soft-panel">
                             <h6>Creating a Read-Only API Key on Binance:</h6>
                             <ol class="mb-0 small">
                                 <li>Log into your <strong>Binance</strong> account.</li>
@@ -249,12 +219,12 @@
         </div>
 
         <!-- Trading (Write) Credentials Section -->
-        <div class="card shadow-sm mt-4">
-            <div class="card-header bg-danger text-white">
+        <div class="card dashboard-panel mt-4">
+            <div class="card-header dashboard-panel-header dashboard-panel-header-danger">
                 <h5 class="mb-0">⚠ Trading Credentials (LIVE Trading)</h5>
             </div>
             <div class="card-body">
-                <div class="alert alert-danger mb-4">
+                <div class="alert alert-satsflow-danger mb-4">
                     <strong>⛔ DANGER - Real Money Trading:</strong>
                     <ul class="mb-0 mt-2">
                         <li>These credentials enable <strong>REAL market buy orders</strong> on Binance.</li>
@@ -288,7 +258,7 @@
 
                     <!-- Right: Status Panel -->
                     <div class="col-md-6">
-                        <div class="card bg-light h-100">
+                        <div class="card satsflow-soft-panel h-100">
                             <div class="card-body">
                                 <h6>Trading Status</h6>
                                 
@@ -318,7 +288,7 @@
                     </button>
                     
                     <div class="collapse mt-3" id="tradingHelpSection">
-                        <div class="card card-body bg-light">
+                        <div class="card card-body satsflow-soft-panel">
                             <h6>Creating a Trading API Key on Binance:</h6>
                             <ol class="mb-0 small">
                                 <li>Log into your <strong>Binance</strong> account.</li>
@@ -340,7 +310,7 @@
                                 <li>Paste them into the form above and click <strong>Save Trading Credentials</strong>.</li>
                                 <li>Click <strong>"Verify Trading Permissions"</strong> to test.</li>
                             </ol>
-                            <div class="alert alert-danger small mt-3 mb-0">
+                            <div class="alert alert-satsflow-danger small mt-3 mb-0">
                                 <strong>🔒 Security Best Practices:</strong>
                                 <ul class="mb-0 small">
                                     <li>Use a SEPARATE API key for trading (don't reuse your read-only key)</li>
@@ -357,12 +327,12 @@
         </div>
 
         <!-- Email Notifications Section -->
-        <div class="card shadow-sm mt-4">
-            <div class="card-header bg-white">
+        <div class="card dashboard-panel mt-4">
+            <div class="card-header dashboard-panel-header">
                 <h5 class="mb-0">📧 Email Notifications</h5>
             </div>
             <div class="card-body">
-                <div class="alert alert-info mb-4">
+                <div class="alert alert-satsflow mb-4">
                     <strong>ℹ️ About Email Notifications:</strong>
                     <ul class="mb-0 mt-2 small">
                         <li>Configure SMTP settings to receive automatic notifications when DCA transactions execute.</li>
@@ -426,7 +396,7 @@
 
                     <!-- Right: Status & Test -->
                     <div class="col-md-6">
-                        <div class="card bg-light h-100">
+                        <div class="card satsflow-soft-panel h-100">
                             <div class="card-body">
                                 <h6>Configuration Status</h6>
                                 
@@ -451,13 +421,13 @@
 
                 <!-- Gmail Help Section -->
                 <div class="mt-4">
-                    <button class="btn btn-sm btn-info text-white" type="button" data-bs-toggle="collapse" data-bs-target="#gmailHelpSection">
+                    <button class="btn btn-sm btn-outline-primary" type="button" data-bs-toggle="collapse" data-bs-target="#gmailHelpSection">
                         ℹ️ How to get Gmail App Password
                     </button>
                     
                     <div class="collapse mt-3" id="gmailHelpSection">
-                        <div class="card card-body bg-light">
-                            <div class="alert alert-info small mb-3">
+                        <div class="card card-body satsflow-soft-panel">
+                            <div class="alert alert-satsflow small mb-3">
                                 <strong>📝 Note:</strong> While App Passwords still work and are simpler to set up, Google recommends OAuth for new integrations. For a personal DCA service, App Passwords are perfectly fine and much easier to configure. OAuth support may be added in a future update.
                             </div>
                             
@@ -842,15 +812,15 @@
                 const result = await response.json();
                 
                 if (result.success) {
-                    resultDiv.innerHTML = '<div class="alert alert-success small mb-0">✔ Test email sent successfully! Check your inbox.</div>';
+                    resultDiv.innerHTML = '<div class="alert alert-satsflow-success small mb-0">✔ Test email sent successfully! Check your inbox.</div>';
                     notyf.success('Test email sent successfully!');
                 } else {
                     const errorMsg = result.error || 'Unknown error';
-                    resultDiv.innerHTML = `<div class="alert alert-danger small mb-0">❌ Email test failed: ${errorMsg}</div>`;
+                    resultDiv.innerHTML = `<div class="alert alert-satsflow-danger small mb-0">❌ Email test failed: ${errorMsg}</div>`;
                     notyf.error('Email test failed: ' + errorMsg);
                 }
             } catch (error) {
-                resultDiv.innerHTML = '<div class="alert alert-danger small mb-0">❌ Network error or backend unreachable</div>';
+                resultDiv.innerHTML = '<div class="alert alert-satsflow-danger small mb-0">❌ Network error or backend unreachable</div>';
                 notyf.error('Network error or backend unreachable');
             } finally {
                 btn.disabled = false;
@@ -1043,7 +1013,7 @@
         loadTradingStatus();
         loadEmailStatus();
     </script>
-    <div style="position: fixed; right: 10px; bottom: 8px; z-index: 9999; font-size: 12px; color: #6c757d; background: rgba(255,255,255,0.92); border: 1px solid #d9dee3; border-radius: 999px; padding: 3px 10px;">
+    <div class="version-badge">
         v{{ app_version }}{% if app_commit_sha %} ({{ app_commit_sha[:7] }}){% endif %}
     </div>
 </body>
