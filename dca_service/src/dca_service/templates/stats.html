@@ -29,8 +29,12 @@
         .container { max-width: 1200px; }
         .card { margin-bottom: 20px; }
         .percentile-card {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
+            background: #fff;
+            color: #000;
+        }
+        .pnl-chart-wrap {
+            height: 400px;
+            position: relative;
         }
         .highlight-row {
             background-color: #e8f4ff;
@@ -117,39 +121,6 @@
             }
         }
 
-        html[data-bs-theme="dark"] body {
-            background-color: #121820;
-            color: #e5e7eb;
-        }
-        html[data-bs-theme="dark"] .card {
-            border-color: #2f3a49;
-        }
-        html[data-bs-theme="dark"] .card-header.bg-white,
-        html[data-bs-theme="dark"] .card-footer {
-            background-color: #1b2430 !important;
-            border-color: #2f3a49;
-        }
-        html[data-bs-theme="dark"] .table-light {
-            --bs-table-bg: #1b2430;
-            --bs-table-color: #e5e7eb;
-            --bs-table-border-color: #2f3a49;
-        }
-        html[data-bs-theme="dark"] .highlight-row {
-            background-color: #1f2d40;
-        }
-        html[data-bs-theme="dark"] .text-muted {
-            color: #9ba7b7 !important;
-        }
-        html[data-bs-theme="dark"] .theme-toggle-btn {
-            border-color: #2f3a49;
-            background: #1b2430;
-            color: #d8deea;
-        }
-        html[data-bs-theme="dark"] .theme-toggle-btn:hover {
-            background: #233043;
-            color: #eef2f8;
-            border-color: #3a4a5f;
-        }
         .version-badge {
             position: fixed;
             right: 10px;
@@ -163,9 +134,9 @@
             padding: 3px 10px;
         }
         .saylor-card {
-            background: linear-gradient(180deg, #f7fbff 0%, #edf3fa 100%);
-            border: 1px solid #d7e0ec;
-            color: #1a2737;
+            background: #fff;
+            border: 1px solid #e5e5e5;
+            color: #000;
         }
         .saylor-card .card-header {
             background: transparent !important;
@@ -190,6 +161,34 @@
         .saylor-meta strong {
             color: #d97821;
         }
+        .saylor-mobile-kpis {
+            display: none;
+        }
+        .saylor-mobile-kpi {
+            min-width: 0;
+            border-top: 1px solid rgba(96, 111, 130, 0.18);
+            padding-top: 10px;
+        }
+        .saylor-mobile-kpi .label {
+            display: block;
+            color: #5f7188;
+            font-size: 0.68rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            font-weight: 700;
+            line-height: 1.2;
+        }
+        .saylor-mobile-kpi strong {
+            display: block;
+            margin-top: 4px;
+            color: #122238;
+            font-size: 1rem;
+            line-height: 1.2;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            font-variant-numeric: tabular-nums;
+        }
         .saylor-negative {
             color: #ff7f7f;
             font-weight: 600;
@@ -201,8 +200,7 @@
         .saylor-summary-box {
             border: 1px solid #234267;
             border-radius: 15px;
-            background: linear-gradient(180deg, rgba(20, 37, 61, 0.92) 0%, rgba(17, 31, 50, 0.92) 100%);
-            box-shadow: inset 0 0 0 1px rgba(60, 88, 120, 0.14);
+            background: #fafafa;
             padding: 12px 14px 10px;
             width: 100%;
             max-width: 420px;
@@ -266,43 +264,21 @@
             height: 460px;
             position: relative;
         }
+        .saylor-chart-toolbar {
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 8px;
+        }
+        .saylor-reset-btn {
+            border-radius: 999px;
+            min-height: 36px;
+        }
         #saylorChart {
             touch-action: none;
         }
-        html[data-bs-theme="dark"] .saylor-card {
-            background: linear-gradient(180deg, #071323 0%, #030a16 100%);
-            border-color: #1c2d46;
-            color: #d8e0f0;
-        }
-        html[data-bs-theme="dark"] .saylor-card .card-header {
-            border-bottom-color: #16263d;
-        }
-        html[data-bs-theme="dark"] .saylor-header-kicker {
-            color: #7f8aa0;
-        }
-        html[data-bs-theme="dark"] .saylor-main-value {
-            color: #f4f7ff;
-        }
-        html[data-bs-theme="dark"] .saylor-meta {
-            color: #9ea9bd;
-        }
-        html[data-bs-theme="dark"] .saylor-meta strong {
-            color: #ffb056;
-        }
-        html[data-bs-theme="dark"] .saylor-summary-box {
-            border-color: #253a59;
-            background: rgba(16, 27, 44, 0.82);
-        }
-        html[data-bs-theme="dark"] .saylor-summary-box .label {
-            color: #8491a7;
-        }
-        html[data-bs-theme="dark"] .saylor-summary-box .metric-sub {
-            color: #96a1b6;
-        }
         html[data-bs-theme="light"] .saylor-summary-box {
             border-color: #c8d3e2;
-            background: linear-gradient(180deg, #f7f9fc 0%, #edf2f8 100%);
-            box-shadow: inset 0 0 0 1px rgba(148, 165, 184, 0.20);
+            background: #fafafa;
         }
         html[data-bs-theme="light"] .saylor-summary-box .label {
             color: #5e7189;
@@ -322,11 +298,37 @@
             }
         }
         @media (max-width: 575px) {
-            .saylor-chart-wrap {
+            .pnl-chart-wrap {
                 height: 340px;
+            }
+            .saylor-desktop-meta {
+                display: none !important;
+            }
+            .saylor-mobile-kpis {
+                display: grid;
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 10px 14px;
+                margin-top: 14px;
+            }
+            .saylor-main-value {
+                font-size: 2rem;
+            }
+            .saylor-chart-toolbar {
+                justify-content: stretch;
+            }
+            .saylor-reset-btn {
+                width: 100%;
+            }
+            .saylor-chart-wrap {
+                height: 380px;
+                min-height: 380px;
+            }
+            #saylorChart {
+                touch-action: pan-y;
             }
         }
     </style>
+    <link rel="stylesheet" href="/static/app.css">
 </head>
 <body>
     <div class="container">
@@ -358,9 +360,11 @@
                         <button id="refreshStatsBtn" class="btn btn-outline-primary text-nowrap" title="Force Refresh Data">
                             <span class="btn-icon">🔄</span><span class="btn-text">Refresh</span>
                         </button>
+                        {% if user and user.is_admin %}
                         <button id="regenerateStaticBtn" class="btn btn-outline-success text-nowrap" title="Regenerate static files (charts, data)">
                             <span class="btn-icon">📊</span><span class="btn-text">Update Charts</span>
                         </button>
+                        {% endif %}
                         <button id="themeToggleBtn" type="button" class="btn text-nowrap theme-toggle-btn" aria-label="Toggle theme" title="Toggle theme"></button>
                     </div>
                     <!-- User section -->
@@ -377,7 +381,7 @@
         </header>
 
         <!-- Wealth Percentile Section -->
-        <div class="card shadow-sm percentile-card mb-4">
+        <div class="card percentile-card mb-4">
             <div class="card-body text-center py-5">
                 <h2 class="display-4 fw-bold text-break" id="percentileText">Loading...</h2>
                 <p class="lead" id="percentileSubtext">Calculating your global rank...</p>
@@ -390,7 +394,7 @@
         <!-- Summary Stats Row -->
         <div class="row row-cols-2 row-cols-md-3 row-cols-xl-5 g-3 mb-4">
             <div class="col">
-                <div class="card shadow-sm h-100">
+                <div class="card h-100">
                     <div class="card-body text-center">
                         <div class="text-muted small">Portfolio Value</div>
                         <div class="h3 text-success mb-0" id="portfolioValueUSD">--</div>
@@ -399,7 +403,7 @@
                 </div>
             </div>
             <div class="col">
-                <div class="card shadow-sm h-100">
+                <div class="card h-100">
                     <div class="card-body text-center">
                         <div class="text-muted small">Avg Buy Price</div>
                         <div class="h3 text-primary mb-0" id="avgBuyPrice">--</div>
@@ -408,7 +412,7 @@
                 </div>
             </div>
             <div class="col">
-                <div class="card shadow-sm h-100">
+                <div class="card h-100">
                     <div class="card-body text-center">
                         <div class="text-muted small">Profit & Loss</div>
                         <div class="h3 mb-0" id="pnlAmount">--</div>
@@ -417,7 +421,7 @@
                 </div>
             </div>
             <div class="col">
-                <div class="card shadow-sm h-100">
+                <div class="card h-100">
                     <div class="card-body text-center">
                         <div class="text-muted small">Total Fees</div>
                         <div class="h3 text-danger mb-0" id="totalFeesUSD">--</div>
@@ -426,7 +430,7 @@
                 </div>
             </div>
             <div class="col">
-                <div class="card shadow-sm h-100">
+                <div class="card h-100">
                     <div class="card-body text-center">
                         <div class="text-muted small">Transactions</div>
                         <div class="h3 text-secondary mb-0" id="transactionCount">--</div>
@@ -439,12 +443,12 @@
         <div class="row">
             <!-- PnL Chart -->
             <div class="col-lg-8">
-                <div class="card shadow-sm h-100">
+                <div class="card h-100">
                     <div class="card-header bg-white">
                         <h5 class="mb-0">Performance Over Time</h5>
                     </div>
                     <div class="card-body">
-                        <div style="height: 400px; position: relative;">
+                        <div class="pnl-chart-wrap">
                             <canvas id="pnlChart"></canvas>
                         </div>
                     </div>
@@ -453,7 +457,7 @@
 
             <!-- Wealth Distribution Table -->
             <div class="col-lg-4">
-                <div class="card shadow-sm h-100">
+                <div class="card h-100">
                     <div class="card-header bg-white">
                         <h5 class="mb-0">Global Wealth Distribution</h5>
                     </div>
@@ -481,19 +485,37 @@
 
         <div class="row mt-2">
             <div class="col-12">
-                <div class="card shadow-sm saylor-card">
+                <div class="card saylor-card">
                     <div class="card-header px-4 pt-4 pb-3">
                         <div class="row g-3 align-items-start">
                             <div class="col-lg-8">
                                 <div class="saylor-header-kicker">Bitcoin Reserve Value</div>
                                 <div class="saylor-main-value" id="saylorReserveValue">$--</div>
-                                <div class="saylor-meta d-flex flex-wrap gap-3">
+                                <div class="saylor-meta saylor-desktop-meta d-flex flex-wrap gap-3">
                                     <span><strong id="saylorTotalBtc">--</strong> BTC</span>
                                     <span>Avg Cost: <strong id="saylorAvgCost">$--</strong></span>
                                     <span id="saylorPnlPercent">--</span>
                                     <span id="saylorPnlUsd">--</span>
                                 </div>
                                 <div class="small mt-2 text-secondary" id="saylorAsOf">As of --</div>
+                                <div class="saylor-mobile-kpis" aria-label="Bitcoin reserve summary">
+                                    <div class="saylor-mobile-kpi">
+                                        <span class="label">Reserve Value</span>
+                                        <strong id="saylorReserveValueMobile">$--</strong>
+                                    </div>
+                                    <div class="saylor-mobile-kpi">
+                                        <span class="label">BTC</span>
+                                        <strong id="saylorTotalBtcMobile">--</strong>
+                                    </div>
+                                    <div class="saylor-mobile-kpi">
+                                        <span class="label">Avg Cost</span>
+                                        <strong id="saylorAvgCostMobile">$--</strong>
+                                    </div>
+                                    <div class="saylor-mobile-kpi">
+                                        <span class="label">P&L</span>
+                                        <strong id="saylorPnlMobile">--</strong>
+                                    </div>
+                                </div>
                             </div>
                             <div class="col-lg-4">
                                 <div class="saylor-summary-box">
@@ -514,6 +536,9 @@
                         </div>
                     </div>
                     <div class="card-body pt-2">
+                        <div class="saylor-chart-toolbar">
+                            <button id="resetSaylorZoomBtn" class="btn btn-sm btn-outline-secondary saylor-reset-btn" type="button">Reset view</button>
+                        </div>
                         <div class="saylor-chart-wrap">
                             <canvas id="saylorChart"></canvas>
                         </div>
@@ -524,7 +549,7 @@
 
         <div class="row mt-4">
             <div class="col-12">
-                <div class="card shadow-sm">
+                <div class="card">
                     <div class="card-header bg-white d-flex justify-content-between align-items-center gap-2">
                         <h5 class="mb-0" id="tradingStyleTitle">Trading Style Analysis</h5>
                         <div class="d-flex align-items-center gap-2">
@@ -890,8 +915,23 @@
             'No Data': '暂无数据'
         };
 
+        function setTextIfPresent(id, value) {
+            const el = document.getElementById(id);
+            if (el) el.textContent = value;
+        }
+
+        function setRequiredText(id, value) {
+            document.getElementById(id).textContent = value;
+        }
+
+        function setClassIfPresent(id, value) {
+            const el = document.getElementById(id);
+            if (el) el.className = value;
+        }
+
         function renderChart(data) {
             if (data.dates.length === 0) return;
+            const isMobileViewport = window.matchMedia('(max-width: 575px)').matches;
 
             const ctx = document.getElementById('pnlChart').getContext('2d');
             
@@ -933,6 +973,7 @@
                     plugins: {
                         title: { display: false }, // Remove title to save space
                         legend: {
+                            display: !isMobileViewport,
                             position: 'top',
                             labels: { boxWidth: 12, font: { size: 11 } }
                         },
@@ -998,20 +1039,31 @@
             const reserveValue = totalBtc * walletPrice;
             const pnlUsd = totalBtc * (walletPrice - walletAvg);
             const pnlPct = walletAvg > 0 ? ((walletPrice - walletAvg) / walletAvg) * 100 : 0;
+            const reserveValueText = `$${reserveValue.toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
+            const totalBtcText = Number(totalBtc).toFixed(8);
+            const avgCostText = `$${walletAvg.toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
 
-            document.getElementById('saylorReserveValue').textContent = `$${reserveValue.toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
-            document.getElementById('saylorTotalBtc').textContent = Number(totalBtc).toFixed(8);
-            document.getElementById('saylorAvgCost').textContent = `$${walletAvg.toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
+            setRequiredText('saylorReserveValue', reserveValueText);
+            setTextIfPresent('saylorReserveValueMobile', reserveValueText);
+            setRequiredText('saylorTotalBtc', totalBtcText);
+            setTextIfPresent('saylorTotalBtcMobile', totalBtcText);
+            setRequiredText('saylorAvgCost', avgCostText);
+            setTextIfPresent('saylorAvgCostMobile', avgCostText);
 
             const pnlPctEl = document.getElementById('saylorPnlPercent');
             const pnlUsdEl = document.getElementById('saylorPnlUsd');
             const sign = pnlUsd >= 0 ? '+' : '-';
             const cls = pnlUsd >= 0 ? 'saylor-positive' : 'saylor-negative';
+            const pnlPercentText = `${sign}${Math.abs(pnlPct).toFixed(2)}%`;
+            const pnlUsdText = `(${sign}$${Math.abs(pnlUsd).toLocaleString(undefined, { maximumFractionDigits: 0 })})`;
+            const pnlMobileText = `${pnlPercentText} ${pnlUsdText}`;
 
             pnlPctEl.className = cls;
             pnlUsdEl.className = cls;
-            pnlPctEl.textContent = `${sign}${Math.abs(pnlPct).toFixed(2)}%`;
-            pnlUsdEl.textContent = `(${sign}$${Math.abs(pnlUsd).toLocaleString(undefined, { maximumFractionDigits: 0 })})`;
+            pnlPctEl.textContent = pnlPercentText;
+            pnlUsdEl.textContent = pnlUsdText;
+            setTextIfPresent('saylorPnlMobile', pnlMobileText);
+            setClassIfPresent('saylorPnlMobile', cls);
 
             document.getElementById('saylorAsOf').textContent = `As of ${lastDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`;
             const purchaseEvents = purchaseBtc.filter((v) => (v || 0) > 0).length;
@@ -1039,6 +1091,7 @@
             const nowTs = Date.now();
             const monthMs = 1000 * 60 * 60 * 24 * 30;
             const isDark = (document.documentElement.getAttribute('data-bs-theme') || 'light') === 'dark';
+            const isMobileViewport = window.matchMedia('(max-width: 575px)').matches;
             const axisColor = isDark ? '#93a2b8' : '#4f6278';
             const gridColor = isDark ? 'rgba(126, 150, 180, 0.16)' : 'rgba(69, 95, 123, 0.14)';
             const legendColor = isDark ? '#b8c4d6' : '#42566d';
@@ -1142,9 +1195,10 @@
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    interaction: { mode: 'nearest', intersect: true, axis: 'xy' },
+                    interaction: { mode: 'nearest', intersect: !isMobileViewport, axis: 'xy' },
                     plugins: {
                         legend: {
+                            display: !isMobileViewport,
                             position: 'top',
                             labels: {
                                 color: legendColor,
@@ -1194,14 +1248,14 @@
                             },
                             zoom: {
                                 wheel: {
-                                    enabled: true,
+                                    enabled: !isMobileViewport,
                                     speed: 0.04
                                 },
                                 pinch: {
-                                    enabled: true
+                                    enabled: !isMobileViewport
                                 },
                                 drag: {
-                                    enabled: true,
+                                    enabled: !isMobileViewport,
                                     threshold: 12,
                                     borderColor: dragBorderColor,
                                     borderWidth: 1,
@@ -1220,7 +1274,8 @@
                             ticks: {
                                 color: axisColor,
                                 stepSize: monthMs,
-                                autoSkip: false,
+                                autoSkip: isMobileViewport,
+                                ...(isMobileViewport ? { maxTicksLimit: 4 } : {}),
                                 maxRotation: 0,
                                 callback(value) {
                                     const d = new Date(value);
@@ -1583,6 +1638,10 @@
             if (saylorCanvas) {
                 saylorCanvas.addEventListener('dblclick', resetSaylorZoom);
             }
+            const resetSaylorZoomBtn = document.getElementById('resetSaylorZoomBtn');
+            if (resetSaylorZoomBtn) {
+                resetSaylorZoomBtn.addEventListener('click', resetSaylorZoom);
+            }
             
             // Refresh Button Handler
             document.getElementById('refreshStatsBtn').addEventListener('click', async () => {
@@ -1624,10 +1683,12 @@
             }
             
             // Regenerate Static Files Button Handler
-            document.getElementById('regenerateStaticBtn').addEventListener('click', async (event) => {
+            const regenerateStaticBtn = document.getElementById('regenerateStaticBtn');
+            if (regenerateStaticBtn) {
+            regenerateStaticBtn.addEventListener('click', async (event) => {
                 event.preventDefault(); // Prevent any default behavior
                 
-                const btn = document.getElementById('regenerateStaticBtn');
+                const btn = regenerateStaticBtn;
                 const originalText = btn.innerHTML;
                 btn.disabled = true;
                 btn.innerHTML = '📊 Updating...';
@@ -1666,13 +1727,8 @@
                                         loadChart(true)
                                     ]);
                                 } else {
-                                    const details = statusData.log_tail || statusData.stderr_preview || statusData.stdout_preview || 'No error details available.';
-                                    console.error('Update Charts failed details:', {
-                                        logPath: statusData.log_path,
-                                        details,
-                                    });
-                                    const shortDetails = String(details).slice(-220).replace(/\n/g, ' ');
-                                    notyf.error(`Update Charts failed. Check logs: ${statusData.log_path || '/app/data/static_generation.log'} | ${shortDetails}`);
+                                    console.error('Update Charts failed.');
+                                    notyf.error('Update Charts failed. Please ask an admin to check server logs.');
                                 }
                                 break;
                             }
@@ -1691,6 +1747,7 @@
                     btn.innerHTML = originalText;
                 }
             });
+            }
         });
     </script>
     <div class="version-badge">

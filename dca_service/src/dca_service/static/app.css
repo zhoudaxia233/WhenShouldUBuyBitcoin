@@ -1,0 +1,416 @@
+:root,
+html[data-bs-theme="light"],
+html[data-bs-theme="dark"],
+html[data-theme="light"],
+html[data-theme="dark"] {
+    --app-canvas: #fff;
+    --app-primary: #000;
+    --app-primary-pressed: #090909;
+    --app-surface-soft: #fafafa;
+    --app-surface-dark: #171717;
+    --app-hairline: #e5e5e5;
+    --app-hairline-strong: #d4d4d4;
+    --app-ink: #000;
+    --app-charcoal: #525252;
+    --app-body: #737373;
+    --app-mute: #a3a3a3;
+    --app-radius-card: 12px;
+    --app-radius-pill: 9999px;
+    --app-breakpoint-mobile: 576px;
+    --app-page-gutter-mobile: 24px;
+    --app-heading-mobile: 30px;
+    --app-header-gap-mobile: 12px;
+    --app-badge-gap: 6px;
+    --app-touch-target-mobile: 40px;
+    --app-font-display: "SF Pro Rounded", ui-rounded, -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+    --app-font-body: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+    --app-font-mono: ui-monospace, "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
+    --bs-body-bg: var(--app-canvas);
+    --bs-body-color: var(--app-ink);
+    --bs-border-color: var(--app-hairline);
+    --bs-primary: var(--app-primary);
+    --bs-link-color: var(--app-ink);
+    --bs-link-hover-color: var(--app-primary-pressed);
+}
+
+* {
+    letter-spacing: 0;
+}
+
+html,
+body {
+    background: var(--app-canvas) !important;
+    color: var(--app-ink) !important;
+    font-family: var(--app-font-body);
+}
+
+body {
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+.display-1,
+.display-2,
+.display-3,
+.display-4 {
+    color: var(--app-ink);
+    font-family: var(--app-font-display);
+    font-weight: 500;
+    letter-spacing: 0;
+}
+
+code,
+pre,
+.masked-key,
+#previewReason {
+    font-family: var(--app-font-mono) !important;
+}
+
+a {
+    color: var(--app-ink);
+}
+
+.container {
+    width: min(100% - 32px, 1120px);
+}
+
+.shadow,
+.shadow-sm,
+.shadow-lg,
+.card,
+.dropdown-menu,
+.modal-content,
+.login-container,
+.theme-toggle-btn,
+.btn {
+    box-shadow: none !important;
+}
+
+.card,
+.modal-content,
+.dropdown-menu {
+    background: var(--app-canvas) !important;
+    border: 1px solid var(--app-hairline) !important;
+    border-radius: var(--app-radius-card) !important;
+    color: var(--app-ink);
+}
+
+.card {
+    margin-bottom: 24px;
+}
+
+.card-header,
+.card-footer,
+.card-header.bg-white,
+.card-footer.bg-white {
+    background: var(--app-canvas) !important;
+    border-color: var(--app-hairline) !important;
+}
+
+.card-header h5,
+.card-header h6 {
+    font-size: 18px;
+    font-weight: 500;
+}
+
+.btn,
+.btn-login {
+    min-height: 36px;
+    border-radius: var(--app-radius-pill) !important;
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 1;
+    padding: 8px 18px;
+}
+
+.btn-sm {
+    min-height: 32px;
+    padding: 7px 14px;
+    font-size: 13px;
+}
+
+.btn-primary,
+.btn-success,
+.btn-info,
+.btn-danger,
+.btn-primary-black,
+.btn-login {
+    background: var(--app-primary) !important;
+    border-color: var(--app-primary) !important;
+    color: #fff !important;
+}
+
+.btn-primary:hover,
+.btn-primary:focus,
+.btn-primary-black:hover,
+.btn-primary-black:focus,
+.btn-login:hover,
+.btn-login:focus {
+    background: var(--app-primary-pressed) !important;
+    border-color: var(--app-primary-pressed) !important;
+    color: #fff !important;
+}
+
+.btn-outline-primary,
+.btn-outline-secondary,
+.btn-outline-success,
+.btn-outline-info,
+.btn-outline-danger,
+.btn-secondary {
+    background: var(--app-canvas) !important;
+    border-color: var(--app-hairline-strong) !important;
+    color: var(--app-ink) !important;
+}
+
+.btn-outline-primary:hover,
+.btn-outline-secondary:hover,
+.btn-outline-success:hover,
+.btn-outline-info:hover,
+.btn-outline-danger:hover,
+.btn-secondary:hover {
+    background: var(--app-primary) !important;
+    border-color: var(--app-primary) !important;
+    color: #fff !important;
+}
+
+.theme-toggle-btn {
+    background: var(--app-canvas) !important;
+    border: 1px solid var(--app-hairline) !important;
+    border-radius: var(--app-radius-pill) !important;
+    color: var(--app-ink) !important;
+}
+
+.theme-toggle-btn:hover {
+    background: var(--app-surface-soft) !important;
+    border-color: var(--app-hairline-strong) !important;
+    color: var(--app-ink) !important;
+}
+
+.badge {
+    border-radius: var(--app-radius-pill);
+    font-weight: 500;
+    letter-spacing: 0;
+}
+
+.bg-primary,
+.bg-secondary,
+.bg-success,
+.bg-info,
+.bg-danger {
+    background-color: var(--app-primary) !important;
+    color: #fff !important;
+}
+
+.bg-light,
+.alert-light,
+.alert-secondary,
+.table-light {
+    background: var(--app-surface-soft) !important;
+    color: var(--app-charcoal) !important;
+}
+
+.alert {
+    border-color: var(--app-hairline) !important;
+    border-radius: var(--app-radius-card);
+}
+
+.alert-info,
+.alert-warning,
+.alert-danger,
+.alert-success,
+.alert-primary {
+    background: var(--app-surface-soft) !important;
+    border-color: var(--app-hairline) !important;
+    color: var(--app-ink) !important;
+}
+
+.form-control,
+.form-select,
+.tier-input,
+input[type="email"],
+input[type="password"],
+input[type="text"],
+input[type="number"],
+select {
+    background: var(--app-canvas) !important;
+    border: 1px solid var(--app-hairline-strong) !important;
+    border-radius: var(--app-radius-pill) !important;
+    color: var(--app-ink) !important;
+}
+
+textarea,
+pre {
+    border-radius: var(--app-radius-card) !important;
+}
+
+.form-control:focus,
+.form-select:focus,
+.tier-input:focus,
+input:focus,
+select:focus,
+textarea:focus {
+    border-color: var(--app-ink) !important;
+    outline: 2px solid rgba(59, 130, 246, 0.5);
+    outline-offset: 2px;
+}
+
+.table {
+    border-color: var(--app-hairline);
+}
+
+.table > :not(caption) > * > * {
+    border-color: var(--app-hairline);
+}
+
+.text-muted,
+.text-secondary,
+.small.text-muted {
+    color: var(--app-body) !important;
+}
+
+.text-primary,
+.text-success,
+.text-danger,
+.text-info,
+.text-warning {
+    color: var(--app-ink) !important;
+}
+
+.progress {
+    background: var(--app-surface-soft);
+    border: 1px solid var(--app-hairline);
+    border-radius: var(--app-radius-pill);
+}
+
+.progress-bar {
+    background: var(--app-primary) !important;
+}
+
+.version-badge {
+    background: var(--app-canvas) !important;
+    border: 1px solid var(--app-hairline) !important;
+    border-radius: var(--app-radius-pill) !important;
+    color: var(--app-body) !important;
+}
+
+.percentile-card,
+.saylor-card {
+    background: var(--app-canvas) !important;
+    border: 1px solid var(--app-hairline) !important;
+    color: var(--app-ink) !important;
+}
+
+.percentile-card .card-body {
+    padding-top: 32px !important;
+    padding-bottom: 32px !important;
+}
+
+.percentile-card .badge {
+    background: var(--app-surface-soft) !important;
+    border: 1px solid var(--app-hairline);
+    color: var(--app-ink) !important;
+}
+
+.highlight-row {
+    background: var(--app-surface-soft) !important;
+}
+
+.saylor-card .card-header {
+    background: var(--app-canvas) !important;
+    border-bottom: 1px solid var(--app-hairline) !important;
+}
+
+.saylor-header-kicker,
+.saylor-meta,
+.saylor-mobile-kpi .label,
+.saylor-summary-box .label,
+.saylor-summary-box .metric-sub {
+    color: var(--app-body) !important;
+}
+
+.saylor-main-value,
+.saylor-mobile-kpi strong,
+.saylor-summary-box .metric-value,
+.saylor-summary-box .metric-number,
+.saylor-meta strong,
+.saylor-positive,
+.saylor-negative,
+.saylor-summary-box .metric-value .btc-symbol {
+    color: var(--app-ink) !important;
+}
+
+.saylor-summary-box {
+    background: var(--app-surface-soft) !important;
+    border: 1px solid var(--app-hairline) !important;
+    border-radius: var(--app-radius-card) !important;
+}
+
+.saylor-mobile-kpi {
+    border-top-color: var(--app-hairline) !important;
+}
+
+.login-container {
+    background: var(--app-canvas) !important;
+    border: 1px solid var(--app-hairline);
+    border-radius: var(--app-radius-card);
+}
+
+.login-header h1,
+.login-header p,
+.form-group label,
+.security-note {
+    color: var(--app-ink) !important;
+}
+
+.security-note {
+    border-top-color: var(--app-hairline) !important;
+}
+
+.error-message {
+    background: var(--app-surface-soft) !important;
+    border: 1px solid var(--app-hairline) !important;
+    border-radius: var(--app-radius-card) !important;
+    color: var(--app-ink) !important;
+}
+
+@media (max-width: 576px) {
+    .container {
+        width: min(100% - var(--app-page-gutter-mobile), 1120px);
+    }
+
+    h1 {
+        font-size: var(--app-heading-mobile);
+        line-height: 1.2;
+    }
+
+    .card-header.d-flex {
+        flex-direction: column;
+        align-items: flex-start !important;
+        gap: var(--app-header-gap-mobile);
+    }
+
+    .card-header.d-flex > div {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--app-badge-gap);
+    }
+
+    .card-header .badge {
+        max-width: 100%;
+        white-space: normal;
+        line-height: 1.25;
+        text-align: left;
+    }
+
+    .nav-actions > .btn,
+    .nav-actions > .dropdown > .btn,
+    .theme-toggle-btn {
+        min-height: var(--app-touch-target-mobile);
+    }
+}

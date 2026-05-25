@@ -5,19 +5,140 @@ Fetches live, daily-updated distribution data.
 
 import pandas as pd
 from typing import List, Dict, Optional
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import logging
 import requests
 import io
 import json
 import pkgutil
+import threading
+import time
 from pathlib import Path
 
 
 logger = logging.getLogger(__name__)
+BITINFOCHARTS_DISTRIBUTION_URL = "https://bitinfocharts.com/top-100-richest-bitcoin-addresses.html"
 
 # Simple in-memory cache
 _cache = {"data": None, "timestamp": None}
+_state_lock = threading.RLock()
+_diagnostics = {
+    "last_attempt_at": None,
+    "last_success_at": None,
+    "last_status": "unavailable",
+    "last_source": None,
+    "last_as_of": None,
+    "last_error_type": None,
+    "last_error_message_sanitized": None,
+    "last_http_status": None,
+    "elapsed_ms": None,
+    "target_url": BITINFOCHARTS_DISTRIBUTION_URL,
+    "cache_age_seconds": None,
+}
+
+
+def _now_utc_iso() -> str:
+    return datetime.now(timezone.utc).isoformat()
+
+
+def _cache_age_seconds_unlocked() -> Optional[int]:
+    timestamp = _cache.get("timestamp")
+    if isinstance(timestamp, datetime):
+        return max(0, int((datetime.now() - timestamp).total_seconds()))
+    return None
+
+
+def _set_diagnostics(**updates) -> Dict[str, object]:
+    with _state_lock:
+        _diagnostics.update(updates)
+        _diagnostics["target_url"] = BITINFOCHARTS_DISTRIBUTION_URL
+        _diagnostics["cache_age_seconds"] = _cache_age_seconds_unlocked()
+        return dict(_diagnostics)
+
+
+def _sanitize_scrape_error(exc: Exception, http_status: Optional[int]) -> tuple[str, str]:
+    if isinstance(exc, requests.exceptions.Timeout):
+        return "Timeout", "Request timed out while contacting BitInfoCharts."
+    if isinstance(exc, requests.exceptions.ConnectionError):
+        return "ConnectionError", "Could not connect to BitInfoCharts."
+    if isinstance(exc, requests.exceptions.HTTPError):
+        status = http_status or getattr(getattr(exc, "response", None), "status_code", None)
+        if status:
+            return "HTTPError", f"BitInfoCharts returned HTTP {status}."
+        return "HTTPError", "BitInfoCharts returned an HTTP error."
+    if isinstance(exc, requests.exceptions.RequestException):
+        return exc.__class__.__name__, "BitInfoCharts request failed."
+
+    message = str(exc)
+    if isinstance(exc, ValueError):
+        if "No tables found" in message:
+            return "ParseError", "BitInfoCharts HTML did not contain readable tables."
+        if "Unexpected table structure" in message:
+            return "ParseError", "BitInfoCharts table structure did not match expected columns."
+        if "Failed to parse any" in message:
+            return "ParseError", "BitInfoCharts table was present but no valid distribution rows were parsed."
+        return "ValueError", "BitInfoCharts distribution data could not be parsed."
+
+    return exc.__class__.__name__, "Live BitInfoCharts fetch failed."
+
+
+def _record_scrape_failure(
+    exc: Exception,
+    *,
+    attempt_at: Optional[str],
+    elapsed_ms: Optional[int],
+    http_status: Optional[int],
+) -> None:
+    error_type, sanitized_message = _sanitize_scrape_error(exc, http_status)
+    _set_diagnostics(
+        last_attempt_at=attempt_at,
+        last_status="unavailable",
+        last_source="bitinfocharts",
+        last_error_type=error_type,
+        last_error_message_sanitized=sanitized_message,
+        last_http_status=http_status,
+        elapsed_ms=elapsed_ms,
+    )
+
+
+def _record_status(
+    *,
+    status: str,
+    source: str,
+    as_of: Optional[str],
+    elapsed_ms: Optional[int] = None,
+    http_status: Optional[int] = None,
+    attempted_at: Optional[str] = None,
+    clear_error: bool = False,
+) -> None:
+    updates = {
+        "last_status": status,
+        "last_source": source,
+        "last_as_of": as_of,
+    }
+    if http_status is not None:
+        updates["last_http_status"] = http_status
+    if elapsed_ms is not None:
+        updates["elapsed_ms"] = elapsed_ms
+    if attempted_at is not None:
+        updates["last_attempt_at"] = attempted_at
+    if status == "live":
+        updates["last_success_at"] = as_of or _now_utc_iso()
+    if clear_error:
+        updates["last_error_type"] = None
+        updates["last_error_message_sanitized"] = None
+        if http_status is None:
+            updates["last_http_status"] = None
+    _set_diagnostics(**updates)
+
+
+def get_distribution_diagnostics() -> Dict[str, object]:
+    """Return a copy of current BitInfoCharts scrape diagnostics."""
+    with _state_lock:
+        snapshot = dict(_diagnostics)
+        snapshot["target_url"] = BITINFOCHARTS_DISTRIBUTION_URL
+        snapshot["cache_age_seconds"] = _cache_age_seconds_unlocked()
+        return snapshot
 
 
 def parse_tier_range(tier_str: str) -> Optional[tuple[float, float]]:
@@ -147,10 +268,11 @@ def _load_static_distribution() -> List[Dict[str, str]]:
 
 
 def _cache_as_of() -> Optional[str]:
-    timestamp = _cache.get("timestamp")
-    if isinstance(timestamp, datetime):
-        return timestamp.isoformat()
-    return None
+    with _state_lock:
+        timestamp = _cache.get("timestamp")
+        if isinstance(timestamp, datetime):
+            return timestamp.isoformat()
+        return None
 
 
 def fetch_distribution_with_status(
@@ -161,15 +283,27 @@ def fetch_distribution_with_status(
     """
     Fetch distribution data with provenance for callers that need to label stale data.
     """
-    if use_cache and _cache["data"] is not None and _cache["timestamp"] is not None:
-        age = datetime.now() - _cache["timestamp"]
+    with _state_lock:
+        cached_data = _cache["data"]
+        cached_timestamp = _cache["timestamp"]
+
+    if use_cache and cached_data is not None and cached_timestamp is not None:
+        age = datetime.now() - cached_timestamp
         if age < timedelta(hours=24):
             logger.info(f"Using cached distribution data (age: {age})")
+            as_of = _cache_as_of()
+            _record_status(
+                status="cached",
+                source="bitinfocharts_cache",
+                as_of=as_of,
+                elapsed_ms=0,
+                http_status=None,
+            )
             return {
-                "data": _cache["data"],
+                "data": cached_data,
                 "data_status": "cached",
                 "source": "bitinfocharts_cache",
-                "as_of": _cache_as_of(),
+                "as_of": as_of,
             }
 
     try:
@@ -185,20 +319,35 @@ def fetch_distribution_with_status(
             "as_of": _cache_as_of(),
         }
     except ValueError:
-        if allow_stale_cache and _cache["data"] is not None:
+        with _state_lock:
+            cached_data = _cache["data"]
+            cached_timestamp = _cache["timestamp"]
+
+        if allow_stale_cache and cached_data is not None:
             age = (
-                datetime.now() - _cache["timestamp"]
-                if _cache["timestamp"]
+                datetime.now() - cached_timestamp
+                if cached_timestamp
                 else timedelta(days=999)
             )
             logger.warning(f"Using stale cached distribution data (age: {age})")
+            as_of = _cache_as_of()
+            _record_status(
+                status="stale",
+                source="bitinfocharts_cache",
+                as_of=as_of,
+            )
             return {
-                "data": _cache["data"],
+                "data": cached_data,
                 "data_status": "stale",
                 "source": "bitinfocharts_cache",
-                "as_of": _cache_as_of(),
+                "as_of": as_of,
             }
         if allow_static_fallback:
+            _record_status(
+                status="static",
+                source="bundled_static",
+                as_of=None,
+            )
             return {
                 "data": _load_static_distribution(),
                 "data_status": "static",
@@ -232,17 +381,32 @@ def fetch_distribution(
         ValueError: If fetching fails and no cache exists
     """
     # Check cache
-    if use_cache and _cache["data"] is not None and _cache["timestamp"] is not None:
-        age = datetime.now() - _cache["timestamp"]
+    with _state_lock:
+        cached_data = _cache["data"]
+        cached_timestamp = _cache["timestamp"]
+
+    if use_cache and cached_data is not None and cached_timestamp is not None:
+        age = datetime.now() - cached_timestamp
         if age < timedelta(hours=24):
             logger.info(f"Using cached distribution data (age: {age})")
-            return _cache["data"]
+            _record_status(
+                status="cached",
+                source="bitinfocharts_cache",
+                as_of=_cache_as_of(),
+                elapsed_ms=0,
+                http_status=None,
+            )
+            return cached_data
 
+    attempt_at = _now_utc_iso()
+    started = time.perf_counter()
+    http_status: Optional[int] = None
+    diagnostics_recorded = False
     try:
         logger.info("Fetching live distribution data from BitInfoCharts...")
 
         # Fetch tables from the page
-        url = "https://bitinfocharts.com/top-100-richest-bitcoin-addresses.html"
+        url = BITINFOCHARTS_DISTRIBUTION_URL
         
         # Try to fetch live data with a short timeout
         try:
@@ -251,26 +415,60 @@ def fetch_distribution(
                 "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
             }
             response = requests.get(url, headers=headers, timeout=5)
+            http_status = getattr(response, "status_code", None)
             response.raise_for_status()
             tables = pd.read_html(io.StringIO(response.text))
         except Exception as e:
             logger.warning(f"Failed to scrape live distribution data: {e}")
+            elapsed_ms = int((time.perf_counter() - started) * 1000)
+            _record_scrape_failure(
+                e,
+                attempt_at=attempt_at,
+                elapsed_ms=elapsed_ms,
+                http_status=http_status,
+            )
+            diagnostics_recorded = True
             if allow_static_fallback:
                 logger.warning("Using bundled static distribution fallback by explicit request.")
+                _record_status(
+                    status="static",
+                    source="bundled_static",
+                    as_of=None,
+                    elapsed_ms=elapsed_ms,
+                    http_status=http_status,
+                )
                 return _load_static_distribution()
             raise
 
         if not tables:
-            raise ValueError("No tables found on page")
+            diagnostics_recorded = True
+            elapsed_ms = int((time.perf_counter() - started) * 1000)
+            exc = ValueError("No tables found on page")
+            _record_scrape_failure(
+                exc,
+                attempt_at=attempt_at,
+                elapsed_ms=elapsed_ms,
+                http_status=http_status,
+            )
+            raise exc
 
         # The first table contains the distribution data
         df = tables[0]
 
         # Expected columns: ['Balance, BTC', 'Addresses', '% Addresses (Total)', 'BTC', 'USD', '% BTC (Total)']
         if "% Addresses (Total)" not in df.columns or "Balance, BTC" not in df.columns:
-            raise ValueError(
+            diagnostics_recorded = True
+            elapsed_ms = int((time.perf_counter() - started) * 1000)
+            exc = ValueError(
                 f"Unexpected table structure. Columns: {df.columns.tolist()}"
             )
+            _record_scrape_failure(
+                exc,
+                attempt_at=attempt_at,
+                elapsed_ms=elapsed_ms,
+                http_status=http_status,
+            )
+            raise exc
 
         # Parse the data
         result = []
@@ -297,30 +495,74 @@ def fetch_distribution(
             })
 
         if not result:
-            raise ValueError("Failed to parse any distribution data")
+            diagnostics_recorded = True
+            elapsed_ms = int((time.perf_counter() - started) * 1000)
+            exc = ValueError("Failed to parse any distribution data")
+            _record_scrape_failure(
+                exc,
+                attempt_at=attempt_at,
+                elapsed_ms=elapsed_ms,
+                http_status=http_status,
+            )
+            raise exc
 
         # Update cache
-        _cache["data"] = result
-        _cache["timestamp"] = datetime.now()
+        with _state_lock:
+            _cache["data"] = result
+            _cache["timestamp"] = datetime.now()
+
+        as_of = _cache_as_of()
+        elapsed_ms = int((time.perf_counter() - started) * 1000)
+        _record_status(
+            status="live",
+            source="bitinfocharts",
+            as_of=as_of,
+            elapsed_ms=elapsed_ms,
+            http_status=http_status,
+            attempted_at=attempt_at,
+            clear_error=True,
+        )
 
         logger.info(f"Successfully fetched {len(result)} distribution tiers")
         return result
 
     except Exception as e:
         logger.error(f"Failed to fetch distribution data: {e}")
+        if not diagnostics_recorded:
+            elapsed_ms = int((time.perf_counter() - started) * 1000)
+            _record_scrape_failure(
+                e,
+                attempt_at=attempt_at,
+                elapsed_ms=elapsed_ms,
+                http_status=http_status,
+            )
 
         # Use stale cache only when the caller explicitly allows it.
-        if allow_stale_cache and _cache["data"] is not None:
+        with _state_lock:
+            cached_data = _cache["data"]
+            cached_timestamp = _cache["timestamp"]
+
+        if allow_stale_cache and cached_data is not None:
             age = (
-                datetime.now() - _cache["timestamp"]
-                if _cache["timestamp"]
+                datetime.now() - cached_timestamp
+                if cached_timestamp
                 else timedelta(days=999)
             )
             logger.warning(f"Using stale cached data (age: {age})")
-            return _cache["data"]
+            _record_status(
+                status="stale",
+                source="bitinfocharts_cache",
+                as_of=_cache_as_of(),
+            )
+            return cached_data
 
         if allow_static_fallback:
             logger.warning("Using bundled static distribution fallback by explicit request.")
+            _record_status(
+                status="static",
+                source="bundled_static",
+                as_of=None,
+            )
             return _load_static_distribution()
 
         # No cache available, must fail
@@ -330,5 +572,21 @@ def fetch_distribution(
 
 def clear_cache():
     """Clear the distribution cache (useful for testing)."""
-    _cache["data"] = None
-    _cache["timestamp"] = None
+    with _state_lock:
+        _cache["data"] = None
+        _cache["timestamp"] = None
+        _diagnostics.update(
+            {
+                "last_attempt_at": None,
+                "last_success_at": None,
+                "last_status": "unavailable",
+                "last_source": None,
+                "last_as_of": None,
+                "last_error_type": None,
+                "last_error_message_sanitized": None,
+                "last_http_status": None,
+                "elapsed_ms": None,
+                "target_url": BITINFOCHARTS_DISTRIBUTION_URL,
+                "cache_age_seconds": None,
+            }
+        )

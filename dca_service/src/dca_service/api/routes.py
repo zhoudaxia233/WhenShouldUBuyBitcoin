@@ -10,7 +10,7 @@ from dca_service.api.schemas import TransactionRead, SimulationRequest, UnifiedT
 from dca_service.services.binance_client import BinanceClient
 from dca_service.services.security import decrypt_text
 from dca_service.core.logging import logger
-from dca_service.auth.dependencies import get_current_user
+from dca_service.auth.dependencies import get_current_user, get_current_admin_user
 
 router = APIRouter()
 _static_generation_process = None
@@ -496,7 +496,7 @@ This is a test message from your DCA Service."""
 
 @router.post("/static/regenerate")
 async def regenerate_static_files(
-    current_user: User = Depends(get_current_user)  # Authentication required
+    current_user: User = Depends(get_current_admin_user)
 ):
     """
     Manually trigger regeneration of static files (charts, data, etc.).
@@ -559,7 +559,7 @@ async def regenerate_static_files(
 
 @router.get("/static/regenerate/status")
 async def regenerate_static_files_status(
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_admin_user)
 ):
     """
     Check current static regeneration task status.

@@ -16,6 +16,7 @@ from dca_service.api import (
     wallet_api,
     stats_api,
     auth_api,
+    admin_api,
 )
 from starlette.middleware.sessions import SessionMiddleware
 from dca_service.scheduler import scheduler
@@ -23,7 +24,7 @@ from sqlmodel import Session, select
 from dca_service.models import DCAStrategy
 from dca_service.database import engine
 from dca_service.models import User
-from dca_service.auth.dependencies import get_current_user
+from dca_service.auth.dependencies import get_current_user, get_current_admin_user
 
 from dca_service.core.logging import logger
 from fastapi.responses import RedirectResponse
@@ -108,6 +109,7 @@ app.include_router(email_settings_api.router, prefix=settings.API_V1_STR)
 app.include_router(summary_api_settings_api.router, prefix=settings.API_V1_STR)
 app.include_router(stats_api.router, prefix=settings.API_V1_STR)
 app.include_router(auth_api.router, prefix=settings.API_V1_STR)
+app.include_router(admin_api.router, prefix=settings.API_V1_STR)
 
 # SSE endpoint for real-time updates
 from dca_service.sse import sse_manager
@@ -176,6 +178,17 @@ def read_stats_page(request: Request, user: User = Depends(get_current_user)):
     return templates.TemplateResponse(
         request=request,
         name="stats.html",
+        context=build_template_context(user=user),
+    )
+
+@app.get("/admin/data-sources")
+def read_admin_data_sources_page(
+    request: Request,
+    user: User = Depends(get_current_admin_user),
+):
+    return templates.TemplateResponse(
+        request=request,
+        name="admin_data_sources.html",
         context=build_template_context(user=user),
     )
 

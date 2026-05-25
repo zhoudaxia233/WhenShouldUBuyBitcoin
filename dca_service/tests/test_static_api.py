@@ -4,6 +4,8 @@ Tests for manual static file generation API endpoint
 import pytest
 from unittest.mock import patch, MagicMock
 
+from dca_service.auth.dependencies import get_current_user
+from dca_service.main import app
 from dca_service.models import User
 
 
@@ -73,3 +75,17 @@ class TestStaticGenerationAPI:
         assert data["success"] is False
         assert "error" in data
 
+    def test_regenerate_endpoint_rejects_non_admin(self, client):
+        """Static regeneration can expose server logs, so it must be admin-only."""
+        app.dependency_overrides[get_current_user] = lambda: User(
+            email="regular@example.com",
+            password_hash="test",
+            is_active=True,
+            is_admin=False,
+        )
+
+        response = client.post("/api/static/regenerate")
+        status_response = client.get("/api/static/regenerate/status")
+
+        assert response.status_code == 403
+        assert status_response.status_code == 403
