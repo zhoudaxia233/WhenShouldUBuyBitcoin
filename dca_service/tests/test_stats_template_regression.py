@@ -232,6 +232,17 @@ def test_distribution_table_has_rank_column_and_bar_renderer():
     assert 'class="rank-bar"' in html
 
 
+def test_distribution_header_does_not_show_app_version_badge():
+    html = _load_stats_template()
+    header_start = html.index('<div class="dashboard-panel stats-distribution-card">')
+    header_end = html.index('<div class="card-body p-0">', header_start)
+    distribution_header = html[header_start:header_end]
+
+    assert "Global Wealth Distribution" in distribution_header
+    assert "version-badge" not in distribution_header
+    assert 'class="stats-footer-version"' in html
+
+
 def test_trading_style_uses_row_based_layout():
     html = _load_stats_template()
 
@@ -246,3 +257,13 @@ def test_stats_uses_only_inline_version_badge_to_avoid_fixed_overlap():
 
     assert 'class="version-badge position-static m-0"' in html
     assert html.count('class="version-badge') == 1
+
+
+def test_distribution_current_row_highlight_is_reapplied_after_percentile_loads():
+    html = _load_stats_template()
+
+    assert "let latestPercentileDisplay = '';" in html
+    assert "function applyCurrentDistributionHighlight()" in html
+    assert "applyCurrentDistributionHighlight();" in html
+    assert "tr.dataset.percentile = String(row.percentile || '').trim();" in html
+    assert "row.classList.toggle('current-rank-row', row.dataset.percentile === currentPercentile);" in html
