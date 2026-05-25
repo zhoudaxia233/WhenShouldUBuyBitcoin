@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DCA Dashboard</title>
+    <title>{{ project_name }} Dashboard</title>
     <script>
         (function () {
             const savedTheme = localStorage.getItem('dca_theme');
@@ -20,13 +20,56 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/notyf@3.10.0/notyf.min.css">
     <style>
+        :root {
+            --dashboard-bg: #fffaf4;
+            --dashboard-card-bg: rgba(255, 255, 255, 0.94);
+            --dashboard-card-bg-solid: #ffffff;
+            --dashboard-text: #15171c;
+            --dashboard-muted: #686f7c;
+            --dashboard-border: #f0dfc9;
+            --dashboard-border-strong: #e7c7a2;
+            --dashboard-accent: #ff8a00;
+            --dashboard-accent-strong: #f97316;
+            --dashboard-accent-soft: rgba(255, 138, 0, 0.12);
+            --dashboard-accent-softer: rgba(255, 138, 0, 0.06);
+            --dashboard-success: #16a34a;
+            --dashboard-danger: #dc2626;
+            --dashboard-shadow: 0 18px 55px rgba(130, 84, 33, 0.09);
+            --dashboard-ring-track: #ece7df;
+        }
+        html[data-bs-theme="dark"] {
+            --dashboard-bg: #12100d;
+            --dashboard-card-bg: #181512;
+            --dashboard-card-bg-solid: #181512;
+            --dashboard-text: #f4efe8;
+            --dashboard-muted: #b8aca0;
+            --dashboard-border: #352a1f;
+            --dashboard-border-strong: #5a3d22;
+            --dashboard-accent-soft: rgba(255, 138, 0, 0.16);
+            --dashboard-accent-softer: rgba(255, 138, 0, 0.08);
+            --dashboard-shadow: 0 24px 70px rgba(0, 0, 0, 0.36);
+            --dashboard-ring-track: #2f2923;
+        }
         body {
-            padding-top: 20px;
-            background-color: #f8f9fa;
+            min-height: 100vh;
+            padding: 24px 0 32px;
+            background:
+                radial-gradient(circle at 14% 0%, var(--dashboard-accent-softer), transparent 28%),
+                var(--dashboard-bg);
+            color: var(--dashboard-text);
+            font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
             transition: background-color 0.2s ease, color 0.2s ease;
         }
-        .container { max-width: 1200px; }
-        .status-badge { font-size: 0.9em; }
+        .dashboard-shell {
+            max-width: 1220px;
+        }
+        .status-badge {
+            border-radius: 7px;
+            font-size: 0.78rem;
+            font-weight: 700;
+            letter-spacing: 0.02em;
+            padding: 0.42rem 0.58rem;
+        }
         /* Ensure tooltips are visible */
         [title] {
             cursor: help;
@@ -42,12 +85,47 @@
             width: 20px;
             margin-right: 8px;
         }
+        .dashboard-header {
+            margin-bottom: 24px;
+        }
+        .brand-lockup {
+            display: inline-flex;
+            align-items: center;
+            flex: 0 0 auto;
+            gap: 14px;
+            color: var(--dashboard-text);
+            text-decoration: none;
+        }
+        .brand-mark {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--dashboard-accent);
+            color: #fff;
+            font-size: 1.55rem;
+            font-weight: 800;
+            line-height: 1;
+            box-shadow: 0 10px 26px rgba(255, 138, 0, 0.28);
+        }
+        .brand-title {
+            font-size: clamp(1.45rem, 2.2vw, 2rem);
+            font-weight: 750;
+            letter-spacing: -0.02em;
+            white-space: nowrap;
+        }
         .nav-actions {
             align-items: center;
         }
+        .dashboard-nav {
+            gap: 0.55rem;
+            flex-wrap: nowrap !important;
+        }
         .nav-actions > .btn,
         .nav-actions > .dropdown > .btn {
-            min-height: 44px;
+            min-height: 42px;
             display: inline-flex;
             align-items: center;
         }
@@ -55,32 +133,296 @@
         .nav-actions > .dropdown > .btn .bi {
             margin-right: 0.45rem;
         }
+        .dashboard-nav-btn {
+            border-color: transparent;
+            border-radius: 10px;
+            color: var(--dashboard-muted);
+            background: transparent;
+            font-size: 0.94rem;
+            font-weight: 650;
+            padding: 0.55rem 0.9rem;
+            transition: all 0.18s ease;
+        }
+        .dashboard-nav-btn:hover,
+        .dashboard-nav-btn:focus {
+            border-color: var(--dashboard-border);
+            background: var(--dashboard-card-bg);
+            color: var(--dashboard-text);
+        }
+        .dashboard-nav-btn.active,
+        .dashboard-nav-btn.nav-accent {
+            border-color: var(--dashboard-border-strong);
+            background: var(--dashboard-accent-softer);
+            color: var(--dashboard-accent-strong);
+        }
+        .dashboard-nav-btn.active {
+            box-shadow: inset 0 0 0 1px rgba(255, 138, 0, 0.08);
+        }
         .theme-toggle-btn {
-            width: 46px;
-            height: 46px;
+            width: 42px;
+            height: 42px;
             padding: 0;
-            border: 1px solid #d8dde6;
-            border-radius: 14px;
-            background: #eef1f5;
+            border: 1px solid var(--dashboard-border);
+            border-radius: 50%;
+            background: var(--dashboard-card-bg);
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            color: #3f4857;
+            color: var(--dashboard-muted);
             transition: all 0.2s ease;
         }
         .theme-toggle-btn:hover {
-            background: #e6eaf0;
-            color: #2f3745;
-            border-color: #cbd2dd;
+            background: var(--dashboard-accent-softer);
+            color: var(--dashboard-accent-strong);
+            border-color: var(--dashboard-border-strong);
         }
         .theme-toggle-btn .theme-icon {
-            width: 22px;
-            height: 22px;
+            width: 21px;
+            height: 21px;
             stroke: currentColor;
             fill: none;
             stroke-width: 2.2;
             stroke-linecap: round;
             stroke-linejoin: round;
+        }
+        .user-chip {
+            min-height: 42px;
+            padding: 0 0 0 1rem;
+            flex: 0 0 auto;
+        }
+        .logout-btn {
+            border-color: var(--dashboard-border-strong);
+            border-radius: 10px;
+            color: var(--dashboard-accent-strong);
+            background: var(--dashboard-accent-softer);
+            font-weight: 650;
+        }
+        .logout-btn:hover {
+            background: var(--dashboard-accent);
+            border-color: var(--dashboard-accent);
+            color: #fff;
+        }
+        .dashboard-panel,
+        .metric-card,
+        .refresh-panel {
+            border: 1px solid var(--dashboard-border);
+            border-radius: 10px;
+            background: var(--dashboard-card-bg);
+            box-shadow: var(--dashboard-shadow);
+        }
+        .dashboard-panel {
+            overflow: hidden;
+        }
+        .dashboard-panel-header,
+        .card-header.dashboard-panel-header,
+        .card-footer.dashboard-panel-footer {
+            border-color: var(--dashboard-border);
+            background: color-mix(in srgb, var(--dashboard-card-bg-solid) 88%, transparent) !important;
+            padding: 1.4rem 1.75rem;
+        }
+        .dashboard-panel-title {
+            font-size: 1.22rem;
+            font-weight: 760;
+            letter-spacing: -0.01em;
+            color: var(--dashboard-text);
+        }
+        .refresh-panel {
+            padding: 0.9rem 1rem;
+        }
+        .refresh-panel strong {
+            color: var(--dashboard-text);
+        }
+        .btn {
+            font-weight: 650;
+        }
+        .btn-primary,
+        .btn-success {
+            border-color: var(--dashboard-accent);
+            background: var(--dashboard-accent);
+            color: #fff;
+        }
+        .btn-primary:hover,
+        .btn-success:hover {
+            border-color: var(--dashboard-accent-strong);
+            background: var(--dashboard-accent-strong);
+            color: #fff;
+        }
+        .btn-outline-primary,
+        .btn-outline-info,
+        .btn-outline-success,
+        .btn-outline-danger {
+            border-color: var(--dashboard-border-strong);
+            color: var(--dashboard-accent-strong);
+            background: var(--dashboard-accent-softer);
+        }
+        .btn-outline-primary:hover,
+        .btn-outline-info:hover,
+        .btn-outline-success:hover,
+        .btn-outline-danger:hover {
+            border-color: var(--dashboard-accent);
+            background: var(--dashboard-accent);
+            color: #fff;
+        }
+        .wallet-card-grid {
+            display: grid;
+            grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.85fr) minmax(0, 1.05fr);
+            gap: 1rem;
+        }
+        .metric-card {
+            min-height: 190px;
+            position: relative;
+            overflow: hidden;
+            padding: 1.55rem 1.65rem;
+        }
+        .metric-card-primary::after {
+            content: "₿";
+            position: absolute;
+            right: 20px;
+            bottom: -34px;
+            color: var(--dashboard-accent-soft);
+            font-size: 8rem;
+            font-weight: 800;
+            line-height: 1;
+            pointer-events: none;
+        }
+        .metric-label,
+        .strategy-label,
+        .quick-stat-label {
+            color: var(--dashboard-muted);
+            font-size: 0.92rem;
+            font-weight: 600;
+        }
+        .metric-value {
+            color: var(--dashboard-text);
+            font-size: clamp(1.65rem, 2.4vw, 2.35rem);
+            font-weight: 760;
+            letter-spacing: -0.025em;
+            line-height: 1.05;
+            word-break: break-word;
+        }
+        .metric-subtext {
+            color: var(--dashboard-muted);
+            font-size: 0.94rem;
+        }
+        .progress-metric-card {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto;
+            align-items: center;
+            gap: 1rem;
+        }
+        .progress-ring {
+            --progress-value: 0%;
+            width: 88px;
+            height: 88px;
+            border-radius: 50%;
+            background: conic-gradient(var(--dashboard-accent) var(--progress-value), var(--dashboard-ring-track) 0);
+            position: relative;
+            flex: none;
+        }
+        .progress-ring::after {
+            content: "";
+            position: absolute;
+            inset: 12px;
+            border-radius: 50%;
+            background: var(--dashboard-card-bg-solid);
+            box-shadow: inset 0 0 0 1px var(--dashboard-border);
+        }
+        .dashboard-accent-progress {
+            height: 7px;
+            max-width: 210px;
+            margin-top: 1.35rem;
+            background: transparent;
+        }
+        .dashboard-accent-progress .progress-bar {
+            border-radius: 999px;
+            background: var(--dashboard-accent) !important;
+        }
+        .strategy-metric-grid {
+            display: grid;
+            grid-template-columns: repeat(5, minmax(0, 1fr));
+            border: 1px solid var(--dashboard-border);
+            border-radius: 10px;
+            background: var(--dashboard-card-bg-solid);
+            overflow: hidden;
+        }
+        .strategy-metric {
+            min-height: 128px;
+            padding: 1.35rem 1.45rem;
+            border-right: 1px solid var(--dashboard-border);
+        }
+        .strategy-metric:last-child {
+            border-right: 0;
+        }
+        .strategy-value {
+            color: var(--dashboard-text);
+            font-size: 1.35rem;
+            font-weight: 760;
+            letter-spacing: -0.015em;
+            line-height: 1.2;
+        }
+        .strategy-action {
+            color: var(--dashboard-accent-strong) !important;
+        }
+        #scheduleDisplay,
+        #execModeBadge,
+        #dataSourceBadge {
+            border: 1px solid var(--dashboard-border);
+            border-radius: 7px;
+            background: var(--dashboard-card-bg-solid) !important;
+            color: var(--dashboard-text) !important;
+            font-size: 0.85rem;
+            font-weight: 650;
+            padding: 0.46rem 0.65rem;
+        }
+        #scheduleDisplay {
+            border-color: var(--dashboard-accent);
+            background: var(--dashboard-accent) !important;
+            color: #fff !important;
+        }
+        .strategy-detail-grid {
+            display: grid;
+            grid-template-columns: minmax(0, 1.1fr) minmax(280px, 0.9fr);
+            gap: 1rem;
+        }
+        .dashboard-info-panel {
+            border: 1px solid var(--dashboard-border) !important;
+            border-radius: 10px;
+            background: var(--dashboard-card-bg-solid) !important;
+            color: var(--dashboard-text);
+            padding: 1.3rem 1.5rem;
+        }
+        .table {
+            --bs-table-bg: transparent;
+            --bs-table-color: var(--dashboard-text);
+            --bs-table-hover-bg: var(--dashboard-accent-softer);
+            border-color: var(--dashboard-border);
+        }
+        .table > :not(caption) > * > * {
+            padding: 0.86rem 1rem;
+            border-bottom-color: var(--dashboard-border);
+        }
+        .table-light {
+            --bs-table-bg: var(--dashboard-card-bg-solid);
+            --bs-table-color: var(--dashboard-muted);
+            --bs-table-border-color: var(--dashboard-border);
+            text-transform: none;
+            font-size: 0.88rem;
+        }
+        .version-badge {
+            position: fixed;
+            right: 12px;
+            bottom: 10px;
+            z-index: 9999;
+            font-size: 12px;
+            color: var(--dashboard-muted);
+            background: var(--dashboard-card-bg);
+            border: 1px solid var(--dashboard-border);
+            border-radius: 999px;
+            padding: 3px 10px;
+            box-shadow: var(--dashboard-shadow);
+        }
+        .text-warning {
+            color: var(--dashboard-accent) !important;
         }
         /* Mobile optimization - hide button text on small screens, show only icons */
         @media (max-width: 576px) {
@@ -104,56 +446,86 @@
                 border-radius: 12px;
             }
         }
-
-        /* Dark mode overrides for custom light-only classes */
-        html[data-bs-theme="dark"] body {
-            background-color: #121820;
-            color: #e5e7eb;
+        @media (max-width: 992px) {
+            .wallet-card-grid,
+            .strategy-detail-grid {
+                grid-template-columns: 1fr;
+            }
+            .strategy-metric-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+            .strategy-metric:nth-child(2n) {
+                border-right: 0;
+            }
         }
-        html[data-bs-theme="dark"] .card {
-            border-color: #2f3a49;
-        }
-        html[data-bs-theme="dark"] .card-header.bg-white,
-        html[data-bs-theme="dark"] .card-footer.bg-white {
-            background-color: #1b2430 !important;
-            border-color: #2f3a49;
-        }
-        html[data-bs-theme="dark"] .table-light {
-            --bs-table-bg: #1b2430;
-            --bs-table-color: #e5e7eb;
-            --bs-table-border-color: #2f3a49;
-        }
-        html[data-bs-theme="dark"] .alert-light {
-            background-color: #1b2430;
-            border-color: #2f3a49;
-            color: #e5e7eb;
-        }
-        html[data-bs-theme="dark"] .text-muted {
-            color: #9ba7b7 !important;
-        }
-        html[data-bs-theme="dark"] .theme-toggle-btn {
-            border-color: #2f3a49;
-            background: #1b2430;
-            color: #d8deea;
-        }
-        html[data-bs-theme="dark"] .theme-toggle-btn:hover {
-            background: #233043;
-            color: #eef2f8;
-            border-color: #3a4a5f;
+        @media (max-width: 768px) {
+            body {
+                padding-top: 16px;
+            }
+            .dashboard-header {
+                margin-bottom: 18px;
+            }
+            .dashboard-nav {
+                width: 100%;
+                justify-content: flex-start !important;
+                overflow-x: auto;
+                flex-wrap: nowrap !important;
+                padding-bottom: 2px;
+            }
+            .wallet-card-grid {
+                grid-template-columns: 1fr;
+            }
+            .metric-card {
+                min-height: auto;
+                padding: 1.25rem;
+            }
+            .progress-metric-card {
+                grid-template-columns: minmax(0, 1fr) 76px;
+            }
+            .progress-ring {
+                width: 76px;
+                height: 76px;
+            }
+            .progress-ring::after {
+                inset: 10px;
+            }
+            .strategy-metric-grid {
+                grid-template-columns: 1fr;
+            }
+            .strategy-metric,
+            .strategy-metric:nth-child(2n) {
+                border-right: 0;
+                border-bottom: 1px solid var(--dashboard-border);
+            }
+            .strategy-metric:last-child {
+                border-bottom: 0;
+            }
+            .dashboard-panel-header,
+            .card-header.dashboard-panel-header,
+            .card-footer.dashboard-panel-footer {
+                padding: 1.1rem 1.2rem;
+            }
+            .version-badge {
+                display: none;
+            }
         }
     </style>
 </head>
-<body>
-    <div class="container">
-        <header class="mb-3">
+<body class="dashboard-page">
+    <div class="container dashboard-shell">
+        <header class="dashboard-header">
             <div class="d-flex flex-column flex-md-row justify-content-between align-items-center gap-3">
-                <h1 class="mb-0">{{ project_name }}</h1>
+                <a href="/" class="brand-lockup" aria-label="DCA dashboard home">
+                    <span class="brand-mark" aria-hidden="true">₿</span>
+                    <span class="brand-title">{{ project_name }}</span>
+                </a>
                 <div class="d-flex flex-column flex-md-row align-items-center gap-3">
                     <!-- Navigation buttons -->
-                    <div class="nav-actions d-flex flex-wrap justify-content-center gap-2">
+                    <div class="nav-actions dashboard-nav d-flex flex-wrap justify-content-center">
+                        <a href="/" class="btn dashboard-nav-btn active" aria-current="page"><i class="bi bi-window-sidebar"></i> <span class="btn-text">Dashboard</span></a>
                         <!-- Settings Dropdown -->
                         <div class="dropdown">
-                            <button class="btn btn-outline-secondary dropdown-toggle" type="button" id="settingsDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                            <button class="btn dashboard-nav-btn dropdown-toggle" type="button" id="settingsDropdown" data-bs-toggle="dropdown" aria-expanded="false">
                                 <i class="bi bi-gear-fill"></i> <span class="btn-text">Settings</span>
                             </button>
                             <ul class="dropdown-menu" aria-labelledby="settingsDropdown">
@@ -170,18 +542,18 @@
                             </ul>
                         </div>
                         {% if user and user.is_admin %}
-                        <a href="/admin/data-sources" class="btn btn-outline-warning admin-diagnostics-link"><i class="bi bi-database-check"></i> <span class="btn-text">Diagnostics</span></a>
+                        <a href="/admin/data-sources" class="btn dashboard-nav-btn nav-accent admin-diagnostics-link"><i class="bi bi-database-check"></i> <span class="btn-text">Diagnostics</span></a>
                         {% endif %}
-                        <a href="/stats" class="btn btn-outline-secondary"><i class="bi bi-graph-up"></i> <span class="btn-text">Stats & Analytics</span></a>
-                        <a href="/analysis/" class="btn btn-outline-secondary" target="_blank">WSUB₿</a>
+                        <a href="/stats" class="btn dashboard-nav-btn"><i class="bi bi-graph-up"></i> <span class="btn-text">Analytics</span></a>
+                        <a href="/analysis/" class="btn dashboard-nav-btn" target="_blank"><i class="bi bi-journal-code"></i> <span class="btn-text">WSUB₿</span></a>
                         <button id="themeToggleBtn" type="button" class="btn text-nowrap theme-toggle-btn" aria-label="Toggle theme" title="Toggle theme"></button>
                     </div>
                     <!-- User section -->
                     {% if user %}
-                    <div class="d-flex align-items-center gap-2 border-start-md ps-md-3 mt-2 mt-md-0 pt-2 pt-md-0 border-top border-top-md-0">
+                    <div class="user-chip d-flex align-items-center gap-2 border-start-md ps-md-3 mt-2 mt-md-0 pt-2 pt-md-0 border-top border-top-md-0">
                         <span class="text-muted small">{{ user.email }}</span>
                         <form method="POST" action="/api/auth/logout" class="d-inline">
-                            <button type="submit" class="btn btn-sm btn-outline-danger">Logout</button>
+                            <button type="submit" class="btn btn-sm logout-btn">Logout</button>
                         </form>
                     </div>
                     {% endif %}
@@ -190,72 +562,69 @@
         </header>
 
         <!-- Global Refresh Status Bar -->
-        <div class="card shadow-sm mb-4">
-            <div class="card-body py-2">
-                <div class="d-flex justify-content-between align-items-center">
+        <div class="refresh-panel mb-4">
+            <div class="d-flex justify-content-between align-items-center gap-3">
                     <div class="text-muted small">
                         <strong>Last refresh:</strong> <span id="globalRefreshTime">Loading...</span>
                     </div>
                     <button id="globalRefreshBtn" class="btn btn-sm btn-outline-primary">
-                        🔄 Refresh Dashboard
+                        <i class="bi bi-arrow-clockwise"></i> <span class="btn-text">Refresh</span>
                     </button>
-                </div>
             </div>
         </div>
 
         <!-- Wallet Overview Section -->
-        <div class="card shadow-sm mb-4">
-            <div class="card-header bg-white">
-                <h5 class="mb-0">Wallet Overview</h5>
-            </div>
-            <div class="card-body">
+        <section class="wallet-overview-section mb-4" aria-label="Wallet overview">
                 <div id="walletError" class="alert alert-warning d-none">
                     Configure Binance API credentials to view hot wallet data.
                 </div>
                 <div id="walletContent">
-                    <div class="row text-center mb-3">
+                    <div class="wallet-card-grid">
                         <!-- Total BTC - Main Display -->
-                        <div class="col-md-4">
-                            <div class="text-muted small">Total BTC Balance</div>
-                            <div class="h3" id="totalBtc">--</div>
-                            <div class="small text-muted">
+                        <article class="metric-card metric-card-primary">
+                            <div class="metric-label mb-3">Total BTC Balance</div>
+                            <div class="metric-value mb-3" id="totalBtc">--</div>
+                            <div class="metric-subtext">
                                 <span id="hotBalance" title="Binance (Hot)">Hot: --</span> | 
                                 <span id="coldBalance" title="Cold Storage">Cold: --</span>
                             </div>
-                            <div class="mt-2">
+                            <div class="mt-4">
                                 <button class="btn btn-sm btn-outline-info" data-bs-toggle="modal" data-bs-target="#setColdWalletModal" title="Set your total cold wallet BTC balance">
-                                    ✏️ Set Cold Wallet
+                                    <i class="bi bi-wallet2"></i> Set Cold Wallet
                                 </button>
                             </div>
-                        </div>
+                        </article>
                         
                         <!-- Available USDC (Binance) -->
-                        <div class="col-md-3">
-                            <div class="text-muted small">Available USDC</div>
-                            <div class="h3" id="quoteBalance">--</div>
-                            <div class="small text-muted">Binance Balance</div>
-                        </div>
+                        <article class="metric-card">
+                            <div class="metric-label mb-4">Available USDC</div>
+                            <div class="metric-value mb-3" id="quoteBalance">--</div>
+                            <div class="metric-subtext">Binance Balance</div>
+                        </article>
                         
                         <!-- Target Progress -->
-                        <div class="col-md-4">
-                            <div class="text-muted small">Target Progress</div>
-                            <div class="h3" id="progressPercent">--%</div>
-                            <div class="text-muted small" id="targetAmount">Target: -- BTC</div>
-                        </div>
+                        <article class="metric-card progress-metric-card">
+                            <div>
+                                <div class="metric-label mb-4">Target Progress</div>
+                                <div class="metric-value mb-3" id="progressPercent">--%</div>
+                                <div class="metric-subtext" id="targetAmount">Target: -- BTC</div>
+                            </div>
+                            <div id="progressRing" class="progress-ring" aria-hidden="true"></div>
+                        </article>
                     </div>
                     
-                    <div class="progress" style="height: 20px;">
+                    <div class="progress dashboard-accent-progress">
                         <div id="progressBar" class="progress-bar bg-success" role="progressbar" style="width: 0%"></div>
                     </div>
+                    <div class="text-muted small mt-3">You're on track. Keep stacking sats.</div>
                 </div>
-            </div>
-        </div>
+        </section>
 
         <!-- DCA Control Section -->
-        <div class="card shadow-sm mb-4">
-            <div class="card-header bg-white d-flex justify-content-between align-items-center">
-                <h5 class="mb-0">DCA Preview & Control</h5>
-                <div>
+        <section class="card dashboard-panel mb-4">
+            <div class="card-header dashboard-panel-header d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-3">
+                <h5 class="dashboard-panel-title mb-0">DCA Strategy</h5>
+                <div class="d-flex flex-wrap gap-2">
                     <span id="execModeBadge" class="badge bg-secondary me-2">Mode: Loading...</span>
                     <span id="dataSourceBadge" class="badge bg-secondary me-2">Source: --</span>
                     <span id="scheduleDisplay" class="badge bg-info text-dark">Loading Schedule...</span>
@@ -265,44 +634,46 @@
                 <div id="metricsWarning" class="alert alert-danger d-none">
                     <strong>Warning:</strong> Metrics are stale or unavailable. DCA execution disabled.
                 </div>
-                <div class="row text-center mb-3">
-                    <div class="col-md-2">
-                        <div class="text-muted small">AHR999 Index</div>
-                        <div class="h4" id="previewAhr">--</div>
+                <div class="strategy-metric-grid mb-4">
+                    <div class="strategy-metric">
+                        <div class="strategy-label mb-3">AHR999 Index</div>
+                        <div class="strategy-value" id="previewAhr">--</div>
                     </div>
-                    <div class="col-md-2">
-                        <div class="text-muted small">Current Price</div>
-                        <div class="h4" id="previewPrice">--</div>
+                    <div class="strategy-metric">
+                        <div class="strategy-label mb-3">Current Price</div>
+                        <div class="strategy-value" id="previewPrice">--</div>
                     </div>
-                    <div class="col-md-2">
-                        <div class="text-muted small">Strategy Band</div>
-                        <div class="h4" id="previewBand">--</div>
+                    <div class="strategy-metric">
+                        <div class="strategy-label mb-3">Strategy Band</div>
+                        <div class="strategy-value" id="previewBand">--</div>
                     </div>
-                    <div class="col-md-3">
-                        <div class="text-muted small">Remaining Budget</div>
-                        <div class="h4" id="remainingBudget" style="cursor: help;" data-bs-toggle="tooltip" data-bs-placement="top" title="Loading budget information...">--</div>
+                    <div class="strategy-metric">
+                        <div class="strategy-label mb-3">Remaining Budget</div>
+                        <div class="strategy-value" id="remainingBudget" style="cursor: help;" data-bs-toggle="tooltip" data-bs-placement="top" title="Loading budget information...">--</div>
                     </div>
-                    <div class="col-md-3">
-                        <div class="text-muted small">Suggested Action</div>
-                        <div class="h4 text-primary" id="previewAction">--</div>
+                    <div class="strategy-metric">
+                        <div class="strategy-label mb-3">Suggested Action</div>
+                        <div class="strategy-value strategy-action" id="previewAction">--</div>
                     </div>
                 </div>
                 
-                <div class="alert alert-light border mb-3" id="previewReasonBox">
-                    <div>
-                        <strong>Status:</strong> <span id="previewReason" style="white-space: pre-line; font-family: monospace; font-size: 0.9em;">Loading...</span>
+                <div class="strategy-detail-grid mb-3">
+                    <div class="dashboard-info-panel" id="previewReasonBox">
+                        <div>
+                            <strong>Status:</strong> <span id="previewReason" style="white-space: pre-line; font-family: monospace; font-size: 0.9em;">Loading...</span>
+                        </div>
+                    </div>
+                    <div class="dashboard-info-panel" id="bottomingSignalBox" style="display: none;">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div><strong>Bottoming Checklist</strong></div>
+                            <div class="small text-muted" id="bottomingSignalDate">--</div>
+                        </div>
+                        <div class="small mt-1" id="bottomingSignalStatus">Unavailable</div>
+                        <div class="small text-muted mt-1" id="bottomingSignalMetrics"></div>
+                        <div class="small text-muted mt-1" id="bottomingSignalMacro"></div>
                     </div>
                 </div>
-                <div class="alert alert-secondary border mb-3" id="bottomingSignalBox" style="display: none;">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div><strong>Bottoming Checklist</strong></div>
-                        <div class="small text-muted" id="bottomingSignalDate">--</div>
-                    </div>
-                    <div class="small mt-1" id="bottomingSignalStatus">Unavailable</div>
-                    <div class="small text-muted mt-1" id="bottomingSignalMetrics"></div>
-                    <div class="small text-muted mt-1" id="bottomingSignalMacro"></div>
-                </div>
-                <div class="alert alert-info border mb-3">
+                <div class="dashboard-info-panel mb-3">
                     <div class="d-flex align-items-center justify-content-between mb-2">
                         <div class="small"><strong>Drawdown Context</strong></div>
                         <div class="btn-group btn-group-sm" role="group" aria-label="Drawdown Mode">
@@ -320,13 +691,13 @@
                     </button>
                 </div>
             </div>
-        </div>
+        </section>
 
-        <div class="card shadow-sm mb-5">
-            <div class="card-header bg-white d-flex justify-content-between align-items-center">
-                <h5 class="mb-0">Transaction History</h5>
+        <section class="card dashboard-panel mb-5">
+            <div class="card-header dashboard-panel-header d-flex justify-content-between align-items-center">
+                <h5 class="dashboard-panel-title mb-0"><span class="text-warning me-2">₿</span>Transaction History</h5>
                 <button id="clearSimulatedBtn" class="btn btn-sm btn-outline-danger">
-                    Reset & Sync History
+                    <i class="bi bi-arrow-clockwise"></i> Reset & Sync History
                 </button>
             </div>
             <div class="card-body p-0">
@@ -350,7 +721,7 @@
                         </tbody>
                     </table>
                 </div>
-                <div class="card-footer bg-white">
+                <div class="card-footer dashboard-panel-footer">
                     <div class="d-flex justify-content-between align-items-center">
                         <button id="prevPageBtn" class="btn btn-sm btn-outline-secondary" disabled>← Previous</button>
                         <span id="pageInfo" class="text-muted small">Page 1 of 1</span>
@@ -358,7 +729,7 @@
                     </div>
                 </div>
             </div>
-        </div>
+        </section>
 
     </div>
     <script>
@@ -397,6 +768,7 @@
                 const progressEl = document.getElementById('progressPercent');
                 const targetEl = document.getElementById('targetAmount');
                 const progressBarEl = document.getElementById('progressBar');
+                const progressRingEl = document.getElementById('progressRing');
 
                 if (totalBtcEl && totalBtc !== null) totalBtcEl.textContent = `${totalBtc.toFixed(8)} BTC`;
                 if (hotEl && hotBtc !== null) hotEl.textContent = `Hot: ${hotBtc.toFixed(8)}`;
@@ -416,6 +788,7 @@
                         if (progressEl) progressEl.textContent = `${progress}%`;
                         if (targetEl) targetEl.textContent = `Target: ${target} BTC`;
                         if (progressBarEl) progressBarEl.style.width = `${progress}%`;
+                        if (progressRingEl) progressRingEl.style.setProperty('--progress-value', `${progress}%`);
                     }
                 }
             }
@@ -1301,7 +1674,7 @@
             if (globalBtn) {
                 globalBtn.addEventListener('click', async () => {
                     globalBtn.disabled = true;
-                    globalBtn.textContent = '🔄 Syncing Trades...';
+                    globalBtn.innerHTML = '<i class="bi bi-arrow-clockwise"></i> <span class="btn-text">Syncing</span>';
                     
                     try {
                         // 1. Trigger Sync
@@ -1313,7 +1686,7 @@
                         }
                         
                         // 2. Refresh Dashboard Data
-                        globalBtn.textContent = '🔄 Loading Data...';
+                        globalBtn.innerHTML = '<i class="bi bi-arrow-clockwise"></i> <span class="btn-text">Loading</span>';
                         await Promise.all([
                             loadTransactions(), // Reload list from DB (fast)
                             loadPreview(),
@@ -1325,7 +1698,7 @@
                         notyf.error('Failed to refresh dashboard');
                     } finally {
                         globalBtn.disabled = false;
-                        globalBtn.textContent = '🔄 Refresh Dashboard';
+                        globalBtn.innerHTML = '<i class="bi bi-arrow-clockwise"></i> <span class="btn-text">Refresh</span>';
                     }
                 });
             }
@@ -1648,6 +2021,10 @@
                 document.getElementById('progressPercent').textContent = progress + '%';
                 document.getElementById('targetAmount').textContent = `Target: ${target} BTC`;
                 document.getElementById('progressBar').style.width = progress + '%';
+                const progressRingEl = document.getElementById('progressRing');
+                if (progressRingEl) {
+                    progressRingEl.style.setProperty('--progress-value', progress + '%');
+                }
             }
         }
 
@@ -1909,7 +2286,7 @@
         // Load on start
         initializeDashboard();
     </script>
-    <div style="position: fixed; right: 10px; bottom: 8px; z-index: 9999; font-size: 12px; color: #6c757d; background: rgba(255,255,255,0.92); border: 1px solid #d9dee3; border-radius: 999px; padding: 3px 10px;">
+    <div class="version-badge">
         v{{ app_version }}{% if app_commit_sha %} ({{ app_commit_sha[:7] }}){% endif %}
     </div>
 </body>
