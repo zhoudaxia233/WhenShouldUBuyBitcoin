@@ -36,3 +36,12 @@ def test_endpoint_requires_authentication_redirects_to_login(
     response = unauth_client.get(endpoint, follow_redirects=False)
     assert response.status_code == 303
     assert response.headers["location"] == "/api/auth/login"
+
+
+def test_events_endpoint_stops_unauthenticated_sse_reconnects(
+    unauth_client: TestClient,
+):
+    response = unauth_client.get("/api/events", follow_redirects=False)
+
+    assert response.status_code == 204
+    assert "location" not in response.headers
