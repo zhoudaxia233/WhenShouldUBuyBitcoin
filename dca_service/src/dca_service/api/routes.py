@@ -1,12 +1,12 @@
 from typing import Any, Dict, List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlmodel import Session, select, col, delete
-from datetime import datetime, timezone
+from datetime import timezone
 from pathlib import Path
 
 from dca_service.database import get_session
 from dca_service.models import DCATransaction, BinanceCredentials, User
-from dca_service.api.schemas import TransactionRead, SimulationRequest, UnifiedTransaction
+from dca_service.api.schemas import TransactionRead, UnifiedTransaction
 from dca_service.services.binance_client import BinanceClient
 from dca_service.services.security import decrypt_text
 from dca_service.core.logging import logger
@@ -472,7 +472,7 @@ def test_email(current_user: User = Depends(get_current_user)):  # Authenticatio
     
     try:
         # Send test email
-        subject = "DCA Service Email Test"
+        subject = f"{settings.PROJECT_NAME} Email Test"
         body = f"""If you received this, email configuration works!
 
 Configuration Details:
@@ -482,7 +482,7 @@ Configuration Details:
 - To: {config['email_to']}
 - Source: {config['source']}
 
-This is a test message from your DCA Service."""
+This is a test message from {settings.PROJECT_NAME}."""
         
         send_email(subject, body)
         

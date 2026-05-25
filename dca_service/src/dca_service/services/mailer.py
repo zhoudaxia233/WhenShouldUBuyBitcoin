@@ -166,7 +166,7 @@ Common issues:
 4. No funds were spent in this failed attempt
 
 ---
-Bitcoin DCA Service
+{settings.PROJECT_NAME}
 Trade safely and HODL wisely!
 """
     
@@ -286,7 +286,7 @@ Portfolio Stats:
 Notes: {transaction.notes or 'None'}
 
 ---
-This is an automated notification from your DCA Service.
+This is an automated notification from {settings.PROJECT_NAME}.
 """
     
     send_email(subject, body)

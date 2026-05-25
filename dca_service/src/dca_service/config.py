@@ -51,7 +51,7 @@ class Settings(BaseSettings):
     METRICS_BACKEND: str = "realtime"  # "csv" or "realtime"
     METRICS_FALLBACK_TO_CSV: bool = True
     API_V1_STR: str = "/api"
-    PROJECT_NAME: str = "DCA Service"
+    PROJECT_NAME: str = "SatsFlow"
     APP_VERSION: str = _detect_app_version()
     APP_COMMIT_SHA: str = _detect_commit_sha()
     BINANCE_CRED_ENC_KEY: str = ""  # Required for saving credentials
