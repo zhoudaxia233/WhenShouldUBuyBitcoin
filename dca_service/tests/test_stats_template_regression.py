@@ -166,6 +166,8 @@ def test_trading_style_csv_export_ui_is_enabled():
     assert 'id="tradingStylePromptPreview"' not in html
     assert "function downloadTradingStyleCsv()" in html
     assert "/api/stats/trading-style.csv?language=${encodeURIComponent(tradingStyleLanguage)}" in html
+    assert "link.download = 'bitcoin-purchases.csv';" in html
+    assert "trading-style-analysis.csv" not in html
     assert "await fetch(url)" in html
     assert "if (!response.ok)" in html
     assert "URL.createObjectURL(blob)" in html
@@ -250,6 +252,20 @@ def test_trading_style_uses_row_based_layout():
     assert 'class="trading-style-row-icon"' in html
     assert 'class="trading-style-row-label" id="tradingStyleLabelTags"' in html
     assert 'class="trading-style-row-content" id="tradingStyleStats"' in html
+
+
+def test_trading_style_status_is_aligned_under_header_title():
+    html = _load_stats_template()
+
+    header_start = html.index('<div class="dashboard-panel stats-trading-panel">')
+    body_start = html.index('<div class="card-body">', header_start)
+    header_html = html[header_start:body_start]
+    body_html = html[body_start:html.index('<div class="trading-style-list">', body_start)]
+
+    assert 'class="trading-style-heading"' in header_html
+    assert 'id="tradingStyleTitle"' in header_html
+    assert 'id="tradingStyleStatus"' in header_html
+    assert 'id="tradingStyleStatus"' not in body_html
 
 
 def test_stats_uses_only_inline_version_badge_to_avoid_fixed_overlap():
