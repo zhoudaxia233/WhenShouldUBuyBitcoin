@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Stats & Analytics</title>
+    <title>Analytics</title>
     <script>
         (function () {
             const savedTheme = localStorage.getItem('dca_theme');
@@ -28,14 +28,204 @@
             transition: background-color 0.2s ease, color 0.2s ease;
         }
         .container { max-width: 1200px; }
-        .card { margin-bottom: 20px; }
-        .percentile-card {
-            background: linear-gradient(135deg, var(--dashboard-accent) 0%, var(--dashboard-accent-strong) 100%);
-            color: white;
+        .stats-page .card { margin-bottom: 0; }
+        .stats-actions-row {
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.75rem;
+            margin: 4px 0 24px;
+        }
+        .stats-rank-hero {
+            position: relative;
+            overflow: hidden;
+            min-height: 220px;
+            padding: clamp(1.55rem, 3vw, 2.35rem);
+            margin-bottom: 22px;
+            background:
+                radial-gradient(circle at 92% 52%, rgba(255, 138, 0, 0.18), transparent 34%),
+                linear-gradient(90deg, var(--dashboard-card-bg-solid) 0%, var(--dashboard-card-bg-solid) 54%, rgba(255, 138, 0, 0.14) 100%);
+        }
+        .stats-rank-content {
+            position: relative;
+            z-index: 1;
+            max-width: 620px;
+        }
+        .stats-rank-kicker,
+        .stats-metric-label,
+        .stats-section-kicker {
+            color: var(--dashboard-muted);
+            font-size: 0.72rem;
+            font-weight: 750;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+        .stats-rank-value {
+            margin: 0.55rem 0 0.55rem;
+            color: var(--dashboard-accent-strong);
+            font-size: clamp(2.45rem, 6vw, 4rem);
+            font-weight: 780;
+            letter-spacing: 0;
+            line-height: 0.95;
+        }
+        .stats-rank-subtext {
+            color: var(--dashboard-text);
+            font-weight: 650;
+            margin-bottom: 0.45rem;
+        }
+        .stats-rank-meta {
+            color: var(--dashboard-muted);
+            font-size: 0.92rem;
+        }
+        .stats-balance-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.28rem;
+            width: max-content;
+            margin-top: 1rem;
+            border: 1px solid var(--dashboard-border);
+            border-radius: 999px;
+            background: var(--dashboard-accent-softer);
+            color: var(--dashboard-accent-strong);
+            font-weight: 750;
+            padding: 0.48rem 0.78rem;
+        }
+        .stats-rank-watermark {
+            position: absolute;
+            right: clamp(1.2rem, 6vw, 4.5rem);
+            top: 50%;
+            transform: translateY(-50%) rotate(14deg);
+            color: rgba(255, 138, 0, 0.18);
+            font-size: clamp(7rem, 17vw, 13rem);
+            font-weight: 900;
+            line-height: 1;
+            pointer-events: none;
+            user-select: none;
+        }
+        .stats-metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(5, minmax(0, 1fr));
+            gap: 16px;
+            margin-bottom: 28px;
+        }
+        .stats-metric-card {
+            min-height: 150px;
+            padding: 22px 22px 18px;
+            display: grid;
+            grid-template-rows: auto auto auto 1fr;
+            gap: 0.35rem;
+            position: relative;
+        }
+        .stats-metric-top {
+            display: flex;
+            align-items: center;
+            gap: 0.7rem;
+            min-width: 0;
+        }
+        .stats-metric-icon {
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            flex: 0 0 auto;
+        }
+        .metric-success-bg { background: rgba(22, 163, 74, 0.12); color: var(--dashboard-success); }
+        .metric-primary-bg { background: rgba(59, 130, 246, 0.12); color: #2563eb; }
+        .metric-danger-bg { background: rgba(220, 38, 38, 0.11); color: var(--dashboard-danger); }
+        .metric-warning-bg { background: rgba(255, 138, 0, 0.13); color: var(--dashboard-accent-strong); }
+        .metric-purple-bg { background: rgba(147, 51, 234, 0.11); color: #9333ea; }
+        .stats-metric-value {
+            margin-top: 0.35rem;
+            color: var(--dashboard-text);
+            font-size: clamp(1.38rem, 2vw, 1.75rem);
+            font-weight: 780;
+            line-height: 1.05;
+            letter-spacing: 0;
+            font-variant-numeric: tabular-nums;
+        }
+        .stats-metric-subtext {
+            color: var(--dashboard-muted);
+            font-size: 0.9rem;
+        }
+        .metric-success { color: var(--dashboard-success); }
+        .metric-primary { color: #2563eb; }
+        .metric-danger { color: var(--dashboard-danger); }
+        .metric-purple { color: #6d3fd1; }
+        .metric-sparkline {
+            align-self: end;
+            justify-self: end;
+            width: 70px;
+            height: 32px;
+            opacity: 0.82;
+        }
+        .metric-sparkline polyline {
+            fill: none;
+            stroke: currentColor;
+            stroke-width: 2.2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+        .stats-analytics-grid {
+            display: grid;
+            grid-template-columns: minmax(0, 1.18fr) minmax(360px, 0.9fr);
+            gap: 28px;
+            margin-bottom: 32px;
+        }
+        .stats-chart-card,
+        .stats-distribution-card,
+        .stats-saylor-panel,
+        .stats-trading-panel {
+            border-radius: 10px;
+        }
+        .stats-chart-card .dashboard-panel-header,
+        .stats-distribution-card .dashboard-panel-header {
+            padding: 1.55rem 1.7rem 1rem;
+            background: transparent !important;
+        }
+        .stats-chart-card .card-body {
+            padding: 0.35rem 1.45rem 1.5rem;
         }
         .pnl-chart-wrap {
             height: 400px;
             position: relative;
+        }
+        .stats-distribution-card .table {
+            font-size: 0.88rem;
+        }
+        .stats-distribution-card th {
+            color: var(--dashboard-text);
+            font-size: 0.74rem;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            white-space: nowrap;
+        }
+        .stats-distribution-card td {
+            vertical-align: middle;
+        }
+        .stats-distribution-card .current-rank-row {
+            color: var(--dashboard-accent-strong);
+            font-weight: 750;
+            background: var(--dashboard-accent-softer);
+            box-shadow: inset 0 0 0 1px var(--dashboard-border);
+        }
+        .rank-bar {
+            width: 78px;
+            height: 4px;
+            border-radius: 999px;
+            background: color-mix(in srgb, var(--dashboard-border) 55%, transparent);
+            overflow: hidden;
+            margin: 0 auto;
+        }
+        .rank-bar-fill {
+            display: block;
+            height: 100%;
+            min-width: 4px;
+            border-radius: inherit;
+            background: color-mix(in srgb, var(--dashboard-muted) 70%, var(--dashboard-border));
+        }
+        .current-rank-row .rank-bar-fill {
+            background: var(--dashboard-accent-strong);
         }
         .highlight-row {
             background-color: #e8f4ff;
@@ -251,7 +441,7 @@
             font-size: clamp(1.22rem, 1.36vw, 1.46rem);
             line-height: 1;
             font-weight: 700;
-            letter-spacing: -0.01em;
+            letter-spacing: 0;
             font-variant-numeric: tabular-nums;
         }
         .saylor-summary-box .metric-sub {
@@ -271,7 +461,7 @@
         }
         #saylorRangeBtc {
             white-space: nowrap;
-            letter-spacing: -0.015em;
+            letter-spacing: 0;
         }
         .saylor-chart-wrap {
             height: 460px;
@@ -288,6 +478,61 @@
         }
         #saylorChart {
             touch-action: none;
+        }
+        .stats-saylor-panel {
+            margin-bottom: 32px;
+        }
+        .stats-saylor-panel .card-header {
+            background: transparent !important;
+            border-bottom: 0;
+        }
+        .stats-saylor-panel .card-body {
+            padding: 0 1.45rem 1.6rem;
+        }
+        .stats-trading-panel .dashboard-panel-header {
+            background: transparent !important;
+            padding-bottom: 0.75rem;
+        }
+        .stats-trading-panel .card-body {
+            padding-top: 0.25rem;
+        }
+        .trading-style-list {
+            border: 1px solid var(--dashboard-border);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        .trading-style-row {
+            display: grid;
+            grid-template-columns: 30px minmax(110px, 150px) minmax(0, 1fr);
+            gap: 0.85rem;
+            padding: 1rem 1.05rem;
+            border-bottom: 1px solid var(--dashboard-border);
+            align-items: start;
+        }
+        .trading-style-row:last-child {
+            border-bottom: 0;
+        }
+        .trading-style-row-icon {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--dashboard-accent-softer);
+            color: var(--dashboard-accent-strong);
+            font-size: 0.85rem;
+        }
+        .trading-style-row-label {
+            color: var(--dashboard-text);
+            font-weight: 760;
+        }
+        .trading-style-row-content {
+            color: var(--dashboard-text);
+            min-width: 0;
+        }
+        .trading-style-row-content ul {
+            padding-left: 1rem;
         }
         html[data-bs-theme="dark"] .saylor-card {
             background: linear-gradient(180deg, var(--dashboard-card-bg-solid) 0%, rgba(255, 138, 0, 0.08) 100%);
@@ -337,13 +582,48 @@
             color: var(--dashboard-accent-strong);
         }
         @media (max-width: 991px) {
+            .stats-metrics-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+            .stats-analytics-grid {
+                grid-template-columns: 1fr;
+            }
             .saylor-chart-wrap {
                 height: 400px;
             }
         }
         @media (max-width: 575px) {
+            .stats-actions-row {
+                justify-content: stretch;
+            }
+            .stats-actions-row .btn {
+                flex: 1 1 auto;
+            }
+            .stats-rank-hero {
+                min-height: 0;
+                padding: 1.45rem;
+            }
+            .stats-rank-watermark {
+                right: 0.25rem;
+                top: 1rem;
+                transform: rotate(14deg);
+                font-size: 7rem;
+            }
+            .stats-metrics-grid {
+                grid-template-columns: 1fr;
+            }
+            .stats-metric-card {
+                min-height: 132px;
+            }
             .pnl-chart-wrap {
                 height: 340px;
+            }
+            .trading-style-row {
+                grid-template-columns: 28px minmax(0, 1fr);
+                gap: 0.7rem;
+            }
+            .trading-style-row-content {
+                grid-column: 2;
             }
             .saylor-desktop-meta {
                 display: none !important;
@@ -373,215 +653,217 @@
         }
     </style>
 </head>
-<body class="satsflow-page">
+<body class="satsflow-page stats-page">
     <div class="container app-shell">
         {% set active_page = 'stats' %}
         {% include "_shared_header.html" %}
 
-        <div class="page-title-block d-flex flex-column flex-md-row justify-content-between gap-3">
-            <div>
-                <h1>Stats & Analytics</h1>
-                <p class="text-muted mb-0">Portfolio performance, rankings, and trading behavior.</p>
-            </div>
-            <div class="d-flex flex-wrap gap-2">
-                <button id="refreshStatsBtn" class="btn btn-outline-primary text-nowrap" title="Force Refresh Data">
-                    <i class="bi bi-arrow-clockwise"></i> <span class="btn-text">Refresh</span>
-                </button>
-                {% if user and user.is_admin %}
-                <button id="regenerateStaticBtn" class="btn btn-outline-success text-nowrap" title="Regenerate static files (charts, data)">
-                    <i class="bi bi-bar-chart-line"></i> <span class="btn-text">Update Charts</span>
-                </button>
-                {% endif %}
-            </div>
+        <div class="stats-actions-row">
+            <h1 class="visually-hidden">Analytics</h1>
+            <button id="refreshStatsBtn" class="btn btn-outline-primary text-nowrap" title="Force Refresh Data">
+                <i class="bi bi-arrow-clockwise"></i> <span class="btn-text">Refresh</span>
+            </button>
+            {% if user and user.is_admin %}
+            <button id="regenerateStaticBtn" class="btn btn-outline-success text-nowrap" title="Regenerate static files (charts, data)">
+                <i class="bi bi-bar-chart-line"></i> <span class="btn-text">Update Charts</span>
+            </button>
+            {% endif %}
         </div>
 
         <!-- Wealth Percentile Section -->
-        <div class="card dashboard-panel percentile-card mb-4">
-            <div class="card-body text-center py-5">
-                <h2 class="display-4 fw-bold text-break" id="percentileText">Loading...</h2>
-                <p class="lead" id="percentileSubtext">Calculating your global rank...</p>
-                <div class="mt-3">
-                    <span class="badge stats-balance-badge fs-6">Total Balance: <span id="totalBtc">--</span> BTC</span>
-                </div>
+        <div class="stats-rank-hero dashboard-panel">
+            <div class="stats-rank-content">
+                <div class="stats-rank-kicker">Global Rank</div>
+                <div class="stats-rank-value text-break" id="percentileText">Loading...</div>
+                <p class="stats-rank-subtext" id="percentileSubtext">Calculating your global rank...</p>
+                <p class="stats-rank-meta mb-0" id="percentileCacheText">Fetching BitInfoCharts distribution data...</p>
+                <span class="stats-balance-badge"><span>Total Balance:</span><span id="totalBtc">--</span><span>BTC</span></span>
             </div>
+            <div class="stats-rank-watermark" aria-hidden="true">₿</div>
         </div>
 
         <!-- Summary Stats Row -->
-        <div class="row row-cols-2 row-cols-md-3 row-cols-xl-5 g-3 mb-4">
-            <div class="col">
-                <div class="card dashboard-panel h-100">
-                    <div class="card-body text-center">
-                        <div class="text-muted small">Portfolio Value</div>
-                        <div class="h3 text-success mb-0" id="portfolioValueUSD">--</div>
-                        <div class="small text-muted"><span id="totalBtcBalance">--</span> BTC</div>
-                    </div>
+        <div class="stats-metrics-grid">
+            <div class="stats-metric-card dashboard-panel">
+                <div class="stats-metric-top">
+                    <span class="stats-metric-icon metric-success-bg"><i class="bi bi-safe"></i></span>
+                    <span class="stats-metric-label">Portfolio Value</span>
                 </div>
+                <div class="stats-metric-value metric-success" id="portfolioValueUSD">--</div>
+                <div class="stats-metric-subtext"><span id="totalBtcBalance">--</span> BTC</div>
+                <svg class="metric-sparkline metric-success" viewBox="0 0 72 34" aria-hidden="true"><polyline points="2,31 14,26 25,27 36,17 46,20 58,8 70,4"></polyline></svg>
             </div>
-            <div class="col">
-                <div class="card dashboard-panel h-100">
-                    <div class="card-body text-center">
-                        <div class="text-muted small">Avg Buy Price</div>
-                        <div class="h3 text-primary mb-0" id="avgBuyPrice">--</div>
-                        <div class="small text-muted">Cost Basis</div>
-                    </div>
+            <div class="stats-metric-card dashboard-panel">
+                <div class="stats-metric-top">
+                    <span class="stats-metric-icon metric-primary-bg"><i class="bi bi-currency-dollar"></i></span>
+                    <span class="stats-metric-label">Avg Buy Price</span>
                 </div>
+                <div class="stats-metric-value metric-primary" id="avgBuyPrice">--</div>
+                <div class="stats-metric-subtext">Cost Basis</div>
+                <svg class="metric-sparkline metric-primary" viewBox="0 0 72 34" aria-hidden="true"><polyline points="2,28 13,25 23,29 34,18 44,21 55,11 70,6"></polyline></svg>
             </div>
-            <div class="col">
-                <div class="card dashboard-panel h-100">
-                    <div class="card-body text-center">
-                        <div class="text-muted small">Profit & Loss</div>
-                        <div class="h3 mb-0" id="pnlAmount">--</div>
-                        <div class="small text-muted"><span id="pnlPercent">--</span></div>
-                    </div>
+            <div class="stats-metric-card dashboard-panel">
+                <div class="stats-metric-top">
+                    <span class="stats-metric-icon metric-danger-bg"><i class="bi bi-arrow-down"></i></span>
+                    <span class="stats-metric-label">Profit & Loss</span>
                 </div>
+                <div class="stats-metric-value" id="pnlAmount">--</div>
+                <div class="stats-metric-subtext"><span id="pnlPercent">--</span></div>
+                <svg class="metric-sparkline metric-danger" viewBox="0 0 72 34" aria-hidden="true"><polyline points="2,27 12,21 20,26 30,12 40,29 50,18 61,26 70,28"></polyline></svg>
             </div>
-            <div class="col">
-                <div class="card dashboard-panel h-100">
-                    <div class="card-body text-center">
-                        <div class="text-muted small">Total Fees</div>
-                        <div class="h3 text-danger mb-0" id="totalFeesUSD">--</div>
-                        <div class="small text-muted"><span id="totalFeesBTC">--</span> BTC</div>
-                    </div>
+            <div class="stats-metric-card dashboard-panel">
+                <div class="stats-metric-top">
+                    <span class="stats-metric-icon metric-warning-bg"><i class="bi bi-wallet2"></i></span>
+                    <span class="stats-metric-label">Total Fees</span>
                 </div>
+                <div class="stats-metric-value metric-danger" id="totalFeesUSD">--</div>
+                <div class="stats-metric-subtext"><span id="totalFeesBTC">--</span> BTC</div>
             </div>
-            <div class="col">
-                <div class="card dashboard-panel h-100">
-                    <div class="card-body text-center">
-                        <div class="text-muted small">Transactions</div>
-                        <div class="h3 text-secondary mb-0" id="transactionCount">--</div>
-                        <div class="small text-muted">Tracked</div>
-                    </div>
+            <div class="stats-metric-card dashboard-panel">
+                <div class="stats-metric-top">
+                    <span class="stats-metric-icon metric-purple-bg"><i class="bi bi-receipt"></i></span>
+                    <span class="stats-metric-label">Transactions</span>
                 </div>
+                <div class="stats-metric-value metric-purple" id="transactionCount">--</div>
+                <div class="stats-metric-subtext">Tracked</div>
+                <svg class="metric-sparkline metric-purple" viewBox="0 0 72 34" aria-hidden="true"><polyline points="2,30 13,27 24,27 36,18 48,17 58,10 70,8"></polyline></svg>
             </div>
         </div>
 
-        <div class="row">
+        <div class="stats-analytics-grid">
             <!-- PnL Chart -->
-            <div class="col-lg-8">
-                <div class="card dashboard-panel h-100">
-                    <div class="card-header dashboard-panel-header">
-                        <h5 class="mb-0">Performance Over Time</h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="pnl-chart-wrap">
-                            <canvas id="pnlChart"></canvas>
-                        </div>
+            <div class="dashboard-panel stats-chart-card">
+                <div class="card-header dashboard-panel-header">
+                    <h5 class="mb-0">Performance Over Time</h5>
+                </div>
+                <div class="card-body">
+                    <div class="pnl-chart-wrap">
+                        <canvas id="pnlChart"></canvas>
                     </div>
                 </div>
             </div>
 
             <!-- Wealth Distribution Table -->
-            <div class="col-lg-4">
-                <div class="card dashboard-panel h-100">
-                    <div class="card-header dashboard-panel-header">
-                        <h5 class="mb-0">Global Wealth Distribution</h5>
+            <div class="dashboard-panel stats-distribution-card">
+                <div class="card-header dashboard-panel-header d-flex justify-content-between align-items-center gap-2">
+                    <h5 class="mb-0">Global Wealth Distribution</h5>
+                    <span class="version-badge position-static m-0">v{{ app_version }}{% if app_commit_sha %} ({{ app_commit_sha[:7] }}){% endif %}</span>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0 text-center">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Balance Tier</th>
+                                    <th>Perc.</th>
+                                    <th>Your Rank</th>
+                                </tr>
+                            </thead>
+                            <tbody id="distributionTable">
+                                <!-- Loaded via JS -->
+                            </tbody>
+                        </table>
                     </div>
-                    <div class="card-body p-0">
-                        <div class="table-responsive">
-                            <table class="table table-hover mb-0 text-center">
-                                <thead class="table-light">
-                                    <tr>
-                                        <th>Balance Tier</th>
-                                        <th>Percentile</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="distributionTable">
-                                    <!-- Loaded via JS -->
-                                </tbody>
-                            </table>
-                        </div>
-                        <div class="card-footer text-muted small text-center">
-                            <span id="distributionSourceText">Source: BitInfoCharts (updated daily)</span>
-                        </div>
+                    <div class="card-footer text-muted small">
+                        <span id="distributionSourceText">Source: BitInfoCharts (updated daily)</span>
                     </div>
                 </div>
             </div>
         </div>
 
-        <div class="row mt-2">
-            <div class="col-12">
-                <div class="card dashboard-panel saylor-card">
-                    <div class="card-header px-4 pt-4 pb-3">
-                        <div class="row g-3 align-items-start">
-                            <div class="col-lg-8">
-                                <div class="saylor-header-kicker">Bitcoin Reserve Value</div>
-                                <div class="saylor-main-value" id="saylorReserveValue">$--</div>
-                                <div class="saylor-meta saylor-desktop-meta d-flex flex-wrap gap-3">
-                                    <span><strong id="saylorTotalBtc">--</strong> BTC</span>
-                                    <span>Avg Cost: <strong id="saylorAvgCost">$--</strong></span>
-                                    <span id="saylorPnlPercent">--</span>
-                                    <span id="saylorPnlUsd">--</span>
-                                </div>
-                                <div class="small mt-2 text-secondary" id="saylorAsOf">As of --</div>
-                                <div class="saylor-mobile-kpis" aria-label="Bitcoin reserve summary">
-                                    <div class="saylor-mobile-kpi">
-                                        <span class="label">Reserve Value</span>
-                                        <strong id="saylorReserveValueMobile">$--</strong>
-                                    </div>
-                                    <div class="saylor-mobile-kpi">
-                                        <span class="label">BTC</span>
-                                        <strong id="saylorTotalBtcMobile">--</strong>
-                                    </div>
-                                    <div class="saylor-mobile-kpi">
-                                        <span class="label">Avg Cost</span>
-                                        <strong id="saylorAvgCostMobile">$--</strong>
-                                    </div>
-                                    <div class="saylor-mobile-kpi">
-                                        <span class="label">P&L</span>
-                                        <strong id="saylorPnlMobile">--</strong>
-                                    </div>
-                                </div>
+        <div class="stats-saylor-panel dashboard-panel saylor-card">
+            <div class="card-header px-4 pt-4 pb-3">
+                <div class="row g-3 align-items-start">
+                    <div class="col-lg-8">
+                        <div class="saylor-header-kicker">Bitcoin Reserve Value</div>
+                        <div class="saylor-main-value" id="saylorReserveValue">$--</div>
+                        <div class="saylor-meta saylor-desktop-meta d-flex flex-wrap gap-3">
+                            <span><strong id="saylorTotalBtc">--</strong> BTC</span>
+                            <span>Avg Cost: <strong id="saylorAvgCost">$--</strong></span>
+                            <span id="saylorPnlPercent">--</span>
+                            <span id="saylorPnlUsd">--</span>
+                        </div>
+                        <div class="small mt-2 text-secondary" id="saylorAsOf">As of --</div>
+                        <div class="saylor-mobile-kpis" aria-label="Bitcoin reserve summary">
+                            <div class="saylor-mobile-kpi">
+                                <span class="label">Reserve Value</span>
+                                <strong id="saylorReserveValueMobile">$--</strong>
                             </div>
-                            <div class="col-lg-4">
-                                <div class="saylor-summary-box">
-                                    <div class="saylor-summary-metrics">
-                                        <div class="saylor-summary-metric">
-                                            <div class="label">Purchase Events</div>
-                                            <div class="metric-value"><span class="metric-number" id="saylorPurchaseEvents">0</span></div>
-                                            <div class="metric-sub">in selected range</div>
-                                        </div>
-                                        <div class="saylor-summary-metric">
-                                            <div class="label">Total BTC</div>
-                                            <div class="metric-value"><span class="btc-symbol">₿</span><span class="metric-number" id="saylorRangeBtc">0</span></div>
-                                            <div class="metric-sub">As of now</div>
-                                        </div>
-                                    </div>
-                                </div>
+                            <div class="saylor-mobile-kpi">
+                                <span class="label">BTC</span>
+                                <strong id="saylorTotalBtcMobile">--</strong>
+                            </div>
+                            <div class="saylor-mobile-kpi">
+                                <span class="label">Avg Cost</span>
+                                <strong id="saylorAvgCostMobile">$--</strong>
+                            </div>
+                            <div class="saylor-mobile-kpi">
+                                <span class="label">P&L</span>
+                                <strong id="saylorPnlMobile">--</strong>
                             </div>
                         </div>
                     </div>
-                    <div class="card-body pt-2">
-                        <div class="saylor-chart-toolbar">
-                            <button id="resetSaylorZoomBtn" class="btn btn-sm btn-outline-secondary saylor-reset-btn" type="button">Reset view</button>
-                        </div>
-                        <div class="saylor-chart-wrap">
-                            <canvas id="saylorChart"></canvas>
+                    <div class="col-lg-4">
+                        <div class="saylor-summary-box">
+                            <div class="saylor-summary-metrics">
+                                <div class="saylor-summary-metric">
+                                    <div class="label">Purchase Events</div>
+                                    <div class="metric-value"><span class="metric-number" id="saylorPurchaseEvents">0</span></div>
+                                    <div class="metric-sub">in selected range</div>
+                                </div>
+                                <div class="saylor-summary-metric">
+                                    <div class="label">Total BTC</div>
+                                    <div class="metric-value"><span class="btc-symbol">₿</span><span class="metric-number" id="saylorRangeBtc">0</span></div>
+                                    <div class="metric-sub">As of now</div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
+            <div class="card-body pt-2">
+                <div class="saylor-chart-toolbar">
+                    <button id="resetSaylorZoomBtn" class="btn btn-sm btn-outline-secondary saylor-reset-btn" type="button">Reset view</button>
+                </div>
+                <div class="saylor-chart-wrap">
+                    <canvas id="saylorChart"></canvas>
+                </div>
+            </div>
         </div>
 
-        <div class="row mt-4">
-            <div class="col-12">
-                <div class="card dashboard-panel">
-                    <div class="card-header dashboard-panel-header d-flex justify-content-between align-items-center gap-2">
-                        <h5 class="mb-0" id="tradingStyleTitle">Trading Style Analysis</h5>
-                        <div class="d-flex align-items-center gap-2">
-                            <div class="btn-group btn-group-sm" role="group" aria-label="Trading style language">
-                                <button id="tradingStyleLangEn" class="btn btn-outline-secondary active" type="button">EN</button>
-                                <button id="tradingStyleLangZh" class="btn btn-outline-secondary" type="button">中文</button>
-                            </div>
-                            <button id="exportStyleCsvBtn" class="btn btn-sm btn-outline-primary">Export CSV</button>
-                        </div>
+        <div class="dashboard-panel stats-trading-panel">
+            <div class="card-header dashboard-panel-header d-flex flex-wrap justify-content-between align-items-center gap-2">
+                <h5 class="mb-0" id="tradingStyleTitle">Trading Style Analysis</h5>
+                <div class="d-flex align-items-center gap-2">
+                    <div class="btn-group btn-group-sm" role="group" aria-label="Trading style language">
+                        <button id="tradingStyleLangEn" class="btn btn-outline-secondary active" type="button">EN</button>
+                        <button id="tradingStyleLangZh" class="btn btn-outline-secondary" type="button">中文</button>
                     </div>
-                    <div class="card-body">
-                        <div class="small text-muted mb-2" id="tradingStyleStatus">Loading analysis...</div>
-                        <div class="mb-2"><strong id="tradingStyleLabelTags">Style Tags:</strong> <span id="tradingStyleTags">--</span></div>
-                        <div class="mb-2"><strong id="tradingStyleLabelStats">Key Stats:</strong> <span id="tradingStyleStats">--</span></div>
-                        <div class="mb-2"><strong id="tradingStyleLabelMethod">Method:</strong> <span id="tradingStyleMethod">--</span></div>
-                        <div class="mb-2">
-                            <strong id="tradingStyleLabelIssues">Potential Issues:</strong>
+                    <button id="exportStyleCsvBtn" class="btn btn-sm btn-outline-primary">Export CSV</button>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="small text-muted mb-3" id="tradingStyleStatus">Loading analysis...</div>
+                <div class="trading-style-list">
+                    <div class="trading-style-row">
+                        <span class="trading-style-row-icon"><i class="bi bi-bullseye"></i></span>
+                        <strong class="trading-style-row-label" id="tradingStyleLabelTags">Style Tags:</strong>
+                        <span class="trading-style-row-content" id="tradingStyleTags">--</span>
+                    </div>
+                    <div class="trading-style-row">
+                        <span class="trading-style-row-icon"><i class="bi bi-clipboard-data"></i></span>
+                        <strong class="trading-style-row-label" id="tradingStyleLabelStats">Key Stats:</strong>
+                        <span class="trading-style-row-content" id="tradingStyleStats">--</span>
+                    </div>
+                    <div class="trading-style-row">
+                        <span class="trading-style-row-icon"><i class="bi bi-pen"></i></span>
+                        <strong class="trading-style-row-label" id="tradingStyleLabelMethod">Method:</strong>
+                        <span class="trading-style-row-content" id="tradingStyleMethod">--</span>
+                    </div>
+                    <div class="trading-style-row">
+                        <span class="trading-style-row-icon"><i class="bi bi-exclamation-circle"></i></span>
+                        <strong class="trading-style-row-label" id="tradingStyleLabelIssues">Potential Issues:</strong>
+                        <div class="trading-style-row-content">
                             <ul class="mb-0" id="tradingStyleIssues"></ul>
                         </div>
                     </div>
@@ -684,9 +966,13 @@
         // UI Updaters
         function updatePercentileUI(data) {
             const unavailable = !data || data.data_status === 'unavailable';
+            const cacheTextEl = document.getElementById('percentileCacheText');
             if (unavailable) {
                 document.getElementById('percentileText').textContent = 'Data Unavailable';
                 document.getElementById('percentileSubtext').textContent = 'BitInfoCharts distribution is currently unavailable.';
+                if (cacheTextEl) {
+                    cacheTextEl.textContent = data?.total_btc ? 'Showing wallet balance while rank data is unavailable.' : 'Rank data unavailable.';
+                }
                 document.getElementById('totalBtc').textContent = data?.total_btc ? data.total_btc.toFixed(8) : '--';
                 return;
             }
@@ -703,10 +989,16 @@
             }
             
             document.getElementById('percentileText').textContent = percentileDisplay;
+            document.getElementById('percentileSubtext').textContent = 'of all Bitcoin holders globally.';
             if (data.data_status === 'stale' || data.data_status === 'cached') {
-                document.getElementById('percentileSubtext').textContent = `of all Bitcoin holders globally. ${staleCacheMessage(data.as_of)}`;
+                if (cacheTextEl) cacheTextEl.textContent = staleCacheMessage(data.as_of);
             } else {
-                document.getElementById('percentileSubtext').textContent = "of all Bitcoin holders globally";
+                const formattedAsOf = formatDataAsOf(data.as_of);
+                if (cacheTextEl) {
+                    cacheTextEl.textContent = formattedAsOf
+                        ? `BitInfoCharts data as of ${formattedAsOf}.`
+                        : 'BitInfoCharts distribution data loaded.';
+                }
             }
             document.getElementById('totalBtc').textContent = data.total_btc ? data.total_btc.toFixed(8) : '--';
         }
@@ -774,7 +1066,7 @@
 
             if (!Array.isArray(data)) {
                 const tr = document.createElement('tr');
-                tr.innerHTML = '<td colspan="2" class="text-muted py-3">Data unavailable</td>';
+                tr.innerHTML = '<td colspan="3" class="text-muted py-3">Data unavailable</td>';
                 tbody.appendChild(tr);
                 updateDistributionSourceUI('unavailable', null);
                 return;
@@ -783,12 +1075,23 @@
             updateDistributionSourceUI(meta.data_status || 'live', meta.as_of || null);
             data.forEach(row => {
                 const tr = document.createElement('tr');
+                const isCurrentRank = document.getElementById('percentileText')?.textContent?.trim() === String(row.percentile || '').trim();
+                if (isCurrentRank) tr.className = 'current-rank-row';
+                const rankWidth = percentileRankBarWidth(row.percentile);
                 tr.innerHTML = `
                     <td>${row.tier}</td>
-                    <td><span class="badge bg-secondary">${row.percentile}</span></td>
+                    <td>${row.percentile}</td>
+                    <td><div class="rank-bar" aria-hidden="true"><span class="rank-bar-fill" style="width: ${rankWidth};"></span></div></td>
                 `;
                 tbody.appendChild(tr);
             });
+        }
+
+        function percentileRankBarWidth(percentile) {
+            const match = String(percentile || '').match(/([0-9]+(?:\.[0-9]+)?)/);
+            const parsed = match ? Number(match[1]) : 0;
+            if (!Number.isFinite(parsed)) return '4%';
+            return `${Math.max(4, Math.min(100, parsed))}%`;
         }
 
         async function loadDistribution(forceRefresh = false) {
@@ -1383,10 +1686,10 @@
                     // Set color based on positive/negative
                     const pnlElement = document.getElementById('pnlAmount');
                     if (pnl >= 0) {
-                        pnlElement.className = 'h3 text-success';
+                        pnlElement.className = 'stats-metric-value metric-success';
                         pnlElement.textContent = `+$${pnl.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
                     } else {
-                        pnlElement.className = 'h3 text-danger';
+                        pnlElement.className = 'stats-metric-value metric-danger';
                         pnlElement.textContent = `-$${Math.abs(pnl).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
                     }
                     
@@ -1767,8 +2070,5 @@
             {% endif %}
         });
     </script>
-    <div class="version-badge">
-        v{{ app_version }}{% if app_commit_sha %} ({{ app_commit_sha[:7] }}){% endif %}
-    </div>
 </body>
 </html>

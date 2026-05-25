@@ -206,3 +206,43 @@ def test_trading_style_uses_rule_data_only_without_ai_call():
     html = _load_stats_template()
     assert "/api/stats/trading-style?include_ai=false&language=${encodeURIComponent(tradingStyleLanguage)}" in html
     assert "const cacheKey = `stats_trading_style_${tradingStyleLanguage}`;" in html
+
+
+def test_stats_page_uses_reference_dashboard_layout_without_visible_title_block():
+    html = _load_stats_template()
+
+    assert '<div class="page-title-block' not in html
+    assert '<h1>Stats & Analytics</h1>' not in html
+    assert 'class="stats-actions-row"' in html
+    assert 'class="stats-rank-hero dashboard-panel"' in html
+    assert 'class="stats-rank-watermark"' in html
+    assert 'class="stats-metrics-grid"' in html
+    assert html.count('class="stats-metric-card dashboard-panel"') == 5
+    assert 'class="stats-analytics-grid"' in html
+    assert 'class="stats-saylor-panel dashboard-panel saylor-card"' in html
+    assert 'class="trading-style-list"' in html
+
+
+def test_distribution_table_has_rank_column_and_bar_renderer():
+    html = _load_stats_template()
+
+    assert "<th>Your Rank</th>" in html
+    assert "colspan=\"3\"" in html
+    assert "function percentileRankBarWidth(percentile)" in html
+    assert 'class="rank-bar"' in html
+
+
+def test_trading_style_uses_row_based_layout():
+    html = _load_stats_template()
+
+    assert 'class="trading-style-row"' in html
+    assert 'class="trading-style-row-icon"' in html
+    assert 'class="trading-style-row-label" id="tradingStyleLabelTags"' in html
+    assert 'class="trading-style-row-content" id="tradingStyleStats"' in html
+
+
+def test_stats_uses_only_inline_version_badge_to_avoid_fixed_overlap():
+    html = _load_stats_template()
+
+    assert 'class="version-badge position-static m-0"' in html
+    assert html.count('class="version-badge') == 1
