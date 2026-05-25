@@ -680,7 +680,6 @@ async def get_user_percentile(
     - Expired cache (> 24h): Fetches new data, falls back to stale cache if fetch fails
     - No cache: Raises HTTP 503 error (won't show bad data)
     """
-    from fastapi import HTTPException
     from dca_service.api.wallet_api import get_wallet_summary
     
     # Use the same logic as wallet summary to ensure consistency
@@ -2451,106 +2450,122 @@ def confirm_add_position(
     }
 
 
-TRADING_STYLE_SUMMARY_CSV_FIELDS = [
-    "raw_fill_count",
-    "behavior_event_count",
-    "split_event_count",
-    "split_fill_extra_count",
-    "avg_fills_per_event",
-    "total_invested_usd",
-    "total_btc",
-    "analysis_window_days",
-    "events_per_30d",
-    "median_interval_days",
-    "avg_event_usd",
-    "event_amount_cv",
-    "high_zone_buy_ratio",
-    "low_zone_buy_ratio",
-    "burst_trading_ratio",
-    "size_price_position_corr",
-    "largest_event_share",
-    "top3_event_share",
-    "weekend_ratio",
-    "manual_event_ratio",
-    "dca_event_ratio",
-]
-
-
-TRADING_STYLE_CSV_FIELDS = [
-    "generated_at",
-    "language",
-    "source_signature",
-    "style_tags",
-    "issues",
-    "method_constraints",
-    *TRADING_STYLE_SUMMARY_CSV_FIELDS,
-    "event_time",
-    "event_key",
-    "event_type",
-    "binance_order_id",
-    "amount_usd",
-    "amount_btc",
+PURCHASE_CSV_FIELDS = [
+    "purchase_datetime",
+    "purchase_type",
+    "usd_spent",
+    "btc_bought",
     "avg_price_usd",
-    "fill_count",
     "fee_usd",
-    "source_types",
-    "interval_since_prev_days",
-    "relative_amount_to_past_median",
-    "relative_amount_label",
-    "price_position_in_past_range",
-    "price_position_label",
-    "price_vs_past_median_pct",
 ]
 
 
-def _csv_cell(value: Any) -> Any:
-    if value is None:
-        return ""
-    if isinstance(value, list):
-        return "|".join(str(item) for item in value)
-    return value
+def _csv_number(value: float, digits: int = 12) -> float:
+    return float(round(float(value or 0.0), digits))
 
 
-def _csv_json_cell(value: Any) -> str:
-    if value in (None, "", [], {}):
-        return ""
-    return json.dumps(value, ensure_ascii=False, sort_keys=True)
+def _classify_purchase_trigger(sources: List[str], manual_flags: List[bool]) -> str:
+    source_set = {source.upper() for source in sources if source}
+    any_manual = any(manual_flags)
+    if "DCA" in source_set or ("SIMULATED" in source_set and not any_manual):
+        return "DCA"
+    if "BINANCE" in source_set or "MANUAL" in source_set:
+        return "ACTIVE_BUY"
+    if "SIMULATED" in source_set:
+        return "SIMULATED"
+    return "UNKNOWN"
 
 
-def _build_trading_style_csv(
-    *,
-    behavior_data: Dict[str, Any],
-    generated_at: str,
-    language: str,
-    source_signature: str,
-) -> str:
+def _build_purchase_csv(transactions: List[DCATransaction]) -> str:
+    grouped: Dict[str, Dict[str, Any]] = {}
+    ordered_keys: List[str] = []
+
+    for idx, tx in enumerate(transactions):
+        amount_usd = _effective_fiat_amount(tx)
+        amount_btc = _effective_btc_amount(tx)
+        avg_price = _effective_price(tx)
+        if amount_usd <= 0 or amount_btc <= 0:
+            continue
+
+        timestamp = tx.timestamp
+        if timestamp.tzinfo is None:
+            timestamp = timestamp.replace(tzinfo=timezone.utc)
+
+        if tx.binance_order_id is not None:
+            key = f"order:{tx.binance_order_id}"
+        else:
+            fallback_id = tx.id if tx.id is not None else idx
+            key = f"tx:{fallback_id}"
+
+        if key not in grouped:
+            grouped[key] = {
+                "timestamp": timestamp,
+                "amount_usd": 0.0,
+                "amount_btc": 0.0,
+                "weighted_price_sum": 0.0,
+                "price_weight": 0.0,
+                "fee_usd": 0.0,
+                "fill_count": 0,
+                "binance_order_id": tx.binance_order_id,
+                "trade_ids": [],
+                "sources": [],
+                "manual_flags": [],
+                "notes": [],
+            }
+            ordered_keys.append(key)
+
+        group = grouped[key]
+        group["timestamp"] = min(group["timestamp"], timestamp)
+        group["amount_usd"] += amount_usd
+        group["amount_btc"] += amount_btc
+        group["fill_count"] += 1
+        group["sources"].append(tx.source or "UNKNOWN")
+        group["manual_flags"].append(bool(tx.is_manual))
+        if tx.notes and tx.notes not in group["notes"]:
+            group["notes"].append(tx.notes)
+        if tx.binance_trade_id is not None:
+            group["trade_ids"].append(int(tx.binance_trade_id))
+
+        group["fee_usd"] += _fee_to_usd(tx, avg_price)
+
+        weight = amount_btc if amount_btc > 0 else amount_usd
+        if weight > 0:
+            group["price_weight"] += weight
+            group["weighted_price_sum"] += avg_price * weight
+
+    rows = []
+    for key in ordered_keys:
+        group = grouped[key]
+        timestamp = group["timestamp"]
+        avg_price = (
+            group["weighted_price_sum"] / group["price_weight"]
+            if group["price_weight"] > 0
+            else 0.0
+        )
+        sources = sorted(set(group["sources"]))
+        rows.append(
+            {
+                "purchase_datetime": timestamp.isoformat(),
+                "purchase_type": _classify_purchase_trigger(sources, group["manual_flags"]),
+                "usd_spent": _csv_number(group["amount_usd"]),
+                "btc_bought": _csv_number(group["amount_btc"]),
+                "avg_price_usd": _csv_number(avg_price),
+                "fee_usd": _csv_number(group["fee_usd"]),
+                "_sort_key": timestamp.isoformat(),
+            }
+        )
+
+    rows.sort(key=lambda row: row["_sort_key"])
+
     output = io.StringIO()
     writer = csv.DictWriter(
         output,
-        fieldnames=TRADING_STYLE_CSV_FIELDS,
+        fieldnames=PURCHASE_CSV_FIELDS,
         lineterminator="\n",
     )
     writer.writeheader()
-
-    summary = behavior_data.get("summary", {}) or {}
-    base_row = {
-        "generated_at": generated_at,
-        "language": language,
-        "source_signature": source_signature,
-        "style_tags": _csv_cell(behavior_data.get("style_tags", []) or []),
-        "issues": _csv_json_cell(behavior_data.get("issues", []) or []),
-        "method_constraints": _csv_json_cell(behavior_data.get("method_constraints", {}) or {}),
-    }
-    for field in TRADING_STYLE_SUMMARY_CSV_FIELDS:
-        base_row[field] = _csv_cell(summary.get(field))
-
-    for item in behavior_data.get("event_diagnostics", []) or []:
-        row = dict(base_row)
-        for field in TRADING_STYLE_CSV_FIELDS:
-            if field in row:
-                continue
-            row[field] = _csv_cell(item.get(field))
-        writer.writerow(row)
+    for row in rows:
+        writer.writerow({field: row[field] for field in PURCHASE_CSV_FIELDS})
 
     return output.getvalue()
 
@@ -2596,23 +2611,20 @@ def download_trading_style_csv(
     current_user: User = Depends(get_current_user),
 ):
     """
-    Export behavior-event diagnostics as CSV.
+    Export successful BTC purchases as order-level CSV rows.
 
-    Split fills with the same binance_order_id are already merged into one row.
+    Split fills with the same binance_order_id are merged into one purchase row.
     """
-    _, _, behavior_data, source_signature = _build_buy_behavior_snapshot(session)
-    normalized_language = _normalize_language(language)
-    generated_at = datetime.now(timezone.utc).isoformat()
-    csv_text = _build_trading_style_csv(
-        behavior_data=behavior_data,
-        generated_at=generated_at,
-        language=normalized_language,
-        source_signature=source_signature,
-    )
+    txs = session.exec(
+        select(DCATransaction)
+        .where(DCATransaction.status == "SUCCESS")
+        .order_by(DCATransaction.timestamp)
+    ).all()
+    csv_text = _build_purchase_csv(txs)
     return Response(
         content=csv_text,
         media_type="text/csv; charset=utf-8",
         headers={
-            "Content-Disposition": 'attachment; filename="trading-style-analysis.csv"',
+            "Content-Disposition": 'attachment; filename="bitcoin-purchases.csv"',
         },
     )

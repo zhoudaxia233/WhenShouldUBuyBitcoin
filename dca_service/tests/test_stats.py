@@ -147,7 +147,82 @@ def test_trading_style_analysis_aggregates_split_fills(client: TestClient, sessi
     assert diagnostics[1]["fill_count"] == 1
 
 
-def test_trading_style_csv_export_contains_behavior_event_rows(client: TestClient, session: Session):
+def test_purchase_csv_export_contains_order_level_purchase_rows(client: TestClient, session: Session):
+    dca_tx = DCATransaction(
+        status="SUCCESS",
+        fiat_amount=25.0,
+        btc_amount=0.0005,
+        price=50000.0,
+        ahr999=0.5,
+        notes="Automated daily DCA",
+        timestamp=datetime(2024, 1, 1, 0, 0, tzinfo=timezone.utc),
+        source="DCA",
+        is_manual=False,
+        binance_order_id=123456,
+        binance_trade_id=111,
+        fee_amount=0.02,
+        fee_asset="USDC",
+        executed_amount_usd=25.0,
+        executed_amount_btc=0.0005,
+        avg_execution_price_usd=50000.0,
+    )
+    active_tx = DCATransaction(
+        status="SUCCESS",
+        fiat_amount=100.0,
+        btc_amount=0.002,
+        price=50020.0,
+        ahr999=0.0,
+        notes="Imported from Binance",
+        timestamp=datetime(2024, 1, 3, 12, 30, tzinfo=timezone.utc),
+        source="MANUAL",
+        is_manual=True,
+        binance_order_id=999999,
+        binance_trade_id=113,
+        fee_amount=0.05,
+        fee_asset="USDC",
+        executed_amount_usd=100.0,
+        executed_amount_btc=0.002,
+        avg_execution_price_usd=50020.0,
+    )
+    session.add(dca_tx)
+    session.add(active_tx)
+    session.commit()
+
+    response = client.get("/api/stats/trading-style.csv?language=en")
+
+    assert response.status_code == 200
+    assert response.headers["content-type"].startswith("text/csv")
+    assert 'attachment; filename="bitcoin-purchases.csv"' in response.headers["content-disposition"]
+
+    rows = list(csv.DictReader(io.StringIO(response.text)))
+    assert rows[0].keys() == {
+        "purchase_datetime",
+        "purchase_type",
+        "usd_spent",
+        "btc_bought",
+        "avg_price_usd",
+        "fee_usd",
+    }
+    assert len(rows) == 2
+    assert rows[0]["purchase_datetime"] == "2024-01-01T00:00:00+00:00"
+    assert rows[0]["purchase_type"] == "DCA"
+    assert rows[0]["usd_spent"] == "25.0"
+    assert rows[0]["btc_bought"] == "0.0005"
+    assert rows[1]["purchase_type"] == "ACTIVE_BUY"
+    assert "asset" not in rows[0]
+    assert "asset_type" not in rows[0]
+    assert "fee_asset" not in rows[0]
+    assert "style_tags" not in rows[0]
+    assert "behavior_event_count" not in rows[0]
+    assert "issues" not in rows[0]
+    assert "source" not in rows[0]
+    assert "fill_count" not in rows[0]
+    assert "binance_order_id" not in rows[0]
+    assert "binance_trade_ids" not in rows[0]
+    assert "notes" not in rows[0]
+
+
+def test_purchase_csv_export_merges_split_fills(client: TestClient, session: Session):
     tx1 = DCATransaction(
         status="SUCCESS",
         fiat_amount=50.0,
@@ -160,6 +235,11 @@ def test_trading_style_csv_export_contains_behavior_event_rows(client: TestClien
         is_manual=True,
         binance_order_id=123456,
         binance_trade_id=111,
+        fee_amount=0.01,
+        fee_asset="USDC",
+        executed_amount_usd=50.0,
+        executed_amount_btc=0.001,
+        avg_execution_price_usd=50000.0,
     )
     tx2 = DCATransaction(
         status="SUCCESS",
@@ -173,42 +253,66 @@ def test_trading_style_csv_export_contains_behavior_event_rows(client: TestClien
         is_manual=True,
         binance_order_id=123456,
         binance_trade_id=112,
-    )
-    tx3 = DCATransaction(
-        status="SUCCESS",
-        fiat_amount=200.0,
-        btc_amount=0.004,
-        price=50020.0,
-        ahr999=0.5,
-        notes="Another order",
-        timestamp=datetime(2024, 1, 3, 0, 0, tzinfo=timezone.utc),
-        source="MANUAL",
-        is_manual=True,
-        binance_order_id=999999,
-        binance_trade_id=113,
+        fee_amount=0.03,
+        fee_asset="USDC",
+        executed_amount_usd=150.0,
+        executed_amount_btc=0.003,
+        avg_execution_price_usd=50010.0,
     )
     session.add(tx1)
     session.add(tx2)
-    session.add(tx3)
     session.commit()
 
     response = client.get("/api/stats/trading-style.csv?language=en")
 
     assert response.status_code == 200
-    assert response.headers["content-type"].startswith("text/csv")
-    assert 'attachment; filename="trading-style-analysis.csv"' in response.headers["content-disposition"]
 
     rows = list(csv.DictReader(io.StringIO(response.text)))
-    assert len(rows) == 2
-    assert rows[0]["binance_order_id"] == "123456"
-    assert rows[0]["fill_count"] == "2"
-    assert rows[0]["amount_usd"] == "200.0"
-    assert rows[0]["source_types"] == "MANUAL"
-    assert rows[0]["style_tags"]
-    assert "behavior_event_count" in rows[0]
-    assert "issues" in rows[0]
-    assert "method_constraints" in rows[0]
-    assert rows[1]["binance_order_id"] == "999999"
+    assert len(rows) == 1
+    assert rows[0]["purchase_datetime"] == "2024-01-01T00:00:00+00:00"
+    assert rows[0]["usd_spent"] == "200.0"
+    assert rows[0]["btc_bought"] == "0.004"
+    assert float(rows[0]["avg_price_usd"]) == 50007.5
+    assert rows[0]["fee_usd"] == "0.04"
+    assert "fee_asset" not in rows[0]
+    assert rows[0]["purchase_type"] == "ACTIVE_BUY"
+    assert "fill_count" not in rows[0]
+    assert "binance_order_id" not in rows[0]
+    assert "binance_trade_ids" not in rows[0]
+
+
+def test_purchase_csv_export_classifies_simulated_and_unknown_triggers(client: TestClient, session: Session):
+    simulated_tx = DCATransaction(
+        status="SUCCESS",
+        fiat_amount=10.0,
+        btc_amount=0.0002,
+        price=50000.0,
+        ahr999=0.5,
+        notes="Manual DCA simulation",
+        timestamp=datetime(2024, 1, 1, 0, 0, tzinfo=timezone.utc),
+        source="SIMULATED",
+        is_manual=True,
+    )
+    unknown_tx = DCATransaction(
+        status="SUCCESS",
+        fiat_amount=20.0,
+        btc_amount=0.0004,
+        price=50000.0,
+        ahr999=0.5,
+        notes="External import",
+        timestamp=datetime(2024, 1, 2, 0, 0, tzinfo=timezone.utc),
+        source="LEDGER",
+        is_manual=False,
+    )
+    session.add(simulated_tx)
+    session.add(unknown_tx)
+    session.commit()
+
+    response = client.get("/api/stats/trading-style.csv?language=en")
+
+    assert response.status_code == 200
+    rows = list(csv.DictReader(io.StringIO(response.text)))
+    assert [row["purchase_type"] for row in rows] == ["SIMULATED", "UNKNOWN"]
 
 
 def test_trading_style_analysis_ai_disabled_without_settings(client: TestClient, session: Session):
