@@ -1,10 +1,10 @@
 <header class="dashboard-header">
-    <div class="d-flex flex-column flex-lg-row justify-content-between align-items-center gap-3">
+    <div class="shared-header-layout">
         <a href="/" class="brand-lockup">
             <span class="brand-mark" aria-hidden="true">₿</span>
             <span class="brand-title">{{ project_name }}</span>
         </a>
-        <div class="d-flex flex-column flex-lg-row align-items-center gap-3 w-100 w-lg-auto">
+        <div class="shared-header-right">
             <nav class="nav-actions dashboard-nav d-flex flex-wrap flex-md-nowrap justify-content-center gap-2" aria-label="Primary navigation">
                 <a href="/" class="btn dashboard-nav-btn{% if active_page == 'dashboard' %} active{% endif %}" aria-label="Dashboard" title="Dashboard"{% if active_page == 'dashboard' %} aria-current="page"{% endif %}><i class="bi bi-window-sidebar"></i> <span class="btn-text">Dashboard</span></a>
                 <div class="dropdown">
@@ -14,7 +14,6 @@
                     <ul class="dropdown-menu" aria-labelledby="settingsDropdown">
                         <li><a class="dropdown-item" href="/strategy"><i class="bi bi-sliders"></i> Strategy</a></li>
                         <li><a class="dropdown-item" href="/settings/binance"><i class="bi bi-currency-bitcoin"></i> Binance</a></li>
-                        <li><a class="dropdown-item" href="/settings/binance#email-settings"><i class="bi bi-envelope"></i> Email</a></li>
                     </ul>
                 </div>
                 {% if user and user.is_admin %}
@@ -22,16 +21,19 @@
                 {% endif %}
                 <a href="/stats" class="btn dashboard-nav-btn{% if active_page == 'stats' %} active{% endif %}" aria-label="Analytics" title="Analytics"{% if active_page == 'stats' %} aria-current="page"{% endif %}><i class="bi bi-graph-up"></i> <span class="btn-text">Analytics</span></a>
                 <a href="/analysis/" class="btn dashboard-nav-btn" target="_blank" aria-label="WSUB" title="WSUB"><i class="bi bi-journal-code"></i> <span class="btn-text">WSUB₿</span></a>
-                <button id="themeToggleBtn" type="button" class="btn text-nowrap theme-toggle-btn" aria-label="Toggle theme" title="Toggle theme"></button>
             </nav>
-            {% if user %}
-            <div class="user-chip d-flex align-items-center gap-2 border-start ps-lg-3 mt-2 mt-lg-0 pt-2 pt-lg-0 border-top border-top-lg-0">
-                <span class="text-muted small">{{ user.email }}</span>
-                <form method="POST" action="/api/auth/logout" class="d-inline">
-                    <button type="submit" class="btn btn-sm logout-btn">Logout</button>
-                </form>
+            <div class="header-utility">
+                <button id="themeToggleBtn" type="button" class="btn text-nowrap theme-toggle-btn" aria-label="Toggle theme" title="Toggle theme"></button>
+                {% if user %}
+                <div class="user-chip" aria-label="Signed in account">
+                    <span class="user-avatar" aria-hidden="true"><i class="bi bi-person-circle"></i></span>
+                    <span class="user-email" title="{{ user.email }}">{{ user.email }}</span>
+                    <form method="POST" action="/api/auth/logout" class="logout-form">
+                        <button type="submit" class="btn btn-sm logout-btn">Logout</button>
+                    </form>
+                </div>
+                {% endif %}
             </div>
-            {% endif %}
         </div>
     </div>
 </header>

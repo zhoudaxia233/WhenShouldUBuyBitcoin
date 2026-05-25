@@ -103,6 +103,7 @@ def test_authenticated_templates_share_satsflow_header_and_nav():
     assert 'id="settingsDropdown"' in header
     assert 'class="dropdown-item" href="/strategy"' in header
     assert 'class="dropdown-item" href="/settings/binance"' in header
+    assert 'href="/settings/binance#email-settings"' not in header
     assert 'href="/stats" class="btn dashboard-nav-btn{% if active_page == \'stats\' %} active{% endif %}"' in header
     assert 'href="/admin/data-sources" class="btn dashboard-nav-btn nav-accent admin-diagnostics-link{% if active_page == \'admin\' %} active{% endif %}"' in header
     assert 'href="/analysis/" class="btn dashboard-nav-btn"' in header
@@ -123,6 +124,32 @@ def test_authenticated_templates_share_satsflow_header_and_nav():
         assert 'class="container app-shell' in html, template_name
         assert active_marker in html, template_name
         assert '{% include "_shared_header.html" %}' in html, template_name
+
+
+def test_shared_header_uses_compact_account_cluster():
+    header = (TEMPLATE_DIR / "_shared_header.html").read_text(encoding="utf-8")
+    css = STATIC_CSS_PATH.read_text(encoding="utf-8")
+
+    assert 'class="header-utility"' in header
+    assert 'aria-label="Signed in account"' in header
+    assert 'class="user-avatar"' in header
+    assert 'class="user-email" title="{{ user.email }}"' in header
+    assert 'class="logout-form"' in header
+    assert 'border-start ps-lg-3' not in header
+    assert 'border-top border-top-lg-0' not in header
+    assert ".header-utility" in css
+    assert ".user-email" in css
+    assert "text-overflow: ellipsis;" in css
+
+
+def test_tablet_header_stacks_before_navigation_wraps():
+    css = STATIC_CSS_PATH.read_text(encoding="utf-8")
+    tablet_css = css[css.index("@media (max-width: 991.98px)") :]
+
+    assert ".shared-header-layout" in tablet_css
+    assert ".shared-header-right" in tablet_css
+    assert "flex-direction: column;" in tablet_css
+    assert "align-items: center;" in tablet_css
 
 
 def test_shared_version_badge_class_is_used_across_templates():
