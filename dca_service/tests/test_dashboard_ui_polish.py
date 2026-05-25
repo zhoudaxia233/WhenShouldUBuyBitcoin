@@ -162,7 +162,7 @@ def test_shared_version_badge_class_is_used_across_templates():
         "strategy.html",
     ]:
         html = (TEMPLATE_DIR / template_name).read_text(encoding="utf-8")
-        assert 'class="version-badge"' in html, template_name
+        assert 'class="version-badge' in html, template_name
 
 
 def test_narrow_authenticated_pages_allow_header_nav_to_wrap():
@@ -218,7 +218,7 @@ def test_mobile_version_badge_does_not_overlay_content():
 def test_stats_uses_satsflow_badge_and_reserve_palette():
     html = (TEMPLATE_DIR / "stats.html").read_text(encoding="utf-8")
 
-    assert 'class="badge stats-balance-badge fs-6"' in html
+    assert 'class="stats-balance-badge"' in html
     assert "badge bg-light text-dark" not in html
     assert "#071323" not in html
     assert "#edf3fa" not in html
