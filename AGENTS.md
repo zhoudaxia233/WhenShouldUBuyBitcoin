@@ -26,3 +26,12 @@ than speed or agreement.
   required reviewer has passed.
 - If the task explicitly requires multi-agent review but no multi-agent tool is
   available, stop and say the hard requirement cannot be satisfied.
+
+## GitHub And Merge Gates
+
+- Do not merge pull requests unless the user explicitly says to merge.
+- Without explicit merge approval, only commit locally, push the feature branch,
+  and open or update a pull request.
+- After the user explicitly approves a merge, update the project version first,
+  verify that the frontend visibly shows the new version, then merge.
+- After a successful merge, delete both the remote and local feature branches.
