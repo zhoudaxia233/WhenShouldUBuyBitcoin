@@ -534,6 +534,11 @@
         .trading-style-row-content ul {
             padding-left: 1rem;
         }
+        .stats-footer-version {
+            display: flex;
+            justify-content: flex-end;
+            margin-top: 1rem;
+        }
         html[data-bs-theme="dark"] .saylor-card {
             background: linear-gradient(180deg, var(--dashboard-card-bg-solid) 0%, rgba(255, 138, 0, 0.08) 100%);
             border-color: var(--dashboard-border);
@@ -747,7 +752,6 @@
             <div class="dashboard-panel stats-distribution-card">
                 <div class="card-header dashboard-panel-header d-flex justify-content-between align-items-center gap-2">
                     <h5 class="mb-0">Global Wealth Distribution</h5>
-                    <span class="version-badge position-static m-0">v{{ app_version }}{% if app_commit_sha %} ({{ app_commit_sha[:7] }}){% endif %}</span>
                 </div>
                 <div class="card-body p-0">
                     <div class="table-responsive">
@@ -870,6 +874,9 @@
                 </div>
             </div>
         </div>
+        <div class="stats-footer-version">
+            <span class="version-badge position-static m-0">v{{ app_version }}{% if app_commit_sha %} ({{ app_commit_sha[:7] }}){% endif %}</span>
+        </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
@@ -912,6 +919,7 @@
         const STATS_CACHE_VERSION = 'v2';
         const PERCENTILE_CACHE_KEY = `stats_percentile_${STATS_CACHE_VERSION}`;
         const DISTRIBUTION_CACHE_KEY = `stats_distribution_${STATS_CACHE_VERSION}`;
+        let latestPercentileDisplay = '';
 
         // Cache Helpers
         function saveToCache(key, data) {
@@ -963,17 +971,34 @@
             return formatted ? `Cached BitInfoCharts data as of ${formatted}.` : 'Cached BitInfoCharts data.';
         }
 
+        function currentPercentileDisplay() {
+            return latestPercentileDisplay || document.getElementById('percentileText')?.textContent?.trim() || '';
+        }
+
+        function isCurrentDistributionRow(row) {
+            return currentPercentileDisplay() === String(row.percentile || '').trim();
+        }
+
+        function applyCurrentDistributionHighlight() {
+            const currentPercentile = currentPercentileDisplay();
+            document.querySelectorAll('#distributionTable tr[data-percentile]').forEach(row => {
+                row.classList.toggle('current-rank-row', row.dataset.percentile === currentPercentile);
+            });
+        }
+
         // UI Updaters
         function updatePercentileUI(data) {
             const unavailable = !data || data.data_status === 'unavailable';
             const cacheTextEl = document.getElementById('percentileCacheText');
             if (unavailable) {
+                latestPercentileDisplay = '';
                 document.getElementById('percentileText').textContent = 'Data Unavailable';
                 document.getElementById('percentileSubtext').textContent = 'BitInfoCharts distribution is currently unavailable.';
                 if (cacheTextEl) {
                     cacheTextEl.textContent = data?.total_btc ? 'Showing wallet balance while rank data is unavailable.' : 'Rank data unavailable.';
                 }
                 document.getElementById('totalBtc').textContent = data?.total_btc ? data.total_btc.toFixed(8) : '--';
+                applyCurrentDistributionHighlight();
                 return;
             }
 
@@ -988,6 +1013,7 @@
                 percentileDisplay = 'N/A';
             }
             
+            latestPercentileDisplay = percentileDisplay;
             document.getElementById('percentileText').textContent = percentileDisplay;
             document.getElementById('percentileSubtext').textContent = 'of all Bitcoin holders globally.';
             if (data.data_status === 'stale' || data.data_status === 'cached') {
@@ -1001,6 +1027,7 @@
                 }
             }
             document.getElementById('totalBtc').textContent = data.total_btc ? data.total_btc.toFixed(8) : '--';
+            applyCurrentDistributionHighlight();
         }
 
         async function loadPercentile(forceRefresh = false) {
@@ -1075,8 +1102,8 @@
             updateDistributionSourceUI(meta.data_status || 'live', meta.as_of || null);
             data.forEach(row => {
                 const tr = document.createElement('tr');
-                const isCurrentRank = document.getElementById('percentileText')?.textContent?.trim() === String(row.percentile || '').trim();
-                if (isCurrentRank) tr.className = 'current-rank-row';
+                tr.dataset.percentile = String(row.percentile || '').trim();
+                if (isCurrentDistributionRow(row)) tr.className = 'current-rank-row';
                 const rankWidth = percentileRankBarWidth(row.percentile);
                 tr.innerHTML = `
                     <td>${row.tier}</td>
