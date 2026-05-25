@@ -29,8 +29,8 @@
         .container { max-width: 1200px; }
         .card { margin-bottom: 20px; }
         .percentile-card {
-            background: #fff;
-            color: #000;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
         }
         .pnl-chart-wrap {
             height: 400px;
@@ -121,6 +121,39 @@
             }
         }
 
+        html[data-bs-theme="dark"] body {
+            background-color: #121820;
+            color: #e5e7eb;
+        }
+        html[data-bs-theme="dark"] .card {
+            border-color: #2f3a49;
+        }
+        html[data-bs-theme="dark"] .card-header.bg-white,
+        html[data-bs-theme="dark"] .card-footer {
+            background-color: #1b2430 !important;
+            border-color: #2f3a49;
+        }
+        html[data-bs-theme="dark"] .table-light {
+            --bs-table-bg: #1b2430;
+            --bs-table-color: #e5e7eb;
+            --bs-table-border-color: #2f3a49;
+        }
+        html[data-bs-theme="dark"] .highlight-row {
+            background-color: #1f2d40;
+        }
+        html[data-bs-theme="dark"] .text-muted {
+            color: #9ba7b7 !important;
+        }
+        html[data-bs-theme="dark"] .theme-toggle-btn {
+            border-color: #2f3a49;
+            background: #1b2430;
+            color: #d8deea;
+        }
+        html[data-bs-theme="dark"] .theme-toggle-btn:hover {
+            background: #233043;
+            color: #eef2f8;
+            border-color: #3a4a5f;
+        }
         .version-badge {
             position: fixed;
             right: 10px;
@@ -134,9 +167,9 @@
             padding: 3px 10px;
         }
         .saylor-card {
-            background: #fff;
-            border: 1px solid #e5e5e5;
-            color: #000;
+            background: linear-gradient(180deg, #f7fbff 0%, #edf3fa 100%);
+            border: 1px solid #d7e0ec;
+            color: #1a2737;
         }
         .saylor-card .card-header {
             background: transparent !important;
@@ -200,7 +233,8 @@
         .saylor-summary-box {
             border: 1px solid #234267;
             border-radius: 15px;
-            background: #fafafa;
+            background: linear-gradient(180deg, rgba(20, 37, 61, 0.92) 0%, rgba(17, 31, 50, 0.92) 100%);
+            box-shadow: inset 0 0 0 1px rgba(60, 88, 120, 0.14);
             padding: 12px 14px 10px;
             width: 100%;
             max-width: 420px;
@@ -276,9 +310,40 @@
         #saylorChart {
             touch-action: none;
         }
+        html[data-bs-theme="dark"] .saylor-card {
+            background: linear-gradient(180deg, #071323 0%, #030a16 100%);
+            border-color: #1c2d46;
+            color: #d8e0f0;
+        }
+        html[data-bs-theme="dark"] .saylor-card .card-header {
+            border-bottom-color: #16263d;
+        }
+        html[data-bs-theme="dark"] .saylor-header-kicker {
+            color: #7f8aa0;
+        }
+        html[data-bs-theme="dark"] .saylor-main-value {
+            color: #f4f7ff;
+        }
+        html[data-bs-theme="dark"] .saylor-meta {
+            color: #9ea9bd;
+        }
+        html[data-bs-theme="dark"] .saylor-meta strong {
+            color: #ffb056;
+        }
+        html[data-bs-theme="dark"] .saylor-summary-box {
+            border-color: #253a59;
+            background: rgba(16, 27, 44, 0.82);
+        }
+        html[data-bs-theme="dark"] .saylor-summary-box .label {
+            color: #8491a7;
+        }
+        html[data-bs-theme="dark"] .saylor-summary-box .metric-sub {
+            color: #96a1b6;
+        }
         html[data-bs-theme="light"] .saylor-summary-box {
             border-color: #c8d3e2;
-            background: #fafafa;
+            background: linear-gradient(180deg, #f7f9fc 0%, #edf2f8 100%);
+            box-shadow: inset 0 0 0 1px rgba(148, 165, 184, 0.20);
         }
         html[data-bs-theme="light"] .saylor-summary-box .label {
             color: #5e7189;
@@ -328,7 +393,6 @@
             }
         }
     </style>
-    <link rel="stylesheet" href="/static/app.css">
 </head>
 <body>
     <div class="container">
@@ -355,9 +419,12 @@
                                         <i class="bi bi-sliders"></i> Strategy Config
                                     </a>
                                 </li>
-                            </ul>
-                        </div>
-                        <button id="refreshStatsBtn" class="btn btn-outline-primary text-nowrap" title="Force Refresh Data">
+	                            </ul>
+	                        </div>
+	                        {% if user and user.is_admin %}
+	                        <a href="/admin/data-sources" class="btn btn-outline-warning text-nowrap admin-diagnostics-link"><i class="bi bi-database-check"></i> <span class="btn-text">Diagnostics</span></a>
+	                        {% endif %}
+	                        <button id="refreshStatsBtn" class="btn btn-outline-primary text-nowrap" title="Force Refresh Data">
                             <span class="btn-icon">🔄</span><span class="btn-text">Refresh</span>
                         </button>
                         {% if user and user.is_admin %}
@@ -381,7 +448,7 @@
         </header>
 
         <!-- Wealth Percentile Section -->
-        <div class="card percentile-card mb-4">
+        <div class="card shadow-sm percentile-card mb-4">
             <div class="card-body text-center py-5">
                 <h2 class="display-4 fw-bold text-break" id="percentileText">Loading...</h2>
                 <p class="lead" id="percentileSubtext">Calculating your global rank...</p>
@@ -394,7 +461,7 @@
         <!-- Summary Stats Row -->
         <div class="row row-cols-2 row-cols-md-3 row-cols-xl-5 g-3 mb-4">
             <div class="col">
-                <div class="card h-100">
+                <div class="card shadow-sm h-100">
                     <div class="card-body text-center">
                         <div class="text-muted small">Portfolio Value</div>
                         <div class="h3 text-success mb-0" id="portfolioValueUSD">--</div>
@@ -403,7 +470,7 @@
                 </div>
             </div>
             <div class="col">
-                <div class="card h-100">
+                <div class="card shadow-sm h-100">
                     <div class="card-body text-center">
                         <div class="text-muted small">Avg Buy Price</div>
                         <div class="h3 text-primary mb-0" id="avgBuyPrice">--</div>
@@ -412,7 +479,7 @@
                 </div>
             </div>
             <div class="col">
-                <div class="card h-100">
+                <div class="card shadow-sm h-100">
                     <div class="card-body text-center">
                         <div class="text-muted small">Profit & Loss</div>
                         <div class="h3 mb-0" id="pnlAmount">--</div>
@@ -421,7 +488,7 @@
                 </div>
             </div>
             <div class="col">
-                <div class="card h-100">
+                <div class="card shadow-sm h-100">
                     <div class="card-body text-center">
                         <div class="text-muted small">Total Fees</div>
                         <div class="h3 text-danger mb-0" id="totalFeesUSD">--</div>
@@ -430,7 +497,7 @@
                 </div>
             </div>
             <div class="col">
-                <div class="card h-100">
+                <div class="card shadow-sm h-100">
                     <div class="card-body text-center">
                         <div class="text-muted small">Transactions</div>
                         <div class="h3 text-secondary mb-0" id="transactionCount">--</div>
@@ -443,7 +510,7 @@
         <div class="row">
             <!-- PnL Chart -->
             <div class="col-lg-8">
-                <div class="card h-100">
+                <div class="card shadow-sm h-100">
                     <div class="card-header bg-white">
                         <h5 class="mb-0">Performance Over Time</h5>
                     </div>
@@ -457,7 +524,7 @@
 
             <!-- Wealth Distribution Table -->
             <div class="col-lg-4">
-                <div class="card h-100">
+                <div class="card shadow-sm h-100">
                     <div class="card-header bg-white">
                         <h5 class="mb-0">Global Wealth Distribution</h5>
                     </div>
@@ -485,7 +552,7 @@
 
         <div class="row mt-2">
             <div class="col-12">
-                <div class="card saylor-card">
+                <div class="card shadow-sm saylor-card">
                     <div class="card-header px-4 pt-4 pb-3">
                         <div class="row g-3 align-items-start">
                             <div class="col-lg-8">
@@ -549,7 +616,7 @@
 
         <div class="row mt-4">
             <div class="col-12">
-                <div class="card">
+                <div class="card shadow-sm">
                     <div class="card-header bg-white d-flex justify-content-between align-items-center gap-2">
                         <h5 class="mb-0" id="tradingStyleTitle">Trading Style Analysis</h5>
                         <div class="d-flex align-items-center gap-2">
@@ -1682,6 +1749,7 @@
                 });
             }
             
+            {% if user and user.is_admin %}
             // Regenerate Static Files Button Handler
             const regenerateStaticBtn = document.getElementById('regenerateStaticBtn');
             if (regenerateStaticBtn) {
@@ -1748,6 +1816,7 @@
                 }
             });
             }
+            {% endif %}
         });
     </script>
     <div class="version-badge">

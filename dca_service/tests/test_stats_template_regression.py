@@ -90,7 +90,7 @@ def test_saylor_summary_box_has_max_width_to_avoid_overflow():
 def test_light_mode_summary_box_uses_light_palette():
     html = _load_stats_template()
     assert "html[data-bs-theme=\"light\"] .saylor-summary-box {" in html
-    assert "background: #fafafa;" in html
+    assert "background: linear-gradient(180deg, #f7f9fc 0%, #edf2f8 100%);" in html
     assert "html[data-bs-theme=\"light\"] .saylor-summary-box .metric-value {" in html
     assert "color: #1b2b40;" in html
 

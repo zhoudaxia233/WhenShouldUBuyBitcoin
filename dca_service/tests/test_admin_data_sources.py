@@ -1,3 +1,4 @@
+from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -6,6 +7,8 @@ from fastapi.testclient import TestClient
 from sqlmodel import Session
 
 from dca_service.auth.dependencies import get_current_user
+from dca_service.config import settings
+from dca_service.api import admin_api
 from dca_service.main import app
 from dca_service.models import User
 from dca_service.services.distribution_scraper import clear_cache
@@ -87,6 +90,124 @@ def test_admin_can_view_bitinfocharts_diagnostics(client: TestClient):
     assert page.status_code == 200
     assert "BitInfoCharts" in page.text
     assert "Refresh now" in page.text
+
+
+def test_admin_dashboard_shows_data_sources_entry(client: TestClient):
+    response = client.get("/")
+
+    assert response.status_code == 200
+    assert 'href="/admin/data-sources"' in response.text
+    assert 'admin-diagnostics-link' in response.text
+
+
+def test_non_admin_dashboard_hides_data_sources_entry(non_admin_client: TestClient):
+    response = non_admin_client.get("/")
+
+    assert response.status_code == 200
+    assert 'href="/admin/data-sources"' not in response.text
+
+
+def test_admin_entry_is_standalone_not_inside_settings_dropdown(client: TestClient):
+    response = client.get("/")
+
+    assert response.status_code == 200
+    settings_menu = response.text[
+        response.text.index('aria-labelledby="settingsDropdown"') :
+        response.text.index("</ul>", response.text.index('aria-labelledby="settingsDropdown"'))
+    ]
+    assert "/admin/data-sources" not in settings_menu
+    assert response.text.index('admin-diagnostics-link') > response.text.index("</ul>", response.text.index('aria-labelledby="settingsDropdown"'))
+
+
+def test_admin_entry_is_available_on_authenticated_nav_pages(client: TestClient):
+    for path in ["/", "/stats", "/strategy", "/settings/binance", "/admin/data-sources"]:
+        response = client.get(path)
+        assert response.status_code == 200
+        assert 'href="/admin/data-sources"' in response.text
+        assert 'admin-diagnostics-link' in response.text
+
+
+def test_non_admin_nav_pages_hide_admin_entry(non_admin_client: TestClient):
+    for path in ["/", "/stats", "/strategy", "/settings/binance"]:
+        response = non_admin_client.get(path)
+        assert response.status_code == 200
+        assert 'href="/admin/data-sources"' not in response.text
+        assert 'admin-diagnostics-link' not in response.text
+
+
+def test_non_admin_stats_page_does_not_ship_admin_ops_endpoints(non_admin_client: TestClient):
+    response = non_admin_client.get("/stats")
+
+    assert response.status_code == 200
+    assert "/api/static/regenerate" not in response.text
+    assert "/api/static/regenerate/status" not in response.text
+    assert "log_tail" not in response.text
+
+
+def test_dashboard_does_not_render_raw_api_detail_messages(non_admin_client: TestClient):
+    response = non_admin_client.get("/")
+
+    assert response.status_code == 200
+    assert "payload?.detail" not in response.text
+    assert "textContent = String(error?.message" not in response.text
+
+
+def test_admin_data_sources_page_has_theme_toggle(client: TestClient):
+    response = client.get("/admin/data-sources")
+
+    assert response.status_code == 200
+    assert "localStorage.getItem('dca_theme')" in response.text
+    assert "data-bs-theme" in response.text
+    assert 'id="themeToggleBtn"' in response.text
+
+
+def test_admin_data_sources_page_uses_bootstrap_theme_variables(client: TestClient):
+    response = client.get("/admin/data-sources")
+
+    assert response.status_code == 200
+    assert "background-color: var(--bs-body-bg)" in response.text
+    assert 'html[data-bs-theme="dark"] body' not in response.text
+
+
+def test_admin_diagnostics_api_includes_sanitized_runtime_logs(
+    client: TestClient,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    log_file = tmp_path / "dca_service.log"
+    log_file.write_text(
+        "\n".join(
+            [
+                "2026-05-25 10:00:00 | INFO | started",
+                "2026-05-25 10:00:01 | ERROR | requests.exceptions.Timeout: Read timed out",
+                "2026-05-25 10:00:02 | ERROR | api_secret=super-secret password=1234 Bearer abc.def.ghi",
+                "2026-05-25 10:00:03 | ERROR | Authorization: Bearer header.token.value",
+            ]
+        ),
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(settings, "LOG_FILE_PATH", str(log_file))
+    monkeypatch.setattr(
+        admin_api,
+        "get_static_generation_log_path",
+        lambda: tmp_path / "static_generation.log",
+        raising=False,
+    )
+
+    response = client.get("/api/admin/data-sources/bitinfocharts")
+
+    assert response.status_code == 200
+    data = response.json()
+    assert "runtime" in data
+    assert data["runtime"]["app_version"]
+    assert data["runtime"]["service_log"]["exists"] is True
+    assert data["runtime"]["service_log"]["line_count"] == 4
+    assert any("Read timed out" in line for line in data["runtime"]["service_log"]["tail"])
+    assert "super-secret" not in response.text
+    assert "password=1234" not in response.text
+    assert "Bearer abc.def.ghi" not in response.text
+    assert "header.token.value" not in response.text
+    assert "[REDACTED]" in response.text
 
 
 def test_admin_refresh_timeout_updates_diagnostics_without_raw_error(client: TestClient):
