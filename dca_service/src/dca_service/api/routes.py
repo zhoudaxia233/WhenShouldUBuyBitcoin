@@ -391,6 +391,31 @@ async def sync_transactions(
     
     return {"success": True, "new_trades_count": count}
 
+
+@router.post("/transactions/repair-dca-classification")
+def repair_dca_classification(
+    dry_run: bool = Query(default=True),
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_admin_user),
+):
+    """
+    Preview or apply conservative repair for Binance-imported DCA orders that were
+    previously misclassified as manual buys.
+    """
+    from dca_service.services.transaction_repair import repair_dca_misclassified_transactions
+
+    repair = repair_dca_misclassified_transactions(session, dry_run=dry_run)
+    action = "Previewed" if dry_run else "Applied"
+    return {
+        "success": True,
+        "repair": repair,
+        "message": (
+            f"{action} DCA classification repair. "
+            f"Candidate orders: {repair['candidate_order_count']}; "
+            f"updated rows: {repair['updated_row_count']}."
+        ),
+    }
+
 @router.get("/transactions/{transaction_id}", response_model=TransactionRead)
 def read_transaction(
     transaction_id: int,

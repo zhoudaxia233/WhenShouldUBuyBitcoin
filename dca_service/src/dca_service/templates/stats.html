@@ -493,6 +493,15 @@
             background: transparent !important;
             padding-bottom: 0.75rem;
         }
+        .trading-style-heading {
+            min-width: min(100%, 360px);
+        }
+        .trading-style-status {
+            margin-top: 0.55rem;
+        }
+        .trading-style-actions {
+            flex: 0 0 auto;
+        }
         .stats-trading-panel .card-body {
             padding-top: 0.25rem;
         }
@@ -622,6 +631,13 @@
             }
             .pnl-chart-wrap {
                 height: 340px;
+            }
+            .stats-trading-panel .dashboard-panel-header {
+                align-items: flex-start !important;
+            }
+            .trading-style-actions {
+                width: 100%;
+                justify-content: flex-start;
             }
             .trading-style-row {
                 grid-template-columns: 28px minmax(0, 1fr);
@@ -836,9 +852,12 @@
         </div>
 
         <div class="dashboard-panel stats-trading-panel">
-            <div class="card-header dashboard-panel-header d-flex flex-wrap justify-content-between align-items-center gap-2">
-                <h5 class="mb-0" id="tradingStyleTitle">Trading Style Analysis</h5>
-                <div class="d-flex align-items-center gap-2">
+            <div class="card-header dashboard-panel-header d-flex flex-wrap justify-content-between align-items-start gap-3">
+                <div class="trading-style-heading">
+                    <h5 class="mb-0" id="tradingStyleTitle">Trading Style Analysis</h5>
+                    <div class="small text-muted trading-style-status" id="tradingStyleStatus">Loading analysis...</div>
+                </div>
+                <div class="trading-style-actions d-flex align-items-center gap-2">
                     <div class="btn-group btn-group-sm" role="group" aria-label="Trading style language">
                         <button id="tradingStyleLangEn" class="btn btn-outline-secondary active" type="button">EN</button>
                         <button id="tradingStyleLangZh" class="btn btn-outline-secondary" type="button">中文</button>
@@ -847,7 +866,6 @@
                 </div>
             </div>
             <div class="card-body">
-                <div class="small text-muted mb-3" id="tradingStyleStatus">Loading analysis...</div>
                 <div class="trading-style-list">
                     <div class="trading-style-row">
                         <span class="trading-style-row-icon"><i class="bi bi-bullseye"></i></span>
@@ -1788,7 +1806,7 @@
                 const downloadUrl = URL.createObjectURL(blob);
                 const link = document.createElement('a');
                 link.href = downloadUrl;
-                link.download = 'trading-style-analysis.csv';
+                link.download = 'bitcoin-purchases.csv';
                 document.body.appendChild(link);
                 link.click();
                 document.body.removeChild(link);

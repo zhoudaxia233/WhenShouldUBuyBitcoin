@@ -32,6 +32,9 @@ than speed or agreement.
 - Do not merge pull requests unless the user explicitly says to merge.
 - Without explicit merge approval, only commit locally, push the feature branch,
   and open or update a pull request.
+- Before merging any pull request, check the current CI/checks status for the
+  exact head commit being merged. Do not merge if CI/checks are failing,
+  pending, missing, stale, or cannot be verified.
 - After the user explicitly approves a merge for app, frontend-visible, or
   runtime behavior changes, update the project version first, verify that the
   frontend visibly shows the new version, then merge.
