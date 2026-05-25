@@ -1,6 +1,8 @@
 """Tests for Bitcoin distribution scraper."""
 import pytest
 from unittest.mock import MagicMock, patch
+import requests
+from dca_service.services import distribution_scraper
 from dca_service.services.distribution_scraper import (
     fetch_distribution,
     fetch_distribution_with_status,
@@ -41,6 +43,13 @@ SAMPLE_DISTRIBUTION_HTML = """
   </tbody>
 </table>
 """
+
+
+@pytest.fixture(autouse=True)
+def reset_distribution_scraper_state():
+    clear_cache()
+    yield
+    clear_cache()
 
 
 def _mock_distribution_response(html: str = SAMPLE_DISTRIBUTION_HTML):
@@ -163,3 +172,48 @@ def test_fetch_distribution_can_use_static_fallback_when_explicitly_enabled():
         assert len(result) > 0
         tiers = [item['tier'] for item in result]
         assert '[100,000 - 1,000,000)' in tiers
+
+
+def test_fetch_distribution_timeout_records_sanitized_diagnostics():
+    """Timeout diagnostics should help admins without exposing raw socket details."""
+    clear_cache()
+
+    raw_timeout = requests.exceptions.Timeout(
+        "HTTPSConnectionPool(host='bitinfocharts.com', port=443): Read timed out. raw socket details"
+    )
+    with patch("requests.get", side_effect=raw_timeout):
+        with pytest.raises(ValueError, match="Failed to fetch distribution data"):
+            fetch_distribution_with_status(use_cache=False, allow_stale_cache=False)
+
+    diagnostics = distribution_scraper.get_distribution_diagnostics()
+    assert diagnostics["last_status"] == "unavailable"
+    assert diagnostics["last_error_type"] == "Timeout"
+    assert diagnostics["last_error_message_sanitized"] == "Request timed out while contacting BitInfoCharts."
+    assert diagnostics["last_http_status"] is None
+    assert diagnostics["target_url"] == "https://bitinfocharts.com/top-100-richest-bitcoin-addresses.html"
+    assert isinstance(diagnostics["elapsed_ms"], int)
+    assert "HTTPSConnectionPool" not in diagnostics["last_error_message_sanitized"]
+    assert "raw socket details" not in diagnostics["last_error_message_sanitized"]
+
+
+def test_stale_cache_diagnostics_preserve_live_http_failure_details():
+    """Stale fallback should still show admins why the live refresh failed."""
+    clear_cache()
+
+    with patch("requests.get", return_value=_mock_distribution_response()):
+        fetch_distribution(use_cache=False)
+
+    response = MagicMock()
+    response.status_code = 403
+    response.raise_for_status.side_effect = requests.exceptions.HTTPError("403 Client Error")
+
+    with patch("requests.get", return_value=response):
+        snapshot = fetch_distribution_with_status(use_cache=False, allow_stale_cache=True)
+
+    diagnostics = distribution_scraper.get_distribution_diagnostics()
+    assert snapshot["data_status"] == "stale"
+    assert diagnostics["last_status"] == "stale"
+    assert diagnostics["last_error_type"] == "HTTPError"
+    assert diagnostics["last_error_message_sanitized"] == "BitInfoCharts returned HTTP 403."
+    assert diagnostics["last_http_status"] == 403
+    assert isinstance(diagnostics["elapsed_ms"], int)

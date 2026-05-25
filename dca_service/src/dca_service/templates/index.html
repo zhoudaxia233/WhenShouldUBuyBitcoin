@@ -105,43 +105,8 @@
             }
         }
 
-        /* Dark mode overrides for custom light-only classes */
-        html[data-bs-theme="dark"] body {
-            background-color: #121820;
-            color: #e5e7eb;
-        }
-        html[data-bs-theme="dark"] .card {
-            border-color: #2f3a49;
-        }
-        html[data-bs-theme="dark"] .card-header.bg-white,
-        html[data-bs-theme="dark"] .card-footer.bg-white {
-            background-color: #1b2430 !important;
-            border-color: #2f3a49;
-        }
-        html[data-bs-theme="dark"] .table-light {
-            --bs-table-bg: #1b2430;
-            --bs-table-color: #e5e7eb;
-            --bs-table-border-color: #2f3a49;
-        }
-        html[data-bs-theme="dark"] .alert-light {
-            background-color: #1b2430;
-            border-color: #2f3a49;
-            color: #e5e7eb;
-        }
-        html[data-bs-theme="dark"] .text-muted {
-            color: #9ba7b7 !important;
-        }
-        html[data-bs-theme="dark"] .theme-toggle-btn {
-            border-color: #2f3a49;
-            background: #1b2430;
-            color: #d8deea;
-        }
-        html[data-bs-theme="dark"] .theme-toggle-btn:hover {
-            background: #233043;
-            color: #eef2f8;
-            border-color: #3a4a5f;
-        }
     </style>
+    <link rel="stylesheet" href="/static/app.css">
 </head>
 <body>
     <div class="container">
@@ -187,7 +152,7 @@
         </header>
 
         <!-- Global Refresh Status Bar -->
-        <div class="card shadow-sm mb-4">
+        <div class="card mb-4">
             <div class="card-body py-2">
                 <div class="d-flex justify-content-between align-items-center">
                     <div class="text-muted small">
@@ -201,7 +166,7 @@
         </div>
 
         <!-- Wallet Overview Section -->
-        <div class="card shadow-sm mb-4">
+        <div class="card mb-4">
             <div class="card-header bg-white">
                 <h5 class="mb-0">Wallet Overview</h5>
             </div>
@@ -249,7 +214,7 @@
         </div>
 
         <!-- DCA Control Section -->
-        <div class="card shadow-sm mb-4">
+        <div class="card mb-4">
             <div class="card-header bg-white d-flex justify-content-between align-items-center">
                 <h5 class="mb-0">DCA Preview & Control</h5>
                 <div>
@@ -319,7 +284,7 @@
             </div>
         </div>
 
-        <div class="card shadow-sm mb-5">
+        <div class="card mb-5">
             <div class="card-header bg-white d-flex justify-content-between align-items-center">
                 <h5 class="mb-0">Transaction History</h5>
                 <button id="clearSimulatedBtn" class="btn btn-sm btn-outline-danger">
@@ -479,7 +444,10 @@
                         globalRefreshEl.textContent = `${parsedDate.toISOString().replace('T', ' ').substring(0, 16)} UTC`;
                     }
                 }
-                renderBottomingSignalPreview(preview.bottoming_signal || null);
+                window.__latestBottomingSignal = preview.bottoming_signal || null;
+                if (typeof window.renderBottomingSignalPreview === 'function') {
+                    window.renderBottomingSignalPreview(window.__latestBottomingSignal);
+                }
                 window.__latestDrawdownDecision = preview;
                 if (typeof window.renderDrawdownContextCompact === 'function') {
                     window.renderDrawdownContextCompact(preview);

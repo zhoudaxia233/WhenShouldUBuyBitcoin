@@ -85,6 +85,22 @@ def test_percentile_api_resilience(client):
             assert data["data_status"] == "unavailable"
             assert data["source"] == "unavailable"
             assert "unavailable" in data["message"].lower()
+            assert "Scraper blocked!" not in response.text
+
+
+def test_distribution_api_does_not_return_raw_scraper_exception(client):
+    """
+    The public distribution endpoint should not expose scraper internals to ordinary users.
+    """
+    with patch("dca_service.services.distribution_scraper.fetch_distribution_with_status") as mock_fetch:
+        mock_fetch.side_effect = ValueError("Scraper blocked! raw Cloudflare token")
+
+        response = client.get("/api/stats/distribution")
+
+        assert response.status_code == 503
+        assert response.json()["detail"] == "Wealth distribution data is currently unavailable"
+        assert "Scraper blocked!" not in response.text
+        assert "raw Cloudflare token" not in response.text
 
 def test_percentile_api_success(client):
     """Test happy path when scraper works."""
