@@ -795,13 +795,19 @@
                 justify-content: center;
                 margin-top: 0.36rem;
             }
+            .wallet-card-grid .mobile-card-icon {
+                display: none;
+            }
             .progress-metric-card {
                 display: flex;
-                min-height: 96px;
+                min-height: 72px;
                 flex-direction: column;
                 align-items: flex-start;
                 justify-content: space-between;
                 gap: 0.42rem;
+            }
+            .progress-metric-card .progress-ring {
+                display: none;
             }
             .progress-ring {
                 width: 48px;
@@ -819,21 +825,28 @@
             .dashboard-page .card-header.dashboard-panel-header {
                 padding: 0.6rem 0.72rem;
             }
+            .dca-strategy-panel .dashboard-panel-header {
+                padding: 0.48rem 0.72rem !important;
+                gap: 0.34rem !important;
+            }
             .dashboard-panel-title {
                 font-size: 0.96rem;
             }
             .dca-strategy-panel .card-body {
-                padding: 0.64rem;
+                padding: 0.42rem 0.58rem 0.56rem !important;
             }
             .strategy-status-pills {
                 justify-content: flex-start;
+                flex-wrap: nowrap;
                 gap: 0.42rem;
+                overflow-x: hidden;
             }
             #scheduleDisplay,
             #execModeBadge,
             #dataSourceBadge {
                 font-size: 0.64rem;
                 padding: 0.24rem 0.34rem;
+                white-space: nowrap;
             }
             .strategy-metric-grid {
                 grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -856,13 +869,13 @@
                 border-bottom: 0;
             }
             .strategy-metric {
-                min-height: 54px;
-                padding: 0.38rem 0.4rem;
+                min-height: 44px;
+                padding: 0.26rem 0.34rem;
                 grid-template-columns: minmax(0, 1fr);
                 gap: 0.2rem;
             }
             .strategy-metric-content {
-                min-height: 42px;
+                min-height: 32px;
             }
             .strategy-action-coin {
                 width: 22px;
@@ -870,11 +883,11 @@
                 font-size: 0.78rem;
             }
             .strategy-label {
-                font-size: 0.58rem;
+                font-size: 0.55rem;
                 margin-bottom: 0.22rem !important;
             }
             .strategy-value {
-                font-size: 0.84rem;
+                font-size: 0.78rem;
             }
             .strategy-card-grid {
                 grid-template-columns: 1fr;
@@ -888,8 +901,8 @@
                 overflow: hidden;
             }
             .strategy-advanced-header {
-                min-height: 56px;
-                padding: 0.62rem 0.78rem;
+                min-height: 48px;
+                padding: 0.44rem 0.64rem;
                 display: flex;
                 align-items: center;
                 justify-content: space-between;
@@ -914,7 +927,7 @@
                 display: block;
                 margin-top: 0.16rem;
                 color: var(--dashboard-muted);
-                font-size: 0.74rem;
+                font-size: 0.7rem;
                 font-weight: 650;
                 line-height: 1.25;
             }
@@ -1023,9 +1036,11 @@
                 margin-top: 0.3rem;
             }
             .strategy-actions {
-                margin-top: 0.56rem;
+                margin-top: 0.4rem;
             }
             .strategy-actions .btn {
+                min-height: 32px;
+                padding: 0.3rem 0.5rem;
                 width: 100%;
             }
             .transactions-table-wrap {
@@ -1366,6 +1381,54 @@
     </div>
     <script>
         window.LOCAL_TIMEZONE = {{ local_timezone | tojson }};
+        const dashboardMobileQuery = window.matchMedia ? window.matchMedia('(max-width: 768px)') : null;
+
+        function isDashboardCompactViewport() {
+            return dashboardMobileQuery ? dashboardMobileQuery.matches : false;
+        }
+
+        function setResponsiveBadgeText(element, fullText, compactText) {
+            if (!element) return;
+            element.dataset.fullText = fullText;
+            element.dataset.compactText = compactText || fullText;
+            element.textContent = isDashboardCompactViewport()
+                ? element.dataset.compactText
+                : element.dataset.fullText;
+        }
+
+        function refreshResponsiveBadgeText() {
+            document.querySelectorAll('[data-full-text][data-compact-text]').forEach((element) => {
+                element.textContent = isDashboardCompactViewport()
+                    ? element.dataset.compactText
+                    : element.dataset.fullText;
+            });
+        }
+
+        function formatStrategyFrequency(value) {
+            if (typeof value !== 'string' || value.trim() === '') return '';
+            return value.charAt(0).toUpperCase() + value.slice(1);
+        }
+
+        function setStrategyScheduleBadge(strategy) {
+            if (!strategy || !strategy.execution_frequency || !strategy.execution_time_utc) return;
+            const scheduleDisplayEl = document.getElementById('scheduleDisplay');
+            if (!scheduleDisplayEl) return;
+            const freq = formatStrategyFrequency(strategy.execution_frequency);
+            const mode = (strategy.time_display_mode || 'UTC').toUpperCase();
+            const modeLabel = mode === 'LOCAL' ? window.LOCAL_TIMEZONE : 'UTC';
+            const scheduleFullText = `Schedule: ${freq} at ${strategy.execution_time_utc} (${modeLabel})`;
+            const scheduleCompactText = `${freq} ${strategy.execution_time_utc}`;
+            setResponsiveBadgeText(scheduleDisplayEl, scheduleFullText, scheduleCompactText);
+        }
+
+        if (dashboardMobileQuery) {
+            if (dashboardMobileQuery.addEventListener) {
+                dashboardMobileQuery.addEventListener('change', refreshResponsiveBadgeText);
+            } else if (dashboardMobileQuery.addListener) {
+                dashboardMobileQuery.addListener(refreshResponsiveBadgeText);
+            }
+        }
+
         // Hydrate wallet and DCA preview from cache as early as possible to avoid placeholder flash on refresh.
         (function () {
             const toFiniteNumber = (value) => {
@@ -1463,13 +1526,7 @@
             }
 
             if (strategy && strategy.execution_frequency && strategy.execution_time_utc) {
-                const scheduleDisplayEl = document.getElementById('scheduleDisplay');
-                if (scheduleDisplayEl) {
-                    const freq = strategy.execution_frequency.charAt(0).toUpperCase() + strategy.execution_frequency.slice(1);
-                    const mode = (strategy.time_display_mode || 'UTC').toUpperCase();
-                    const modeLabel = mode === 'LOCAL' ? window.LOCAL_TIMEZONE : 'UTC';
-                    scheduleDisplayEl.textContent = `Schedule: ${freq} at ${strategy.execution_time_utc} (${modeLabel})`;
-                }
+                setStrategyScheduleBadge(strategy);
             }
 
             if (preview) {
@@ -1520,7 +1577,7 @@
                     typeof preview.metrics_source.label === 'string' &&
                     preview.metrics_source.label.trim() !== ''
                 ) {
-                    dataSourceBadgeEl.textContent = `Source: ${preview.metrics_source.label}`;
+                    setResponsiveBadgeText(dataSourceBadgeEl, `Source: ${preview.metrics_source.label}`, preview.metrics_source.label);
                     dataSourceBadgeEl.title = preview.metrics_source.label;
                 }
                 if (remainingBudgetEl && remainingBudget !== null) {
@@ -2122,10 +2179,8 @@
 
         function updateStrategyUI(strategy) {
             if (strategy) {
-                const freq = strategy.execution_frequency.charAt(0).toUpperCase() + strategy.execution_frequency.slice(1);
                 currentTimeDisplayMode = (strategy.time_display_mode || 'UTC').toUpperCase();
-                const modeLabel = currentTimeDisplayMode === 'LOCAL' ? LOCAL_TIMEZONE : 'UTC';
-                document.getElementById('scheduleDisplay').textContent = `Schedule: ${freq} at ${strategy.execution_time_utc} (${modeLabel})`;
+                setStrategyScheduleBadge(strategy);
                 if (allTransactions.length > 0) {
                     renderTransactionPage();
                 }
@@ -2337,7 +2392,7 @@
             const metricsSource = decision.metrics_source || {backend: 'unknown', label: 'Unknown'};
             const sourceBadge = document.getElementById('dataSourceBadge');
             if (sourceBadge) {
-                sourceBadge.textContent = `Source: ${metricsSource.label}`;
+                setResponsiveBadgeText(sourceBadge, `Source: ${metricsSource.label}`, metricsSource.label);
                 sourceBadge.title = metricsSource.label; // Tooltip for full label
             }
             
@@ -2949,10 +3004,10 @@
             
             if (mode === 'LIVE') {
                 badge.className = 'badge bg-danger me-2';
-                badge.textContent = 'Mode: LIVE';
+                setResponsiveBadgeText(badge, 'Mode: LIVE', 'LIVE');
             } else {
                 badge.className = 'badge bg-secondary me-2';
-                badge.textContent = 'Mode: Dry Run';
+                setResponsiveBadgeText(badge, 'Mode: Dry Run', 'Dry Run');
             }
         }
 

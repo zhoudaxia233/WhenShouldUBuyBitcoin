@@ -127,13 +127,15 @@ def test_dashboard_mobile_keeps_reference_density_and_card_shapes():
     assert "grid-column: 1 / -1;" in mobile_css
     assert "min-height: 128px;" in mobile_css
     assert ".progress-metric-card {" in mobile_css
-    assert "min-height: 96px;" in mobile_css
+    assert "min-height: 72px;" in mobile_css
+    assert ".wallet-card-grid .mobile-card-icon {" in mobile_css
+    assert ".progress-metric-card .progress-ring {" in mobile_css
     assert ".dca-budget-card {" not in mobile_css
     assert ".wallet-card-grid .metric-card:not(.metric-card-primary) .metric-value {" in mobile_css
     assert "white-space: nowrap;" in mobile_css
     assert ".strategy-metric-grid {" in mobile_css
     assert "grid-template-columns: repeat(3, minmax(0, 1fr));" in mobile_css
-    assert "min-height: 54px;" in mobile_css
+    assert "min-height: 44px;" in mobile_css
     assert "#bottomingSignalBox {" not in mobile_css
     assert 'id="bottomingSignalStatus"' in html
     assert 'id="bottomingSignalMetrics"' in html
@@ -143,6 +145,40 @@ def test_dashboard_mobile_keeps_reference_density_and_card_shapes():
     assert ".mobile-transaction-card-list {" in mobile_css
     assert ".transactions-table-wrap {" in mobile_css
     assert "display: none;" in mobile_css
+
+
+def test_dashboard_mobile_strategy_badges_use_compact_single_row_labels():
+    html = _dashboard_html()
+    mobile_css = html[html.index("@media (max-width: 768px)") :]
+
+    assert "function setResponsiveBadgeText(element, fullText, compactText)" in html
+    assert "function refreshResponsiveBadgeText()" in html
+    assert "setResponsiveBadgeText(scheduleDisplayEl, scheduleFullText, scheduleCompactText);" in html
+    assert "const scheduleCompactText = `${freq} ${strategy.execution_time_utc}`;" in html
+    assert "setResponsiveBadgeText(dataSourceBadgeEl, `Source: ${preview.metrics_source.label}`, preview.metrics_source.label);" in html
+    assert "setResponsiveBadgeText(sourceBadge, `Source: ${metricsSource.label}`, metricsSource.label);" in html
+    assert "setResponsiveBadgeText(badge, 'Mode: LIVE', 'LIVE');" in html
+    assert "setResponsiveBadgeText(badge, 'Mode: Dry Run', 'Dry Run');" in html
+    assert ".strategy-status-pills {" in mobile_css
+    assert "flex-wrap: nowrap;" in mobile_css
+    assert "overflow-x: hidden;" in mobile_css
+
+
+def test_dashboard_mobile_strategy_cta_stays_above_bottom_nav():
+    html = _dashboard_html()
+    mobile_css = html[html.index("@media (max-width: 768px)") :]
+
+    assert ".dca-strategy-panel .dashboard-panel-header {" in mobile_css
+    assert "padding: 0.48rem 0.72rem !important;" in mobile_css
+    assert ".dca-strategy-panel .card-body {" in mobile_css
+    assert "padding: 0.42rem 0.58rem 0.56rem !important;" in mobile_css
+    assert ".strategy-metric {" in mobile_css
+    assert "min-height: 44px;" in mobile_css
+    assert ".strategy-metric-content {" in mobile_css
+    assert "min-height: 32px;" in mobile_css
+    assert ".strategy-actions .btn {" in mobile_css
+    assert "min-height: 32px;" in mobile_css
+    assert "padding: 0.3rem 0.5rem;" in mobile_css
 
 
 def test_dashboard_dca_strategy_uses_structured_reference_cards():
