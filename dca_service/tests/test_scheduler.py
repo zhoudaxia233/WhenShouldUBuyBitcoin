@@ -484,3 +484,43 @@ class TestSchedulerLifecycle:
         """Test that stopping non-running scheduler doesn't cause issues"""
         scheduler.stop()  # Should not raise error
         assert scheduler.is_running is False
+
+
+class TestStaticGenerationSchedule:
+    """Tests for scheduled static analysis regeneration."""
+
+    def test_scheduler_start_registers_daily_static_generation_job(self, scheduler):
+        """Static charts/data should refresh daily on the server."""
+        scheduler.start()
+
+        job = scheduler.scheduler.get_job("static_generation")
+
+        assert job is not None
+        assert job.name == "Daily Static Analysis Generation"
+        assert str(job.trigger) == "cron[hour='0', minute='30']"
+        scheduler.stop()
+
+    @patch("dca_service.services.static_generator.trigger_static_generation")
+    def test_static_generation_job_runs_in_background(self, mock_trigger, scheduler):
+        """The scheduled job should update mounted docs files without blocking."""
+        scheduler._run_static_generation_job()
+
+        mock_trigger.assert_called_once_with(background=True)
+
+    @patch("dca_service.services.static_generator.trigger_static_generation")
+    def test_static_generation_job_error_does_not_raise(self, mock_trigger, scheduler):
+        """Static generation failures should be logged without killing APScheduler."""
+        mock_trigger.side_effect = RuntimeError("generation failed")
+
+        scheduler._run_static_generation_job()
+
+        mock_trigger.assert_called_once_with(background=True)
+
+    def test_static_generation_schedule_can_be_disabled(self, scheduler, monkeypatch):
+        """Operators should be able to disable server-side chart regeneration."""
+        monkeypatch.setattr(settings, "STATIC_GENERATION_SCHEDULE_ENABLED", False)
+
+        scheduler.start()
+
+        assert scheduler.scheduler.get_job("static_generation") is None
+        scheduler.stop()

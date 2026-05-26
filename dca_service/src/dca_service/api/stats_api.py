@@ -590,7 +590,7 @@ def _build_wealth_distribution_from_live_data(force_refresh: bool = False) -> Tu
     Behavior:
     - Fresh cache (< 24h): Returns cached data instantly
     - Expired cache (> 24h): Fetches new data, falls back to stale cache if fetch fails
-    - No cache: Raises error (won't show bad data)
+    - No runtime cache: Uses bundled static data when live fetch fails, labeled in metadata
     
     Returns:
         Tuple of wealth distribution tiers and source metadata.
@@ -598,7 +598,7 @@ def _build_wealth_distribution_from_live_data(force_refresh: bool = False) -> Tu
         percentile_top is float for comparison, percentile_str preserves original formatting.
         
     Raises:
-        ValueError: If no distribution data is available (no cache and fetch failed)
+        ValueError: If no distribution data is available from live, runtime cache, or bundled static data
     """
     from dca_service.services.distribution_scraper import (
         fetch_distribution_with_status,
@@ -608,7 +608,7 @@ def _build_wealth_distribution_from_live_data(force_refresh: bool = False) -> Tu
 
     snapshot = fetch_distribution_with_status(
         use_cache=not force_refresh,
-        allow_static_fallback=False,
+        allow_static_fallback=True,
         allow_stale_cache=True,
     )
     distribution_data = snapshot.get("data") or []
@@ -637,7 +637,11 @@ def _build_wealth_distribution_from_live_data(force_refresh: bool = False) -> Tu
     # Sort by min_btc descending (largest first)
     wealth_dist.sort(key=lambda x: x[0], reverse=True)
     
-    logger.info(f"Built wealth distribution from live data: {len(wealth_dist)} tiers")
+    logger.info(
+        "Built wealth distribution from %s data: %s tiers",
+        snapshot.get("source", "unknown"),
+        len(wealth_dist),
+    )
     return wealth_dist, snapshot
 
 @router.get("/stats/distribution")
@@ -650,7 +654,7 @@ def get_wealth_distribution(
     try:
         snapshot = fetch_distribution_with_status(
             use_cache=not force_refresh,
-            allow_static_fallback=False,
+            allow_static_fallback=True,
             allow_stale_cache=True,
         )
         headers = {
