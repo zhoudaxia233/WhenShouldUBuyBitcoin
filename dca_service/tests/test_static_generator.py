@@ -13,6 +13,7 @@ from dca_service.services.static_generator import (
     trigger_static_generation,
     check_static_generation_status,
     _assert_static_output_writable,
+    inspect_static_output_freshness,
 )
 
 
@@ -155,6 +156,32 @@ class TestStaticGeneratorErrorHandling:
         metrics.chmod(0o444)
 
         _assert_static_output_writable(tmp_path)
+
+    def test_inspect_static_output_freshness_flags_stale_metrics_and_report(self, tmp_path):
+        data_dir = tmp_path / "docs" / "data"
+        data_dir.mkdir(parents=True)
+        (data_dir / "btc_metrics.csv").write_text(
+            "date,close_price\n2026-03-15,72789.91\n",
+            encoding="utf-8",
+        )
+        (data_dir / "daily_report.json").write_text(
+            '{"report_date":"2026-03-15","generated_at":"2026-03-16T19:06:33Z"}',
+            encoding="utf-8",
+        )
+
+        result = inspect_static_output_freshness(
+            tmp_path,
+            now_date="2026-05-26",
+            max_metrics_age_days=3,
+            max_report_age_days=7,
+        )
+
+        assert result["fresh"] is False
+        assert result["metrics"]["latest_date"] == "2026-03-15"
+        assert result["metrics"]["age_days"] == 72
+        assert result["metrics"]["fresh"] is False
+        assert result["daily_report"]["report_date"] == "2026-03-15"
+        assert result["daily_report"]["fresh"] is False
 
 
 class TestProcessStatusCheck:
