@@ -1285,9 +1285,12 @@
                 statsRawFills: 'Raw fills',
                 statsSplitMerged: 'Split extras merged',
                 statsAvgEvent: 'Avg event',
+                statsWeightedAvg: 'Avg cost',
                 statsMedianInterval: 'Median interval',
                 statsHighZone: 'High-zone ratio',
                 statsLowZone: 'Low-zone ratio',
+                statsHighZoneUsd: 'High-zone USD',
+                statsLowZoneUsd: 'Low-zone USD',
                 statsBurst: 'Burst ratio',
                 days: 'days',
                 methodSplit: 'Same binance_order_id merged into one event.',
@@ -1309,9 +1312,12 @@
                 statsRawFills: '原始成交',
                 statsSplitMerged: '拆单合并数',
                 statsAvgEvent: '平均单次金额',
+                statsWeightedAvg: '平均成本',
                 statsMedianInterval: '中位间隔',
                 statsHighZone: '高位买入占比',
                 statsLowZone: '低位买入占比',
+                statsHighZoneUsd: '高位资金占比',
+                statsLowZoneUsd: '低位资金占比',
                 statsBurst: '密集交易占比',
                 days: '天',
                 methodSplit: '同一 binance_order_id 的拆分成交会合并为一个行为事件。',
@@ -1323,6 +1329,7 @@
         const STYLE_TAG_ZH_MAP = {
             'Dip Buyer': '逢低买入型',
             'Momentum Chaser': '追涨型',
+            'High-cost Weighted': '高成本权重偏高',
             'Fixed-size DCA': '固定金额定投型',
             'Burst Trader': '密集交易型',
             'Manual Dominant': '手动主导型',
@@ -1886,6 +1893,9 @@
             const titleMap = {
                 'Limited sample size': '样本量有限',
                 'Possible high-price chasing': '可能存在高位追涨',
+                'High-cost basis from larger high-zone buys': '高位大额买入抬高成本',
+                'Low-zone count overstates deployed capital': '低位次数高估了资金投入',
+                'Average cost still mid-to-high': '平均成本仍处于中高位',
                 'Larger size at higher prices': '高位加大仓位',
                 'High burst frequency': '交易过于密集',
                 'Concentrated single-event risk': '单笔集中风险偏高',
@@ -1896,6 +1906,9 @@
             const detailMap = {
                 'Behavior interpretation confidence is limited because the event count is still small.': '行为解读的置信度有限，因为行为事件数量仍然偏少。',
                 'A large share of buys happened near the top of your historical range at the moment of execution.': '有较高比例的买入发生在当时历史区间的高位附近。',
+                'High-zone buys are a much larger share of deployed capital than of event count, which keeps average cost elevated.': '高位买入在资金占比上明显高于次数占比，因此平均成本仍被抬高。',
+                'Many buys occurred in lower zones, but a smaller share of total USD was deployed there, so average cost repairs slowly.': '很多买入发生在低位区间，但投入资金占比没有同样高，所以平均成本下降较慢。',
+                'Your average cost is still high relative to your observed buy range despite frequent lower-zone entries.': '尽管低位买入次数较多，你的平均成本相对自己的买入价格区间仍然偏高。',
                 'Position size tends to increase when your own observed price range is already in upper zones.': '在你自己历史观察区间偏高时，仓位规模倾向于增大。',
                 'Many trades happen within 48 hours of each other, which may indicate reactive execution.': '很多交易发生在48小时内，可能存在反应式执行。',
                 'Your largest event contributes over 35% of total invested amount.': '你最大的一次行为事件占总投入金额超过35%。',
@@ -1939,6 +1952,7 @@
             const rawFillCount = Number(summary.raw_fill_count || 0);
             const splitExtras = Number(summary.split_fill_extra_count || 0);
             const avgEventUsd = Number(summary.avg_event_usd || 0);
+            const weightedAvgBuy = Number(summary.weighted_avg_buy_price_usd || 0);
             const medianIntervalDays = summary.median_interval_days;
 
             document.getElementById('tradingStyleTags').textContent = tags.length ? tags.map(localizeStyleTag).join(', ') : '--';
@@ -1947,9 +1961,12 @@
                 `${text.statsRawFills}: ${rawFillCount}`,
                 `${text.statsSplitMerged}: ${splitExtras}`,
                 `${text.statsAvgEvent}: $${avgEventUsd.toLocaleString(undefined, { maximumFractionDigits: 2 })}`,
+                `${text.statsWeightedAvg}: ${weightedAvgBuy > 0 ? `$${weightedAvgBuy.toLocaleString(undefined, { maximumFractionDigits: 0 })}` : '--'}`,
                 `${text.statsMedianInterval}: ${medianIntervalDays == null ? '--' : Number(medianIntervalDays).toFixed(2)} ${text.days}`,
                 `${text.statsHighZone}: ${formatPct(summary.high_zone_buy_ratio)}`,
                 `${text.statsLowZone}: ${formatPct(summary.low_zone_buy_ratio)}`,
+                `${text.statsHighZoneUsd}: ${formatPct(summary.high_zone_usd_ratio)}`,
+                `${text.statsLowZoneUsd}: ${formatPct(summary.low_zone_usd_ratio)}`,
                 `${text.statsBurst}: ${formatPct(summary.burst_trading_ratio)}`
             ].join(' | ');
 

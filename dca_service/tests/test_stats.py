@@ -147,6 +147,79 @@ def test_trading_style_analysis_aggregates_split_fills(client: TestClient, sessi
     assert diagnostics[1]["fill_count"] == 1
 
 
+def test_behavior_analysis_surfaces_amount_weighted_high_cost_exposure():
+    base_time = datetime(2026, 1, 1, tzinfo=timezone.utc)
+    events = [
+        {
+            "event_key": "order:1",
+            "event_type": "ORDER",
+            "binance_order_id": 1,
+            "timestamp": base_time,
+            "timestamp_end": base_time,
+            "fill_count": 1,
+            "amount_usd": 10.0,
+            "amount_btc": 0.0002,
+            "avg_price_usd": 50000.0,
+            "fee_usd": 0.0,
+            "source_types": ["MANUAL"],
+            "tx_ids": [1],
+            "trade_ids": [1],
+        },
+        {
+            "event_key": "order:2",
+            "event_type": "ORDER",
+            "binance_order_id": 2,
+            "timestamp": base_time + timedelta(days=1),
+            "timestamp_end": base_time + timedelta(days=1),
+            "fill_count": 1,
+            "amount_usd": 1000.0,
+            "amount_btc": 0.01,
+            "avg_price_usd": 100000.0,
+            "fee_usd": 0.0,
+            "source_types": ["MANUAL"],
+            "tx_ids": [2],
+            "trade_ids": [2],
+        },
+    ]
+    for idx in range(10):
+        ts = base_time + timedelta(days=2 + idx)
+        events.append(
+            {
+                "event_key": f"order:{idx + 3}",
+                "event_type": "ORDER",
+                "binance_order_id": idx + 3,
+                "timestamp": ts,
+                "timestamp_end": ts,
+                "fill_count": 1,
+                "amount_usd": 10.0,
+                "amount_btc": 0.0002,
+                "avg_price_usd": 50000.0,
+                "fee_usd": 0.0,
+                "source_types": ["MANUAL"],
+                "tx_ids": [idx + 3],
+                "trade_ids": [idx + 3],
+            }
+        )
+
+    analysis = stats_api._build_behavior_analysis(
+        events,
+        {
+            "raw_fill_count": len(events),
+            "event_count": len(events),
+            "split_event_count": 0,
+            "split_fill_extra_count": 0,
+        },
+    )
+
+    summary = analysis["summary"]
+    assert summary["low_zone_buy_ratio"] > summary["high_zone_buy_ratio"]
+    assert summary["high_zone_usd_ratio"] > 0.85
+    assert summary["low_zone_usd_ratio"] < 0.10
+    assert summary["weighted_avg_buy_price_usd"] > 90000.0
+    assert "High-cost Weighted" in analysis["style_tags"]
+    assert any(item["title"] == "High-cost basis from larger high-zone buys" for item in analysis["issues"])
+
+
 def test_purchase_csv_export_contains_order_level_purchase_rows(client: TestClient, session: Session):
     dca_tx = DCATransaction(
         status="SUCCESS",
@@ -535,6 +608,310 @@ def test_add_position_advice_uses_split_fill_merged_behavior_events(client: Test
     assert "Do now:" in payload["guidance"]["analysis_text"]
     assert "Short reason:" in payload["guidance"]["analysis_text"]
     assert payload["guidance"]["method_constraints"]["no_hindsight"]
+
+
+def test_add_position_advice_reports_cost_basis_impact():
+    base_time = datetime(2026, 1, 1, tzinfo=timezone.utc)
+    events = [
+        {
+            "event_key": "order:1",
+            "event_type": "ORDER",
+            "binance_order_id": 1,
+            "timestamp": base_time,
+            "timestamp_end": base_time,
+            "fill_count": 1,
+            "amount_usd": 1000.0,
+            "amount_btc": 0.01,
+            "avg_price_usd": 100000.0,
+            "fee_usd": 0.0,
+            "source_types": ["MANUAL"],
+            "tx_ids": [1],
+            "trade_ids": [1],
+        },
+        {
+            "event_key": "order:2",
+            "event_type": "ORDER",
+            "binance_order_id": 2,
+            "timestamp": base_time + timedelta(days=1),
+            "timestamp_end": base_time + timedelta(days=1),
+            "fill_count": 1,
+            "amount_usd": 500.0,
+            "amount_btc": 0.0071428571,
+            "avg_price_usd": 70000.0,
+            "fee_usd": 0.0,
+            "source_types": ["MANUAL"],
+            "tx_ids": [2],
+            "trade_ids": [2],
+        },
+    ]
+    aggregate_meta = {
+        "raw_fill_count": len(events),
+        "event_count": len(events),
+        "split_event_count": 0,
+        "split_fill_extra_count": 0,
+    }
+    behavior_data = stats_api._build_behavior_analysis(events, aggregate_meta)
+
+    guidance = stats_api._build_add_position_guidance(
+        behavior_data=behavior_data,
+        events=events,
+        amount_usdc=1000.0,
+        current_price_usd=70000.0,
+        market_context={
+            "available": True,
+            "is_stale": False,
+            "is_double_undervalued": True,
+            "ratio_dca_current": 0.95,
+            "ratio_trend_current": 0.55,
+            "current_vs_180d_low_pct": 5.0,
+            "drop_24h_pct": -1.0,
+        },
+        macro_context={"available": False},
+    )
+
+    cost_basis = guidance["cost_basis_context"]
+    assert cost_basis["current_avg_cost_usd"] > 87000.0
+    assert cost_basis["proposed_avg_cost_after_buy_usd"] < cost_basis["current_avg_cost_usd"]
+    assert cost_basis["proposed_avg_cost_delta_usd"] < 0
+    assert "Cost basis:" in guidance["analysis_text"]
+
+
+def test_add_position_advice_ignores_stale_market_and_macro_signals():
+    base_time = datetime(2026, 1, 1, tzinfo=timezone.utc)
+    events = [
+        {
+            "event_key": "order:1",
+            "event_type": "ORDER",
+            "binance_order_id": 1,
+            "timestamp": base_time,
+            "timestamp_end": base_time,
+            "fill_count": 1,
+            "amount_usd": 100.0,
+            "amount_btc": 0.001,
+            "avg_price_usd": 100000.0,
+            "fee_usd": 0.0,
+            "source_types": ["MANUAL"],
+            "tx_ids": [1],
+            "trade_ids": [1],
+        }
+    ]
+    behavior_data = stats_api._build_behavior_analysis(
+        events,
+        {
+            "raw_fill_count": 1,
+            "event_count": 1,
+            "split_event_count": 0,
+            "split_fill_extra_count": 0,
+        },
+    )
+
+    guidance = stats_api._build_add_position_guidance(
+        behavior_data=behavior_data,
+        events=events,
+        amount_usdc=1000.0,
+        current_price_usd=70000.0,
+        market_context={
+            "available": True,
+            "is_stale": True,
+            "metrics_as_of_date": "2026-03-15",
+            "metrics_age_days": 72,
+            "deep_value_regime": True,
+            "is_double_undervalued": True,
+            "ahr999": 0.42,
+            "ahr999_sub_1": True,
+            "ahr999_sub_07": True,
+            "rsi14": 22.0,
+            "is_rsi_bottoming_signal": True,
+            "current_vs_180d_low_pct": 0.5,
+            "drop_24h_pct": -9.0,
+        },
+        macro_context={
+            "available": True,
+            "is_stale": True,
+            "report_age_days": 72,
+            "macro_risk_score": 30.0,
+            "stress_flags": 0,
+            "net_liquidity_90d_delta": 120.0,
+        },
+    )
+
+    assert guidance["data_freshness"]["market_context_usable"] is False
+    assert guidance["data_freshness"]["macro_context_usable"] is False
+    assert "stale" in guidance["analysis_text"].lower()
+    assert "Technical bottoming:" not in guidance["analysis_text"]
+
+
+def test_add_position_advice_exposes_practical_signal_context_for_easy_metrics():
+    base_time = datetime(2026, 1, 1, tzinfo=timezone.utc)
+    events = [
+        {
+            "event_key": "order:1",
+            "event_type": "ORDER",
+            "binance_order_id": 1,
+            "timestamp": base_time,
+            "timestamp_end": base_time,
+            "fill_count": 1,
+            "amount_usd": 100.0,
+            "amount_btc": 0.0011111111,
+            "avg_price_usd": 90000.0,
+            "fee_usd": 0.0,
+            "source_types": ["MANUAL"],
+            "tx_ids": [1],
+            "trade_ids": [1],
+        },
+        {
+            "event_key": "order:2",
+            "event_type": "ORDER",
+            "binance_order_id": 2,
+            "timestamp": base_time + timedelta(days=5),
+            "timestamp_end": base_time + timedelta(days=5),
+            "fill_count": 1,
+            "amount_usd": 100.0,
+            "amount_btc": 0.00125,
+            "avg_price_usd": 80000.0,
+            "fee_usd": 0.0,
+            "source_types": ["MANUAL"],
+            "tx_ids": [2],
+            "trade_ids": [2],
+        },
+    ]
+    behavior_data = stats_api._build_behavior_analysis(
+        events,
+        {
+            "raw_fill_count": len(events),
+            "event_count": len(events),
+            "split_event_count": 0,
+            "split_fill_extra_count": 0,
+        },
+    )
+
+    guidance = stats_api._build_add_position_guidance(
+        behavior_data=behavior_data,
+        events=events,
+        amount_usdc=100.0,
+        current_price_usd=76000.0,
+        market_context={
+            "available": True,
+            "is_stale": False,
+            "is_double_undervalued": False,
+            "ratio_dca_current": 0.97,
+            "ratio_trend_current": 0.57,
+            "ahr999": 0.56,
+            "ahr999_sub_1": True,
+            "current_vs_180d_low_pct": 23.0,
+            "current_vs_ath_pct": -38.0,
+            "range_30d_pct": 8.8,
+            "realized_vol_30d_pct": 1.3,
+            "drop_24h_pct": -0.4,
+        },
+        macro_context={
+            "available": True,
+            "is_stale": False,
+            "report_age_days": 1,
+            "macro_risk_score": 31.0,
+            "stress_flags": 0,
+            "net_liquidity_90d_delta": 207.0,
+            "ma_regime": "bearish",
+            "ma_spread": -3468.0,
+            "oi_percentile": 86.7,
+            "oi_quadrant": "Squeeze Setup (crowded)",
+        },
+    )
+
+    signals = guidance["practical_signal_context"]
+    assert signals["valuation"]["bias"] == "supportive"
+    assert signals["cost_basis"]["bias"] == "supportive"
+    assert signals["macro"]["bias"] == "supportive"
+    assert signals["trend"]["bias"] == "defensive"
+    assert signals["leverage"]["bias"] == "defensive"
+    assert "Practical signals:" in guidance["analysis_text"]
+
+
+def test_add_position_advice_crowded_leverage_trims_size_and_raises_risk():
+    base_time = datetime(2026, 1, 1, tzinfo=timezone.utc)
+    events = [
+        {
+            "event_key": "order:1",
+            "event_type": "ORDER",
+            "binance_order_id": 1,
+            "timestamp": base_time,
+            "timestamp_end": base_time,
+            "fill_count": 1,
+            "amount_usd": 100.0,
+            "amount_btc": 0.0011111111,
+            "avg_price_usd": 90000.0,
+            "fee_usd": 0.0,
+            "source_types": ["MANUAL"],
+            "tx_ids": [1],
+            "trade_ids": [1],
+        },
+        {
+            "event_key": "order:2",
+            "event_type": "ORDER",
+            "binance_order_id": 2,
+            "timestamp": base_time + timedelta(days=5),
+            "timestamp_end": base_time + timedelta(days=5),
+            "fill_count": 1,
+            "amount_usd": 100.0,
+            "amount_btc": 0.00125,
+            "avg_price_usd": 80000.0,
+            "fee_usd": 0.0,
+            "source_types": ["MANUAL"],
+            "tx_ids": [2],
+            "trade_ids": [2],
+        },
+    ]
+    behavior_data = stats_api._build_behavior_analysis(
+        events,
+        {
+            "raw_fill_count": len(events),
+            "event_count": len(events),
+            "split_event_count": 0,
+            "split_fill_extra_count": 0,
+        },
+    )
+    market_context = {
+        "available": True,
+        "is_stale": False,
+        "is_double_undervalued": False,
+        "ratio_dca_current": 0.97,
+        "ratio_trend_current": 0.57,
+        "ahr999": 0.56,
+        "ahr999_sub_1": True,
+        "current_vs_180d_low_pct": 23.0,
+        "drop_24h_pct": -0.4,
+    }
+    base_macro = {
+        "available": True,
+        "is_stale": False,
+        "report_age_days": 1,
+        "macro_risk_score": 31.0,
+        "stress_flags": 0,
+        "net_liquidity_90d_delta": 207.0,
+        "ma_regime": "bearish",
+        "ma_spread": -3468.0,
+    }
+
+    uncrowded = stats_api._build_add_position_guidance(
+        behavior_data=behavior_data,
+        events=events,
+        amount_usdc=100.0,
+        current_price_usd=76000.0,
+        market_context=market_context,
+        macro_context={**base_macro, "oi_percentile": 40.0, "oi_quadrant": "balanced"},
+    )
+    crowded = stats_api._build_add_position_guidance(
+        behavior_data=behavior_data,
+        events=events,
+        amount_usdc=100.0,
+        current_price_usd=76000.0,
+        market_context=market_context,
+        macro_context={**base_macro, "oi_percentile": 90.0, "oi_quadrant": "Squeeze Setup (crowded)"},
+    )
+
+    assert crowded["suggested_amount_usdc"] < uncrowded["suggested_amount_usdc"]
+    assert crowded["risk_score"] > uncrowded["risk_score"]
+    assert crowded["practical_signal_context"]["leverage"]["bias"] == "defensive"
 
 
 def test_add_position_confirm_records_simulated_buy_transaction(client: TestClient, session: Session):

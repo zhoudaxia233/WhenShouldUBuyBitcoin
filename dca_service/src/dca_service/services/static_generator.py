@@ -8,9 +8,12 @@ import subprocess
 import sys
 import os
 import stat
+import csv
+import json
+from datetime import date as date_type
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Optional
+from typing import Any, Optional
 
 from dca_service.core.logging import logger
 
@@ -58,6 +61,99 @@ def _assert_static_output_writable(project_root: Path) -> None:
             raise PermissionError(
                 f"Directory is not writable: {path} (mode={mode}, uid={os.getuid()}, gid={os.getgid()})"
             )
+
+
+def _parse_report_date(value: Any) -> Optional[date_type]:
+    if isinstance(value, datetime):
+        return value.date()
+    if isinstance(value, date_type):
+        return value
+    if not isinstance(value, str) or not value.strip():
+        return None
+
+    text = value.strip()
+    iso_text = text[:-1] + "+00:00" if text.endswith("Z") else text
+    try:
+        return datetime.fromisoformat(iso_text).date()
+    except ValueError:
+        try:
+            return datetime.strptime(text[:10], "%Y-%m-%d").date()
+        except ValueError:
+            return None
+
+
+def _freshness_entry(*, exists: bool, observed_date: Optional[date_type], now_date: date_type, max_age_days: int) -> dict:
+    age_days = (now_date - observed_date).days if observed_date is not None else None
+    fresh = bool(exists and age_days is not None and 0 <= age_days <= max_age_days)
+    return {
+        "exists": bool(exists),
+        "age_days": int(age_days) if age_days is not None else None,
+        "fresh": fresh,
+        "max_age_days": int(max_age_days),
+    }
+
+
+def inspect_static_output_freshness(
+    project_root: Path,
+    *,
+    now_date: str | date_type | None = None,
+    max_metrics_age_days: int = 3,
+    max_report_age_days: int = 7,
+) -> dict:
+    """
+    Inspect generated docs/data files and flag successful jobs that left stale output.
+
+    The generator can exit cleanly even when upstream data did not advance; this
+    gives the API a concrete post-run freshness check instead of trusting exit code only.
+    """
+    root = Path(project_root)
+    today = _parse_report_date(now_date) if now_date is not None else datetime.now(timezone.utc).date()
+    if today is None:
+        today = datetime.now(timezone.utc).date()
+
+    metrics_path = root / "docs" / "data" / "btc_metrics.csv"
+    metrics_latest_date: Optional[date_type] = None
+    if metrics_path.exists():
+        try:
+            with metrics_path.open("r", encoding="utf-8", newline="") as f:
+                reader = csv.DictReader(f)
+                for row in reader:
+                    row_date = _parse_report_date(row.get("date"))
+                    if row_date is not None and (metrics_latest_date is None or row_date > metrics_latest_date):
+                        metrics_latest_date = row_date
+        except Exception:
+            metrics_latest_date = None
+
+    report_path = root / "docs" / "data" / "daily_report.json"
+    report_date: Optional[date_type] = None
+    if report_path.exists():
+        try:
+            data = json.loads(report_path.read_text(encoding="utf-8"))
+            report_date = _parse_report_date(data.get("report_date")) or _parse_report_date(data.get("generated_at"))
+        except Exception:
+            report_date = None
+
+    metrics = _freshness_entry(
+        exists=metrics_path.exists(),
+        observed_date=metrics_latest_date,
+        now_date=today,
+        max_age_days=max_metrics_age_days,
+    )
+    metrics["latest_date"] = metrics_latest_date.isoformat() if metrics_latest_date is not None else None
+
+    daily_report = _freshness_entry(
+        exists=report_path.exists(),
+        observed_date=report_date,
+        now_date=today,
+        max_age_days=max_report_age_days,
+    )
+    daily_report["report_date"] = report_date.isoformat() if report_date is not None else None
+
+    return {
+        "fresh": bool(metrics["fresh"] and daily_report["fresh"]),
+        "metrics": metrics,
+        "daily_report": daily_report,
+    }
 
 
 def trigger_static_generation(background: bool = True) -> Optional[subprocess.Popen]:
