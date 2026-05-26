@@ -11,7 +11,7 @@ from dca_service.models import DCATransaction
 
 MIN_ORDERS_PER_BUCKET = 5
 MIN_DISTINCT_DATES = 4
-MAX_AMOUNT_CV = 0.35
+MAX_AMOUNT_CV = 0.45
 MIN_DAILY_GAP_RATIO = 0.60
 
 

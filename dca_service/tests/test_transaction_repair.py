@@ -109,6 +109,29 @@ def test_repair_dca_classification_apply_updates_only_candidates(session: Sessio
     assert by_order_id[9999].is_manual is True
 
 
+def test_repair_dca_classification_accepts_variable_daily_dca_amounts(session: Session):
+    start = datetime(2025, 11, 28, 0, 0, tzinfo=timezone.utc)
+    amounts = [12.0, 16.0, 20.0, 25.0, 30.0, 40.0]
+    order_ids = []
+    for idx, amount in enumerate(amounts):
+        order_id = 8200 + idx
+        order_ids.append(order_id)
+        _add_imported_manual_order(
+            session,
+            order_id=order_id,
+            trade_id=10200 + idx,
+            timestamp=start + timedelta(days=idx),
+            amount_usd=amount,
+        )
+    session.commit()
+
+    result = repair_dca_misclassified_transactions(session, dry_run=True)
+
+    assert result["candidate_order_count"] == len(order_ids)
+    assert {order["order_id"] for order in result["candidate_orders"]} == set(order_ids)
+    assert all("minute_bucket=00:00" in order["reason"] for order in result["candidate_orders"])
+
+
 def test_repair_dca_classification_ignores_inconsistent_manual_buys(session: Session):
     start = datetime(2026, 2, 1, 0, 0, tzinfo=timezone.utc)
     for idx, amount in enumerate([20.0, 80.0, 25.0, 140.0, 30.0]):
