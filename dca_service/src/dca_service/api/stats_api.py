@@ -37,6 +37,8 @@ BINANCE_PRICE_CACHE_TTL_SECONDS = 3
 BINANCE_SAFE_POLL_SECONDS = 3
 BINANCE_TICKER_REQUEST_WEIGHT = 2
 BINANCE_PRICE_CACHE: Dict[str, Dict[str, Any]] = {}
+MARKET_CONTEXT_MAX_AGE_DAYS = 3
+MACRO_CONTEXT_MAX_AGE_DAYS = 7
 
 
 def _normalize_language(language: str | None) -> str:
@@ -190,6 +192,15 @@ def _load_recent_market_context(current_price_usd: float) -> Dict[str, Any]:
         "volume_ratio_30": None,
         "is_post_panic_volume_contraction": None,
         "bottoming_tech_signal_count": 0,
+        "metrics_as_of_date": None,
+        "metrics_age_days": None,
+        "is_stale": True,
+        "freshness_max_age_days": MARKET_CONTEXT_MAX_AGE_DAYS,
+        "dca_cost": None,
+        "trend_value": None,
+        "ratio_dca_current": None,
+        "ratio_trend_current": None,
+        "is_double_undervalued": False,
     }
     try:
         csv_path = _resolve_metrics_csv_path()
@@ -198,10 +209,17 @@ def _load_recent_market_context(current_price_usd: float) -> Dict[str, Any]:
 
         prices: List[float] = []
         last_row: Optional[Dict[str, Any]] = None
+        last_metric_date = None
         with open(csv_path, "r", encoding="utf-8") as f:
             reader = csv.DictReader(f)
             for row in reader:
                 last_row = row
+                date_str = row.get("date")
+                if date_str:
+                    try:
+                        last_metric_date = datetime.strptime(date_str[:10], "%Y-%m-%d").date()
+                    except (ValueError, TypeError):
+                        pass
                 price_str = row.get("close_price")
                 if not price_str:
                     continue
@@ -212,6 +230,12 @@ def _load_recent_market_context(current_price_usd: float) -> Dict[str, Any]:
 
         if len(prices) < 2:
             return context
+
+        metrics_age_days = None
+        metrics_is_stale = True
+        if last_metric_date is not None:
+            metrics_age_days = (datetime.now(timezone.utc).date() - last_metric_date).days
+            metrics_is_stale = metrics_age_days < 0 or metrics_age_days > MARKET_CONTEXT_MAX_AGE_DAYS
 
         window = prices[-180:] if len(prices) >= 180 else prices
         low_180d = min(window)
@@ -276,6 +300,18 @@ def _load_recent_market_context(current_price_usd: float) -> Dict[str, Any]:
             return str(raw).strip().lower() in {"1", "true", "yes"}
 
         ahr999_val = _maybe_float_from_last("ahr999")
+        dca_cost = _maybe_float_from_last("dca_cost")
+        trend_value = _maybe_float_from_last("trend_value")
+        ratio_dca_current = (current_price_usd / dca_cost) if dca_cost and dca_cost > 0 else _maybe_float_from_last("ratio_dca")
+        ratio_trend_current = (
+            current_price_usd / trend_value if trend_value and trend_value > 0 else _maybe_float_from_last("ratio_trend")
+        )
+        is_double_undervalued = bool(
+            ratio_dca_current is not None
+            and ratio_trend_current is not None
+            and ratio_dca_current < 1.0
+            and ratio_trend_current < 1.0
+        )
         rsi14_val = _maybe_float_from_last("rsi14")
         rsi14w_val = _maybe_float_from_last("rsi14w")
         volume_ratio_30 = _maybe_float_from_last("volume_ratio_30")
@@ -323,6 +359,15 @@ def _load_recent_market_context(current_price_usd: float) -> Dict[str, Any]:
             "volume_ratio_30": float(volume_ratio_30) if volume_ratio_30 is not None else None,
             "is_post_panic_volume_contraction": is_post_panic_volume_contraction,
             "bottoming_tech_signal_count": int(bottoming_tech_signal_count),
+            "metrics_as_of_date": last_metric_date.isoformat() if last_metric_date is not None else None,
+            "metrics_age_days": int(metrics_age_days) if metrics_age_days is not None else None,
+            "is_stale": bool(metrics_is_stale),
+            "freshness_max_age_days": MARKET_CONTEXT_MAX_AGE_DAYS,
+            "dca_cost": float(dca_cost) if dca_cost is not None else None,
+            "trend_value": float(trend_value) if trend_value is not None else None,
+            "ratio_dca_current": float(ratio_dca_current) if ratio_dca_current is not None else None,
+            "ratio_trend_current": float(ratio_trend_current) if ratio_trend_current is not None else None,
+            "is_double_undervalued": bool(is_double_undervalued),
         }
     except Exception:
         return context
@@ -342,6 +387,8 @@ def _load_macro_context() -> Dict[str, Any]:
         "stress_flags": None,
         "net_liquidity_90d_delta": None,
         "oi_30d_change_pct": None,
+        "oi_percentile": None,
+        "oi_quadrant": None,
         "ma_regime": None,
         "ma_spread": None,
         "usdjpy_risk_level": None,
@@ -353,6 +400,8 @@ def _load_macro_context() -> Dict[str, Any]:
         "is_extreme_fear_proxy": None,
         "hashrate_30d_change_pct": None,
         "miner_stress_proxy": None,
+        "is_stale": True,
+        "freshness_max_age_days": MACRO_CONTEXT_MAX_AGE_DAYS,
     }
     try:
         def _maybe_float(value: Any) -> Optional[float]:
@@ -402,12 +451,15 @@ def _load_macro_context() -> Dict[str, Any]:
                 report_age_days = (datetime.now(timezone.utc).date() - report_dt).days
             except Exception:
                 report_age_days = None
+        report_is_stale = report_age_days is None or report_age_days < 0 or report_age_days > MACRO_CONTEXT_MAX_AGE_DAYS
 
         macro_risk_score = _maybe_float(macro_metrics.get("score"))
         macro_risk_regime = macro_metrics.get("regime")
         stress_flags = funding_metrics.get("stress_flags")
         net_liq_delta = _maybe_float(liquidity_metrics.get("net_liquidity_90d_delta"))
         oi_30d_change = _maybe_float(futures_metrics.get("oi_30d_change_pct"))
+        oi_percentile = _maybe_float(futures_metrics.get("oi_percentile"))
+        oi_quadrant = futures_metrics.get("quadrant")
         ma_regime = ma_metrics.get("regime")
         ma_spread = _maybe_float(ma_metrics.get("ma_spread"))
         usdjpy_risk_level = usdjpy_metrics.get("risk_level")
@@ -427,6 +479,8 @@ def _load_macro_context() -> Dict[str, Any]:
             "stress_flags": int(stress_flags) if stress_flags is not None else None,
             "net_liquidity_90d_delta": net_liq_delta,
             "oi_30d_change_pct": oi_30d_change,
+            "oi_percentile": oi_percentile,
+            "oi_quadrant": str(oi_quadrant) if oi_quadrant is not None else None,
             "ma_regime": str(ma_regime) if ma_regime is not None else None,
             "ma_spread": ma_spread,
             "usdjpy_risk_level": str(usdjpy_risk_level) if usdjpy_risk_level is not None else None,
@@ -437,6 +491,8 @@ def _load_macro_context() -> Dict[str, Any]:
             "is_extreme_fear_proxy": bool(is_extreme_fear_proxy) if is_extreme_fear_proxy is not None else None,
             "hashrate_30d_change_pct": hashrate_30d_change_pct,
             "miner_stress_proxy": str(miner_stress_proxy) if miner_stress_proxy is not None else None,
+            "is_stale": bool(report_is_stale),
+            "freshness_max_age_days": MACRO_CONTEXT_MAX_AGE_DAYS,
         }
     except Exception:
         return context
@@ -1071,8 +1127,12 @@ def _build_behavior_analysis(events: List[Dict[str, Any]], aggregate_meta: Dict[
                 "median_interval_days": None,
                 "avg_event_usd": 0.0,
                 "event_amount_cv": 0.0,
+                "weighted_avg_buy_price_usd": None,
+                "weighted_avg_price_position": None,
                 "high_zone_buy_ratio": 0.0,
                 "low_zone_buy_ratio": 0.0,
+                "high_zone_usd_ratio": 0.0,
+                "low_zone_usd_ratio": 0.0,
                 "burst_trading_ratio": 0.0,
                 "size_price_position_corr": None,
                 "largest_event_share": 0.0,
@@ -1092,6 +1152,8 @@ def _build_behavior_analysis(events: List[Dict[str, Any]], aggregate_meta: Dict[
     intervals_days: List[float] = []
     high_zone_count = 0
     low_zone_count = 0
+    high_zone_usd = 0.0
+    low_zone_usd = 0.0
     burst_count = 0
     weekend_count = 0
     manual_count = 0
@@ -1140,8 +1202,10 @@ def _build_behavior_analysis(events: List[Dict[str, Any]], aggregate_meta: Dict[
 
         if price_position >= 0.75:
             high_zone_count += 1
+            high_zone_usd += max(float(event["amount_usd"]), 0.0)
         if price_position <= 0.25:
             low_zone_count += 1
+            low_zone_usd += max(float(event["amount_usd"]), 0.0)
 
         past_median_price = _safe_median(past_prices, fallback=event["avg_price_usd"])
         if past_median_price > 0:
@@ -1172,6 +1236,17 @@ def _build_behavior_analysis(events: List[Dict[str, Any]], aggregate_meta: Dict[
 
     total_invested_usd = float(sum(event_amounts))
     total_btc = float(sum(max(e["amount_btc"], 0.0) for e in events))
+    weighted_avg_buy_price_usd = (total_invested_usd / total_btc) if total_btc > 0 else None
+    all_prices = [max(e["avg_price_usd"], 0.0) for e in events if e["avg_price_usd"] > 0]
+    weighted_avg_price_position = None
+    if weighted_avg_buy_price_usd is not None and all_prices:
+        min_price = min(all_prices)
+        max_price = max(all_prices)
+        if max_price > min_price:
+            weighted_avg_price_position = (weighted_avg_buy_price_usd - min_price) / (max_price - min_price)
+            weighted_avg_price_position = min(max(float(weighted_avg_price_position), 0.0), 1.0)
+        else:
+            weighted_avg_price_position = 0.5
     first_ts = timestamps[0]
     last_ts = timestamps[-1]
     span_days = max((last_ts - first_ts).total_seconds() / 86400.0, 1.0)
@@ -1198,8 +1273,14 @@ def _build_behavior_analysis(events: List[Dict[str, Any]], aggregate_meta: Dict[
         "median_interval_days": (_safe_median(intervals_days) if intervals_days else None),
         "avg_event_usd": float(event_amount_mean),
         "event_amount_cv": float(event_amount_cv),
+        "weighted_avg_buy_price_usd": float(weighted_avg_buy_price_usd) if weighted_avg_buy_price_usd is not None else None,
+        "weighted_avg_price_position": (
+            float(weighted_avg_price_position) if weighted_avg_price_position is not None else None
+        ),
         "high_zone_buy_ratio": float(high_zone_count / event_count) if event_count > 0 else 0.0,
         "low_zone_buy_ratio": float(low_zone_count / event_count) if event_count > 0 else 0.0,
+        "high_zone_usd_ratio": float(high_zone_usd / total_invested_usd) if total_invested_usd > 0 else 0.0,
+        "low_zone_usd_ratio": float(low_zone_usd / total_invested_usd) if total_invested_usd > 0 else 0.0,
         "burst_trading_ratio": float(burst_count / len(intervals_days)) if intervals_days else 0.0,
         "size_price_position_corr": _safe_corr(event_amounts, price_positions),
         "largest_event_share": float(largest_event_share),
@@ -1214,6 +1295,11 @@ def _build_behavior_analysis(events: List[Dict[str, Any]], aggregate_meta: Dict[
         style_tags.append("Dip Buyer")
     if summary["high_zone_buy_ratio"] >= summary["low_zone_buy_ratio"] + 0.1:
         style_tags.append("Momentum Chaser")
+    if (
+        summary["high_zone_usd_ratio"] >= 0.45
+        and summary["high_zone_usd_ratio"] >= summary["high_zone_buy_ratio"] + 0.20
+    ):
+        style_tags.append("High-cost Weighted")
     if summary["event_amount_cv"] <= 0.25:
         style_tags.append("Fixed-size DCA")
     if summary["burst_trading_ratio"] >= 0.45 and event_count >= 8:
@@ -1239,6 +1325,43 @@ def _build_behavior_analysis(events: List[Dict[str, Any]], aggregate_meta: Dict[
                 "severity": "warning",
                 "title": "Possible high-price chasing",
                 "detail": "A large share of buys happened near the top of your historical range at the moment of execution.",
+            }
+        )
+
+    if (
+        summary["high_zone_usd_ratio"] >= 0.45
+        and summary["high_zone_usd_ratio"] >= summary["high_zone_buy_ratio"] + 0.20
+    ):
+        issues.append(
+            {
+                "severity": "warning",
+                "title": "High-cost basis from larger high-zone buys",
+                "detail": "High-zone buys are a much larger share of deployed capital than of event count, which keeps average cost elevated.",
+            }
+        )
+
+    if (
+        summary["low_zone_buy_ratio"] >= 0.50
+        and summary["low_zone_usd_ratio"] <= summary["low_zone_buy_ratio"] - 0.20
+    ):
+        issues.append(
+            {
+                "severity": "warning",
+                "title": "Low-zone count overstates deployed capital",
+                "detail": "Many buys occurred in lower zones, but a smaller share of total USD was deployed there, so average cost repairs slowly.",
+            }
+        )
+
+    if (
+        summary["weighted_avg_price_position"] is not None
+        and summary["weighted_avg_price_position"] >= 0.45
+        and summary["low_zone_buy_ratio"] >= 0.50
+    ):
+        issues.append(
+            {
+                "severity": "info",
+                "title": "Average cost still mid-to-high",
+                "detail": "Your average cost is still high relative to your observed buy range despite frequent lower-zone entries.",
             }
         )
 
@@ -1340,6 +1463,25 @@ def _build_add_position_guidance(
 
     summary = behavior_data.get("summary", {}) or {}
     style_tags = behavior_data.get("style_tags", []) or []
+    total_invested_usd = float(summary.get("total_invested_usd", 0.0) or 0.0)
+    total_btc = float(summary.get("total_btc", 0.0) or 0.0)
+    current_avg_cost_usd = (total_invested_usd / total_btc) if total_btc > 0 else None
+    proposed_btc = amount_usdc / current_price_usd if current_price_usd > 0 else 0.0
+    proposed_avg_cost_after_buy = None
+    proposed_avg_cost_delta = None
+    proposed_avg_cost_delta_pct = None
+    if total_btc + proposed_btc > 0:
+        proposed_avg_cost_after_buy = (total_invested_usd + amount_usdc) / (total_btc + proposed_btc)
+        if current_avg_cost_usd is not None:
+            proposed_avg_cost_delta = proposed_avg_cost_after_buy - current_avg_cost_usd
+            proposed_avg_cost_delta_pct = (
+                (proposed_avg_cost_delta / current_avg_cost_usd) * 100.0 if current_avg_cost_usd > 0 else None
+            )
+    cost_basis_repair_opportunity = bool(
+        current_avg_cost_usd is not None
+        and current_price_usd > 0
+        and current_price_usd < current_avg_cost_usd
+    )
 
     historical_prices = [float(e.get("avg_price_usd", 0.0)) for e in events if float(e.get("avg_price_usd", 0.0)) > 0]
     hist_min = min(historical_prices) if historical_prices else current_price_usd
@@ -1358,27 +1500,74 @@ def _build_add_position_guidance(
 
     market_ctx = market_context or {}
     macro_ctx = macro_context or {}
-    deep_value_regime = bool(market_ctx.get("deep_value_regime"))
-    breakout_high_regime = bool(market_ctx.get("breakout_high_regime"))
-    near_ath = bool(market_ctx.get("near_ath") or market_ctx.get("near_180d_high"))
-    new_ath = bool(market_ctx.get("new_ath"))
-    new_180d_low = bool(market_ctx.get("new_180d_low"))
-    drop_24h_pct = _as_float(market_ctx.get("drop_24h_pct"))
-    current_vs_180d_low_pct = _as_float(market_ctx.get("current_vs_180d_low_pct"))
-    ahr999_now = _as_float(market_ctx.get("ahr999"))
-    ahr999_sub_1 = bool(market_ctx.get("ahr999_sub_1")) if market_ctx.get("ahr999_sub_1") is not None else False
-    ahr999_sub_07 = bool(market_ctx.get("ahr999_sub_07")) if market_ctx.get("ahr999_sub_07") is not None else False
-    rsi14_now = _as_float(market_ctx.get("rsi14"))
-    rsi14w_now = _as_float(market_ctx.get("rsi14w"))
-    is_rsi_bottoming_signal = (
-        bool(market_ctx.get("is_rsi_bottoming_signal"))
-        if market_ctx.get("is_rsi_bottoming_signal") is not None
-        else False
-    )
-    is_post_panic_volume_contraction = (
-        bool(market_ctx.get("is_post_panic_volume_contraction"))
-        if market_ctx.get("is_post_panic_volume_contraction") is not None
-        else False
+    market_available_raw = bool(market_ctx.get("available"))
+    market_is_stale = bool(market_ctx.get("is_stale")) if "is_stale" in market_ctx else False
+    metrics_age_days = market_ctx.get("metrics_age_days")
+    try:
+        metrics_age_days_int = int(metrics_age_days) if metrics_age_days is not None else None
+    except (TypeError, ValueError):
+        metrics_age_days_int = None
+    if metrics_age_days_int is not None and (
+        metrics_age_days_int < 0 or metrics_age_days_int > MARKET_CONTEXT_MAX_AGE_DAYS
+    ):
+        market_is_stale = True
+    market_context_usable = bool(market_available_raw and not market_is_stale)
+
+    if market_context_usable:
+        deep_value_regime = bool(market_ctx.get("deep_value_regime"))
+        breakout_high_regime = bool(market_ctx.get("breakout_high_regime"))
+        near_180d_low = bool(market_ctx.get("near_180d_low"))
+        near_ath = bool(market_ctx.get("near_ath") or market_ctx.get("near_180d_high"))
+        new_ath = bool(market_ctx.get("new_ath"))
+        new_180d_low = bool(market_ctx.get("new_180d_low"))
+        drop_24h_pct = _as_float(market_ctx.get("drop_24h_pct"))
+        current_vs_180d_low_pct = _as_float(market_ctx.get("current_vs_180d_low_pct"))
+        current_vs_ath_pct = _as_float(market_ctx.get("current_vs_ath_pct"))
+        ahr999_now = _as_float(market_ctx.get("ahr999"))
+        ahr999_sub_1 = bool(market_ctx.get("ahr999_sub_1")) if market_ctx.get("ahr999_sub_1") is not None else False
+        ahr999_sub_07 = bool(market_ctx.get("ahr999_sub_07")) if market_ctx.get("ahr999_sub_07") is not None else False
+        rsi14_now = _as_float(market_ctx.get("rsi14"))
+        rsi14w_now = _as_float(market_ctx.get("rsi14w"))
+        is_rsi_bottoming_signal = (
+            bool(market_ctx.get("is_rsi_bottoming_signal"))
+            if market_ctx.get("is_rsi_bottoming_signal") is not None
+            else False
+        )
+        is_post_panic_volume_contraction = (
+            bool(market_ctx.get("is_post_panic_volume_contraction"))
+            if market_ctx.get("is_post_panic_volume_contraction") is not None
+            else False
+        )
+        ratio_dca_current = _as_float(market_ctx.get("ratio_dca_current") or market_ctx.get("ratio_dca"))
+        ratio_trend_current = _as_float(market_ctx.get("ratio_trend_current") or market_ctx.get("ratio_trend"))
+        double_undervalued = bool(market_ctx.get("is_double_undervalued"))
+    else:
+        deep_value_regime = False
+        breakout_high_regime = False
+        near_180d_low = False
+        near_ath = False
+        new_ath = False
+        new_180d_low = False
+        drop_24h_pct = None
+        current_vs_180d_low_pct = None
+        current_vs_ath_pct = None
+        ahr999_now = None
+        ahr999_sub_1 = False
+        ahr999_sub_07 = False
+        rsi14_now = None
+        rsi14w_now = None
+        is_rsi_bottoming_signal = False
+        is_post_panic_volume_contraction = False
+        ratio_dca_current = None
+        ratio_trend_current = None
+        double_undervalued = False
+
+    persistent_value_regime = bool(
+        market_context_usable
+        and double_undervalued
+        and (ratio_dca_current is None or ratio_dca_current <= 1.00)
+        and (ratio_trend_current is None or ratio_trend_current <= 0.70)
+        and cost_basis_repair_opportunity
     )
 
     recent_amounts = [float(e.get("amount_usd", 0.0)) for e in events[-10:] if float(e.get("amount_usd", 0.0)) > 0]
@@ -1429,10 +1618,15 @@ def _build_add_position_guidance(
     event_amount_cv = float(summary.get("event_amount_cv", 0.0) or 0.0)
     high_zone_ratio = float(summary.get("high_zone_buy_ratio", 0.0) or 0.0)
     low_zone_ratio = float(summary.get("low_zone_buy_ratio", 0.0) or 0.0)
+    high_zone_usd_ratio = float(summary.get("high_zone_usd_ratio", 0.0) or 0.0)
+    low_zone_usd_ratio = float(summary.get("low_zone_usd_ratio", 0.0) or 0.0)
 
     burst_habit = bool(burst_ratio >= 0.45 and event_count >= 8)
     inconsistent_habit = bool(event_amount_cv >= 0.9 and event_count >= 8)
     high_zone_habit = bool(high_zone_ratio >= 0.55 and high_zone_ratio > low_zone_ratio + 0.15 and event_count >= 8)
+    high_cost_weighted_habit = bool(
+        high_zone_usd_ratio >= 0.45 and high_zone_usd_ratio >= high_zone_ratio + 0.20 and event_count >= 6
+    )
     dca_event_ratio = float(summary.get("dca_event_ratio", 0.0) or 0.0)
     manual_event_ratio = float(summary.get("manual_event_ratio", 0.0) or 0.0)
     if dca_event_ratio >= 0.60:
@@ -1445,7 +1639,6 @@ def _build_add_position_guidance(
         cadence_label = "mixed buy cadence"
         source_mix_label = "mixed"
 
-    macro_available = bool(macro_ctx.get("available"))
     macro_risk_score = _as_float(macro_ctx.get("macro_risk_score"))
     macro_risk_regime = str(macro_ctx.get("macro_risk_regime") or "").strip().lower() or None
     stress_flags = macro_ctx.get("stress_flags")
@@ -1455,7 +1648,11 @@ def _build_add_position_guidance(
         stress_flags_int = None
     net_liquidity_delta = _as_float(macro_ctx.get("net_liquidity_90d_delta"))
     oi_30d_change_pct = _as_float(macro_ctx.get("oi_30d_change_pct"))
+    oi_percentile = _as_float(macro_ctx.get("oi_percentile"))
+    oi_quadrant = str(macro_ctx.get("oi_quadrant") or "").strip()
+    oi_quadrant_lower = oi_quadrant.lower()
     ma_regime = str(macro_ctx.get("ma_regime") or "").strip().lower() or None
+    ma_spread = _as_float(macro_ctx.get("ma_spread"))
     fear_greed_value = _as_float(macro_ctx.get("fear_greed_value"))
     fear_panic_score = _as_float(macro_ctx.get("fear_panic_score"))
     is_extreme_fear_proxy = (
@@ -1470,11 +1667,35 @@ def _build_add_position_guidance(
         report_age_days_int = int(report_age_days) if report_age_days is not None else None
     except (TypeError, ValueError):
         report_age_days_int = None
+    macro_is_stale = bool(macro_ctx.get("is_stale")) if "is_stale" in macro_ctx else False
+    if report_age_days_int is not None and (
+        report_age_days_int < 0 or report_age_days_int > MACRO_CONTEXT_MAX_AGE_DAYS
+    ):
+        macro_is_stale = True
+    macro_available = bool(macro_ctx.get("available") and not macro_is_stale)
+    if not macro_available:
+        macro_risk_score = None
+        macro_risk_regime = None
+        stress_flags_int = None
+        net_liquidity_delta = None
+        oi_30d_change_pct = None
+        oi_percentile = None
+        oi_quadrant = ""
+        oi_quadrant_lower = ""
+        ma_regime = None
+        ma_spread = None
+        fear_greed_value = None
+        fear_panic_score = None
+        is_extreme_fear_proxy = False
+        hashrate_30d_change_pct = None
+        miner_stress_proxy = None
 
     # Multi-signal capitulation mode:
     # If price is deeply depressed and several independent stress/deleveraging
     # signals align, do not auto-downsize solely because of historical sizing habits.
     capitulation_signals = 0
+    if persistent_value_regime:
+        capitulation_signals += 1
     if deep_value_regime or new_180d_low:
         capitulation_signals += 1
     if drop_24h_pct is not None and drop_24h_pct <= -8.0:
@@ -1487,10 +1708,13 @@ def _build_add_position_guidance(
         capitulation_signals += 1
     if stress_flags_int is not None and stress_flags_int <= 1:
         capitulation_signals += 1
-    strong_dip_add_mode = bool((deep_value_regime or new_180d_low) and capitulation_signals >= 3)
-    range_30d_pct = _as_float(market_ctx.get("range_30d_pct"))
-    realized_vol_30d_pct = _as_float(market_ctx.get("realized_vol_30d_pct"))
-    sideways_30d = bool(market_ctx.get("sideways_30d"))
+    strong_dip_add_mode = bool(
+        ((deep_value_regime or new_180d_low) and capitulation_signals >= 3)
+        or (persistent_value_regime and capitulation_signals >= 2)
+    )
+    range_30d_pct = _as_float(market_ctx.get("range_30d_pct")) if market_context_usable else None
+    realized_vol_30d_pct = _as_float(market_ctx.get("realized_vol_30d_pct")) if market_context_usable else None
+    sideways_30d = bool(market_ctx.get("sideways_30d")) if market_context_usable else False
     if not sideways_30d and range_30d_pct is not None and realized_vol_30d_pct is not None:
         sideways_30d = bool(range_30d_pct <= 12.0 and realized_vol_30d_pct <= 3.0)
 
@@ -1525,15 +1749,149 @@ def _build_add_position_guidance(
         and (local_sideways_by_trades or sideways_30d)
         and not macro_takeoff_mode
         and not strong_dip_add_mode
+        and not persistent_value_regime
     )
 
     reasons: List[str] = []
     applied_lessons: List[str] = []
     macro_notes: List[str] = []
     tech_notes: List[str] = []
+    freshness_notes: List[str] = []
+    if market_available_raw and not market_context_usable:
+        if metrics_age_days_int is not None:
+            freshness_notes.append(
+                f"market CSV is stale ({metrics_age_days_int}d old; as of {market_ctx.get('metrics_as_of_date') or 'unknown'}), so technical market signals are ignored."
+            )
+        else:
+            freshness_notes.append("market CSV freshness is unknown/stale, so technical market signals are ignored.")
+    if bool(macro_ctx.get("available")) and not macro_available:
+        if report_age_days_int is not None:
+            freshness_notes.append(
+                f"macro snapshot is stale ({report_age_days_int}d old; as of {macro_ctx.get('report_date') or 'unknown'}), so macro signals are ignored."
+            )
+        else:
+            freshness_notes.append("macro snapshot freshness is unknown/stale, so macro signals are ignored.")
+
+    valuation_support_signals: List[str] = []
+    valuation_defense_signals: List[str] = []
+    if market_context_usable:
+        if double_undervalued:
+            valuation_support_signals.append("double undervaluation")
+        if ratio_trend_current is not None:
+            if ratio_trend_current <= 0.70:
+                valuation_support_signals.append(f"trend ratio {ratio_trend_current:.2f}")
+            elif ratio_trend_current >= 1.15:
+                valuation_defense_signals.append(f"trend ratio {ratio_trend_current:.2f}")
+        if ratio_dca_current is not None:
+            if ratio_dca_current < 1.0:
+                valuation_support_signals.append(f"DCA ratio {ratio_dca_current:.2f}")
+            elif ratio_dca_current >= 1.10:
+                valuation_defense_signals.append(f"DCA ratio {ratio_dca_current:.2f}")
+        if ahr999_now is not None:
+            if ahr999_now < 0.70:
+                valuation_support_signals.append(f"AHR999 {ahr999_now:.2f}")
+            elif ahr999_now < 1.0:
+                valuation_support_signals.append(f"AHR999 {ahr999_now:.2f}")
+            elif ahr999_now >= 1.20:
+                valuation_defense_signals.append(f"AHR999 {ahr999_now:.2f}")
+        if current_vs_180d_low_pct is not None and current_vs_180d_low_pct <= 5.0:
+            valuation_support_signals.append(f"{current_vs_180d_low_pct:.1f}% above 180d low")
+        if current_vs_ath_pct is not None and current_vs_ath_pct >= -5.0:
+            valuation_defense_signals.append(f"{current_vs_ath_pct:.1f}% from ATH")
+    if breakout_high_regime or new_ath or near_ath:
+        valuation_defense_signals.append("near breakout/high zone")
+    if valuation_defense_signals and not (deep_value_regime or persistent_value_regime):
+        valuation_bias = "defensive"
+    elif valuation_support_signals:
+        valuation_bias = "supportive"
+    else:
+        valuation_bias = "neutral"
+
+    price_vs_avg_cost_pct = (
+        ((current_price_usd - current_avg_cost_usd) / current_avg_cost_usd) * 100.0
+        if current_avg_cost_usd
+        else None
+    )
+    cost_basis_signals: List[str] = []
+    if cost_basis_repair_opportunity and price_vs_avg_cost_pct is not None:
+        cost_basis_signals.append(f"price {price_vs_avg_cost_pct:.1f}% below avg cost")
+        cost_basis_bias = "supportive"
+    elif price_vs_avg_cost_pct is not None and price_vs_avg_cost_pct >= 12.0:
+        cost_basis_signals.append(f"price {price_vs_avg_cost_pct:.1f}% above avg cost")
+        cost_basis_bias = "defensive"
+    else:
+        cost_basis_bias = "neutral"
+
+    macro_support_signals: List[str] = []
+    macro_defense_signals: List[str] = []
+    if macro_available:
+        if macro_risk_score is not None:
+            if macro_risk_score <= 35.0:
+                macro_support_signals.append(f"risk {macro_risk_score:.1f}")
+            elif macro_risk_score >= 70.0:
+                macro_defense_signals.append(f"risk {macro_risk_score:.1f}")
+        if stress_flags_int is not None:
+            if stress_flags_int == 0:
+                macro_support_signals.append("no stress flags")
+            elif stress_flags_int >= 2:
+                macro_defense_signals.append(f"stress flags {stress_flags_int}")
+        if net_liquidity_delta is not None:
+            if net_liquidity_delta >= 80.0:
+                macro_support_signals.append(f"net liquidity {net_liquidity_delta:+.1f}B")
+            elif net_liquidity_delta <= -120.0:
+                macro_defense_signals.append(f"net liquidity {net_liquidity_delta:+.1f}B")
+    if macro_defense_signals:
+        macro_bias = "defensive"
+    elif macro_support_signals:
+        macro_bias = "supportive"
+    else:
+        macro_bias = "neutral"
+
+    trend_signals: List[str] = []
+    if ma_regime == "bearish":
+        trend_bias = "defensive"
+        trend_signals.append("MA regime bearish")
+    elif ma_regime == "bullish":
+        trend_bias = "supportive"
+        trend_signals.append("MA regime bullish")
+    else:
+        trend_bias = "neutral"
+    if ma_spread is not None:
+        trend_signals.append(f"MA spread {ma_spread:+.0f}")
+
+    leverage_support_signals: List[str] = []
+    leverage_defense_signals: List[str] = []
+    if macro_available:
+        if oi_percentile is not None:
+            if oi_percentile >= 85.0:
+                leverage_defense_signals.append(f"OI percentile {oi_percentile:.1f}")
+            elif oi_percentile <= 20.0:
+                leverage_support_signals.append(f"OI percentile {oi_percentile:.1f}")
+        if oi_quadrant_lower:
+            if "crowded" in oi_quadrant_lower or "squeeze" in oi_quadrant_lower:
+                leverage_defense_signals.append(oi_quadrant)
+            elif "deleverag" in oi_quadrant_lower or "washed" in oi_quadrant_lower:
+                leverage_support_signals.append(oi_quadrant)
+        if oi_30d_change_pct is not None:
+            if oi_30d_change_pct >= 25.0:
+                leverage_defense_signals.append(f"OI 30d {oi_30d_change_pct:+.1f}%")
+            elif oi_30d_change_pct <= -15.0:
+                leverage_support_signals.append(f"OI 30d {oi_30d_change_pct:+.1f}%")
+    if leverage_defense_signals:
+        leverage_bias = "defensive"
+    elif leverage_support_signals:
+        leverage_bias = "supportive"
+    else:
+        leverage_bias = "neutral"
 
     multiplier = 1.0
-    if deep_value_regime or new_180d_low:
+    if persistent_value_regime:
+        multiplier *= 1.80
+        reasons.append("BTC is double-undervalued and below your cost basis, so a larger repair add is allowed.")
+        if strong_dip_add_mode:
+            multiplier *= 1.12
+            reasons.append("Cost-basis repair has multi-signal support, so the size cap is loosened.")
+    elif deep_value_regime or new_180d_low:
         multiplier *= 1.65
         reasons.append("Price is in a deep pullback zone, so adding now is allowed with a larger size than baseline.")
         if strong_dip_add_mode:
@@ -1545,7 +1903,7 @@ def _build_add_position_guidance(
     elif macro_takeoff_mode:
         multiplier *= 1.15
         reasons.append("Macro takeoff signals are aligned, so adding above baseline is justified.")
-    elif price_position <= 0.25 or bool(market_ctx.get("near_180d_low")):
+    elif price_position <= 0.25 or near_180d_low:
         multiplier *= 1.20
         reasons.append("Price is in your historical lower zone, which fits your dip-buy edge.")
     elif breakout_high_regime or new_ath:
@@ -1555,37 +1913,67 @@ def _build_add_position_guidance(
         multiplier *= 0.72
         reasons.append("Price is near historical highs, so this add should be smaller.")
 
+    allow_practical_value_boost = not (
+        no_extra_add_needed_mode
+        or breakout_high_regime
+        or near_ath
+        or new_ath
+        or deep_value_regime
+        or persistent_value_regime
+    )
+    if allow_practical_value_boost and valuation_bias == "supportive":
+        multiplier *= 1.06
+        reasons.append("Practical valuation ratios are below long-term anchors, so a modest add is supported.")
+    elif valuation_bias == "defensive" and not (deep_value_regime or persistent_value_regime):
+        multiplier *= 0.94
+        reasons.append("Practical valuation ratios are no longer cheap, so size is trimmed.")
+
+    if allow_practical_value_boost and cost_basis_bias == "supportive":
+        multiplier *= 1.04
+        reasons.append("The add helps repair your average cost without relying only on buy frequency.")
+    elif cost_basis_bias == "defensive" and not (deep_value_regime or persistent_value_regime):
+        multiplier *= 0.96
+        reasons.append("Current price is already above your average cost, so cost-basis repair is not active.")
+
     if macro_available:
-        if report_age_days_int is not None and report_age_days_int > 5:
-            macro_notes.append(f"Macro snapshot is {report_age_days_int} days old, so macro weight is reduced.")
         if macro_risk_score is not None:
             if macro_risk_score >= 70:
-                multiplier *= 0.92 if deep_value_regime else 0.82
+                multiplier *= 0.92 if (deep_value_regime or persistent_value_regime) else 0.82
                 macro_notes.append(f"Macro risk score {macro_risk_score:.1f}/100 is high; size is trimmed.")
             elif macro_risk_score <= 35:
                 multiplier *= 1.05
                 macro_notes.append(f"Macro risk score {macro_risk_score:.1f}/100 is contained; normal risk budget is acceptable.")
         if stress_flags_int is not None:
             if stress_flags_int >= 2:
-                multiplier *= 0.95 if deep_value_regime else 0.88
+                multiplier *= 0.95 if (deep_value_regime or persistent_value_regime) else 0.88
                 macro_notes.append(f"Funding stress flags = {stress_flags_int}; keep risk tighter.")
             elif stress_flags_int == 0:
                 macro_notes.append("Funding stress flags are low.")
         if net_liquidity_delta is not None:
             if net_liquidity_delta <= -120:
-                multiplier *= 0.96 if deep_value_regime else 0.90
+                multiplier *= 0.96 if (deep_value_regime or persistent_value_regime) else 0.90
                 macro_notes.append(f"Net liquidity 90d delta is weak ({net_liquidity_delta:+.1f}B), so keep size controlled.")
             elif net_liquidity_delta >= 80:
                 multiplier *= 1.07
                 macro_notes.append(f"Net liquidity 90d delta is supportive ({net_liquidity_delta:+.1f}B).")
-        if oi_30d_change_pct is not None:
-            if oi_30d_change_pct >= 25:
-                multiplier *= 0.92
-                macro_notes.append(f"Futures OI rose {oi_30d_change_pct:+.1f}% in 30d; avoid chasing crowded risk.")
-            elif oi_30d_change_pct <= -15:
-                multiplier *= 1.05
-                macro_notes.append(f"Futures OI changed {oi_30d_change_pct:+.1f}% in 30d, showing prior deleveraging.")
-        if ma_regime == "bearish" and not deep_value_regime:
+        if leverage_bias == "defensive":
+            leverage_factor = 0.95 if (deep_value_regime or persistent_value_regime) else 0.92
+            if oi_percentile is not None and oi_percentile >= 90.0 and not (deep_value_regime or persistent_value_regime):
+                leverage_factor = 0.88
+            multiplier *= leverage_factor
+            macro_notes.append(
+                "Futures positioning is crowded ("
+                + "; ".join(leverage_defense_signals[:2])
+                + "); trim add size."
+            )
+        elif leverage_bias == "supportive":
+            multiplier *= 1.05
+            macro_notes.append(
+                "Futures positioning shows prior deleveraging ("
+                + "; ".join(leverage_support_signals[:2])
+                + "); normal adds are easier to justify."
+            )
+        if ma_regime == "bearish" and not (deep_value_regime or persistent_value_regime):
             multiplier *= 0.95
             macro_notes.append("Trend regime is bearish, so size is capped slightly.")
         elif ma_regime == "bullish":
@@ -1594,7 +1982,10 @@ def _build_add_position_guidance(
         if macro_risk_regime and macro_risk_regime != "neutral":
             macro_notes.append(f"Macro regime: {macro_risk_regime}.")
     else:
-        macro_notes.append("Macro snapshot unavailable; decision uses live price + your history only.")
+        if bool(macro_ctx.get("available")) and macro_is_stale:
+            macro_notes.append("Macro snapshot is stale and ignored; decision uses live price + your history only.")
+        else:
+            macro_notes.append("Macro snapshot unavailable; decision uses live price + your history only.")
 
     # Free-data technical bottoming overlays (advisory only):
     # Use as small, capped sizing/risk adjustments and never override hard WAIT guards.
@@ -1661,6 +2052,13 @@ def _build_add_position_guidance(
     elif tech_signal_hits > 0 and not allow_tech_bottoming_boost:
         tech_notes.append("Bottoming overlays detected but ignored because price is in/near breakout-high regime.")
 
+    if tech_signal_hits > 0 and allow_tech_bottoming_boost:
+        bottoming_bias = "supportive"
+    elif tech_signal_hits > 0:
+        bottoming_bias = "neutral"
+    else:
+        bottoming_bias = "neutral"
+
     if burst_habit and recent_48h_count >= 1:
         if strong_dip_add_mode:
             multiplier *= 0.98
@@ -1669,14 +2067,14 @@ def _build_add_position_guidance(
             multiplier *= 0.92 if deep_value_regime else 0.80
             applied_lessons.append("You often cluster buys within 48h; size is reduced to avoid burst-overtrading.")
 
-    if high_zone_habit and (breakout_high_regime or near_ath or price_position >= 0.75):
+    if (high_zone_habit or high_cost_weighted_habit) and (breakout_high_regime or near_ath or price_position >= 0.75):
         multiplier *= 0.85
-        applied_lessons.append("You have a high-zone chasing pattern; this call applies an extra size haircut.")
+        applied_lessons.append("Your high-cost exposure is already meaningful; high-zone adds get an extra size haircut.")
 
     suggested_amount = max(10.0, baseline_amount * multiplier)
     if inconsistent_habit:
         # Keep size executable and stable, but allow wider ranges in deep drawdowns.
-        if strong_dip_add_mode:
+        if strong_dip_add_mode or persistent_value_regime:
             upper = max(baseline_amount * 10.0, amount_usdc * 1.10)
         else:
             upper = baseline_amount * (3.00 if deep_value_regime else 1.20)
@@ -1684,17 +2082,22 @@ def _build_add_position_guidance(
         suggested_amount = min(max(suggested_amount, lower), upper)
         applied_lessons.append("Your historical sizing is unstable; suggestion is anchored to reduce noise in outcomes.")
 
-    if strong_dip_add_mode and amount_usdc > suggested_amount:
+    if (strong_dip_add_mode or persistent_value_regime) and amount_usdc > suggested_amount:
         suggested_amount = amount_usdc
-        applied_lessons.append(
-            "In confirmed capitulation mode, current size is not downscaled just for historical pattern mismatch."
-        )
+        if strong_dip_add_mode:
+            applied_lessons.append(
+                "In confirmed capitulation mode, current size is not downscaled just for historical pattern mismatch."
+            )
+        else:
+            applied_lessons.append(
+                "In confirmed double-undervaluation mode, current size is not downscaled just for historical pattern mismatch."
+            )
 
     suggested_amount = round(max(10.0, suggested_amount), 2)
     proposed_gap_pct = ((amount_usdc - suggested_amount) / suggested_amount * 100.0) if suggested_amount > 0 else 0.0
 
     decision = "BUY"
-    if not deep_value_regime:
+    if not (deep_value_regime or persistent_value_regime):
         if no_extra_add_needed_mode:
             decision = "WAIT"
             reasons.append(f"No extra add needed now: your ongoing {cadence_label} already covers this sideways regime.")
@@ -1724,7 +2127,7 @@ def _build_add_position_guidance(
         size_bucket = "NONE"
 
     if decision == "BUY":
-        if deep_value_regime:
+        if deep_value_regime or persistent_value_regime:
             band = 0.35
         else:
             band = 0.10 if inconsistent_habit else 0.15
@@ -1772,6 +2175,12 @@ def _build_add_position_guidance(
             action_now = f"Buy ${amount_usdc:,.2f} now."
             call_reason = "Capitulation setup is confirmed across multiple signals."
             final_call = f"BUY AS PLANNED: ${amount_usdc:,.2f}"
+        elif persistent_value_regime:
+            action_code = "BUY_AS_PLANNED"
+            input_alignment = "ALIGNED_DEEP_VALUE"
+            action_now = f"Buy ${amount_usdc:,.2f} now."
+            call_reason = "Double-undervaluation and cost-basis repair both support this add."
+            final_call = f"BUY AS PLANNED: ${amount_usdc:,.2f}"
         elif amount_usdc > suggested_amount * 1.15 and not deep_value_regime:
             action_code = "BUY_LESS"
             input_alignment = "ABOVE_SUGGESTED"
@@ -1804,8 +2213,16 @@ def _build_add_position_guidance(
         risk_score += 12
     if stress_flags_int is not None and stress_flags_int >= 2:
         risk_score += 8
+    if leverage_bias == "defensive":
+        risk_score += 4 if (deep_value_regime or persistent_value_regime) else 7
+    elif leverage_bias == "supportive":
+        risk_score -= 3
+    if trend_bias == "defensive" and not (deep_value_regime or persistent_value_regime):
+        risk_score += 4
     if deep_value_regime:
         risk_score -= 18
+    if persistent_value_regime:
+        risk_score -= 14
     if allow_tech_bottoming_boost and tech_signal_hits >= 2:
         risk_score -= min(8, 4 + (tech_signal_hits - 2) * 2)
     if decision == "WAIT":
@@ -1819,6 +2236,12 @@ def _build_add_position_guidance(
         risk_level = "low"
 
     estimated_btc = suggested_amount / current_price_usd if (decision == "BUY" and current_price_usd > 0) else 0.0
+    suggested_avg_cost_after_buy = None
+    suggested_avg_cost_delta = None
+    if decision == "BUY" and total_btc + estimated_btc > 0:
+        suggested_avg_cost_after_buy = (total_invested_usd + suggested_amount) / (total_btc + estimated_btc)
+        if current_avg_cost_usd is not None:
+            suggested_avg_cost_delta = suggested_avg_cost_after_buy - current_avg_cost_usd
     lines: List[str] = [f"Call: {final_call}"]
     if decision == "BUY":
         lines.append(
@@ -1830,11 +2253,34 @@ def _build_add_position_guidance(
         lines.append(f"Input: ${amount_usdc:,.2f} | Suggested now: skip this entry.")
     lines.append(f"Do now: {action_now}")
     lines.append(f"Short reason: {call_reason}")
+    if freshness_notes:
+        lines.append("Data freshness: " + " ".join(freshness_notes))
+    if current_avg_cost_usd is not None and proposed_avg_cost_after_buy is not None:
+        delta_text = (
+            f"{proposed_avg_cost_delta:+,.2f}"
+            if proposed_avg_cost_delta is not None
+            else "+0.00"
+        )
+        lines.append(
+            "Cost basis: "
+            f"current avg ${current_avg_cost_usd:,.2f}; "
+            f"your proposed add would move it to ${proposed_avg_cost_after_buy:,.2f} "
+            f"({delta_text})."
+        )
     lines.append(
         "Price context: "
         f"{price_vs_hist_median_pct:+.2f}% vs your historical median fill, "
-        f"{(market_ctx.get('current_vs_180d_low_pct') if market_ctx.get('current_vs_180d_low_pct') is not None else 0.0):+.2f}% vs 180d low, "
-        f"24h move {(market_ctx.get('drop_24h_pct') if market_ctx.get('drop_24h_pct') is not None else 0.0):+.2f}%."
+        f"{(current_vs_180d_low_pct if current_vs_180d_low_pct is not None else 0.0):+.2f}% vs 180d low, "
+        f"24h move {(drop_24h_pct if drop_24h_pct is not None else 0.0):+.2f}%."
+    )
+    lines.append(
+        "Practical signals: "
+        f"valuation {valuation_bias}; "
+        f"cost basis {cost_basis_bias}; "
+        f"macro {macro_bias}; "
+        f"trend {trend_bias}; "
+        f"leverage {leverage_bias}; "
+        f"bottoming {bottoming_bias}."
     )
     if recent_trade_range_pct is not None and current_vs_recent_trade_median_pct is not None:
         lines.append(
@@ -1862,7 +2308,7 @@ def _build_add_position_guidance(
         tech_parts.append(f"RSI14 {rsi14_now:.1f}")
     if rsi14w_now is not None:
         tech_parts.append(f"RSI14W* {rsi14w_now:.1f}")
-    if market_ctx.get("volume_ratio_30") is not None:
+    if market_context_usable and market_ctx.get("volume_ratio_30") is not None:
         try:
             tech_parts.append(f"vol/30D {float(market_ctx['volume_ratio_30']):.2f}x")
         except (TypeError, ValueError):
@@ -1933,6 +2379,11 @@ def _build_add_position_guidance(
             "burst_trading_ratio": burst_ratio,
             "median_interval_days": summary.get("median_interval_days"),
             "event_amount_cv": event_amount_cv,
+            "high_zone_buy_ratio": high_zone_ratio,
+            "low_zone_buy_ratio": low_zone_ratio,
+            "high_zone_usd_ratio": high_zone_usd_ratio,
+            "low_zone_usd_ratio": low_zone_usd_ratio,
+            "high_cost_weighted_habit": high_cost_weighted_habit,
             "dense_buy_mode": dense_buy_mode,
             "dense_dca_mode": dense_buy_mode,
             "source_mix_label": source_mix_label,
@@ -1949,8 +2400,106 @@ def _build_add_position_guidance(
             "recent_events_72h": recent_72h_count,
             "last_event_time": last_event_ts.isoformat() if isinstance(last_event_ts, datetime) else None,
         },
+        "cost_basis_context": {
+            "total_invested_usd": float(total_invested_usd),
+            "total_btc": float(total_btc),
+            "current_avg_cost_usd": float(current_avg_cost_usd) if current_avg_cost_usd is not None else None,
+            "current_price_usd": float(current_price_usd),
+            "price_vs_avg_cost_pct": (
+                float(((current_price_usd - current_avg_cost_usd) / current_avg_cost_usd) * 100.0)
+                if current_avg_cost_usd
+                else None
+            ),
+            "cost_basis_repair_opportunity": bool(cost_basis_repair_opportunity),
+            "proposed_btc": float(proposed_btc),
+            "proposed_avg_cost_after_buy_usd": (
+                float(proposed_avg_cost_after_buy) if proposed_avg_cost_after_buy is not None else None
+            ),
+            "proposed_avg_cost_delta_usd": (
+                float(proposed_avg_cost_delta) if proposed_avg_cost_delta is not None else None
+            ),
+            "proposed_avg_cost_delta_pct": (
+                float(proposed_avg_cost_delta_pct) if proposed_avg_cost_delta_pct is not None else None
+            ),
+            "suggested_avg_cost_after_buy_usd": (
+                float(suggested_avg_cost_after_buy) if suggested_avg_cost_after_buy is not None else None
+            ),
+            "suggested_avg_cost_delta_usd": (
+                float(suggested_avg_cost_delta) if suggested_avg_cost_delta is not None else None
+            ),
+            "persistent_value_regime": bool(persistent_value_regime),
+            "is_double_undervalued": bool(double_undervalued),
+            "ratio_dca_current": float(ratio_dca_current) if ratio_dca_current is not None else None,
+            "ratio_trend_current": float(ratio_trend_current) if ratio_trend_current is not None else None,
+        },
+        "practical_signal_context": {
+            "valuation": {
+                "bias": valuation_bias,
+                "signals": valuation_support_signals if valuation_bias != "defensive" else valuation_defense_signals,
+                "support_signals": valuation_support_signals,
+                "defense_signals": valuation_defense_signals,
+                "ratio_dca_current": float(ratio_dca_current) if ratio_dca_current is not None else None,
+                "ratio_trend_current": float(ratio_trend_current) if ratio_trend_current is not None else None,
+                "ahr999": float(ahr999_now) if ahr999_now is not None else None,
+                "current_vs_180d_low_pct": (
+                    float(current_vs_180d_low_pct) if current_vs_180d_low_pct is not None else None
+                ),
+                "current_vs_ath_pct": float(current_vs_ath_pct) if current_vs_ath_pct is not None else None,
+            },
+            "cost_basis": {
+                "bias": cost_basis_bias,
+                "signals": cost_basis_signals,
+                "current_avg_cost_usd": float(current_avg_cost_usd) if current_avg_cost_usd is not None else None,
+                "price_vs_avg_cost_pct": float(price_vs_avg_cost_pct) if price_vs_avg_cost_pct is not None else None,
+                "repair_opportunity": bool(cost_basis_repair_opportunity),
+            },
+            "macro": {
+                "bias": macro_bias,
+                "available": bool(macro_available),
+                "support_signals": macro_support_signals,
+                "defense_signals": macro_defense_signals,
+                "macro_risk_score": float(macro_risk_score) if macro_risk_score is not None else None,
+                "stress_flags": stress_flags_int,
+                "net_liquidity_90d_delta": (
+                    float(net_liquidity_delta) if net_liquidity_delta is not None else None
+                ),
+            },
+            "trend": {
+                "bias": trend_bias,
+                "signals": trend_signals,
+                "ma_regime": ma_regime,
+                "ma_spread": float(ma_spread) if ma_spread is not None else None,
+            },
+            "leverage": {
+                "bias": leverage_bias,
+                "support_signals": leverage_support_signals,
+                "defense_signals": leverage_defense_signals,
+                "oi_percentile": float(oi_percentile) if oi_percentile is not None else None,
+                "oi_quadrant": oi_quadrant or None,
+                "oi_30d_change_pct": float(oi_30d_change_pct) if oi_30d_change_pct is not None else None,
+            },
+            "bottoming": {
+                "bias": bottoming_bias,
+                "signals": tech_signal_labels[:4],
+                "tech_signal_hits": int(tech_signal_hits),
+                "allow_tech_bottoming_boost": bool(allow_tech_bottoming_boost),
+            },
+        },
         "market_context": market_ctx,
         "macro_context": macro_ctx,
+        "data_freshness": {
+            "market_context_usable": bool(market_context_usable),
+            "market_is_stale": bool(market_is_stale),
+            "metrics_as_of_date": market_ctx.get("metrics_as_of_date"),
+            "metrics_age_days": metrics_age_days_int,
+            "market_max_age_days": MARKET_CONTEXT_MAX_AGE_DAYS,
+            "macro_context_usable": bool(macro_available),
+            "macro_is_stale": bool(macro_is_stale),
+            "macro_report_date": macro_ctx.get("report_date"),
+            "macro_report_age_days": report_age_days_int,
+            "macro_max_age_days": MACRO_CONTEXT_MAX_AGE_DAYS,
+            "notes": freshness_notes,
+        },
         "technical_bottoming_context": {
             "ahr999": ahr999_now,
             "ahr999_sub_1": bool(ahr999_sub_1),

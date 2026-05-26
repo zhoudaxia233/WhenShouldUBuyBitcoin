@@ -602,15 +602,33 @@ async def regenerate_static_files_status(
     stderr = (_static_generation_last_result.get("stderr") or "").strip()
     stdout = (_static_generation_last_result.get("stdout") or "").strip()
     failed = exit_code not in (0, None)
+    output_freshness = None
+    message = "Static generation completed successfully." if not failed else "Static generation failed."
+    if not failed:
+        try:
+            from dca_service.services.static_generator import (
+                inspect_static_output_freshness,
+                resolve_project_root,
+            )
+
+            output_freshness = inspect_static_output_freshness(resolve_project_root())
+            if not output_freshness.get("fresh"):
+                failed = True
+                message = "Static generation completed but output data is stale."
+        except Exception as e:
+            logger.error(f"Failed to inspect static output freshness: {e}")
+            failed = True
+            message = "Static generation completed but output freshness could not be verified."
 
     return {
         "success": not failed,
         "running": False,
         "completed": True,
         "exit_code": exit_code,
-        "message": "Static generation completed successfully." if not failed else "Static generation failed.",
+        "message": message,
         "stderr_preview": stderr[-500:] if stderr else "",
         "stdout_preview": stdout[-500:] if stdout else "",
         "log_path": _static_generation_log_path,
         "log_tail": _read_log_tail(_static_generation_log_path, 4000),
+        "output_freshness": output_freshness,
     }
