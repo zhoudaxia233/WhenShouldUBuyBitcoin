@@ -62,4 +62,5 @@ def test_dashboard_cache_hydration_does_not_use_local_timezone_before_definition
     ]
 
     assert "mode === 'LOCAL' ? LOCAL_TIMEZONE : 'UTC'" not in early_preview_script
-    assert "mode === 'LOCAL' ? window.LOCAL_TIMEZONE : 'UTC'" in early_preview_script
+    assert "setStrategyScheduleBadge(strategy);" in early_preview_script
+    assert "mode === 'LOCAL' ? window.LOCAL_TIMEZONE : 'UTC'" in html
