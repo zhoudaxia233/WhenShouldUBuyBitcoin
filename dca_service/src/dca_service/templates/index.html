@@ -275,9 +275,6 @@
         .mobile-transaction-card-list {
             display: none;
         }
-        .dca-budget-card {
-            display: none;
-        }
         .metric-card {
             min-height: 190px;
             position: relative;
@@ -445,6 +442,12 @@
             display: grid;
             grid-template-columns: repeat(3, minmax(0, 1fr));
             gap: 1rem;
+        }
+        .strategy-advanced-header {
+            display: none;
+        }
+        .strategy-advanced-body {
+            margin-bottom: 0 !important;
         }
         .dashboard-info-panel {
             border: 1px solid var(--dashboard-border) !important;
@@ -709,7 +712,7 @@
                 margin-bottom: 0.75rem !important;
             }
             .wallet-card-grid {
-                grid-template-columns: repeat(3, minmax(0, 1fr));
+                grid-template-columns: repeat(2, minmax(0, 1fr));
                 gap: 0.5rem;
             }
             .wallet-overview-section {
@@ -729,9 +732,6 @@
             }
             .dashboard-mobile-only,
             .dashboard-mobile-only-card {
-                display: block;
-            }
-            .dca-budget-card {
                 display: block;
             }
             .metric-label {
@@ -880,6 +880,52 @@
                 grid-template-columns: 1fr;
                 gap: 0.5rem;
                 margin-bottom: 0.6rem !important;
+            }
+            .strategy-advanced-panel {
+                border: 1px solid var(--dashboard-border);
+                border-radius: 10px;
+                background: var(--dashboard-card-bg-solid);
+                overflow: hidden;
+            }
+            .strategy-advanced-header {
+                min-height: 56px;
+                padding: 0.62rem 0.78rem;
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 0.7rem;
+                cursor: pointer;
+            }
+            .strategy-advanced-header:focus-visible {
+                outline: 2px solid var(--dashboard-accent);
+                outline-offset: -3px;
+            }
+            .strategy-advanced-title {
+                min-width: 0;
+            }
+            .strategy-advanced-title strong {
+                display: block;
+                color: var(--dashboard-text);
+                font-size: 0.96rem;
+                font-weight: 780;
+                line-height: 1.2;
+            }
+            .strategy-advanced-summary {
+                display: block;
+                margin-top: 0.16rem;
+                color: var(--dashboard-muted);
+                font-size: 0.74rem;
+                font-weight: 650;
+                line-height: 1.25;
+            }
+            .strategy-advanced-body {
+                padding: 0 0.5rem 0.5rem;
+            }
+            .strategy-advanced-panel.is-collapsed .strategy-advanced-body {
+                display: none;
+            }
+            .strategy-advanced-panel:not(.is-collapsed) .strategy-advanced-body {
+                display: grid;
             }
             .dashboard-info-panel {
                 padding: 0.85rem 0.92rem;
@@ -1113,13 +1159,6 @@
                             <div id="progressRing" class="progress-ring" aria-hidden="true"></div>
                         </article>
 
-                        <!-- DCA Budget (mobile summary) -->
-                        <article class="metric-card dca-budget-card dashboard-mobile-only-card">
-                            <div class="metric-label mb-4">DCA Budget</div>
-                            <div class="metric-value mb-3" id="mobileDcaBudget">--</div>
-                            <div class="metric-subtext">Monthly</div>
-                            <div class="mobile-card-icon" aria-hidden="true"><i class="bi bi-wallet2"></i></div>
-                        </article>
                     </div>
 
                     <div class="progress dashboard-accent-progress">
@@ -1179,7 +1218,17 @@
                     </div>
                 </div>
                 
-                <div class="strategy-card-grid mb-3">
+                <div class="strategy-advanced-panel mobile-collapsible is-collapsed mb-3">
+                    <div class="strategy-advanced-header" role="button" tabindex="0" data-strategy-accordion-toggle aria-expanded="false" aria-controls="strategyAdvancedBody">
+                        <div class="strategy-advanced-title">
+                            <strong>Advanced</strong>
+                            <span class="strategy-advanced-summary">Status · Drawdown Context · Bottoming Checklist</span>
+                        </div>
+                        <span class="strategy-card-collapse-toggle" aria-hidden="true">
+                            <i class="bi bi-chevron-down"></i>
+                        </span>
+                    </div>
+                    <div class="strategy-advanced-body strategy-card-grid" id="strategyAdvancedBody">
                     <div class="dashboard-info-panel strategy-detail-card strategy-status-card mobile-collapsible is-collapsed" id="previewReasonBox">
                         <div class="strategy-detail-card-header" role="button" tabindex="0" data-strategy-accordion-toggle aria-expanded="false" aria-controls="strategyStatusBody">
                             <div class="strategy-detail-card-title">
@@ -1264,6 +1313,7 @@
                             <div class="visually-hidden" id="bottomingSignalMetrics"></div>
                         </div>
                     </div>
+                    </div>
                 </div>
 
                 <div class="strategy-actions">
@@ -1278,7 +1328,7 @@
             <div class="card-header dashboard-panel-header d-flex justify-content-between align-items-center">
                 <h5 class="dashboard-panel-title mb-0"><span class="text-warning me-2">₿</span>Transaction History</h5>
                 <button id="clearSimulatedBtn" class="btn btn-sm btn-outline-danger">
-                    <i class="bi bi-arrow-clockwise"></i> Reset & Sync History
+                    <i class="bi bi-arrow-clockwise"></i> Re-sync
                 </button>
             </div>
             <div class="card-body p-0">
@@ -1475,7 +1525,6 @@
                 }
                 if (remainingBudgetEl && remainingBudget !== null) {
                     remainingBudgetEl.textContent = `$${remainingBudget.toFixed(2)}`;
-                    setDashboardTextIfPresent('mobileDcaBudget', `$${remainingBudget.toFixed(2)}`);
                 }
                 if (globalRefreshEl && typeof preview.timestamp === 'string' && preview.timestamp.trim() !== '') {
                     const parsedDate = new Date(preview.timestamp);
@@ -2314,7 +2363,6 @@
             
             if (decision.remaining_budget !== null && decision.remaining_budget !== undefined) {
                 remainingBudgetElem.textContent = '$' + decision.remaining_budget.toFixed(2);
-                setDashboardTextIfPresent('mobileDcaBudget', `$${decision.remaining_budget.toFixed(2)}`);
                 
                 // Set tooltip based on reset behavior
                 // Handle both boolean true and string "true" from JSON
@@ -2360,7 +2408,6 @@
                 });
             } else {
                 remainingBudgetElem.textContent = '--';
-                setDashboardTextIfPresent('mobileDcaBudget', '--');
                 const tooltipText = 'Budget information unavailable';
                 
                 // Update Bootstrap tooltip
@@ -3002,7 +3049,7 @@
             if (clearBtn) {
                 clearConfirmationActive = false;
                 clearBtn.disabled = false;
-                clearBtn.textContent = 'Reset & Sync History';
+                clearBtn.textContent = 'Re-sync';
                 clearBtn.classList.remove('btn-danger');
                 clearBtn.classList.add('btn-outline-danger');
             }
