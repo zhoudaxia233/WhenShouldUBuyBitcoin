@@ -35,6 +35,12 @@ than speed or agreement.
 - Before merging any pull request, check the current CI/checks status for the
   exact head commit being merged. Do not merge if CI/checks are failing,
   pending, missing, stale, or cannot be verified.
+- Before merging any pull request, run
+  `poetry run python scripts/update_distribution_data.py` locally to refresh the
+  bundled BitInfoCharts wealth distribution fallback. Stage and include
+  `dca_service/src/dca_service/data/wealth_distribution.json` if it changed.
+  Do not run full `main.py` for this gate, and do not stage generated
+  `docs/data/*` or `docs/charts/*` churn unless the user explicitly asks.
 - After the user explicitly approves a merge for app, frontend-visible, or
   runtime behavior changes, update the project version first, verify that the
   frontend visibly shows the new version, then merge.
