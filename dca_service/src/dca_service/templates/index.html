@@ -236,6 +236,22 @@
         .btn {
             font-weight: 650;
         }
+        .btn-dashboard-accent {
+            border-color: var(--dashboard-accent);
+            background: var(--dashboard-accent);
+            color: #fff;
+        }
+        .btn-dashboard-accent:hover,
+        .btn-dashboard-accent:focus {
+            border-color: var(--dashboard-accent-strong);
+            background: var(--dashboard-accent-strong);
+            color: #fff;
+        }
+        .btn-dashboard-accent:disabled {
+            border-color: var(--dashboard-accent);
+            background: var(--dashboard-accent);
+            color: #fff;
+        }
         .btn-primary,
         .btn-success {
             border-color: var(--dashboard-accent);
@@ -1080,7 +1096,7 @@
             .mobile-transaction-amounts {
                 min-width: 0;
             }
-            .mobile-transaction-id,
+            .mobile-transaction-price,
             .mobile-transaction-fiat {
                 display: block;
                 color: var(--dashboard-text);
@@ -1332,7 +1348,7 @@
                 </div>
 
                 <div class="strategy-actions">
-                    <button id="openAddPositionBtn" class="btn btn-success" disabled data-bs-toggle="modal" data-bs-target="#addPositionModal">
+                    <button id="openAddPositionBtn" class="btn btn-dashboard-accent" disabled data-bs-toggle="modal" data-bs-target="#addPositionModal">
                         Add Position
                     </button>
                 </div>
@@ -2016,6 +2032,7 @@
                 const timestampDisplay = formatTransactionTimestamp(tx.timestamp);
                 const fiatAmount = tx.fiat_amount ? `$${tx.fiat_amount.toFixed(2)}` : '-';
                 const btcAmount = tx.btc_amount ? `${tx.btc_amount.toFixed(8)} BTC` : '-';
+                const priceDisplay = tx.price ? `$${tx.price.toFixed(2)}` : '-';
 
                 card.className = 'mobile-transaction-card';
                 card.innerHTML = `
@@ -2023,7 +2040,7 @@
                         <i class="bi ${isSuccess ? 'bi-check-lg' : 'bi-x-lg'}"></i>
                     </div>
                     <div class="mobile-transaction-main">
-                        <span class="mobile-transaction-id">${escapeHtml(tx.id)}</span>
+                        <span class="mobile-transaction-price">${escapeHtml(priceDisplay)}</span>
                         <span class="mobile-transaction-time">${escapeHtml(timestampDisplay)}</span>
                         <span class="mobile-transaction-source">${escapeHtml(source)}</span>
                     </div>

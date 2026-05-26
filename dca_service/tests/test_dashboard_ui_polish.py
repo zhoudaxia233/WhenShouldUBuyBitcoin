@@ -116,6 +116,22 @@ def test_dashboard_mobile_app_cards_are_hydrated_from_existing_data():
     assert "renderMobileTransactionCards(pageTransactions);" in html
 
 
+def test_dashboard_mobile_transaction_cards_show_purchase_price_not_id():
+    html = _dashboard_html()
+    mobile_render = html[
+        html.index("function renderMobileTransactionCards(pageTransactions)")
+        : html.index("function renderTransactionPage()")
+    ]
+
+    assert "const priceDisplay = tx.price ? `$${tx.price.toFixed(2)}` : '-';" in mobile_render
+    assert (
+        '<span class="mobile-transaction-price">${escapeHtml(priceDisplay)}</span>'
+        in mobile_render
+    )
+    assert "mobile-transaction-id" not in mobile_render
+    assert "${escapeHtml(tx.id)}" not in mobile_render
+
+
 def test_dashboard_mobile_keeps_reference_density_and_card_shapes():
     html = _dashboard_html()
     mobile_css = html[html.index("@media (max-width: 768px)") :]
