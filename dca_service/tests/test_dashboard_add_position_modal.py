@@ -20,3 +20,18 @@ def test_dashboard_add_position_modal_and_safe_polling_are_present():
     assert "fetch('/api/stats/add-position/confirm'" in html
     assert "previewCache.suggested_amount_usd" not in html
     assert "if (amountInput) amountInput.value = '';" in html
+
+
+def test_dashboard_add_position_button_uses_accent_class_without_success_flash():
+    repo_root = Path(__file__).resolve().parents[2]
+    template_path = repo_root / "dca_service" / "src" / "dca_service" / "templates" / "index.html"
+    html = template_path.read_text(encoding="utf-8")
+    button_markup = html[
+        html.index('<button id="openAddPositionBtn"')
+        : html.index("</button>", html.index('<button id="openAddPositionBtn"'))
+    ]
+
+    assert 'class="btn btn-dashboard-accent"' in button_markup
+    assert "btn-success" not in button_markup
+    assert ".btn-dashboard-accent {" in html
+    assert ".btn-dashboard-accent:hover," in html
