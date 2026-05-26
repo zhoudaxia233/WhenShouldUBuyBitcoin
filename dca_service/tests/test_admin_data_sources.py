@@ -169,6 +169,16 @@ def test_admin_data_sources_page_uses_bootstrap_theme_variables(client: TestClie
     assert 'html[data-bs-theme="dark"] body' not in response.text
 
 
+def test_admin_data_sources_page_loads_bootstrap_bundle_for_shared_dropdown(client: TestClient):
+    response = client.get("/admin/data-sources")
+
+    assert response.status_code == 200
+    assert "bootstrap.bundle.min.js" in response.text
+    assert response.text.index("bootstrap.bundle.min.js") < response.text.index(
+        "document.addEventListener('DOMContentLoaded'"
+    )
+
+
 def test_admin_diagnostics_api_includes_sanitized_runtime_logs(
     client: TestClient,
     tmp_path: Path,
