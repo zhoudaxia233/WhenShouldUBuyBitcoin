@@ -47,15 +47,23 @@ def test_total_btc_value_is_forced_single_line():
     assert "white-space: nowrap;" in html
 
 
-def test_pan_disabled_and_drag_zoom_is_direct():
+def test_saylor_mobile_pan_is_enabled_and_desktop_drag_zoom_is_direct():
     html = _load_stats_template()
-    # Pan should be disabled.
+    assert "const mobileSaylorGestures = isMobileViewport;" in html
+    assert "const desktopSaylorPrecisionZoom = !isMobileViewport;" in html
+
     pan_block = re.search(r"pan:\s*\{[\s\S]*?\}", html)
     assert pan_block is not None
-    assert "enabled: false" in pan_block.group(0)
+    assert "enabled: mobileSaylorGestures" in pan_block.group(0)
+
+    pinch_block = re.search(r"pinch:\s*\{[\s\S]*?\}", html)
+    assert pinch_block is not None
+    assert "enabled: mobileSaylorGestures" in pinch_block.group(0)
+
     # Drag-to-zoom should be direct (no modifier key).
     drag_block = re.search(r"drag:\s*\{[\s\S]*?\}", html)
     assert drag_block is not None
+    assert "enabled: desktopSaylorPrecisionZoom" in drag_block.group(0)
     assert "modifierKey" not in drag_block.group(0)
 
 
@@ -123,16 +131,18 @@ def test_saylor_required_summary_fields_use_strict_setters():
     assert "setTextIfPresent('saylorAvgCost', avgCostText);" not in html
 
 
-def test_saylor_mobile_chart_disables_precision_zoom_and_has_reset_button():
+def test_saylor_mobile_chart_enables_touch_gestures_and_has_reset_button():
     html = _load_stats_template()
     assert 'id="resetSaylorZoomBtn"' in html
     assert "resetSaylorZoomBtn.addEventListener('click', resetSaylorZoom)" in html
     assert "const isMobileViewport = window.matchMedia('(max-width: 575px)').matches;" in html
     assert "display: !isMobileViewport" in html
-    assert "enabled: !isMobileViewport" in html
+    assert "enabled: desktopSaylorPrecisionZoom" in html
+    assert "enabled: mobileSaylorGestures" in html
+    assert "mode: mobileSaylorGestures ? 'x' : 'xy'" in html
     assert "#saylorChart {" in html
     assert "touch-action: none;" in html
-    assert "touch-action: pan-y;" in html
+    assert "min-width: 720px;" not in html
 
 
 def test_saylor_desktop_x_axis_does_not_get_mobile_tick_limit():
@@ -223,6 +233,34 @@ def test_stats_page_uses_reference_dashboard_layout_without_visible_title_block(
     assert 'class="stats-analytics-grid"' in html
     assert 'class="stats-saylor-panel dashboard-panel saylor-card"' in html
     assert 'class="trading-style-list"' in html
+
+
+def test_stats_mobile_layout_keeps_metrics_dense_before_charts():
+    html = _load_stats_template()
+    mobile_css = html.split("@media (max-width: 575px)", 1)[1]
+
+    assert ".stats-actions-row {" in mobile_css
+    assert "margin: 0 0 10px;" in mobile_css
+    assert ".stats-metrics-grid {" in mobile_css
+    assert "grid-template-columns: repeat(2, minmax(0, 1fr));" in mobile_css
+    assert "grid-template-columns: 1fr;" not in mobile_css
+    assert "gap: 10px;" in mobile_css
+    assert ".stats-metric-card {" in mobile_css
+    assert "min-height: 96px;" in mobile_css
+    assert "padding: 12px;" in mobile_css
+    assert ".metric-sparkline {" in mobile_css
+    assert "display: none;" in mobile_css
+
+
+def test_stats_mobile_action_buttons_keep_readable_labels():
+    html = _load_stats_template()
+    mobile_css = html.split("@media (max-width: 575px)", 1)[1]
+
+    assert ".stats-actions-row .btn {" in mobile_css
+    assert "min-height: 36px;" in mobile_css
+    assert ".stats-actions-row .btn-text {" not in mobile_css
+    assert "Refresh</span>" in html
+    assert "Update Charts</span>" in html
 
 
 def test_distribution_table_has_rank_column_and_bar_renderer():

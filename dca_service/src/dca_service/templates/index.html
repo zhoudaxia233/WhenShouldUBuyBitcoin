@@ -269,6 +269,15 @@
             grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.85fr) minmax(0, 1.05fr);
             gap: 1rem;
         }
+        .dashboard-mobile-only,
+        .dashboard-mobile-only-card,
+        .mobile-card-icon,
+        .mobile-transaction-card-list {
+            display: none;
+        }
+        .dca-budget-card {
+            display: none;
+        }
         .metric-card {
             min-height: 190px;
             position: relative;
@@ -330,9 +339,12 @@
         }
         .dashboard-accent-progress {
             height: 7px;
-            max-width: 210px;
+            width: 100%;
+            max-width: none;
             margin-top: 1.35rem;
-            background: transparent;
+            background: var(--dashboard-ring-track);
+            border-radius: 999px;
+            overflow: hidden;
         }
         .dashboard-accent-progress .progress-bar {
             border-radius: 999px;
@@ -347,22 +359,71 @@
             overflow: hidden;
         }
         .strategy-metric {
-            min-height: 128px;
-            padding: 1.35rem 1.45rem;
+            min-height: 84px;
+            padding: 0.95rem 1.2rem;
             border-right: 1px solid var(--dashboard-border);
+            display: flex;
+            align-items: center;
         }
         .strategy-metric:last-child {
             border-right: 0;
         }
+        .strategy-metric-content {
+            min-width: 0;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            justify-content: center;
+        }
+        .strategy-action-coin,
+        .strategy-card-icon {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background: var(--dashboard-accent-softer);
+            color: var(--dashboard-accent-strong);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            flex: none;
+        }
         .strategy-value {
             color: var(--dashboard-text);
-            font-size: 1.35rem;
+            font-size: 1.16rem;
             font-weight: 760;
-            letter-spacing: -0.015em;
+            letter-spacing: 0;
             line-height: 1.2;
+        }
+        .strategy-value-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.55rem;
+            width: 100%;
+        }
+        .strategy-metric .strategy-label {
+            font-size: 0.84rem;
+            margin-bottom: 0.45rem !important;
         }
         .strategy-action {
             color: var(--dashboard-accent-strong) !important;
+            white-space: nowrap;
+        }
+        .strategy-action-coin {
+            width: 26px;
+            height: 26px;
+            font-size: 0.92rem;
+            box-shadow: inset 0 0 0 1px var(--dashboard-accent);
+        }
+        .dca-strategy-panel .card-body {
+            padding: 1.25rem 1.35rem 1.35rem;
+        }
+        .strategy-status-pills {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.6rem;
+            justify-content: flex-end;
         }
         #scheduleDisplay,
         #execModeBadge,
@@ -380,9 +441,9 @@
             background: var(--dashboard-accent) !important;
             color: #fff !important;
         }
-        .strategy-detail-grid {
+        .strategy-card-grid {
             display: grid;
-            grid-template-columns: minmax(0, 1.1fr) minmax(280px, 0.9fr);
+            grid-template-columns: repeat(3, minmax(0, 1fr));
             gap: 1rem;
         }
         .dashboard-info-panel {
@@ -391,6 +452,162 @@
             background: var(--dashboard-card-bg-solid) !important;
             color: var(--dashboard-text);
             padding: 1.3rem 1.5rem;
+        }
+        .strategy-detail-card {
+            min-height: 242px;
+            padding: 0;
+            overflow: hidden;
+            position: relative;
+        }
+        .strategy-detail-card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.75rem;
+            padding: 1.05rem 1.2rem 0;
+        }
+        .strategy-detail-card-header[role="button"] {
+            cursor: pointer;
+        }
+        .strategy-detail-card-header[role="button"]:focus-visible {
+            outline: 2px solid var(--dashboard-accent);
+            outline-offset: -3px;
+        }
+        .strategy-detail-card-title {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.55rem;
+            min-width: 0;
+            font-weight: 780;
+            color: var(--dashboard-text);
+        }
+        .strategy-card-header-meta {
+            color: var(--dashboard-muted);
+            font-weight: 720;
+            white-space: nowrap;
+        }
+        #drawdownCompactLabel {
+            display: none;
+        }
+        .strategy-detail-card-body {
+            padding: 0.85rem 1.2rem 1.15rem;
+        }
+        .strategy-reason-text {
+            color: var(--dashboard-text);
+            font-family: var(--bs-body-font-family);
+            font-size: 0.9rem;
+            font-weight: 650;
+            line-height: 1.55;
+            white-space: pre-line;
+            position: relative;
+            z-index: 1;
+        }
+        .strategy-status-card::after {
+            content: "\F26A";
+            font-family: "bootstrap-icons";
+            position: absolute;
+            right: 1.25rem;
+            bottom: 0.7rem;
+            width: 112px;
+            height: 112px;
+            border-radius: 50%;
+            border: 6px solid var(--dashboard-border);
+            color: var(--dashboard-border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3.1rem;
+            opacity: 0.55;
+            pointer-events: none;
+        }
+        .desktop-drawdown-mode-controls .btn,
+        .drawdown-mode-btn {
+            font-weight: 760;
+        }
+        .mobile-drawdown-mode-controls {
+            display: none;
+        }
+        .strategy-card-collapse-toggle {
+            display: none;
+            border: 0;
+            background: transparent;
+            color: var(--dashboard-muted);
+            align-items: center;
+            gap: 0.35rem;
+            padding: 0;
+            font-weight: 720;
+        }
+        .drawdown-body-layout {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) 132px;
+            gap: 1rem;
+            align-items: center;
+        }
+        .drawdown-kicker,
+        .bottoming-metric-list dt {
+            color: var(--dashboard-muted);
+            font-size: 0.82rem;
+            font-weight: 650;
+        }
+        .drawdown-large-value {
+            color: var(--dashboard-text);
+            display: block;
+            font-size: 1.18rem;
+            font-weight: 800;
+            line-height: 1.15;
+            margin: 0.18rem 0 0.52rem;
+        }
+        .drawdown-comparable {
+            color: var(--dashboard-text);
+            font-weight: 780;
+            margin-top: 0.65rem;
+        }
+        .drawdown-comparable-range {
+            color: var(--dashboard-muted);
+            font-size: 0.86rem;
+            margin-top: 0.12rem;
+        }
+        .drawdown-sparkline {
+            color: var(--dashboard-accent);
+            min-width: 0;
+        }
+        .drawdown-sparkline svg {
+            width: 100%;
+            height: 72px;
+            display: block;
+        }
+        .bottoming-summary {
+            color: var(--dashboard-muted);
+            font-size: 0.9rem;
+            line-height: 1.45;
+            margin-bottom: 0.85rem;
+        }
+        .bottoming-metric-list {
+            margin: 0;
+        }
+        .bottoming-metric-list > div {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto;
+            gap: 0.75rem;
+            align-items: baseline;
+            margin-bottom: 0.44rem;
+        }
+        .bottoming-metric-list > div:last-child {
+            margin-bottom: 0;
+        }
+        .bottoming-metric-list dd {
+            color: var(--dashboard-text);
+            font-weight: 780;
+            margin: 0;
+            text-align: right;
+        }
+        .bottoming-macro-list {
+            margin-top: 0.2rem;
+        }
+        .strategy-actions {
+            display: flex;
+            justify-content: flex-end;
+            margin-top: 1rem;
         }
         .table {
             --bs-table-bg: transparent;
@@ -408,6 +625,9 @@
             --bs-table-border-color: var(--dashboard-border);
             text-transform: none;
             font-size: 0.88rem;
+        }
+        .mobile-transaction-card-list {
+            padding: 0.75rem;
         }
         .text-warning {
             color: var(--dashboard-accent) !important;
@@ -429,7 +649,7 @@
         }
         @media (max-width: 992px) {
             .wallet-card-grid,
-            .strategy-detail-grid {
+            .strategy-card-grid {
                 grid-template-columns: 1fr;
             }
             .strategy-metric-grid {
@@ -441,50 +661,397 @@
         }
         @media (max-width: 768px) {
             body {
-                padding-top: 16px;
+                padding-top: 14px;
+                padding-bottom: 92px;
             }
-            .dashboard-header {
-                margin-bottom: 18px;
+            .shared-header-layout {
+                flex-direction: row;
+                align-items: center;
+                justify-content: space-between;
+            }
+            .shared-header-right {
+                width: auto;
+                flex: 0 0 auto;
+                justify-content: flex-end;
+            }
+            .brand-mark {
+                width: 36px;
+                height: 36px;
+                font-size: 1.18rem;
+                box-shadow: 0 8px 20px rgba(255, 138, 0, 0.22);
+            }
+            .brand-title {
+                font-size: 1.34rem;
             }
             .dashboard-nav {
-                width: 100%;
-                justify-content: center !important;
-                overflow-x: visible;
-                flex-wrap: wrap !important;
-                padding-bottom: 2px;
+                display: none !important;
+            }
+            .dashboard-nav-btn.dropdown-toggle::after {
+                display: none;
+            }
+            .nav-actions > .btn .bi,
+            .nav-actions > .dropdown > .btn .bi {
+                margin-right: 0;
+            }
+            .theme-toggle-btn {
+                width: 36px;
+                height: 36px;
+            }
+            .header-utility {
+                width: auto;
+                justify-content: flex-end;
+            }
+            .header-utility .user-chip {
+                display: none !important;
+            }
+            .refresh-panel {
+                padding: 0.68rem 0.78rem;
+                margin-bottom: 0.75rem !important;
             }
             .wallet-card-grid {
-                grid-template-columns: 1fr;
+                grid-template-columns: repeat(3, minmax(0, 1fr));
+                gap: 0.5rem;
+            }
+            .wallet-overview-section {
+                margin-bottom: 0.6rem !important;
+            }
+            .metric-card-primary {
+                grid-column: 1 / -1;
+                min-height: 128px;
+                background: linear-gradient(135deg, #ff9a16 0%, #ff7a00 100%);
+                color: #fff;
+                border-color: rgba(255, 122, 0, 0.42);
+                box-shadow: 0 18px 40px rgba(255, 122, 0, 0.24);
             }
             .metric-card {
                 min-height: auto;
-                padding: 1.25rem;
+                padding: 0.68rem 0.72rem;
+            }
+            .dashboard-mobile-only,
+            .dashboard-mobile-only-card {
+                display: block;
+            }
+            .dca-budget-card {
+                display: block;
+            }
+            .metric-label {
+                font-size: 0.72rem;
+                margin-bottom: 0.48rem !important;
+            }
+            .metric-value {
+                font-size: 1.45rem;
+                letter-spacing: 0;
+                margin-bottom: 0.42rem !important;
+            }
+            .wallet-card-grid .metric-card:not(.metric-card-primary) .metric-value {
+                font-size: 1.18rem;
+                white-space: nowrap;
+            }
+            .metric-card-primary .metric-label,
+            .metric-card-primary .metric-value,
+            .metric-card-primary .metric-subtext {
+                color: #fff;
+            }
+            .metric-card-primary .metric-label {
+                opacity: 0.88;
+            }
+            .metric-card-primary .metric-value {
+                font-size: 1.58rem;
+            }
+            .metric-subtext {
+                font-size: 0.8rem;
+            }
+            .metric-card-primary::after {
+                right: 14px;
+                bottom: -14px;
+                color: rgba(255, 255, 255, 0.16);
+                font-size: 5.8rem;
+            }
+            .metric-card-primary .mt-4 {
+                margin-top: 0.34rem !important;
+            }
+            .metric-card .btn {
+                min-height: 32px;
+                padding: 0.28rem 0.44rem;
+            }
+            .metric-card-primary .btn {
+                border-color: rgba(255, 255, 255, 0.72);
+                background: rgba(255, 255, 255, 0.08);
+                color: #fff;
+            }
+            .metric-card-primary .btn:hover,
+            .metric-card-primary .btn:focus {
+                background: #fff;
+                color: var(--dashboard-accent-strong);
+            }
+            .mobile-card-icon {
+                width: 28px;
+                height: 28px;
+                border-radius: 9px;
+                background: var(--dashboard-accent-softer);
+                color: var(--dashboard-accent-strong);
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                margin-top: 0.36rem;
             }
             .progress-metric-card {
-                grid-template-columns: minmax(0, 1fr) 76px;
+                display: flex;
+                min-height: 96px;
+                flex-direction: column;
+                align-items: flex-start;
+                justify-content: space-between;
+                gap: 0.42rem;
             }
             .progress-ring {
-                width: 76px;
-                height: 76px;
+                width: 48px;
+                height: 48px;
+                align-self: center;
             }
             .progress-ring::after {
-                inset: 10px;
+                inset: 7px;
+            }
+            .dashboard-accent-progress {
+                height: 5px;
+                margin-top: 0.48rem;
+            }
+            .dashboard-page .dashboard-panel-header,
+            .dashboard-page .card-header.dashboard-panel-header {
+                padding: 0.6rem 0.72rem;
+            }
+            .dashboard-panel-title {
+                font-size: 0.96rem;
+            }
+            .dca-strategy-panel .card-body {
+                padding: 0.64rem;
+            }
+            .strategy-status-pills {
+                justify-content: flex-start;
+                gap: 0.42rem;
+            }
+            #scheduleDisplay,
+            #execModeBadge,
+            #dataSourceBadge {
+                font-size: 0.64rem;
+                padding: 0.24rem 0.34rem;
             }
             .strategy-metric-grid {
-                grid-template-columns: 1fr;
+                grid-template-columns: repeat(3, minmax(0, 1fr));
+                margin-bottom: 0.6rem !important;
             }
             .strategy-metric,
-            .strategy-metric:nth-child(2n) {
-                border-right: 0;
+            .strategy-metric:nth-child(2n),
+            .strategy-metric:nth-child(2n - 1) {
+                border-right: 1px solid var(--dashboard-border);
                 border-bottom: 1px solid var(--dashboard-border);
             }
-            .strategy-metric:last-child {
+            .strategy-metric:nth-child(3n) {
+                border-right: 0;
+            }
+            .strategy-metric:nth-child(n + 4) {
                 border-bottom: 0;
+            }
+            .strategy-metric:last-child {
+                border-right: 0;
+                border-bottom: 0;
+            }
+            .strategy-metric {
+                min-height: 54px;
+                padding: 0.38rem 0.4rem;
+                grid-template-columns: minmax(0, 1fr);
+                gap: 0.2rem;
+            }
+            .strategy-metric-content {
+                min-height: 42px;
+            }
+            .strategy-action-coin {
+                width: 22px;
+                height: 22px;
+                font-size: 0.78rem;
+            }
+            .strategy-label {
+                font-size: 0.58rem;
+                margin-bottom: 0.22rem !important;
+            }
+            .strategy-value {
+                font-size: 0.84rem;
+            }
+            .strategy-card-grid {
+                grid-template-columns: 1fr;
+                gap: 0.5rem;
+                margin-bottom: 0.6rem !important;
+            }
+            .dashboard-info-panel {
+                padding: 0.85rem 0.92rem;
+            }
+            .strategy-detail-card {
+                min-height: 0;
+                padding: 0;
+            }
+            .strategy-detail-card-header {
+                padding: 0.62rem 0.78rem;
+                min-height: 56px;
+            }
+            .strategy-detail-card-body {
+                padding: 0 0.78rem 0.72rem;
+            }
+            .strategy-card-icon {
+                width: 24px;
+                height: 24px;
+                font-size: 0.82rem;
+            }
+            .strategy-detail-card-title {
+                flex: 1 1 auto;
+                gap: 0.46rem;
+                font-size: 0.96rem;
+                line-height: 1.2;
+            }
+            .strategy-detail-card-title strong {
+                font-size: inherit;
+                line-height: inherit;
+            }
+            .strategy-card-collapse-toggle {
+                display: flex;
+                flex: 0 0 auto;
+                align-items: center;
+                color: var(--dashboard-muted);
+                font-size: 0.96rem;
+                line-height: 1;
+            }
+            .strategy-card-header-meta {
+                display: block;
+                flex: 0 1 auto;
+                color: var(--dashboard-muted);
+                font-size: 0.96rem;
+                font-weight: 720;
+                line-height: 1.2;
+                text-align: right;
+            }
+            #drawdownCompactLabel {
+                display: block;
+            }
+            .mobile-collapsible.is-collapsed .strategy-detail-card-body {
+                display: none;
+            }
+            .desktop-drawdown-mode-controls {
+                display: none;
+            }
+            .mobile-drawdown-mode-controls {
+                display: inline-flex;
+                width: 100%;
+                margin-bottom: 0.62rem;
+            }
+            .mobile-drawdown-mode-controls .btn {
+                flex: 1 1 0;
+                font-size: 0.7rem;
+                padding: 0.24rem 0.34rem;
+            }
+            .strategy-status-card::after,
+            .drawdown-sparkline {
+                display: none;
+            }
+            .strategy-reason-text {
+                font-size: 0.76rem;
+                line-height: 1.28;
+            }
+            .drawdown-body-layout {
+                grid-template-columns: 1fr;
+                gap: 0.4rem;
+            }
+            .drawdown-large-value {
+                font-size: 0.94rem;
+                margin-bottom: 0.35rem;
+            }
+            .drawdown-kicker,
+            .bottoming-metric-list dt {
+                font-size: 0.72rem;
+            }
+            .bottoming-summary,
+            .drawdown-comparable-range {
+                font-size: 0.76rem;
+            }
+            .bottoming-metric-list > div {
+                margin-bottom: 0.32rem;
+            }
+            .bottoming-macro-list {
+                margin-top: 0.3rem;
+            }
+            .strategy-actions {
+                margin-top: 0.56rem;
+            }
+            .strategy-actions .btn {
+                width: 100%;
+            }
+            .transactions-table-wrap {
+                display: none;
+            }
+            .mobile-transaction-card-list {
+                display: grid;
+                gap: 0.5rem;
+                padding: 0.75rem;
+            }
+            .mobile-transaction-card {
+                display: grid;
+                grid-template-columns: 32px minmax(0, 1fr) auto;
+                gap: 0.7rem;
+                align-items: center;
+                border: 1px solid var(--dashboard-border);
+                border-radius: 10px;
+                background: var(--dashboard-card-bg-solid);
+                padding: 0.78rem 0.82rem;
+            }
+            .mobile-transaction-status {
+                width: 24px;
+                height: 24px;
+                border-radius: 50%;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                color: #0f8f46;
+                background: rgba(22, 163, 74, 0.14);
+                font-size: 0.78rem;
+            }
+            .mobile-transaction-status.failed {
+                color: #b91c1c;
+                background: rgba(220, 38, 38, 0.12);
+            }
+            .mobile-transaction-main,
+            .mobile-transaction-amounts {
+                min-width: 0;
+            }
+            .mobile-transaction-id,
+            .mobile-transaction-fiat {
+                display: block;
+                color: var(--dashboard-text);
+                font-size: 0.9rem;
+                font-weight: 820;
+                line-height: 1.1;
+            }
+            .mobile-transaction-time,
+            .mobile-transaction-btc {
+                display: block;
+                color: var(--dashboard-muted);
+                font-size: 0.76rem;
+                line-height: 1.3;
+            }
+            .mobile-transaction-source {
+                display: inline-flex;
+                width: fit-content;
+                margin-top: 0.24rem;
+                border-radius: 5px;
+                background: var(--dashboard-accent-softer);
+                color: var(--dashboard-text);
+                font-size: 0.62rem;
+                font-weight: 800;
+                padding: 0.14rem 0.32rem;
+            }
+            .mobile-transaction-amounts {
+                text-align: right;
             }
             .dashboard-panel-header,
             .card-header.dashboard-panel-header,
             .card-footer.dashboard-panel-footer {
-                padding: 1.1rem 1.2rem;
+                padding: 0.95rem 1rem;
             }
         }
     </style>
@@ -533,6 +1100,7 @@
                             <div class="metric-label mb-4">Available USDC</div>
                             <div class="metric-value mb-3" id="quoteBalance">--</div>
                             <div class="metric-subtext">Binance Balance</div>
+                            <div class="mobile-card-icon" aria-hidden="true"><i class="bi bi-currency-dollar"></i></div>
                         </article>
                         
                         <!-- Target Progress -->
@@ -544,22 +1112,29 @@
                             </div>
                             <div id="progressRing" class="progress-ring" aria-hidden="true"></div>
                         </article>
+
+                        <!-- DCA Budget (mobile summary) -->
+                        <article class="metric-card dca-budget-card dashboard-mobile-only-card">
+                            <div class="metric-label mb-4">DCA Budget</div>
+                            <div class="metric-value mb-3" id="mobileDcaBudget">--</div>
+                            <div class="metric-subtext">Monthly</div>
+                            <div class="mobile-card-icon" aria-hidden="true"><i class="bi bi-wallet2"></i></div>
+                        </article>
                     </div>
-                    
+
                     <div class="progress dashboard-accent-progress">
-                        <div id="progressBar" class="progress-bar bg-success" role="progressbar" style="width: 0%"></div>
+                        <div id="progressBar" class="progress-bar bg-success" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" style="width: 0%"></div>
                     </div>
-                    <div class="text-muted small mt-3">You're on track. Keep stacking sats.</div>
                 </div>
         </section>
 
         <!-- DCA Control Section -->
-        <section class="card dashboard-panel mb-4">
+        <section class="card dashboard-panel dca-strategy-panel mb-4">
             <div class="card-header dashboard-panel-header d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-3">
                 <h5 class="dashboard-panel-title mb-0">DCA Strategy</h5>
-                <div class="d-flex flex-wrap gap-2">
-                    <span id="execModeBadge" class="badge bg-secondary me-2">Mode: Loading...</span>
-                    <span id="dataSourceBadge" class="badge bg-secondary me-2">Source: --</span>
+                <div class="strategy-status-pills">
+                    <span id="execModeBadge" class="badge bg-secondary">Mode: Loading...</span>
+                    <span id="dataSourceBadge" class="badge bg-secondary">Source: --</span>
                     <span id="scheduleDisplay" class="badge satsflow-info-badge">Loading Schedule...</span>
                 </div>
             </div>
@@ -569,56 +1144,129 @@
                 </div>
                 <div class="strategy-metric-grid mb-4">
                     <div class="strategy-metric">
-                        <div class="strategy-label mb-3">AHR999 Index</div>
-                        <div class="strategy-value" id="previewAhr">--</div>
+                        <div class="strategy-metric-content">
+                            <div class="strategy-label mb-3">AHR999 Index</div>
+                            <div class="strategy-value" id="previewAhr">--</div>
+                        </div>
                     </div>
                     <div class="strategy-metric">
-                        <div class="strategy-label mb-3">Current Price</div>
-                        <div class="strategy-value" id="previewPrice">--</div>
+                        <div class="strategy-metric-content">
+                            <div class="strategy-label mb-3">Current Price</div>
+                            <div class="strategy-value" id="previewPrice">--</div>
+                        </div>
                     </div>
                     <div class="strategy-metric">
-                        <div class="strategy-label mb-3">Strategy Band</div>
-                        <div class="strategy-value" id="previewBand">--</div>
+                        <div class="strategy-metric-content">
+                            <div class="strategy-label mb-3">Strategy Band</div>
+                            <div class="strategy-value" id="previewBand">--</div>
+                        </div>
                     </div>
                     <div class="strategy-metric">
-                        <div class="strategy-label mb-3">Remaining Budget</div>
-                        <div class="strategy-value" id="remainingBudget" style="cursor: help;" data-bs-toggle="tooltip" data-bs-placement="top" title="Loading budget information...">--</div>
+                        <div class="strategy-metric-content">
+                            <div class="strategy-label mb-3">Remaining Budget</div>
+                            <div class="strategy-value" id="remainingBudget" style="cursor: help;" data-bs-toggle="tooltip" data-bs-placement="top" title="Loading budget information...">--</div>
+                            <div class="metric-subtext">Monthly</div>
+                        </div>
                     </div>
                     <div class="strategy-metric">
-                        <div class="strategy-label mb-3">Suggested Action</div>
-                        <div class="strategy-value strategy-action" id="previewAction">--</div>
+                        <div class="strategy-metric-content">
+                            <div class="strategy-label mb-3">Suggested Action</div>
+                            <div class="strategy-value-row">
+                                <div class="strategy-value strategy-action" id="previewAction">--</div>
+                                <span class="strategy-action-coin" aria-hidden="true">₿</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 
-                <div class="strategy-detail-grid mb-3">
-                    <div class="dashboard-info-panel" id="previewReasonBox">
-                        <div>
-                            <strong>Status:</strong> <span id="previewReason" style="white-space: pre-line; font-family: monospace; font-size: 0.9em;">Loading...</span>
+                <div class="strategy-card-grid mb-3">
+                    <div class="dashboard-info-panel strategy-detail-card strategy-status-card mobile-collapsible is-collapsed" id="previewReasonBox">
+                        <div class="strategy-detail-card-header" role="button" tabindex="0" data-strategy-accordion-toggle aria-expanded="false" aria-controls="strategyStatusBody">
+                            <div class="strategy-detail-card-title">
+                                <span class="strategy-card-icon" aria-hidden="true"><i class="bi bi-currency-bitcoin"></i></span>
+                                <strong>Status</strong>
+                            </div>
+                            <span class="strategy-card-collapse-toggle" aria-hidden="true">
+                                <i class="bi bi-chevron-down"></i>
+                            </span>
+                        </div>
+                        <div class="strategy-detail-card-body" id="strategyStatusBody">
+                            <div class="strategy-reason-text" id="previewReason">Loading...</div>
                         </div>
                     </div>
-                    <div class="dashboard-info-panel" id="bottomingSignalBox" style="display: none;">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div><strong>Bottoming Checklist</strong></div>
-                            <div class="small text-muted" id="bottomingSignalDate">--</div>
+                    <div class="dashboard-info-panel strategy-detail-card strategy-drawdown-card mobile-collapsible is-collapsed">
+                        <div class="strategy-detail-card-header" role="button" tabindex="0" data-strategy-accordion-toggle aria-expanded="false" aria-controls="drawdownCardBody">
+                            <div class="strategy-detail-card-title">
+                                <span class="strategy-card-icon" aria-hidden="true"><i class="bi bi-currency-bitcoin"></i></span>
+                                <strong>Drawdown Context</strong>
+                            </div>
+                            <div class="btn-group btn-group-sm desktop-drawdown-mode-controls" role="group" aria-label="Drawdown Mode">
+                                <button type="button" class="btn btn-outline-secondary drawdown-mode-btn" data-mode="ath">ATH</button>
+                                <button type="button" class="btn btn-outline-secondary drawdown-mode-btn" data-mode="365d">365D</button>
+                                <button type="button" class="btn btn-outline-secondary drawdown-mode-btn active" data-mode="180d">180D</button>
+                            </div>
+                            <span class="strategy-card-header-meta" id="drawdownCompactLabel">180D --</span>
+                            <span class="strategy-card-collapse-toggle" aria-hidden="true">
+                                <i class="bi bi-chevron-down"></i>
+                            </span>
                         </div>
-                        <div class="small mt-1" id="bottomingSignalStatus">Unavailable</div>
-                        <div class="small text-muted mt-1" id="bottomingSignalMetrics"></div>
-                        <div class="small text-muted mt-1" id="bottomingSignalMacro"></div>
-                    </div>
-                </div>
-                <div class="dashboard-info-panel mb-3">
-                    <div class="d-flex align-items-center justify-content-between mb-2">
-                        <div class="small"><strong>Drawdown Context</strong></div>
-                        <div class="btn-group btn-group-sm" role="group" aria-label="Drawdown Mode">
-                            <button type="button" class="btn btn-outline-secondary drawdown-mode-btn" data-mode="ath">ATH</button>
-                            <button type="button" class="btn btn-outline-secondary drawdown-mode-btn" data-mode="365d">365D</button>
-                            <button type="button" class="btn btn-outline-secondary drawdown-mode-btn active" data-mode="180d">180D</button>
+                        <div class="strategy-detail-card-body" id="drawdownCardBody">
+                            <div class="btn-group btn-group-sm mobile-drawdown-mode-controls" role="group" aria-label="Mobile Drawdown Mode">
+                                <button type="button" class="btn btn-outline-secondary drawdown-mode-btn" data-mode="ath">ATH</button>
+                                <button type="button" class="btn btn-outline-secondary drawdown-mode-btn" data-mode="365d">365D</button>
+                                <button type="button" class="btn btn-outline-secondary drawdown-mode-btn active" data-mode="180d">180D</button>
+                            </div>
+                            <div class="drawdown-body-layout">
+                                <div>
+                                    <div class="drawdown-kicker" id="drawdownModeLabel">180D Drawdown</div>
+                                    <strong class="drawdown-large-value" id="drawdownPercent">--</strong>
+                                    <div class="drawdown-kicker">Percentile</div>
+                                    <strong class="drawdown-large-value" id="drawdownPercentile">--</strong>
+                                    <div class="metric-subtext" id="drawdownDeeper">--</div>
+                                    <div class="drawdown-comparable">Recent Comparable</div>
+                                    <div><strong id="drawdownComparableDate">--</strong></div>
+                                    <div class="drawdown-comparable-range" id="drawdownComparableRange">--</div>
+                                </div>
+                                <div class="drawdown-sparkline" aria-hidden="true">
+                                    <svg viewBox="0 0 140 72" preserveAspectRatio="none" focusable="false">
+                                        <polyline points="0,45 12,42 20,51 30,31 41,37 53,26 62,55 75,47 88,58 96,38 108,44 118,23 128,36 140,31" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></polyline>
+                                    </svg>
+                                </div>
+                            </div>
+                            <div class="visually-hidden" id="drawdownDetails">Loading drawdown context...</div>
                         </div>
                     </div>
-                    <div class="small" id="drawdownDetails">Loading drawdown context...</div>
+                    <div class="dashboard-info-panel strategy-detail-card strategy-bottoming-card mobile-collapsible is-collapsed" id="bottomingSignalBox" style="display: none;">
+                        <div class="strategy-detail-card-header" role="button" tabindex="0" data-strategy-accordion-toggle aria-expanded="false" aria-controls="bottomingCardBody">
+                            <div class="strategy-detail-card-title">
+                                <span class="strategy-card-icon" aria-hidden="true"><i class="bi bi-currency-bitcoin"></i></span>
+                                <strong>Bottoming Checklist</strong>
+                            </div>
+                            <div class="strategy-card-header-meta" id="bottomingSignalDate">--</div>
+                            <span class="strategy-card-collapse-toggle" aria-hidden="true">
+                                <i class="bi bi-chevron-down"></i>
+                            </span>
+                        </div>
+                        <div class="strategy-detail-card-body" id="bottomingCardBody">
+                            <div class="bottoming-summary" id="bottomingSignalStatus">Unavailable</div>
+                            <dl class="bottoming-metric-list">
+                                <div><dt>Vol/30D MA</dt><dd id="bottomingVolumeRatio">--</dd></div>
+                                <div><dt>Recent panic (7D)</dt><dd id="bottomingRecentPanic">--</dd></div>
+                                <div><dt>Daily return</dt><dd id="bottomingDailyReturn">--</dd></div>
+                                <div><dt>RSI14</dt><dd id="bottomingRsi14">--</dd></div>
+                                <div><dt>RSI14W proxy</dt><dd id="bottomingRsi14w">--</dd></div>
+                            </dl>
+                            <dl class="bottoming-metric-list bottoming-macro-list" id="bottomingSignalMacro">
+                                <div><dt>Macro risk</dt><dd id="bottomingMacroRisk">--</dd></div>
+                                <div><dt>USD/JPY risk</dt><dd id="bottomingUsdjpyRisk">--</dd></div>
+                                <div><dt>MA regime</dt><dd id="bottomingMaRegime">--</dd></div>
+                            </dl>
+                            <div class="visually-hidden" id="bottomingSignalMetrics"></div>
+                        </div>
+                    </div>
                 </div>
 
-                <div class="d-flex justify-content-end">
+                <div class="strategy-actions">
                     <button id="openAddPositionBtn" class="btn btn-success" disabled data-bs-toggle="modal" data-bs-target="#addPositionModal">
                         Add Position
                     </button>
@@ -634,7 +1282,7 @@
                 </button>
             </div>
             <div class="card-body p-0">
-                <div class="table-responsive">
+                <div class="table-responsive transactions-table-wrap">
                     <table class="table table-hover mb-0">
                         <thead class="table-light">
                             <tr>
@@ -654,6 +1302,7 @@
                         </tbody>
                     </table>
                 </div>
+                <div id="transactionsCards" class="mobile-transaction-card-list" aria-label="Mobile transaction list"></div>
                 <div class="card-footer dashboard-panel-footer">
                     <div class="d-flex justify-content-between align-items-center">
                         <button id="prevPageBtn" class="btn btn-sm btn-outline-secondary" disabled>← Previous</button>
@@ -673,6 +1322,35 @@
                 const num = Number(value);
                 return Number.isFinite(num) ? num : null;
             };
+
+            function setDashboardTextIfPresent(id, value) {
+                const element = document.getElementById(id);
+                if (element) {
+                    element.textContent = value;
+                }
+            }
+
+            function updateMobileFiatEstimate() {
+                const element = document.getElementById('totalBtcFiatValue');
+                const totalBtc = Number(window.__dashboardTotalBtc);
+                const priceUsd = Number(window.__dashboardPriceUsd);
+                if (!element || !Number.isFinite(totalBtc) || !Number.isFinite(priceUsd)) {
+                    return;
+                }
+                element.textContent = `≈ $${(totalBtc * priceUsd).toLocaleString(undefined, {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                })}`;
+            }
+
+            window.updateMobileFiatEstimate = updateMobileFiatEstimate;
+
+            function formatDashboardStatusReason(reasonText) {
+                if (typeof reasonText !== 'string') return '';
+                return reasonText.replace(/\s*\|\s*/g, '\n');
+            }
+
+            window.formatDashboardStatusReason = formatDashboardStatusReason;
 
             const parseCache = (key) => {
                 try {
@@ -704,7 +1382,11 @@
                 const progressBarEl = document.getElementById('progressBar');
                 const progressRingEl = document.getElementById('progressRing');
 
-                if (totalBtcEl && totalBtc !== null) totalBtcEl.textContent = `${totalBtc.toFixed(8)} BTC`;
+                if (totalBtcEl && totalBtc !== null) {
+                    totalBtcEl.textContent = `${totalBtc.toFixed(8)} BTC`;
+                    window.__dashboardTotalBtc = totalBtc;
+                    updateMobileFiatEstimate();
+                }
                 if (hotEl && hotBtc !== null) hotEl.textContent = `Hot: ${hotBtc.toFixed(8)}`;
                 if (coldEl && coldBtc !== null) coldEl.textContent = `Cold: ${coldBtc.toFixed(8)}`;
 
@@ -721,7 +1403,10 @@
                         const progress = Math.min((totalBtc / target) * 100, 100).toFixed(4);
                         if (progressEl) progressEl.textContent = `${progress}%`;
                         if (targetEl) targetEl.textContent = `Target: ${target} BTC`;
-                        if (progressBarEl) progressBarEl.style.width = `${progress}%`;
+                        if (progressBarEl) {
+                            progressBarEl.style.width = `${progress}%`;
+                            progressBarEl.setAttribute('aria-valuenow', progress);
+                        }
                         if (progressRingEl) progressRingEl.style.setProperty('--progress-value', `${progress}%`);
                     }
                 }
@@ -754,22 +1439,30 @@
 
                 if (previewAhrEl && ahrValue !== null) {
                     previewAhrEl.textContent = ahrValue.toFixed(2);
+                    setDashboardTextIfPresent('mobilePreviewAhr', ahrValue.toFixed(2));
                 }
                 if (previewPriceEl && priceValue !== null) {
                     previewPriceEl.textContent = `$${priceValue.toLocaleString()}`;
+                    window.__dashboardPriceUsd = priceValue;
+                    updateMobileFiatEstimate();
                 }
                 if (previewBandEl && typeof preview.ahr_band === 'string' && preview.ahr_band.trim() !== '') {
-                    previewBandEl.textContent = preview.ahr_band.toUpperCase();
+                    const bandText = preview.ahr_band.toUpperCase();
+                    previewBandEl.textContent = bandText;
+                    setDashboardTextIfPresent('mobilePreviewBand', bandText);
                 }
                 if (previewActionEl && typeof preview.can_execute === 'boolean') {
+                    let actionText = '--';
                     if (preview.can_execute && suggestedAmount !== null) {
-                        previewActionEl.textContent = `BUY $${suggestedAmount.toFixed(2)}`;
+                        actionText = `BUY $${suggestedAmount.toFixed(2)}`;
                     } else if (!preview.can_execute) {
-                        previewActionEl.textContent = 'WAIT';
+                        actionText = 'WAIT';
                     }
+                    previewActionEl.textContent = actionText;
+                    setDashboardTextIfPresent('mobilePreviewAction', actionText);
                 }
                 if (previewReasonEl && typeof preview.reason === 'string' && preview.reason.trim() !== '') {
-                    previewReasonEl.textContent = preview.reason.replace(/\s*\|\s*/g, '\n');
+                    previewReasonEl.textContent = formatDashboardStatusReason(preview.reason);
                 }
                 if (
                     dataSourceBadgeEl &&
@@ -782,6 +1475,7 @@
                 }
                 if (remainingBudgetEl && remainingBudget !== null) {
                     remainingBudgetEl.textContent = `$${remainingBudget.toFixed(2)}`;
+                    setDashboardTextIfPresent('mobileDcaBudget', `$${remainingBudget.toFixed(2)}`);
                 }
                 if (globalRefreshEl && typeof preview.timestamp === 'string' && preview.timestamp.trim() !== '') {
                     const parsedDate = new Date(preview.timestamp);
@@ -1048,6 +1742,20 @@
         const THEME_ICON_SUN = '<svg class="theme-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"></circle><line x1="12" y1="2.5" x2="12" y2="5"></line><line x1="12" y1="19" x2="12" y2="21.5"></line><line x1="2.5" y1="12" x2="5" y2="12"></line><line x1="19" y1="12" x2="21.5" y2="12"></line><line x1="5.2" y1="5.2" x2="6.9" y2="6.9"></line><line x1="17.1" y1="17.1" x2="18.8" y2="18.8"></line><line x1="17.1" y1="6.9" x2="18.8" y2="5.2"></line><line x1="5.2" y1="18.8" x2="6.9" y2="17.1"></line></svg>';
         const THEME_ICON_MOON = '<svg class="theme-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M14.5 3.5a8.8 8.8 0 1 0 6 14.9 9.2 9.2 0 0 1-6.8-2.7 9.3 9.3 0 0 1-2.8-6.9 8.9 8.9 0 0 1 3.6-7.3Z"></path></svg>';
 
+        function updateMobileFiatEstimate() {
+            const element = document.getElementById('totalBtcFiatValue');
+            const totalBtc = Number(window.__dashboardTotalBtc);
+            const priceUsd = Number(window.__dashboardPriceUsd);
+            if (!element || !Number.isFinite(totalBtc) || !Number.isFinite(priceUsd)) {
+                return;
+            }
+            element.textContent = `≈ $${(totalBtc * priceUsd).toLocaleString(undefined, {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            })}`;
+        }
+        window.updateMobileFiatEstimate = updateMobileFiatEstimate;
+
         function updateThemeToggleButton(theme) {
             const btn = document.getElementById('themeToggleBtn');
             if (!btn) return;
@@ -1064,10 +1772,19 @@
 
         window.renderDrawdownContextCompact = function renderDrawdownContextCompact(decisionLike) {
             const drawdownDetailsEl = document.getElementById('drawdownDetails');
-            if (!drawdownDetailsEl) return;
+            const modeLabelEl = document.getElementById('drawdownModeLabel');
+            const compactLabelEl = document.getElementById('drawdownCompactLabel');
+            const percentEl = document.getElementById('drawdownPercent');
+            const percentileEl = document.getElementById('drawdownPercentile');
+            const deeperEl = document.getElementById('drawdownDeeper');
+            const comparableDateEl = document.getElementById('drawdownComparableDate');
+            const comparableRangeEl = document.getElementById('drawdownComparableRange');
             const ctx = decisionLike?.drawdown_context;
             if (!ctx || !ctx[currentDrawdownMode]) {
-                drawdownDetailsEl.textContent = 'Drawdown context unavailable.';
+                if (drawdownDetailsEl) drawdownDetailsEl.textContent = 'Drawdown context unavailable.';
+                setDashboardTextIfPresent('drawdownPercent', '--');
+                setDashboardTextIfPresent('drawdownPercentile', '--');
+                setDashboardTextIfPresent('drawdownCompactLabel', `${currentDrawdownMode.toUpperCase()} --`);
                 return;
             }
 
@@ -1077,11 +1794,25 @@
             const rank = Number(item.percentile_rank ?? 0);
             const deeper = Number(item.deeper_than_pct ?? rank);
             const recentComparable = item.recent_comparable || item.nearest_match || null;
+            const percentText = `${dd.toFixed(2)}%`;
+            const percentileText = `P${rank.toFixed(1)}`;
+            const deeperText = `(deeper than ${deeper.toFixed(1)}% history)`;
+            const comparableDate = recentComparable ? recentComparable.date : '--';
+            const comparableRange = recentComparable ? _formatPeakToPrice(recentComparable) : '--';
 
-            drawdownDetailsEl.innerHTML = `
+            if (modeLabelEl) modeLabelEl.textContent = `${name} Drawdown`;
+            if (compactLabelEl) compactLabelEl.textContent = `${name} ${percentText}`;
+            if (percentEl) percentEl.textContent = percentText;
+            if (percentileEl) percentileEl.textContent = percentileText;
+            if (deeperEl) deeperEl.textContent = deeperText;
+            if (comparableDateEl) comparableDateEl.textContent = comparableDate;
+            if (comparableRangeEl) comparableRangeEl.textContent = comparableRange;
+            if (drawdownDetailsEl) {
+                drawdownDetailsEl.innerHTML = `
                 <div><strong>${name}</strong> Drawdown: ${dd.toFixed(2)}% | Percentile: P${rank.toFixed(1)} (deeper than ${deeper.toFixed(1)}% history)</div>
                 <div class="mt-1">Recent Comparable: ${recentComparable ? recentComparable.date : '--'} (${_formatPeakToPrice(recentComparable)})</div>
             `;
+            }
         };
 
         function setDrawdownMode(mode) {
@@ -1154,6 +1885,50 @@
                 console.error('Error loading transactions:', error);
             }
         }
+
+        function escapeHtml(value) {
+            const span = document.createElement('span');
+            span.textContent = value === null || value === undefined ? '' : String(value);
+            return span.innerHTML;
+        }
+
+        function renderMobileTransactionCards(pageTransactions) {
+            const container = document.getElementById('transactionsCards');
+            if (!container) return;
+
+            container.innerHTML = '';
+
+            if (!pageTransactions.length) {
+                container.innerHTML = '<div class="mobile-transaction-empty text-muted small">No transactions yet.</div>';
+                return;
+            }
+
+            pageTransactions.forEach(tx => {
+                const card = document.createElement('article');
+                const isSuccess = tx.status === 'SUCCESS';
+                const source = tx.source || 'SIMULATED';
+                const timestampDisplay = formatTransactionTimestamp(tx.timestamp);
+                const fiatAmount = tx.fiat_amount ? `$${tx.fiat_amount.toFixed(2)}` : '-';
+                const btcAmount = tx.btc_amount ? `${tx.btc_amount.toFixed(8)} BTC` : '-';
+
+                card.className = 'mobile-transaction-card';
+                card.innerHTML = `
+                    <div class="mobile-transaction-status${isSuccess ? '' : ' failed'}" aria-hidden="true">
+                        <i class="bi ${isSuccess ? 'bi-check-lg' : 'bi-x-lg'}"></i>
+                    </div>
+                    <div class="mobile-transaction-main">
+                        <span class="mobile-transaction-id">${escapeHtml(tx.id)}</span>
+                        <span class="mobile-transaction-time">${escapeHtml(timestampDisplay)}</span>
+                        <span class="mobile-transaction-source">${escapeHtml(source)}</span>
+                    </div>
+                    <div class="mobile-transaction-amounts">
+                        <span class="mobile-transaction-fiat">${escapeHtml(fiatAmount)}</span>
+                        <span class="mobile-transaction-btc">${escapeHtml(btcAmount)}</span>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
         
         function renderTransactionPage() {
             const tbody = document.getElementById('transactionsTable');
@@ -1163,6 +1938,7 @@
             const startIdx = (currentPage - 1) * rowsPerPage;
             const endIdx = startIdx + rowsPerPage;
             const pageTransactions = allTransactions.slice(startIdx, endIdx);
+            renderMobileTransactionCards(pageTransactions);
             
             pageTransactions.forEach(tx => {
                 const row = document.createElement('tr');
@@ -1262,6 +2038,33 @@
 
             document.querySelectorAll('.drawdown-mode-btn').forEach((btn) => {
                 btn.addEventListener('click', () => setDrawdownMode(btn.dataset.mode));
+            });
+            function toggleStrategyCard(toggle) {
+                const card = toggle.closest('.mobile-collapsible');
+                if (!card) return;
+                const isCollapsed = card.classList.toggle('is-collapsed');
+                toggle.setAttribute('aria-expanded', String(!isCollapsed));
+                const icon = toggle.querySelector('.strategy-card-collapse-toggle .bi');
+                if (icon) {
+                    icon.classList.toggle('bi-chevron-down', isCollapsed);
+                    icon.classList.toggle('bi-chevron-up', !isCollapsed);
+                }
+            }
+            function isStrategyAccordionViewport() {
+                return window.matchMedia('(max-width: 768px)').matches;
+            }
+            document.querySelectorAll('[data-strategy-accordion-toggle]').forEach((toggle) => {
+                toggle.addEventListener('click', (event) => {
+                    if (event.target.closest('.desktop-drawdown-mode-controls, .drawdown-mode-btn')) return;
+                    if (!isStrategyAccordionViewport()) return;
+                    toggleStrategyCard(toggle);
+                });
+                toggle.addEventListener('keydown', (event) => {
+                    if (event.key !== 'Enter' && event.key !== ' ') return;
+                    if (!isStrategyAccordionViewport()) return;
+                    event.preventDefault();
+                    toggleStrategyCard(toggle);
+                });
             });
             setDrawdownMode('180d');
         });
@@ -1398,17 +2201,25 @@
             }
 
             const parts = [];
+            setDashboardTextIfPresent('bottomingVolumeRatio', hasRatio ? `${ratioNum.toFixed(2)}x` : '--');
             if (hasRatio) parts.push(`Vol/30D MA: ${ratioNum.toFixed(2)}x`);
             if (renderSignal.recent_panic_selloff_7d !== null && renderSignal.recent_panic_selloff_7d !== undefined) {
-                parts.push(`Recent panic (7D): ${recentPanic ? 'yes' : 'no'}`);
+                const panicText = recentPanic ? 'Yes' : 'No';
+                setDashboardTextIfPresent('bottomingRecentPanic', panicText);
+                parts.push(`Recent panic (7D): ${panicText.toLowerCase()}`);
+            } else {
+                setDashboardTextIfPresent('bottomingRecentPanic', '--');
             }
+            let retText = '--';
             if (hasRet) {
-                let retText;
                 if (Math.abs(retNum) < 0.005) retText = 'Nearly unchanged';
                 else if (Math.abs(retNum) < 0.05) retText = `${retNum.toFixed(4)}%`;
                 else retText = `${retNum.toFixed(2)}%`;
                 parts.push(`Daily return: ${retText}`);
             }
+            setDashboardTextIfPresent('bottomingDailyReturn', retText);
+            setDashboardTextIfPresent('bottomingRsi14', hasRsiDaily ? rsiDaily.toFixed(1) : '--');
+            setDashboardTextIfPresent('bottomingRsi14w', hasRsiWeekly ? rsiWeekly.toFixed(1) : '--');
             if (hasRsiDaily) parts.push(`RSI14: ${rsiDaily.toFixed(1)}`);
             if (hasRsiWeekly) parts.push(`RSI14W proxy: ${rsiWeekly.toFixed(1)}`);
             metricsEl.textContent = parts.join(' | ');
@@ -1421,9 +2232,12 @@
                 const liqDelta = Number(macro.net_liquidity_90d_delta);
                 const oi30d = Number(macro.oi_30d_change_pct);
                 const usdjpyRisk = macro.usdjpy_risk_level ? String(macro.usdjpy_risk_level) : null;
+                let macroRiskText = '--';
                 if (Number.isFinite(riskScore)) {
-                    macroParts.push(`Macro risk: ${riskScore.toFixed(0)}${riskRegime ? ` (${riskRegime})` : ''}`);
+                    macroRiskText = `${riskScore.toFixed(0)}${riskRegime ? ` (${riskRegime})` : ''}`;
+                    macroParts.push(`Macro risk: ${macroRiskText}`);
                 } else if (riskRegime) {
+                    macroRiskText = riskRegime;
                     macroParts.push(`Macro risk: ${riskRegime}`);
                 }
                 if (Number.isFinite(stressFlags)) macroParts.push(`Stress flags: ${stressFlags}`);
@@ -1431,24 +2245,44 @@
                 if (Number.isFinite(oi30d)) macroParts.push(`OI 30D: ${oi30d >= 0 ? '+' : ''}${oi30d.toFixed(1)}%`);
                 if (usdjpyRisk) macroParts.push(`USD/JPY risk: ${usdjpyRisk}`);
                 if (macro.ma_regime) macroParts.push(`MA regime: ${String(macro.ma_regime)}`);
-                macroEl.textContent = macroParts.join(' | ');
-                macroEl.style.display = macroEl.textContent ? '' : 'none';
+                setDashboardTextIfPresent('bottomingMacroRisk', macroRiskText);
+                setDashboardTextIfPresent('bottomingUsdjpyRisk', usdjpyRisk ? String(usdjpyRisk).replace(/\s+risk$/i, '') : '--');
+                setDashboardTextIfPresent('bottomingMaRegime', macro.ma_regime ? String(macro.ma_regime) : '--');
+                macroEl.setAttribute('data-summary', macroParts.join(' | '));
+                macroEl.style.display = macroParts.length ? '' : 'none';
             } else if (macroEl) {
-                macroEl.textContent = '';
+                setDashboardTextIfPresent('bottomingMacroRisk', '--');
+                setDashboardTextIfPresent('bottomingUsdjpyRisk', '--');
+                setDashboardTextIfPresent('bottomingMaRegime', '--');
+                macroEl.removeAttribute('data-summary');
                 macroEl.style.display = 'none';
             }
         }
         window.renderBottomingSignalPreview = renderBottomingSignalPreview;
         renderBottomingSignalPreview(null);
 
+        function setDashboardTextIfPresent(id, value) {
+            const element = document.getElementById(id);
+            if (element) {
+                element.textContent = value;
+            }
+        }
+
         function updatePreviewUI(decision) {
             // Update metrics display
             document.getElementById('previewAhr').textContent = decision.ahr999_value.toFixed(2);
+            setDashboardTextIfPresent('mobilePreviewAhr', decision.ahr999_value.toFixed(2));
             document.getElementById('previewPrice').textContent = '$' + decision.price_usd.toLocaleString();
-            document.getElementById('previewBand').textContent = decision.ahr_band.toUpperCase();
-            document.getElementById('previewAction').textContent = decision.can_execute 
+            window.__dashboardPriceUsd = decision.price_usd;
+            updateMobileFiatEstimate();
+            const bandText = decision.ahr_band.toUpperCase();
+            document.getElementById('previewBand').textContent = bandText;
+            setDashboardTextIfPresent('mobilePreviewBand', bandText);
+            const actionText = decision.can_execute
                 ? `BUY $${decision.suggested_amount_usd.toFixed(2)}` 
                 : 'WAIT';
+            document.getElementById('previewAction').textContent = actionText;
+            setDashboardTextIfPresent('mobilePreviewAction', actionText);
             
             // Update data source (Phase 6)
             const metricsSource = decision.metrics_source || {backend: 'unknown', label: 'Unknown'};
@@ -1461,8 +2295,7 @@
             // Update status (support line breaks)
             const reasonElem = document.getElementById('previewReason');
             if (reasonElem) {
-                // Replace " | " with newlines for better readability
-                reasonElem.textContent = decision.reason.replace(/\s*\|\s*/g, '\n');
+                reasonElem.textContent = formatDashboardStatusReason(decision.reason);
             }
             renderBottomingSignalPreview(decision.bottoming_signal || null);
 
@@ -1481,6 +2314,7 @@
             
             if (decision.remaining_budget !== null && decision.remaining_budget !== undefined) {
                 remainingBudgetElem.textContent = '$' + decision.remaining_budget.toFixed(2);
+                setDashboardTextIfPresent('mobileDcaBudget', `$${decision.remaining_budget.toFixed(2)}`);
                 
                 // Set tooltip based on reset behavior
                 // Handle both boolean true and string "true" from JSON
@@ -1526,6 +2360,7 @@
                 });
             } else {
                 remainingBudgetElem.textContent = '--';
+                setDashboardTextIfPresent('mobileDcaBudget', '--');
                 const tooltipText = 'Budget information unavailable';
                 
                 // Update Bootstrap tooltip
@@ -1930,6 +2765,8 @@
             
             // Total BTC (main display)
             document.getElementById('totalBtc').textContent = data.total_btc.toFixed(8) + ' BTC';
+            window.__dashboardTotalBtc = data.total_btc;
+            updateMobileFiatEstimate();
             
             // Breakdown - Hot and Cold
             const hotText = data.hot_wallet_balance.toFixed(8);
@@ -1948,13 +2785,14 @@
                 errorBox.classList.add('d-none');
             }
             
-            // Update Progress Bar
+            // Update target progress
             if (strategy) {
                 const target = strategy.target_btc_amount || 1.0;
                 const progress = Math.min((data.total_btc / target) * 100, 100).toFixed(4);
                 document.getElementById('progressPercent').textContent = progress + '%';
                 document.getElementById('targetAmount').textContent = `Target: ${target} BTC`;
                 document.getElementById('progressBar').style.width = progress + '%';
+                document.getElementById('progressBar').setAttribute('aria-valuenow', progress);
                 const progressRingEl = document.getElementById('progressRing');
                 if (progressRingEl) {
                     progressRingEl.style.setProperty('--progress-value', progress + '%');
@@ -1981,7 +2819,7 @@
                 const data = await response.json();
                 saveToCache('wallet_summary', data);
                 
-                // 3. Fetch strategy (for progress bar)
+                // 3. Fetch strategy for target progress
                 const stratResponse = await fetch('/api/strategy');
                 const strategy = await stratResponse.json();
                 
