@@ -85,8 +85,9 @@ def test_dashboard_mobile_reference_structure_prioritizes_wallet_hero():
     assert 'id="totalBtcFiatValue"' not in html
     assert 'id="mobileHeroPrice"' not in html
     assert 'metric-market-price' not in html
-    assert 'class="metric-card dca-budget-card dashboard-mobile-only-card"' in html
-    assert 'id="mobileDcaBudget"' in html
+    assert 'class="metric-card dca-budget-card dashboard-mobile-only-card"' not in html
+    assert 'id="mobileDcaBudget"' not in html
+    assert "DCA Budget" not in html
     assert "Quick Stats" not in html
     assert 'id="mobileDcaBudgetQuick"' not in html
     assert 'class="progress dashboard-accent-progress"' in html
@@ -105,7 +106,7 @@ def test_dashboard_mobile_app_cards_are_hydrated_from_existing_data():
     assert "window.__dashboardTotalBtc = totalBtc;" in html
     assert "window.__dashboardPriceUsd = priceValue;" in html
     assert "setDashboardTextIfPresent('mobileHeroPrice'" not in html
-    assert "setDashboardTextIfPresent('mobileDcaBudget', `$${remainingBudget.toFixed(2)}`);" in html
+    assert "setDashboardTextIfPresent('mobileDcaBudget'" not in html
     assert "progressBarEl.style.width = `${progress}%`;" in html
     assert "progressBarEl.setAttribute('aria-valuenow', progress);" in html
     assert "document.getElementById('progressBar').style.width = progress + '%';" in html
@@ -120,20 +121,21 @@ def test_dashboard_mobile_keeps_reference_density_and_card_shapes():
     mobile_css = html[html.index("@media (max-width: 768px)") :]
 
     assert ".wallet-card-grid {" in mobile_css
-    assert "grid-template-columns: repeat(3, minmax(0, 1fr));" in mobile_css
+    assert "grid-template-columns: repeat(2, minmax(0, 1fr));" in mobile_css
     assert ".metric-card-primary {" in mobile_css
     assert "background: linear-gradient(135deg, #ff9a16 0%, #ff7a00 100%);" in mobile_css
     assert "grid-column: 1 / -1;" in mobile_css
     assert "min-height: 128px;" in mobile_css
     assert ".progress-metric-card {" in mobile_css
-    assert "min-height: 96px;" in mobile_css
-    assert ".dca-budget-card {" in mobile_css
-    assert "display: block;" in mobile_css
+    assert "min-height: 72px;" in mobile_css
+    assert ".wallet-card-grid .mobile-card-icon {" in mobile_css
+    assert ".progress-metric-card .progress-ring {" in mobile_css
+    assert ".dca-budget-card {" not in mobile_css
     assert ".wallet-card-grid .metric-card:not(.metric-card-primary) .metric-value {" in mobile_css
     assert "white-space: nowrap;" in mobile_css
     assert ".strategy-metric-grid {" in mobile_css
     assert "grid-template-columns: repeat(3, minmax(0, 1fr));" in mobile_css
-    assert "min-height: 54px;" in mobile_css
+    assert "min-height: 44px;" in mobile_css
     assert "#bottomingSignalBox {" not in mobile_css
     assert 'id="bottomingSignalStatus"' in html
     assert 'id="bottomingSignalMetrics"' in html
@@ -143,6 +145,40 @@ def test_dashboard_mobile_keeps_reference_density_and_card_shapes():
     assert ".mobile-transaction-card-list {" in mobile_css
     assert ".transactions-table-wrap {" in mobile_css
     assert "display: none;" in mobile_css
+
+
+def test_dashboard_mobile_strategy_badges_use_compact_single_row_labels():
+    html = _dashboard_html()
+    mobile_css = html[html.index("@media (max-width: 768px)") :]
+
+    assert "function setResponsiveBadgeText(element, fullText, compactText)" in html
+    assert "function refreshResponsiveBadgeText()" in html
+    assert "setResponsiveBadgeText(scheduleDisplayEl, scheduleFullText, scheduleCompactText);" in html
+    assert "const scheduleCompactText = `${freq} ${strategy.execution_time_utc}`;" in html
+    assert "setResponsiveBadgeText(dataSourceBadgeEl, `Source: ${preview.metrics_source.label}`, preview.metrics_source.label);" in html
+    assert "setResponsiveBadgeText(sourceBadge, `Source: ${metricsSource.label}`, metricsSource.label);" in html
+    assert "setResponsiveBadgeText(badge, 'Mode: LIVE', 'LIVE');" in html
+    assert "setResponsiveBadgeText(badge, 'Mode: Dry Run', 'Dry Run');" in html
+    assert ".strategy-status-pills {" in mobile_css
+    assert "flex-wrap: nowrap;" in mobile_css
+    assert "overflow-x: hidden;" in mobile_css
+
+
+def test_dashboard_mobile_strategy_cta_stays_above_bottom_nav():
+    html = _dashboard_html()
+    mobile_css = html[html.index("@media (max-width: 768px)") :]
+
+    assert ".dca-strategy-panel .dashboard-panel-header {" in mobile_css
+    assert "padding: 0.48rem 0.72rem !important;" in mobile_css
+    assert ".dca-strategy-panel .card-body {" in mobile_css
+    assert "padding: 0.42rem 0.58rem 0.56rem !important;" in mobile_css
+    assert ".strategy-metric {" in mobile_css
+    assert "min-height: 44px;" in mobile_css
+    assert ".strategy-metric-content {" in mobile_css
+    assert "min-height: 32px;" in mobile_css
+    assert ".strategy-actions .btn {" in mobile_css
+    assert "min-height: 32px;" in mobile_css
+    assert "padding: 0.3rem 0.5rem;" in mobile_css
 
 
 def test_dashboard_dca_strategy_uses_structured_reference_cards():
@@ -155,7 +191,11 @@ def test_dashboard_dca_strategy_uses_structured_reference_cards():
     assert 'id="previewAhrState"' not in html
     assert 'strategy-mini-chip' not in html
     assert 'class="strategy-action-coin"' in html
-    assert 'class="strategy-card-grid mb-3"' in html
+    assert 'class="strategy-advanced-panel mobile-collapsible is-collapsed mb-3"' in html
+    assert 'class="strategy-advanced-header" role="button" tabindex="0" data-strategy-accordion-toggle aria-expanded="false" aria-controls="strategyAdvancedBody"' in html
+    assert "<strong>Advanced</strong>" in html
+    assert "Status · Drawdown Context · Bottoming Checklist" in html
+    assert 'class="strategy-advanced-body strategy-card-grid" id="strategyAdvancedBody"' in html
     assert 'class="dashboard-info-panel strategy-detail-card strategy-status-card mobile-collapsible is-collapsed"' in html
     assert 'class="strategy-detail-card-header" role="button" tabindex="0" data-strategy-accordion-toggle aria-expanded="false" aria-controls="strategyStatusBody"' in html
     assert 'class="dashboard-info-panel strategy-detail-card strategy-drawdown-card mobile-collapsible is-collapsed"' in html
@@ -209,6 +249,10 @@ def test_dashboard_dca_strategy_uses_structured_reference_cards():
     assert "justify-content: space-between;" in html
     assert "font-family: var(--bs-body-font-family);" in html
     assert ".strategy-card-collapse-toggle {" in mobile_css
+    assert ".strategy-advanced-header {" in mobile_css
+    assert ".strategy-advanced-panel.is-collapsed .strategy-advanced-body {" in mobile_css
+    assert "display: none;" in mobile_css
+    assert ".strategy-advanced-panel:not(.is-collapsed) .strategy-advanced-body {" in mobile_css
     assert ".strategy-card-header-meta {" in mobile_css
     assert "font-size: 0.96rem;" in mobile_css
     assert ".strategy-detail-card-title strong {" in mobile_css
@@ -224,6 +268,14 @@ def test_dashboard_dca_strategy_uses_structured_reference_cards():
     assert "display: inline-flex;" in mobile_css
     assert ".mobile-collapsible.is-collapsed .strategy-detail-card-body {" in mobile_css
     assert "display: none;" in mobile_css
+
+
+def test_dashboard_history_resync_action_uses_short_mobile_friendly_label():
+    html = _dashboard_html()
+
+    assert "Reset & Sync History" not in html
+    assert "Re-sync" in html
+    assert "clearBtn.textContent = 'Re-sync';" in html
 
 
 def test_dashboard_dark_mode_has_matching_tokens():
