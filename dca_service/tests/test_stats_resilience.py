@@ -1,11 +1,13 @@
 import pytest
 from unittest.mock import patch, MagicMock
+import requests
 from fastapi.testclient import TestClient
 from sqlmodel import Session, SQLModel, create_engine
 from dca_service.main import app
 from dca_service.database import get_session
 from dca_service.models import GlobalSettings, User
 from dca_service.auth.dependencies import get_current_user
+from dca_service.services.distribution_scraper import clear_cache
 
 @pytest.fixture(name="client")
 def client_fixture():
@@ -178,3 +180,48 @@ def test_distribution_api_returns_stale_cache_headers(client):
         assert response.headers["x-data-status"] == "stale"
         assert response.headers["x-data-source"] == "bitinfocharts_cache"
         assert response.headers["x-data-as-of"] == "2026-05-22T23:20:00+00:00"
+
+
+def test_distribution_api_uses_labeled_static_fallback_when_live_fetch_is_blocked(client):
+    """Packaged distribution data should keep the table available without pretending it is live."""
+    clear_cache()
+    blocked_response = MagicMock()
+    blocked_response.status_code = 403
+    blocked_response.raise_for_status.side_effect = requests.exceptions.HTTPError(
+        "403 Client Error"
+    )
+
+    with patch("requests.get", return_value=blocked_response):
+        response = client.get("/api/stats/distribution")
+
+    assert response.status_code == 200
+    assert response.headers["x-data-status"] == "static"
+    assert response.headers["x-data-source"] == "bundled_static"
+    data = response.json()
+    assert len(data) > 0
+    assert "tier" in data[0]
+    assert "percentile" in data[0]
+    assert "403 Client Error" not in response.text
+
+
+def test_percentile_api_uses_labeled_static_fallback_when_live_fetch_is_blocked(client):
+    """Rank calculation should use packaged data when live BitInfoCharts access is blocked."""
+    clear_cache()
+    blocked_response = MagicMock()
+    blocked_response.status_code = 403
+    blocked_response.raise_for_status.side_effect = requests.exceptions.HTTPError(
+        "403 Client Error"
+    )
+
+    with patch("requests.get", return_value=blocked_response):
+        with patch("dca_service.api.wallet_api.get_wallet_summary") as mock_wallet:
+            mock_wallet.return_value = MagicMock(total_btc=1.5)
+            response = client.get("/api/stats/percentile")
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["total_btc"] == 1.5
+    assert data["percentile_display"].startswith("Top ")
+    assert data["data_status"] == "static"
+    assert data["source"] == "bundled_static"
+    assert "403 Client Error" not in response.text

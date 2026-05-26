@@ -69,6 +69,11 @@ class Settings(BaseSettings):
     # Logging Settings
     LOG_LEVEL: str = "INFO"
     LOG_FILE_PATH: str = "logs/dca_service.log"
+
+    # Static analysis generation
+    STATIC_GENERATION_SCHEDULE_ENABLED: bool = True
+    STATIC_GENERATION_SCHEDULE_HOUR_UTC: int = 0
+    STATIC_GENERATION_SCHEDULE_MINUTE_UTC: int = 30
     
     # Session Settings (for authentication)
     # WARNING: In production, MUST set a strong random SESSION_SECRET

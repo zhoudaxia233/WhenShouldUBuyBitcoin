@@ -1082,7 +1082,9 @@
             latestPercentileDisplay = percentileDisplay;
             document.getElementById('percentileText').textContent = percentileDisplay;
             document.getElementById('percentileSubtext').textContent = 'of all Bitcoin holders globally.';
-            if (data.data_status === 'stale' || data.data_status === 'cached') {
+            if (data.data_status === 'static') {
+                if (cacheTextEl) cacheTextEl.textContent = 'Bundled BitInfoCharts data.';
+            } else if (data.data_status === 'stale' || data.data_status === 'cached') {
                 if (cacheTextEl) cacheTextEl.textContent = staleCacheMessage(data.as_of);
             } else {
                 const formattedAsOf = formatDataAsOf(data.as_of);
@@ -1122,7 +1124,7 @@
                 }
 
                 saveToCache(PERCENTILE_CACHE_KEY, data);
-                return { ok: true, stale: data.data_status === 'stale' || data.data_status === 'cached', data };
+                return { ok: true, stale: data.data_status === 'stale' || data.data_status === 'cached' || data.data_status === 'static', data };
             } catch (error) {
                 console.error('Error loading percentile:', error);
                 const cached = loadFromCache(PERCENTILE_CACHE_KEY) || loadFromCache('stats_percentile');
@@ -1146,6 +1148,8 @@
             if (!sourceEl) return;
             if (status === 'unavailable') {
                 sourceEl.textContent = 'Source: BitInfoCharts (currently unavailable)';
+            } else if (status === 'static') {
+                sourceEl.textContent = 'Source: bundled BitInfoCharts data';
             } else if (status === 'stale' || status === 'cached') {
                 sourceEl.textContent = `Source: BitInfoCharts cached data${formatDataAsOf(asOf) ? ` (as of ${formatDataAsOf(asOf)})` : ''}`;
             } else {
@@ -1205,7 +1209,7 @@
                 };
                 saveToCache(DISTRIBUTION_CACHE_KEY, { data, meta });
                 updateDistributionUI(data, meta);
-                return { ok: true, stale: meta.data_status === 'stale' || meta.data_status === 'cached', data };
+                return { ok: true, stale: meta.data_status === 'stale' || meta.data_status === 'cached' || meta.data_status === 'static', data };
             } catch (error) {
                 console.error('Error loading distribution:', error);
                 const cached = loadFromCache(DISTRIBUTION_CACHE_KEY) || loadFromCache('stats_distribution');
