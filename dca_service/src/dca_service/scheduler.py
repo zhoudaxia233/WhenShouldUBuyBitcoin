@@ -60,6 +60,20 @@ class DCAScheduler:
             name='Binance Trade Sync',
             replace_existing=True
         )
+
+        if settings.STATIC_GENERATION_SCHEDULE_ENABLED:
+            self.scheduler.add_job(
+                func=self._run_static_generation_job,
+                trigger=CronTrigger(
+                    hour=settings.STATIC_GENERATION_SCHEDULE_HOUR_UTC,
+                    minute=settings.STATIC_GENERATION_SCHEDULE_MINUTE_UTC,
+                ),
+                id='static_generation',
+                name='Daily Static Analysis Generation',
+                replace_existing=True,
+                max_instances=1,
+                coalesce=True,
+            )
         
         self.scheduler.start()
         self.is_running = True
@@ -465,6 +479,16 @@ class DCAScheduler:
         except Exception as e:
             session.rollback()
             logger.exception(f"Fatal error in DCA execution: {e}")
+
+    def _run_static_generation_job(self):
+        """Run scheduled static analysis generation in the background."""
+        try:
+            from dca_service.services.static_generator import trigger_static_generation
+
+            trigger_static_generation(background=True)
+            logger.info("Triggered scheduled static file generation")
+        except Exception as e:
+            logger.error(f"Failed to trigger scheduled static generation: {e}")
 
     def _sync_trades_job(self):
         """

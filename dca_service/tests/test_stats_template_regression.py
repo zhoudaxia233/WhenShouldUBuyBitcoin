@@ -200,6 +200,14 @@ def test_distribution_and_percentile_label_browser_cache_as_stale_data():
     assert "Promise.allSettled" in html
 
 
+def test_distribution_and_percentile_label_static_fallback_data():
+    html = _load_stats_template()
+    assert "Bundled BitInfoCharts data" in html
+    assert "Source: bundled BitInfoCharts data" in html
+    assert "data.data_status === 'static'" in html
+    assert "meta.data_status === 'static'" in html
+
+
 def test_update_charts_button_is_admin_only_and_does_not_show_raw_logs():
     html = _load_stats_template()
     assert "{% if user and user.is_admin %}" in html
