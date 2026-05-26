@@ -58,7 +58,8 @@ def test_product_name_is_satsflow_and_not_hardcoded_in_login():
     assert 'PROJECT_NAME: str = "SatsFlow"' in config
     assert "<title>{{ project_name }} Dashboard</title>" in _dashboard_html()
     assert "<title>Login - {{ project_name }}</title>" in login
-    assert "<h1>{{ project_name }}</h1>" in login
+    assert 'class="brand-title">{{ project_name }}</span>' in login
+    assert "<h1>{{ project_name }}</h1>" not in login
     assert '"project_name": settings.PROJECT_NAME' in auth_api
 
 
@@ -71,6 +72,158 @@ def test_dashboard_wallet_uses_metric_cards_and_progress_ring():
     assert 'id="progressRing"' in html
     assert "--progress-value" in html
     assert "progressRingEl.style.setProperty('--progress-value'" in html
+
+
+def test_dashboard_mobile_reference_structure_prioritizes_wallet_hero():
+    html = _dashboard_html()
+
+    wallet_index = html.index('class="wallet-overview-section')
+    strategy_index = html.index('DCA Strategy')
+    transactions_index = html.index('Transaction History')
+    assert wallet_index < strategy_index < transactions_index
+    assert 'class="dashboard-mobile-snapshot"' not in html
+    assert 'id="totalBtcFiatValue"' not in html
+    assert 'id="mobileHeroPrice"' not in html
+    assert 'metric-market-price' not in html
+    assert 'class="metric-card dca-budget-card dashboard-mobile-only-card"' in html
+    assert 'id="mobileDcaBudget"' in html
+    assert "Quick Stats" not in html
+    assert 'id="mobileDcaBudgetQuick"' not in html
+    assert 'class="progress dashboard-accent-progress"' in html
+    assert 'id="progressBar"' in html
+    assert "width: 100%;" in html[html.index(".dashboard-accent-progress {") : html.index(".dashboard-accent-progress .progress-bar")]
+    assert "max-width: none;" in html[html.index(".dashboard-accent-progress {") : html.index(".dashboard-accent-progress .progress-bar")]
+    assert "background: var(--dashboard-ring-track);" in html[html.index(".dashboard-accent-progress {") : html.index(".dashboard-accent-progress .progress-bar")]
+    assert "Spent $0.00 of $600.00" not in html
+    assert 'id="transactionsCards"' in html
+
+
+def test_dashboard_mobile_app_cards_are_hydrated_from_existing_data():
+    html = _dashboard_html()
+
+    assert "function setDashboardTextIfPresent(id, value)" in html
+    assert "window.__dashboardTotalBtc = totalBtc;" in html
+    assert "window.__dashboardPriceUsd = priceValue;" in html
+    assert "setDashboardTextIfPresent('mobileHeroPrice'" not in html
+    assert "setDashboardTextIfPresent('mobileDcaBudget', `$${remainingBudget.toFixed(2)}`);" in html
+    assert "progressBarEl.style.width = `${progress}%`;" in html
+    assert "progressBarEl.setAttribute('aria-valuenow', progress);" in html
+    assert "document.getElementById('progressBar').style.width = progress + '%';" in html
+    assert "document.getElementById('progressBar').setAttribute('aria-valuenow', progress);" in html
+    assert "setDashboardTextIfPresent('mobileDcaBudgetQuick'" not in html
+    assert "setDashboardTextIfPresent('mobileDailyDca'" not in html
+    assert "renderMobileTransactionCards(pageTransactions);" in html
+
+
+def test_dashboard_mobile_keeps_reference_density_and_card_shapes():
+    html = _dashboard_html()
+    mobile_css = html[html.index("@media (max-width: 768px)") :]
+
+    assert ".wallet-card-grid {" in mobile_css
+    assert "grid-template-columns: repeat(3, minmax(0, 1fr));" in mobile_css
+    assert ".metric-card-primary {" in mobile_css
+    assert "background: linear-gradient(135deg, #ff9a16 0%, #ff7a00 100%);" in mobile_css
+    assert "grid-column: 1 / -1;" in mobile_css
+    assert "min-height: 128px;" in mobile_css
+    assert ".progress-metric-card {" in mobile_css
+    assert "min-height: 96px;" in mobile_css
+    assert ".dca-budget-card {" in mobile_css
+    assert "display: block;" in mobile_css
+    assert ".wallet-card-grid .metric-card:not(.metric-card-primary) .metric-value {" in mobile_css
+    assert "white-space: nowrap;" in mobile_css
+    assert ".strategy-metric-grid {" in mobile_css
+    assert "grid-template-columns: repeat(3, minmax(0, 1fr));" in mobile_css
+    assert "min-height: 54px;" in mobile_css
+    assert "#bottomingSignalBox {" not in mobile_css
+    assert 'id="bottomingSignalStatus"' in html
+    assert 'id="bottomingSignalMetrics"' in html
+    assert 'id="bottomingSignalMacro"' in html
+    assert 'id="mobileBottomingSummary"' not in html
+    assert 'href="/stats">View Details' not in html
+    assert ".mobile-transaction-card-list {" in mobile_css
+    assert ".transactions-table-wrap {" in mobile_css
+    assert "display: none;" in mobile_css
+
+
+def test_dashboard_dca_strategy_uses_structured_reference_cards():
+    html = _dashboard_html()
+    mobile_css = html[html.index("@media (max-width: 768px)") :]
+
+    assert 'class="card dashboard-panel dca-strategy-panel mb-4"' in html
+    assert 'class="strategy-status-pills"' in html
+    assert 'class="strategy-metric-content"' in html
+    assert 'id="previewAhrState"' not in html
+    assert 'strategy-mini-chip' not in html
+    assert 'class="strategy-action-coin"' in html
+    assert 'class="strategy-card-grid mb-3"' in html
+    assert 'class="dashboard-info-panel strategy-detail-card strategy-status-card mobile-collapsible is-collapsed"' in html
+    assert 'class="strategy-detail-card-header" role="button" tabindex="0" data-strategy-accordion-toggle aria-expanded="false" aria-controls="strategyStatusBody"' in html
+    assert 'class="dashboard-info-panel strategy-detail-card strategy-drawdown-card mobile-collapsible is-collapsed"' in html
+    assert 'class="strategy-detail-card-header" role="button" tabindex="0" data-strategy-accordion-toggle aria-expanded="false" aria-controls="drawdownCardBody"' in html
+    assert 'class="dashboard-info-panel strategy-detail-card strategy-bottoming-card mobile-collapsible is-collapsed"' in html
+    assert 'class="strategy-detail-card-header" role="button" tabindex="0" data-strategy-accordion-toggle aria-expanded="false" aria-controls="bottomingCardBody"' in html
+    assert 'class="btn-group btn-group-sm mobile-drawdown-mode-controls"' in html
+    assert 'aria-label="Mobile Drawdown Mode"' in html
+    assert 'button class="strategy-card-collapse-toggle"' not in html
+    assert 'class="strategy-card-header-meta" id="drawdownCompactLabel"' in html
+    assert 'class="strategy-card-header-meta" id="bottomingSignalDate"' in html
+    assert 'strategy-quick-card' not in html
+    assert 'strategy-quick-stats-strip' not in html
+    assert "function formatDashboardStatusReason(reasonText)" in html
+    assert r"replace(/\s*\|\s*/g, '\n')" in html
+    assert "startsWith('Budget:')" not in html
+    assert "startsWith('Monthly Spent=')" not in html
+    assert "formatDashboardStatusReason(preview.reason)" in html
+    assert "formatDashboardStatusReason(decision.reason)" in html
+    assert 'data-strategy-accordion-toggle' in html
+    assert 'id="drawdownPercent"' in html
+    assert 'id="drawdownPercentile"' in html
+    assert 'id="drawdownComparableDate"' in html
+    assert 'id="bottomingVolumeRatio"' in html
+    assert 'id="bottomingMacroRisk"' in html
+    assert 'id="bottomingMaRegime"' in html
+    assert 'id="quickPurchaseEvents"' not in html
+    assert "getDashboardAhrBadge" not in html
+    assert "getDashboardAhrState" not in html
+    assert 'document.querySelectorAll(\'[data-strategy-accordion-toggle]\')' in html
+    assert "function toggleStrategyCard(toggle)" in html
+    assert "event.target.closest('.desktop-drawdown-mode-controls, .drawdown-mode-btn')" in html
+    assert "event.key !== 'Enter' && event.key !== ' '" in html
+    assert "setDashboardTextIfPresent('bottomingVolumeRatio'" in html
+    assert "setDashboardTextIfPresent('drawdownPercent'" in html
+    assert "setDashboardTextIfPresent('quickPurchaseEvents'" not in html
+
+    assert ".strategy-card-grid {" in html
+    assert "grid-template-columns: repeat(3, minmax(0, 1fr));" in html
+    assert "grid-template-columns: 1fr;" in html
+    assert ".strategy-metric-icon" not in html
+    assert "min-height: 84px;" in html
+    assert "padding: 0.95rem 1.2rem;" in html
+    assert "font-size: 1.16rem;" in html
+    assert ".strategy-metric .strategy-label {" in html
+    assert "margin-bottom: 0.45rem !important;" in html
+    assert ".strategy-metric-content {" in html
+    assert ".strategy-action {" in html
+    assert "white-space: nowrap;" in html
+    assert ".strategy-value-row {" in html
+    assert "justify-content: space-between;" in html
+    assert "font-family: var(--bs-body-font-family);" in html
+    assert ".strategy-card-collapse-toggle {" in mobile_css
+    assert ".strategy-card-header-meta {" in mobile_css
+    assert "font-size: 0.96rem;" in mobile_css
+    assert ".strategy-detail-card-title strong {" in mobile_css
+    assert "#drawdownCompactLabel {" in mobile_css
+    drawdown_label_css = mobile_css[
+        mobile_css.index("#drawdownCompactLabel {") :
+        mobile_css.index("}", mobile_css.index("#drawdownCompactLabel {"))
+    ]
+    assert "display: block;" in drawdown_label_css
+    assert ".strategy-status-card:not(.is-collapsed) {" not in mobile_css
+    assert "margin-bottom: 56px;" not in mobile_css
+    assert ".mobile-drawdown-mode-controls {" in mobile_css
+    assert "display: inline-flex;" in mobile_css
+    assert ".mobile-collapsible.is-collapsed .strategy-detail-card-body {" in mobile_css
+    assert "display: none;" in mobile_css
 
 
 def test_dashboard_dark_mode_has_matching_tokens():
@@ -99,15 +252,19 @@ def test_authenticated_templates_share_satsflow_header_and_nav():
     assert 'class="brand-mark"' in header
     assert 'class="brand-title">{{ project_name }}</span>' in header
     assert 'class="nav-actions dashboard-nav' in header
+    assert 'class="mobile-bottom-nav"' in header
     assert 'href="/" class="btn dashboard-nav-btn{% if active_page == \'dashboard\' %} active{% endif %}"' in header
+    assert 'href="/" class="mobile-bottom-nav-item{% if active_page == \'dashboard\' %} active{% endif %}"' in header
     assert 'id="settingsDropdown"' in header
     assert 'class="dropdown-item" href="/strategy"' in header
     assert 'class="dropdown-item" href="/settings/binance"' in header
     assert 'href="/settings/binance#email-settings"' not in header
     assert 'href="/stats" class="btn dashboard-nav-btn{% if active_page == \'stats\' %} active{% endif %}"' in header
+    assert 'href="/stats" class="mobile-bottom-nav-item{% if active_page == \'stats\' %} active{% endif %}"' in header
     assert 'href="/admin/data-sources" class="btn dashboard-nav-btn nav-accent admin-diagnostics-link{% if active_page == \'admin\' %} active{% endif %}"' in header
     assert 'href="/analysis/" class="btn dashboard-nav-btn"' in header
-    for label in ["Dashboard", "Settings", "Diagnostics", "Analytics", "WSUB"]:
+    assert 'class="mobile-bottom-nav-item mobile-bottom-nav-button' in header
+    for label in ["Dashboard", "Settings", "Diagnostics", "Analytics", "WSUB", "More"]:
         assert f'aria-label="{label}"' in header
         assert f'title="{label}"' in header
 
@@ -152,6 +309,101 @@ def test_tablet_header_stacks_before_navigation_wraps():
     assert "align-items: center;" in tablet_css
 
 
+def test_mobile_authenticated_pages_share_compact_header_and_panel_density():
+    css = STATIC_CSS_PATH.read_text(encoding="utf-8")
+    mobile_css = css[css.index("@media (max-width: 768px)") :]
+
+    assert ".dashboard-header {" in mobile_css
+    assert "margin-bottom: 10px;" in mobile_css
+    assert ".brand-mark {" in mobile_css
+    assert "width: 36px;" in mobile_css
+    assert ".brand-title {" in mobile_css
+    assert "font-size: 1.34rem;" in mobile_css
+    assert ".dashboard-nav {" in mobile_css
+    assert "display: none !important;" in mobile_css
+    assert ".header-utility .user-chip {" in mobile_css
+    assert "display: none;" in mobile_css
+    assert ".mobile-bottom-nav {" in mobile_css
+    assert "position: fixed;" in mobile_css
+    assert ".mobile-bottom-nav-item {" in mobile_css
+    assert "min-height: 44px;" in mobile_css
+    assert ".page-title-block {" in mobile_css
+    assert "margin-bottom: 12px;" in mobile_css
+    assert ".satsflow-page .card-body," in mobile_css
+    assert ".dashboard-page .card-body {" in mobile_css
+    assert "padding: 1rem;" in mobile_css
+
+
+def test_mobile_authenticated_pages_use_compact_form_and_alert_density():
+    css = STATIC_CSS_PATH.read_text(encoding="utf-8")
+    mobile_css = css[css.index("@media (max-width: 768px)") :]
+
+    assert ".satsflow-page .alert-satsflow," in mobile_css
+    assert ".satsflow-page .alert-satsflow-danger {" in mobile_css
+    assert "padding: 0.72rem 0.82rem;" in mobile_css
+    assert ".satsflow-page .form-label {" in mobile_css
+    assert "margin-bottom: 0.25rem;" in mobile_css
+    assert ".satsflow-page .form-control," in mobile_css
+    assert "min-height: 38px;" in mobile_css
+    assert ".satsflow-soft-panel.card-body," in mobile_css
+    assert "padding: 0.82rem;" in mobile_css
+    assert ".app-shell-settings .dashboard-panel + .dashboard-panel {" in mobile_css
+    assert "margin-top: 0.75rem !important;" in mobile_css
+
+
+def test_settings_mobile_deprioritizes_long_explainer_lists():
+    css = STATIC_CSS_PATH.read_text(encoding="utf-8")
+    mobile_css = css[css.index("@media (max-width: 768px)") :]
+
+    assert ".app-shell-settings .alert-satsflow ul," in mobile_css
+    assert ".app-shell-settings .alert-satsflow-danger ul {" in mobile_css
+    assert "display: none;" in mobile_css
+    assert ".app-shell-settings .dashboard-panel-header," in mobile_css
+    assert "padding: 0.72rem 0.85rem;" in mobile_css
+    assert ".app-shell-settings .satsflow-soft-panel .mb-3 {" in mobile_css
+    assert "margin-bottom: 0.45rem !important;" in mobile_css
+
+
+def test_admin_mobile_diagnostics_reduce_log_and_grid_height():
+    html = (TEMPLATE_DIR / "admin_data_sources.html").read_text(encoding="utf-8")
+    mobile_css = html[html.index("@media (max-width: 576px)") :]
+
+    assert ".log-tail {" in mobile_css
+    assert "max-height: 240px;" in mobile_css
+    assert ".diagnostics-grid dt," in mobile_css
+    assert "padding-top: 0.35rem;" in mobile_css
+    assert "#copyDiagnosticsBtn," in mobile_css
+    assert "flex: 1 1 120px;" in mobile_css
+
+
+def test_strategy_mobile_tiers_are_dense_not_full_height_cards():
+    html = (TEMPLATE_DIR / "strategy.html").read_text(encoding="utf-8")
+    mobile_css = html[html.index("@media (max-width: 768px)") :]
+
+    assert ".tier-row {" in mobile_css
+    assert "gap: 6px;" in mobile_css
+    assert "padding: 10px 9px;" in mobile_css
+    assert ".tier-input {" in mobile_css
+    assert "width: 96px;" in mobile_css
+
+
+def test_dashboard_inline_mobile_styles_do_not_override_shared_compact_header():
+    html = _dashboard_html()
+    mobile_css = html[html.index("@media (max-width: 768px)") :]
+
+    assert ".brand-mark {" in mobile_css
+    assert "width: 36px;" in mobile_css
+    assert ".brand-title {" in mobile_css
+    assert "font-size: 1.34rem;" in mobile_css
+    assert ".dashboard-nav {" in mobile_css
+    assert "display: none !important;" in mobile_css
+    assert ".header-utility .user-chip {" in mobile_css
+    assert "display: none !important;" in mobile_css
+    assert ".theme-toggle-btn {" in mobile_css
+    assert "width: 36px;" in mobile_css
+    assert "height: 36px;" in mobile_css
+
+
 def test_shared_version_badge_class_is_used_across_templates():
     for template_name in [
         "admin_data_sources.html",
@@ -189,14 +441,22 @@ def test_mobile_navigation_and_action_labels_remain_visible():
         assert ".btn .btn-text" not in html, template_name
 
 
-def test_mobile_navigation_wraps_instead_of_horizontal_clipping():
+def test_mobile_navigation_uses_bottom_tab_bar_instead_of_top_icon_row():
     css = STATIC_CSS_PATH.read_text(encoding="utf-8")
     dashboard = (TEMPLATE_DIR / "index.html").read_text(encoding="utf-8")
 
     mobile_css = css[css.index("@media (max-width: 768px)") :]
-    assert "overflow-x: visible;" in mobile_css
-    assert "flex-wrap: wrap !important;" in mobile_css
-    assert "flex-wrap: nowrap !important;" not in dashboard[dashboard.find("@media (max-width: 768px)") :]
+    assert ".dashboard-nav {" in mobile_css
+    assert "display: none !important;" in mobile_css
+    assert ".mobile-bottom-nav {" in mobile_css
+    assert "position: fixed;" in mobile_css
+    assert "grid-template-columns:" in mobile_css
+
+    dashboard_mobile_css = dashboard[dashboard.find("@media (max-width: 768px)") :]
+    assert ".dashboard-nav {" in dashboard_mobile_css
+    assert "display: none !important;" in dashboard_mobile_css
+    assert ".transactions-table-wrap {" in dashboard_mobile_css
+    assert "display: none;" in dashboard_mobile_css
 
 
 def test_diagnostics_nav_accent_is_distinct_from_active_state():
@@ -209,6 +469,10 @@ def test_diagnostics_nav_accent_is_distinct_from_active_state():
 
 def test_mobile_version_badge_does_not_overlay_content():
     css = STATIC_CSS_PATH.read_text(encoding="utf-8")
+
+    base_badge_css = css[css.index(".version-badge {") : css.index(".login-shell")]
+    assert "position: static;" in base_badge_css
+    assert "position: fixed;" not in base_badge_css
 
     mobile_css = css[css.index("@media (max-width: 768px)") :]
     assert ".version-badge" in mobile_css

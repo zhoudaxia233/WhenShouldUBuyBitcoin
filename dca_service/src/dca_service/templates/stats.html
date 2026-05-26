@@ -609,25 +609,73 @@
         @media (max-width: 575px) {
             .stats-actions-row {
                 justify-content: stretch;
+                gap: 8px;
+                margin: 0 0 10px;
             }
             .stats-actions-row .btn {
                 flex: 1 1 auto;
+                min-height: 36px;
+                padding: 0.4rem 0.55rem;
+                font-size: 0.78rem;
             }
             .stats-rank-hero {
                 min-height: 0;
-                padding: 1.45rem;
+                padding: 0.85rem;
+                margin-bottom: 10px;
+            }
+            .stats-rank-value {
+                margin: 0.25rem 0 0.3rem;
+                font-size: clamp(1.85rem, 10vw, 2.45rem);
+            }
+            .stats-rank-subtext {
+                margin-bottom: 0.25rem;
+                font-size: 0.9rem;
+            }
+            .stats-rank-meta {
+                font-size: 0.76rem;
+            }
+            .stats-balance-badge {
+                margin-top: 0.48rem;
+                font-size: 0.74rem;
+                padding: 0.3rem 0.5rem;
             }
             .stats-rank-watermark {
                 right: 0.25rem;
                 top: 1rem;
                 transform: rotate(14deg);
-                font-size: 7rem;
+                font-size: 4.75rem;
             }
             .stats-metrics-grid {
-                grid-template-columns: 1fr;
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 10px;
+                margin-bottom: 16px;
             }
             .stats-metric-card {
-                min-height: 132px;
+                min-height: 96px;
+                padding: 12px;
+                gap: 0.18rem;
+            }
+            .stats-metric-top {
+                gap: 0.38rem;
+            }
+            .stats-metric-icon {
+                width: 24px;
+                height: 24px;
+                font-size: 0.78rem;
+            }
+            .stats-metric-label {
+                font-size: 0.58rem;
+                letter-spacing: 0.03em;
+            }
+            .stats-metric-value {
+                margin-top: 0.1rem;
+                font-size: clamp(0.98rem, 5.6vw, 1.18rem);
+            }
+            .stats-metric-subtext {
+                font-size: 0.72rem;
+            }
+            .metric-sparkline {
+                display: none;
             }
             .pnl-chart-wrap {
                 height: 340px;
@@ -665,11 +713,11 @@
                 width: 100%;
             }
             .saylor-chart-wrap {
-                height: 380px;
-                min-height: 380px;
+                height: 340px;
+                min-height: 340px;
             }
             #saylorChart {
-                touch-action: pan-y;
+                touch-action: none;
             }
         }
     </style>
@@ -1455,6 +1503,8 @@
             const monthMs = 1000 * 60 * 60 * 24 * 30;
             const isDark = (document.documentElement.getAttribute('data-bs-theme') || 'light') === 'dark';
             const isMobileViewport = window.matchMedia('(max-width: 575px)').matches;
+            const mobileSaylorGestures = isMobileViewport;
+            const desktopSaylorPrecisionZoom = !isMobileViewport;
             const axisColor = isDark ? '#93a2b8' : '#4f6278';
             const gridColor = isDark ? 'rgba(126, 150, 180, 0.16)' : 'rgba(69, 95, 123, 0.14)';
             const legendColor = isDark ? '#b8c4d6' : '#42566d';
@@ -1558,7 +1608,7 @@
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    interaction: { mode: 'nearest', intersect: !isMobileViewport, axis: 'xy' },
+                    interaction: { mode: 'nearest', intersect: !isMobileViewport, axis: mobileSaylorGestures ? 'x' : 'xy' },
                     plugins: {
                         legend: {
                             display: !isMobileViewport,
@@ -1605,26 +1655,26 @@
                                 y: { min: 0 }
                             },
                             pan: {
-                                enabled: false,
-                                mode: 'xy',
-                                threshold: 10
+                                enabled: mobileSaylorGestures,
+                                mode: mobileSaylorGestures ? 'x' : 'xy',
+                                threshold: mobileSaylorGestures ? 6 : 10
                             },
                             zoom: {
                                 wheel: {
-                                    enabled: !isMobileViewport,
+                                    enabled: desktopSaylorPrecisionZoom,
                                     speed: 0.04
                                 },
                                 pinch: {
-                                    enabled: !isMobileViewport
+                                    enabled: mobileSaylorGestures
                                 },
                                 drag: {
-                                    enabled: !isMobileViewport,
+                                    enabled: desktopSaylorPrecisionZoom,
                                     threshold: 12,
                                     borderColor: dragBorderColor,
                                     borderWidth: 1,
                                     backgroundColor: dragFillColor
                                 },
-                                mode: 'xy'
+                                mode: mobileSaylorGestures ? 'x' : 'xy'
                             }
                         }
                     },

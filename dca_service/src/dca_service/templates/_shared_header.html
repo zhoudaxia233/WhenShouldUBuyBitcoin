@@ -36,4 +36,42 @@
             </div>
         </div>
     </div>
+    <nav class="mobile-bottom-nav" aria-label="Mobile primary navigation">
+        <a href="/" class="mobile-bottom-nav-item{% if active_page == 'dashboard' %} active{% endif %}" aria-label="Dashboard" title="Dashboard"{% if active_page == 'dashboard' %} aria-current="page"{% endif %}>
+            <i class="bi bi-house-fill" aria-hidden="true"></i>
+            <span>Dashboard</span>
+        </a>
+        {% if user and user.is_admin %}
+        <a href="/admin/data-sources" class="mobile-bottom-nav-item{% if active_page == 'admin' %} active{% endif %}" aria-label="Diagnostics" title="Diagnostics"{% if active_page == 'admin' %} aria-current="page"{% endif %}>
+            <i class="bi bi-crosshair" aria-hidden="true"></i>
+            <span>Diagnostics</span>
+        </a>
+        {% endif %}
+        <a href="/stats" class="mobile-bottom-nav-item{% if active_page == 'stats' %} active{% endif %}" aria-label="Analytics" title="Analytics"{% if active_page == 'stats' %} aria-current="page"{% endif %}>
+            <i class="bi bi-bar-chart-line-fill" aria-hidden="true"></i>
+            <span>Analytics</span>
+        </a>
+        <a href="/analysis/" class="mobile-bottom-nav-item" target="_blank" aria-label="WSUB" title="WSUB">
+            <i class="bi bi-journal-code" aria-hidden="true"></i>
+            <span>WSUB</span>
+        </a>
+        <div class="dropup mobile-bottom-more">
+            <button class="mobile-bottom-nav-item mobile-bottom-nav-button dropdown-toggle{% if active_page in ['strategy', 'settings'] %} active{% endif %}" type="button" id="mobileMoreDropdown" data-bs-toggle="dropdown" aria-expanded="false" aria-label="More" title="More">
+                <i class="bi bi-three-dots" aria-hidden="true"></i>
+                <span>More</span>
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="mobileMoreDropdown">
+                <li><a class="dropdown-item" href="/strategy"><i class="bi bi-sliders"></i> Strategy</a></li>
+                <li><a class="dropdown-item" href="/settings/binance"><i class="bi bi-currency-bitcoin"></i> Binance</a></li>
+                {% if user %}
+                <li><hr class="dropdown-divider"></li>
+                <li>
+                    <form method="POST" action="/api/auth/logout" class="logout-form">
+                        <button type="submit" class="dropdown-item"><i class="bi bi-box-arrow-right"></i> Logout</button>
+                    </form>
+                </li>
+                {% endif %}
+            </ul>
+        </div>
+    </nav>
 </header>
