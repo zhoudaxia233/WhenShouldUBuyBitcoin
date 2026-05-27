@@ -2082,17 +2082,6 @@ def _build_add_position_guidance(
         suggested_amount = min(max(suggested_amount, lower), upper)
         applied_lessons.append("Your historical sizing is unstable; suggestion is anchored to reduce noise in outcomes.")
 
-    if (strong_dip_add_mode or persistent_value_regime) and amount_usdc > suggested_amount:
-        suggested_amount = amount_usdc
-        if strong_dip_add_mode:
-            applied_lessons.append(
-                "In confirmed capitulation mode, current size is not downscaled just for historical pattern mismatch."
-            )
-        else:
-            applied_lessons.append(
-                "In confirmed double-undervaluation mode, current size is not downscaled just for historical pattern mismatch."
-            )
-
     suggested_amount = round(max(10.0, suggested_amount), 2)
     proposed_gap_pct = ((amount_usdc - suggested_amount) / suggested_amount * 100.0) if suggested_amount > 0 else 0.0
 
@@ -2137,6 +2126,11 @@ def _build_add_position_guidance(
         range_min = 0.0
         range_max = 0.0
 
+    lower_alignment_factor = 0.65 if (deep_value_regime or persistent_value_regime) else 0.85
+    upper_alignment_factor = 1.35 if (deep_value_regime or persistent_value_regime) else 1.15
+    input_below_suggested = bool(amount_usdc < suggested_amount * lower_alignment_factor)
+    input_above_suggested = bool(amount_usdc > suggested_amount * upper_alignment_factor)
+
     if not reasons:
         reasons.append("No major risk signal is active; this setup is close to your normal decision profile.")
     reasons.extend(macro_notes[:2])
@@ -2169,7 +2163,25 @@ def _build_add_position_guidance(
         final_call = "NO BUY"
     else:
         advised_amount_usdc = suggested_amount
-        if strong_dip_add_mode:
+        if input_above_suggested:
+            action_code = "BUY_LESS"
+            input_alignment = "ABOVE_SUGGESTED"
+            action_now = f"Buy less: ${suggested_amount:,.2f}."
+            if deep_value_regime or persistent_value_regime:
+                call_reason = "Deep-value signals support adding, but your input is above the widened size band."
+            else:
+                call_reason = "Your input is larger than the rational size for this setup."
+            final_call = f"BUY LESS: ${suggested_amount:,.2f}"
+        elif input_below_suggested:
+            action_code = "BUY_MORE"
+            input_alignment = "BELOW_SUGGESTED"
+            action_now = f"Buy more: ${suggested_amount:,.2f}."
+            if deep_value_regime or persistent_value_regime:
+                call_reason = "Deep-value signals support adding; your input is below the widened size band."
+            else:
+                call_reason = "Your input is below the size implied by current edge."
+            final_call = f"BUY MORE: ${suggested_amount:,.2f}"
+        elif strong_dip_add_mode:
             action_code = "BUY_AS_PLANNED"
             input_alignment = "ALIGNED_CAPITULATION"
             action_now = f"Buy ${amount_usdc:,.2f} now."
@@ -2181,18 +2193,6 @@ def _build_add_position_guidance(
             action_now = f"Buy ${amount_usdc:,.2f} now."
             call_reason = "Double-undervaluation and cost-basis repair both support this add."
             final_call = f"BUY AS PLANNED: ${amount_usdc:,.2f}"
-        elif amount_usdc > suggested_amount * 1.15 and not deep_value_regime:
-            action_code = "BUY_LESS"
-            input_alignment = "ABOVE_SUGGESTED"
-            action_now = f"Buy less: ${suggested_amount:,.2f}."
-            call_reason = "Your input is larger than the rational size for this setup."
-            final_call = f"BUY LESS: ${suggested_amount:,.2f}"
-        elif amount_usdc < suggested_amount * 0.85:
-            action_code = "BUY_MORE"
-            input_alignment = "BELOW_SUGGESTED"
-            action_now = f"Buy more: ${suggested_amount:,.2f}."
-            call_reason = "Your input is below the size implied by current edge."
-            final_call = f"BUY MORE: ${suggested_amount:,.2f}"
         else:
             action_code = "BUY_AS_PLANNED"
             input_alignment = "ALIGNED"
@@ -2334,10 +2334,11 @@ def _build_add_position_guidance(
         suffix = f" | flags: {', '.join(tech_flags)}" if tech_flags else ""
         lines.append("Technical bottoming: " + ", ".join(tech_parts) + suffix + ".")
     lines.append("Why:")
-    for idx, reason in enumerate(reasons[:2], start=1):
+    displayed_reasons = reasons[:2]
+    for idx, reason in enumerate(displayed_reasons, start=1):
         lines.append(f"{idx}. {reason}")
     lines.append("Applied lesson:")
-    for idx, lesson in enumerate(applied_lessons[:1], start=1):
+    for idx, lesson in enumerate(applied_lessons[:1], start=len(displayed_reasons) + 1):
         lines.append(f"{idx}. {lesson}")
 
     return {
