@@ -13,6 +13,17 @@ def _load_stats_template() -> str:
     return template_path.read_text(encoding="utf-8")
 
 
+def _load_shared_header_template() -> str:
+    template_path = (
+        Path(__file__).resolve().parents[1]
+        / "src"
+        / "dca_service"
+        / "templates"
+        / "_shared_header.html"
+    )
+    return template_path.read_text(encoding="utf-8")
+
+
 def test_saylor_btc_shows_8_decimals():
     html = _load_stats_template()
     # Keep BTC display precision consistent across summary fields.
@@ -106,18 +117,109 @@ def test_light_mode_summary_box_uses_satsflow_palette():
     assert "color: var(--dashboard-text);" in html
 
 
-def test_saylor_mobile_summary_kpis_are_above_chart():
+def test_saylor_mobile_uses_inline_summary_without_summary_card():
     html = _load_stats_template()
+    mobile_css = html.split("@media (max-width: 767.98px)", 1)[1]
+
     assert 'class="saylor-mobile-kpis"' in html
+    assert 'class="saylor-mobile-inline-stats"' in html
     assert 'id="saylorReserveValueMobile"' in html
     assert 'id="saylorTotalBtcMobile"' in html
     assert 'id="saylorAvgCostMobile"' in html
     assert 'id="saylorPnlMobile"' in html
+    assert 'id="saylorPnlMobileBadge"' in html
+    assert 'id="saylorPurchaseEventsMobile"' in html
+    assert 'id="saylorRangeBtcMobile"' in html
+    assert 'class="saylor-mobile-chart-legend"' in html
     assert "function setTextIfPresent(id, value)" in html
     assert "saylorReserveValueMobile" in html
+
+    mobile_kpi_block = mobile_css[
+        mobile_css.index(".saylor-mobile-kpis {") : mobile_css.index(".saylor-mobile-topline {")
+    ]
     assert ".saylor-mobile-kpis {" in html
-    assert "grid-template-columns: repeat(2, minmax(0, 1fr));" in html
-    assert "white-space: nowrap;" in html
+    assert "display: none;" in mobile_kpi_block
+
+    mobile_pnl_block = mobile_css[
+        mobile_css.index(".saylor-mobile-pnl-chip {") : mobile_css.index(".saylor-mobile-inline-stats {")
+    ]
+    assert "display: inline-flex;" in mobile_pnl_block
+
+    inline_block = mobile_css[
+        mobile_css.index(".saylor-mobile-inline-stats {") : mobile_css.index(".saylor-summary-box {")
+    ]
+    assert "display: flex;" in inline_block
+    assert "font-size: 0.96rem;" in inline_block
+    assert "font-variant-numeric: tabular-nums;" in inline_block
+
+    summary_block = mobile_css[
+        mobile_css.index(".saylor-summary-box {") : mobile_css.index(".saylor-mobile-chart-legend {")
+    ]
+    assert "display: none;" in summary_block
+    assert "font-size: clamp(3.25rem, 15vw, 4.25rem);" in mobile_css
+
+
+def test_saylor_mobile_places_chart_before_reset_control():
+    html = _load_stats_template()
+    mobile_css = html.split("@media (max-width: 767.98px)", 1)[1]
+
+    card_body_block = mobile_css[
+        mobile_css.index(".stats-saylor-panel .card-body {") : mobile_css.index(".saylor-desktop-meta {")
+    ]
+    assert "display: flex;" in card_body_block
+    assert "flex-direction: column;" in card_body_block
+
+    chart_block = mobile_css[
+        mobile_css.index(".saylor-chart-wrap {") : mobile_css.index("#saylorChart {")
+    ]
+    assert "order: 1;" in chart_block
+    assert "height: 390px;" in chart_block
+
+    toolbar_block = mobile_css[
+        mobile_css.index(".saylor-chart-toolbar {") : mobile_css.index(".saylor-reset-btn {")
+    ]
+    assert "order: 2;" in toolbar_block
+    assert "margin: 18px 0 0;" in toolbar_block
+
+
+def test_saylor_mobile_purchase_bubbles_stay_prominent_and_amount_scaled():
+    html = _load_stats_template()
+    assert "const radiusBase = isMobileViewport ? 5.6 : 5.5;" in html
+    assert "const radius = radiusBase * Math.sqrt(Math.max(ratio, 0.04));" in html
+    assert "r: Math.max(isMobileViewport ? 4.5 : 3, Math.min(isMobileViewport ? 13 : 11, radius))" in html
+    assert "borderWidth: isMobileViewport ? 4 : 2" in html
+
+
+def test_saylor_mobile_chart_uses_larger_axis_and_series_styling():
+    html = _load_stats_template()
+    assert "borderWidth: isMobileViewport ? 3.5 : 3" in html
+    assert "borderWidth: isMobileViewport ? 2.5 : 2" in html
+    assert "const mobileSaylorTickFont = isMobileViewport ? { size: 13, weight: '600' } : undefined;" in html
+    assert "font: mobileSaylorTickFont" in html
+    assert "padding: isMobileViewport ? 8 : 3" in html
+
+
+def test_saylor_mobile_aggregates_purchase_bubbles_to_avoid_overplotting():
+    html = _load_stats_template()
+    assert "const isMobileViewport = window.matchMedia('(max-width: 767.98px)').matches;" in html
+    assert "const purchaseBucketMs = isMobileViewport ? 1000 * 60 * 60 * 24 * 14 : 0;" in html
+    assert "const key = purchaseBucketMs ? String(Math.floor(ts / purchaseBucketMs) * purchaseBucketMs) : String(ts);" in html
+    assert "x: purchaseBucketMs ? Number(key) + (purchaseBucketMs / 2) : ts" in html
+    assert "pointHoverRadius: isMobileViewport ? 15 : 12" in html
+
+
+def test_saylor_mobile_aggregated_purchase_tooltip_shows_date_range():
+    html = _load_stats_template()
+    assert "function formatSaylorTooltipDate(ts)" in html
+    assert "rangeStart: ts" in html
+    assert "rangeEnd: ts" in html
+    assert "purchaseCount: 1" in html
+    assert "existing.rangeStart = Math.min(existing.rangeStart, ts);" in html
+    assert "existing.rangeEnd = Math.max(existing.rangeEnd, ts);" in html
+    assert "existing.purchaseCount += 1;" in html
+    assert "purchaseCount: item.purchaseCount" in html
+    assert "if (isMobileViewport && point.purchaseCount > 1 && point.rangeStart && point.rangeEnd)" in html
+    assert "return `${formatSaylorTooltipDate(point.rangeStart)} - ${formatSaylorTooltipDate(point.rangeEnd)}`;" in html
 
 
 def test_saylor_required_summary_fields_use_strict_setters():
@@ -135,7 +237,7 @@ def test_saylor_mobile_chart_enables_touch_gestures_and_has_reset_button():
     html = _load_stats_template()
     assert 'id="resetSaylorZoomBtn"' in html
     assert "resetSaylorZoomBtn.addEventListener('click', resetSaylorZoom)" in html
-    assert "const isMobileViewport = window.matchMedia('(max-width: 575px)').matches;" in html
+    assert "const isMobileViewport = window.matchMedia('(max-width: 767.98px)').matches;" in html
     assert "display: !isMobileViewport" in html
     assert "enabled: desktopSaylorPrecisionZoom" in html
     assert "enabled: mobileSaylorGestures" in html
@@ -148,7 +250,7 @@ def test_saylor_mobile_chart_enables_touch_gestures_and_has_reset_button():
 def test_saylor_desktop_x_axis_does_not_get_mobile_tick_limit():
     html = _load_stats_template()
     assert "maxTicksLimit: isMobileViewport ? 4 : 8" not in html
-    assert "...(isMobileViewport ? { maxTicksLimit: 4 } : {})" in html
+    assert "...(isMobileViewport ? { maxTicksLimit: 3 } : {})" in html
 
 
 def test_performance_chart_has_mobile_safe_wrapper_and_legend_config():
@@ -237,10 +339,35 @@ def test_stats_page_uses_reference_dashboard_layout_without_visible_title_block(
     assert 'class="stats-rank-hero dashboard-panel"' in html
     assert 'class="stats-rank-watermark"' in html
     assert 'class="stats-metrics-grid"' in html
-    assert html.count('class="stats-metric-card dashboard-panel"') == 5
+    assert html.count('stats-metric-card dashboard-panel') == 5
     assert 'class="stats-analytics-grid"' in html
     assert 'class="stats-saylor-panel dashboard-panel saylor-card"' in html
     assert 'class="trading-style-list"' in html
+
+
+def test_stats_refresh_control_lives_in_header_not_actions_row():
+    html = _load_stats_template()
+    header = _load_shared_header_template()
+    actions_start = html.index('<div class="stats-actions-row">')
+    actions_end = html.index('</div>', actions_start)
+    actions_html = html[actions_start:actions_end]
+
+    assert 'id="refreshStatsBtn"' not in actions_html
+    assert "Force Refresh Data" not in actions_html
+    assert 'id="refreshStatsBtn"' in header
+    assert "Refresh analytics" in header
+    assert "document.getElementById('refreshStatsBtn').addEventListener" not in html
+
+
+def test_stats_mobile_hides_transactions_metric_card():
+    html = _load_stats_template()
+    mobile_css = html.split("@media (max-width: 575px)", 1)[1]
+
+    assert 'class="stats-metric-card dashboard-panel stats-transaction-card"' in html
+    assert ".stats-transaction-card {" in mobile_css
+    assert "display: none;" in mobile_css[
+        mobile_css.index(".stats-transaction-card {") : mobile_css.index(".pnl-chart-wrap {")
+    ]
 
 
 def test_stats_mobile_layout_keeps_metrics_dense_before_charts():
@@ -267,7 +394,7 @@ def test_stats_mobile_action_buttons_keep_readable_labels():
     assert ".stats-actions-row .btn {" in mobile_css
     assert "min-height: 36px;" in mobile_css
     assert ".stats-actions-row .btn-text {" not in mobile_css
-    assert "Refresh</span>" in html
+    assert "Force Refresh Data" not in html
     assert "Update Charts</span>" in html
 
 
