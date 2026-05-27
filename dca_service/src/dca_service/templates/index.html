@@ -204,8 +204,7 @@
             color: #fff;
         }
         .dashboard-panel,
-        .metric-card,
-        .refresh-panel {
+        .metric-card {
             border: 1px solid var(--dashboard-border);
             border-radius: 10px;
             background: var(--dashboard-card-bg);
@@ -225,12 +224,6 @@
             font-size: 1.22rem;
             font-weight: 760;
             letter-spacing: -0.01em;
-            color: var(--dashboard-text);
-        }
-        .refresh-panel {
-            padding: 0.9rem 1rem;
-        }
-        .refresh-panel strong {
             color: var(--dashboard-text);
         }
         .btn {
@@ -723,10 +716,6 @@
             .header-utility .user-chip {
                 display: none !important;
             }
-            .refresh-panel {
-                padding: 0.68rem 0.78rem;
-                margin-bottom: 0.75rem !important;
-            }
             .wallet-card-grid {
                 grid-template-columns: repeat(2, minmax(0, 1fr));
                 gap: 0.5rem;
@@ -1137,18 +1126,6 @@
     <div class="container app-shell dashboard-shell">
         {% set active_page = 'dashboard' %}
         {% include "_shared_header.html" %}
-
-        <!-- Global Refresh Status Bar -->
-        <div class="refresh-panel mb-4">
-            <div class="d-flex justify-content-between align-items-center gap-3">
-                    <div class="text-muted small">
-                        <strong>Last refresh:</strong> <span id="globalRefreshTime">Loading...</span>
-                    </div>
-                    <button id="globalRefreshBtn" class="btn btn-sm btn-outline-primary">
-                        <i class="bi bi-arrow-clockwise"></i> <span class="btn-text">Refresh</span>
-                    </button>
-            </div>
-        </div>
 
         <!-- Wallet Overview Section -->
         <section class="wallet-overview-section mb-4" aria-label="Wallet overview">
@@ -1602,7 +1579,13 @@
                 if (globalRefreshEl && typeof preview.timestamp === 'string' && preview.timestamp.trim() !== '') {
                     const parsedDate = new Date(preview.timestamp);
                     if (!Number.isNaN(parsedDate.getTime())) {
-                        globalRefreshEl.textContent = `${parsedDate.toISOString().replace('T', ' ').substring(0, 16)} UTC`;
+                        const formattedRefreshTime = `${parsedDate.toISOString().replace('T', ' ').substring(0, 16)} UTC`;
+                        const globalRefreshButton = document.getElementById('globalRefreshBtn');
+                        globalRefreshEl.textContent = formattedRefreshTime;
+                        if (globalRefreshButton) {
+                            globalRefreshButton.title = `Refresh dashboard. Last refresh: ${formattedRefreshTime}`;
+                            globalRefreshButton.setAttribute('aria-label', `Refresh dashboard. Last refresh: ${formattedRefreshTime}`);
+                        }
                     }
                 }
                 window.__latestBottomingSignal = preview.bottoming_signal || null;
@@ -1773,7 +1756,7 @@
             window.history.replaceState({}, document.title, newUrl);
         }
 
-        // Format timestamp for global refresh bar based on strategy time mode
+        // Format timestamp for global refresh control based on strategy time mode
         function formatGlobalRefreshTime(isoString, displayMode = currentTimeDisplayMode) {
             if (!isoString) return 'Never';
             
@@ -2551,9 +2534,26 @@
         // Helper to update global refresh timestamp
         function updateGlobalRefreshTime(timestamp) {
             const elem = document.getElementById('globalRefreshTime');
-            if (elem && timestamp) {
-                elem.textContent = formatGlobalRefreshTime(timestamp);
+            const button = document.getElementById('globalRefreshBtn');
+            if (!timestamp) return;
+
+            const formatted = formatGlobalRefreshTime(timestamp);
+            if (elem) {
+                elem.textContent = formatted;
             }
+            if (button) {
+                button.title = `Refresh dashboard. Last refresh: ${formatted}`;
+                button.setAttribute('aria-label', `Refresh dashboard. Last refresh: ${formatted}`);
+            }
+        }
+
+        function setGlobalRefreshButtonState(button, label, syncing = false) {
+            if (!button) return;
+            button.classList.toggle('is-syncing', syncing);
+            button.innerHTML = `
+                <i class="bi bi-arrow-clockwise" aria-hidden="true"></i>
+                <span class="visually-hidden">${label}</span>
+            `;
         }
 
         // Global refresh button handler
@@ -2562,7 +2562,7 @@
             if (globalBtn) {
                 globalBtn.addEventListener('click', async () => {
                     globalBtn.disabled = true;
-                    globalBtn.innerHTML = '<i class="bi bi-arrow-clockwise"></i> <span class="btn-text">Syncing</span>';
+                    setGlobalRefreshButtonState(globalBtn, 'Syncing dashboard', true);
                     
                     try {
                         // 1. Trigger Sync
@@ -2574,7 +2574,7 @@
                         }
                         
                         // 2. Refresh Dashboard Data
-                        globalBtn.innerHTML = '<i class="bi bi-arrow-clockwise"></i> <span class="btn-text">Loading</span>';
+                        setGlobalRefreshButtonState(globalBtn, 'Loading dashboard data', true);
                         await Promise.all([
                             loadTransactions(), // Reload list from DB (fast)
                             loadPreview(),
@@ -2586,7 +2586,7 @@
                         notyf.error('Failed to refresh dashboard');
                     } finally {
                         globalBtn.disabled = false;
-                        globalBtn.innerHTML = '<i class="bi bi-arrow-clockwise"></i> <span class="btn-text">Refresh</span>';
+                        setGlobalRefreshButtonState(globalBtn, 'Refresh dashboard');
                     }
                 });
             }

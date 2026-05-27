@@ -244,6 +244,43 @@ body.login-body {
     border-color: var(--dashboard-border-strong);
 }
 
+.dashboard-refresh-btn {
+    width: 42px;
+    min-width: 42px;
+    height: 42px;
+    flex: 0 0 42px;
+    padding: 0;
+    border: 1px solid var(--dashboard-border);
+    border-radius: 50%;
+    background: var(--dashboard-card-bg);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--dashboard-muted);
+    transition: all 0.2s ease;
+}
+
+.dashboard-refresh-btn:hover,
+.dashboard-refresh-btn:focus {
+    background: var(--dashboard-accent-softer);
+    color: var(--dashboard-accent-strong);
+    border-color: var(--dashboard-border-strong);
+}
+
+.dashboard-refresh-btn:disabled {
+    opacity: 0.72;
+}
+
+.dashboard-refresh-btn.is-syncing .bi {
+    animation: dashboard-refresh-spin 0.9s linear infinite;
+}
+
+@keyframes dashboard-refresh-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
 .theme-toggle-btn .theme-icon {
     width: 21px;
     height: 21px;
@@ -322,7 +359,6 @@ body.login-body {
 
 .dashboard-panel,
 .metric-card,
-.refresh-panel,
 .satsflow-page .card {
     border: 1px solid var(--dashboard-border);
     border-radius: 10px;
@@ -351,10 +387,6 @@ body.login-body {
     font-weight: 760;
     letter-spacing: -0.01em;
     color: var(--dashboard-text);
-}
-
-.refresh-panel {
-    padding: 0.9rem 1rem;
 }
 
 .satsflow-page .btn,
@@ -710,9 +742,12 @@ html[data-bs-theme="dark"] .satsflow-page .card-footer {
 
     .theme-toggle-btn,
     .satsflow-page .theme-toggle-btn,
-    .dashboard-page .theme-toggle-btn {
+    .dashboard-page .theme-toggle-btn,
+    .dashboard-refresh-btn {
         width: 36px;
+        min-width: 36px;
         height: 36px;
+        flex-basis: 36px;
     }
 
     .header-utility .user-chip {

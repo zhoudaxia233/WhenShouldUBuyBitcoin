@@ -24,6 +24,18 @@
             </nav>
             <div class="header-utility">
                 <button id="themeToggleBtn" type="button" class="btn text-nowrap theme-toggle-btn" aria-label="Toggle theme" title="Toggle theme"></button>
+                {% if active_page == 'dashboard' %}
+                <button id="globalRefreshBtn" type="button" class="btn text-nowrap dashboard-refresh-btn" aria-label="Refresh dashboard" title="Refresh dashboard">
+                    <i class="bi bi-arrow-clockwise" aria-hidden="true"></i>
+                    <span class="visually-hidden">Refresh</span>
+                </button>
+                <span id="globalRefreshTime" class="visually-hidden">Loading...</span>
+                {% elif active_page == 'stats' %}
+                <button id="refreshStatsBtn" type="button" class="btn text-nowrap dashboard-refresh-btn" aria-label="Refresh analytics" title="Refresh analytics">
+                    <i class="bi bi-arrow-clockwise" aria-hidden="true"></i>
+                    <span class="visually-hidden">Refresh</span>
+                </button>
+                {% endif %}
                 {% if user %}
                 <div class="user-chip" aria-label="Signed in account">
                     <span class="user-avatar" aria-hidden="true"><i class="bi bi-person-circle"></i></span>
@@ -41,12 +53,6 @@
             <i class="bi bi-house-fill" aria-hidden="true"></i>
             <span>Dashboard</span>
         </a>
-        {% if user and user.is_admin %}
-        <a href="/admin/data-sources" class="mobile-bottom-nav-item{% if active_page == 'admin' %} active{% endif %}" aria-label="Diagnostics" title="Diagnostics"{% if active_page == 'admin' %} aria-current="page"{% endif %}>
-            <i class="bi bi-crosshair" aria-hidden="true"></i>
-            <span>Diagnostics</span>
-        </a>
-        {% endif %}
         <a href="/stats" class="mobile-bottom-nav-item{% if active_page == 'stats' %} active{% endif %}" aria-label="Analytics" title="Analytics"{% if active_page == 'stats' %} aria-current="page"{% endif %}>
             <i class="bi bi-bar-chart-line-fill" aria-hidden="true"></i>
             <span>Analytics</span>
@@ -61,6 +67,9 @@
                 <span>More</span>
             </button>
             <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="mobileMoreDropdown">
+                {% if user and user.is_admin %}
+                <li><a class="dropdown-item" href="/admin/data-sources"><i class="bi bi-database-check"></i> Diagnostics</a></li>
+                {% endif %}
                 <li><a class="dropdown-item" href="/strategy"><i class="bi bi-sliders"></i> Strategy</a></li>
                 <li><a class="dropdown-item" href="/settings/binance"><i class="bi bi-currency-bitcoin"></i> Binance</a></li>
                 {% if user %}

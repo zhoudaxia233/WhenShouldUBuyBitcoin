@@ -74,6 +74,19 @@ def test_dashboard_wallet_uses_metric_cards_and_progress_ring():
     assert "progressRingEl.style.setProperty('--progress-value'" in html
 
 
+def test_dashboard_refresh_control_lives_in_header_not_standalone_bar():
+    html = _dashboard_html()
+    header = (TEMPLATE_DIR / "_shared_header.html").read_text(encoding="utf-8")
+
+    assert 'class="refresh-panel mb-4"' not in html
+    assert "Global Refresh Status Bar" not in html
+    assert 'id="globalRefreshBtn"' in header
+    assert 'dashboard-refresh-btn' in header
+    assert "<strong>Last refresh:</strong>" not in html
+    assert "updateGlobalRefreshTime(timestamp)" in html
+    assert "globalBtn.disabled = true;" in html
+
+
 def test_dashboard_mobile_reference_structure_prioritizes_wallet_hero():
     html = _dashboard_html()
 
@@ -330,6 +343,8 @@ def test_authenticated_templates_share_satsflow_header_and_nav():
     assert 'href="/stats" class="btn dashboard-nav-btn{% if active_page == \'stats\' %} active{% endif %}"' in header
     assert 'href="/stats" class="mobile-bottom-nav-item{% if active_page == \'stats\' %} active{% endif %}"' in header
     assert 'href="/admin/data-sources" class="btn dashboard-nav-btn nav-accent admin-diagnostics-link{% if active_page == \'admin\' %} active{% endif %}"' in header
+    assert 'href="/admin/data-sources" class="mobile-bottom-nav-item' not in header
+    assert '<a class="dropdown-item" href="/admin/data-sources"><i class="bi bi-database-check"></i> Diagnostics</a>' in header
     assert 'href="/analysis/" class="btn dashboard-nav-btn"' in header
     assert 'class="mobile-bottom-nav-item mobile-bottom-nav-button' in header
     for label in ["Dashboard", "Settings", "Diagnostics", "Analytics", "WSUB", "More"]:
