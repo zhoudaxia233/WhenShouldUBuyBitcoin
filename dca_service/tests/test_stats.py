@@ -914,6 +914,104 @@ def test_add_position_advice_crowded_leverage_trims_size_and_raises_risk():
     assert crowded["practical_signal_context"]["leverage"]["bias"] == "defensive"
 
 
+def test_add_position_advice_deep_value_uses_wide_band_not_unlimited_planned_size():
+    base_time = datetime(2026, 1, 1, tzinfo=timezone.utc)
+    events = [
+        {
+            "event_key": "order:1",
+            "event_type": "ORDER",
+            "binance_order_id": 1,
+            "timestamp": base_time,
+            "timestamp_end": base_time,
+            "fill_count": 1,
+            "amount_usd": 100.0,
+            "amount_btc": 0.0011111111,
+            "avg_price_usd": 90000.0,
+            "fee_usd": 0.0,
+            "source_types": ["MANUAL"],
+            "tx_ids": [1],
+            "trade_ids": [1],
+        },
+        {
+            "event_key": "order:2",
+            "event_type": "ORDER",
+            "binance_order_id": 2,
+            "timestamp": base_time + timedelta(days=5),
+            "timestamp_end": base_time + timedelta(days=5),
+            "fill_count": 1,
+            "amount_usd": 100.0,
+            "amount_btc": 0.00125,
+            "avg_price_usd": 80000.0,
+            "fee_usd": 0.0,
+            "source_types": ["MANUAL"],
+            "tx_ids": [2],
+            "trade_ids": [2],
+        },
+    ]
+    behavior_data = stats_api._build_behavior_analysis(
+        events,
+        {
+            "raw_fill_count": len(events),
+            "event_count": len(events),
+            "split_event_count": 0,
+            "split_fill_extra_count": 0,
+        },
+    )
+    market_context = {
+        "available": True,
+        "is_stale": False,
+        "is_double_undervalued": True,
+        "ratio_dca_current": 0.97,
+        "ratio_trend_current": 0.57,
+        "ahr999": 0.56,
+        "ahr999_sub_1": True,
+        "current_vs_180d_low_pct": 23.0,
+        "drop_24h_pct": -0.4,
+    }
+    macro_context = {
+        "available": True,
+        "is_stale": False,
+        "report_age_days": 1,
+        "macro_risk_score": 31.0,
+        "stress_flags": 0,
+        "net_liquidity_90d_delta": 207.0,
+        "ma_regime": "bearish",
+        "ma_spread": -3468.0,
+    }
+
+    small = stats_api._build_add_position_guidance(
+        behavior_data=behavior_data,
+        events=events,
+        amount_usdc=50.0,
+        current_price_usd=76000.0,
+        market_context=market_context,
+        macro_context=macro_context,
+    )
+    planned = stats_api._build_add_position_guidance(
+        behavior_data=behavior_data,
+        events=events,
+        amount_usdc=250.0,
+        current_price_usd=76000.0,
+        market_context=market_context,
+        macro_context=macro_context,
+    )
+    huge = stats_api._build_add_position_guidance(
+        behavior_data=behavior_data,
+        events=events,
+        amount_usdc=3000.0,
+        current_price_usd=76000.0,
+        market_context=market_context,
+        macro_context=macro_context,
+    )
+
+    assert small["action_code"] == "BUY_MORE"
+    assert planned["action_code"] == "BUY_AS_PLANNED"
+    assert huge["action_code"] == "BUY_LESS"
+    assert huge["suggested_amount_usdc"] < huge["proposed_amount_usdc"]
+    assert huge["input_alignment"] == "ABOVE_SUGGESTED"
+    assert "\nApplied lesson:\n3. " in planned["analysis_text"]
+
+
 def test_add_position_confirm_records_simulated_buy_transaction(client: TestClient, session: Session):
     with patch("dca_service.api.stats_api._send_add_position_email_task") as mock_email_task:
         response = client.post(
