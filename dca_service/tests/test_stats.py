@@ -1325,6 +1325,195 @@ def test_add_position_advice_dense_active_buy_pressure_waits_without_drawdown_ga
     assert "15%" in guidance["analysis_text"]
 
 
+def test_add_position_advice_three_active_buys_in_24h_waits_even_without_sideways_or_dca():
+    now_utc = datetime.now(timezone.utc)
+    events = []
+    prices = [91_000.0, 89_500.0, 93_000.0, 88_000.0, 92_000.0, 87_500.0, 94_000.0, 86_500.0]
+    for idx, price in enumerate(prices):
+        ts = now_utc - timedelta(days=10 - idx)
+        events.append(
+            {
+                "event_key": f"order:older-active-{idx}",
+                "event_type": "ORDER",
+                "binance_order_id": 30_000 + idx,
+                "timestamp": ts,
+                "timestamp_end": ts,
+                "fill_count": 1,
+                "amount_usd": 40.0,
+                "amount_btc": 40.0 / price,
+                "avg_price_usd": price,
+                "fee_usd": 0.0,
+                "source_types": ["MANUAL"],
+                "manual_flags": [True],
+                "tx_ids": [300 + idx],
+                "trade_ids": [300 + idx],
+            }
+        )
+
+    for idx, (hours_ago, price) in enumerate([(20, 84_000.0), (11, 82_000.0), (4, 80_500.0)]):
+        ts = now_utc - timedelta(hours=hours_ago)
+        events.append(
+            {
+                "event_key": f"order:today-active-{idx}",
+                "event_type": "ORDER",
+                "binance_order_id": 40_000 + idx,
+                "timestamp": ts,
+                "timestamp_end": ts,
+                "fill_count": 1,
+                "amount_usd": 30.0,
+                "amount_btc": 30.0 / price,
+                "avg_price_usd": price,
+                "fee_usd": 0.0,
+                "source_types": ["MANUAL"],
+                "manual_flags": [True],
+                "tx_ids": [400 + idx],
+                "trade_ids": [400 + idx],
+            }
+        )
+
+    behavior_data = stats_api._build_behavior_analysis(
+        events,
+        {
+            "raw_fill_count": len(events),
+            "event_count": len(events),
+            "split_event_count": 0,
+            "split_fill_extra_count": 0,
+        },
+    )
+
+    guidance = stats_api._build_add_position_guidance(
+        behavior_data=behavior_data,
+        events=events,
+        amount_usdc=50.0,
+        current_price_usd=83_000.0,
+        market_context={
+            "available": True,
+            "is_stale": False,
+            "is_double_undervalued": False,
+            "ratio_dca_current": 1.02,
+            "ratio_trend_current": 0.90,
+            "ahr999": 1.02,
+            "current_vs_180d_low_pct": 18.0,
+            "current_vs_ath_pct": -22.0,
+            "drop_24h_pct": -1.0,
+            "range_30d_pct": 18.0,
+            "realized_vol_30d_pct": 5.0,
+            "sideways_30d": False,
+        },
+        macro_context={
+            "available": True,
+            "is_stale": False,
+            "report_age_days": 1,
+            "macro_risk_score": 45.0,
+            "stress_flags": 1,
+            "net_liquidity_90d_delta": 0.0,
+            "oi_30d_change_pct": 0.0,
+            "ma_regime": "neutral",
+        },
+    )
+
+    assert guidance["decision"] == "WAIT"
+    assert guidance["action_code"] == "NO_BUY"
+    assert guidance["behavior_context"]["recent_active_buy_events_24h"] == 3
+    assert guidance["behavior_context"]["active_buy_intraday_cooldown_mode"] is True
+    assert "3 active buys" in guidance["call_reason"]
+
+
+def test_add_position_advice_three_active_buys_in_24h_overrides_value_mode_before_drawdown_gate():
+    now_utc = datetime.now(timezone.utc)
+    events = []
+    for idx, (days_ago, price) in enumerate(
+        [(10, 91_000.0), (9, 89_500.0), (8, 93_000.0), (7, 88_000.0), (6, 92_000.0), (5, 87_500.0), (4, 94_000.0), (3, 86_500.0)]
+    ):
+        ts = now_utc - timedelta(days=days_ago)
+        events.append(
+            {
+                "event_key": f"order:older-value-active-{idx}",
+                "event_type": "ORDER",
+                "binance_order_id": 50_000 + idx,
+                "timestamp": ts,
+                "timestamp_end": ts,
+                "fill_count": 1,
+                "amount_usd": 40.0,
+                "amount_btc": 40.0 / price,
+                "avg_price_usd": price,
+                "fee_usd": 0.0,
+                "source_types": ["MANUAL"],
+                "manual_flags": [True],
+                "tx_ids": [500 + idx],
+                "trade_ids": [500 + idx],
+            }
+        )
+
+    for idx, (hours_ago, price) in enumerate([(20, 84_000.0), (11, 82_000.0), (4, 80_500.0)]):
+        ts = now_utc - timedelta(hours=hours_ago)
+        events.append(
+            {
+                "event_key": f"order:today-value-active-{idx}",
+                "event_type": "ORDER",
+                "binance_order_id": 60_000 + idx,
+                "timestamp": ts,
+                "timestamp_end": ts,
+                "fill_count": 1,
+                "amount_usd": 30.0,
+                "amount_btc": 30.0 / price,
+                "avg_price_usd": price,
+                "fee_usd": 0.0,
+                "source_types": ["MANUAL"],
+                "manual_flags": [True],
+                "tx_ids": [600 + idx],
+                "trade_ids": [600 + idx],
+            }
+        )
+
+    behavior_data = stats_api._build_behavior_analysis(
+        events,
+        {
+            "raw_fill_count": len(events),
+            "event_count": len(events),
+            "split_event_count": 0,
+            "split_fill_extra_count": 0,
+        },
+    )
+
+    guidance = stats_api._build_add_position_guidance(
+        behavior_data=behavior_data,
+        events=events,
+        amount_usdc=50.0,
+        current_price_usd=83_000.0,
+        market_context={
+            "available": True,
+            "is_stale": False,
+            "is_double_undervalued": True,
+            "ratio_dca_current": 0.81,
+            "ratio_trend_current": 0.56,
+            "ahr999": 0.45,
+            "current_vs_180d_low_pct": 17.0,
+            "current_vs_ath_pct": -41.0,
+            "drop_24h_pct": 0.8,
+            "range_30d_pct": 13.6,
+            "realized_vol_30d_pct": 4.0,
+            "sideways_30d": False,
+        },
+        macro_context={
+            "available": True,
+            "is_stale": False,
+            "report_age_days": 1,
+            "macro_risk_score": 40.0,
+            "stress_flags": 0,
+            "net_liquidity_90d_delta": 132.0,
+            "oi_30d_change_pct": 0.0,
+            "ma_regime": "bearish",
+        },
+    )
+
+    assert guidance["decision"] == "WAIT"
+    assert guidance["action_code"] == "NO_BUY"
+    assert guidance["behavior_context"]["active_buy_intraday_cooldown_mode"] is True
+    assert guidance["behavior_context"]["active_buy_drawdown_gate"] is False
+    assert "3 active buys" in guidance["call_reason"]
+
+
 def test_add_position_advice_sideways_dense_dca_allows_add_with_takeoff_macro(client: TestClient, session: Session):
     now_utc = datetime.now(timezone.utc)
     start_ts = now_utc - timedelta(days=11)

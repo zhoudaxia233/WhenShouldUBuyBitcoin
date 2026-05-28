@@ -1847,6 +1847,10 @@ def _build_add_position_guidance(
         and recent_active_buy_dense
         and (active_buy_underperforming_dca or high_cost_weighted_habit)
     )
+    active_buy_intraday_cooldown_mode = bool(
+        recent_active_buy_24h_count >= 3
+        and not active_buy_drawdown_gate
+    )
     dense_sideways_no_extra_mode = bool(
         dense_buy_mode
         and ongoing_dense_flow
@@ -1865,6 +1869,7 @@ def _build_add_position_guidance(
     no_extra_add_needed_mode = bool(
         dense_sideways_no_extra_mode
         or active_buy_discipline_mode
+        or active_buy_intraday_cooldown_mode
     )
 
     reasons: List[str] = []
@@ -2013,8 +2018,12 @@ def _build_add_position_guidance(
             multiplier *= 1.25
             reasons.append("Multi-signal capitulation setup confirmed, so larger add size is allowed.")
     elif no_extra_add_needed_mode:
-        multiplier *= 0.50 if active_buy_discipline_mode else 0.68
-        if active_buy_discipline_mode:
+        multiplier *= 0.45 if active_buy_intraday_cooldown_mode else 0.50 if active_buy_discipline_mode else 0.68
+        if active_buy_intraday_cooldown_mode:
+            reasons.append(
+                "You already made 3 active buys in the last 24h; wait for DCA or a 15%+ cost-basis drawdown."
+            )
+        elif active_buy_discipline_mode:
             reasons.append(
                 "Active buys are already dense, dominant, and more expensive than DCA; wait for DCA or a 15%+ cost-basis drawdown."
             )
@@ -2193,6 +2202,8 @@ def _build_add_position_guidance(
 
     if active_buy_pressure and not active_buy_drawdown_gate:
         applied_lessons.append("Dense active-buy pressure is active; discretionary adds wait for DCA or a 15%+ cost-basis drawdown.")
+    if active_buy_intraday_cooldown_mode:
+        applied_lessons.append("Intraday active-buy cooldown is active after 3 active buys in 24h.")
 
     suggested_amount = max(10.0, baseline_amount * multiplier)
     if inconsistent_habit:
@@ -2209,7 +2220,13 @@ def _build_add_position_guidance(
     proposed_gap_pct = ((amount_usdc - suggested_amount) / suggested_amount * 100.0) if suggested_amount > 0 else 0.0
 
     decision = "BUY"
-    if not (deep_value_regime or persistent_value_regime):
+    if active_buy_intraday_cooldown_mode:
+        decision = "WAIT"
+        if not any("3 active buys" in reason for reason in reasons):
+            reasons.append(
+                "You already made 3 active buys in the last 24h; wait for DCA or a 15%+ cost-basis drawdown."
+            )
+    elif not (deep_value_regime or persistent_value_regime):
         if no_extra_add_needed_mode:
             decision = "WAIT"
             reasons.append(f"No extra add needed now: your ongoing {cadence_label} already covers this sideways regime.")
@@ -2269,7 +2286,12 @@ def _build_add_position_guidance(
         input_alignment = "WAIT"
         action_now = "No buy now."
         if no_extra_add_needed_mode:
-            if active_buy_discipline_mode:
+            if active_buy_intraday_cooldown_mode:
+                call_reason = (
+                    "No extra active buy: 3 active buys in the last 24h; "
+                    "wait for DCA or a 15%+ cost-basis drawdown."
+                )
+            elif active_buy_discipline_mode:
                 call_reason = (
                     "No extra active buy: active buys are already dense, dominant, and more expensive than DCA; "
                     "wait for DCA or a 15%+ cost-basis drawdown."
@@ -2533,6 +2555,7 @@ def _build_add_position_guidance(
             "active_buy_pressure": active_buy_pressure,
             "active_buy_drawdown_gate": active_buy_drawdown_gate,
             "active_buy_drawdown_tier": active_buy_drawdown_tier,
+            "active_buy_intraday_cooldown_mode": active_buy_intraday_cooldown_mode,
             "active_buy_discipline_mode": active_buy_discipline_mode,
             "dense_sideways_no_extra_mode": dense_sideways_no_extra_mode,
             "no_extra_add_needed_mode": no_extra_add_needed_mode,
