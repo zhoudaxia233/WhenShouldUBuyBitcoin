@@ -1231,6 +1231,100 @@ def test_add_position_advice_sideways_dense_dca_waits_without_takeoff_macro(clie
     assert "dense" in payload["guidance"]["call_reason"].lower()
 
 
+def test_add_position_advice_dense_active_buy_pressure_waits_without_drawdown_gate():
+    now_utc = datetime.now(timezone.utc)
+    events = []
+
+    for idx in range(2):
+        ts = now_utc - timedelta(days=13 - idx)
+        events.append(
+            {
+                "event_key": f"order:dca-{idx}",
+                "event_type": "ORDER",
+                "binance_order_id": 10_000 + idx,
+                "timestamp": ts,
+                "timestamp_end": ts,
+                "fill_count": 1,
+                "amount_usd": 50.0,
+                "amount_btc": 50.0 / 78_000.0,
+                "avg_price_usd": 78_000.0,
+                "fee_usd": 0.0,
+                "source_types": ["DCA"],
+                "tx_ids": [idx],
+                "trade_ids": [idx],
+            }
+        )
+
+    for idx in range(10):
+        ts = now_utc - timedelta(days=9 - idx)
+        events.append(
+            {
+                "event_key": f"order:active-{idx}",
+                "event_type": "ORDER",
+                "binance_order_id": 20_000 + idx,
+                "timestamp": ts,
+                "timestamp_end": ts,
+                "fill_count": 1,
+                "amount_usd": 200.0,
+                "amount_btc": 200.0 / 90_000.0,
+                "avg_price_usd": 90_000.0,
+                "fee_usd": 0.0,
+                "source_types": ["MANUAL"],
+                "tx_ids": [100 + idx],
+                "trade_ids": [100 + idx],
+            }
+        )
+
+    behavior_data = stats_api._build_behavior_analysis(
+        events,
+        {
+            "raw_fill_count": len(events),
+            "event_count": len(events),
+            "split_event_count": 0,
+            "split_fill_extra_count": 0,
+        },
+    )
+
+    guidance = stats_api._build_add_position_guidance(
+        behavior_data=behavior_data,
+        events=events,
+        amount_usdc=500.0,
+        current_price_usd=86_000.0,
+        market_context={
+            "available": True,
+            "is_stale": False,
+            "is_double_undervalued": False,
+            "ratio_dca_current": 1.05,
+            "ratio_trend_current": 0.95,
+            "ahr999": 1.05,
+            "current_vs_180d_low_pct": 20.0,
+            "current_vs_ath_pct": -18.0,
+            "drop_24h_pct": -0.5,
+            "range_30d_pct": 16.0,
+            "realized_vol_30d_pct": 4.0,
+            "sideways_30d": False,
+        },
+        macro_context={
+            "available": True,
+            "is_stale": False,
+            "report_age_days": 1,
+            "macro_risk_score": 45.0,
+            "stress_flags": 1,
+            "net_liquidity_90d_delta": 0.0,
+            "oi_30d_change_pct": 0.0,
+            "ma_regime": "neutral",
+        },
+    )
+
+    assert guidance["decision"] == "WAIT"
+    assert guidance["action_code"] == "NO_BUY"
+    assert guidance["behavior_context"]["active_buy_discipline_mode"] is True
+    assert guidance["behavior_context"]["active_buy_usd_ratio"] > 0.90
+    assert guidance["behavior_context"]["active_buy_cost_premium_pct"] > 5.0
+    assert "active buy" in guidance["call_reason"].lower()
+    assert "15%" in guidance["analysis_text"]
+
+
 def test_add_position_advice_sideways_dense_dca_allows_add_with_takeoff_macro(client: TestClient, session: Session):
     now_utc = datetime.now(timezone.utc)
     start_ts = now_utc - timedelta(days=11)
