@@ -35,3 +35,14 @@ def test_dashboard_add_position_button_uses_accent_class_without_success_flash()
     assert "btn-success" not in button_markup
     assert ".btn-dashboard-accent {" in html
     assert ".btn-dashboard-accent:hover," in html
+
+
+def test_add_position_no_buy_advice_does_not_enable_confirm_buy():
+    repo_root = Path(__file__).resolve().parents[2]
+    template_path = repo_root / "dca_service" / "src" / "dca_service" / "templates" / "index.html"
+    html = template_path.read_text(encoding="utf-8")
+
+    assert "const actionCode = payload?.guidance?.action_code;" in html
+    assert "if (actionCode === 'NO_BUY')" in html
+    assert "Advice says no buy right now." in html
+    assert "setAddPositionActionMode('advice');" in html
