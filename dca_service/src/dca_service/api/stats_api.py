@@ -1030,6 +1030,7 @@ def _aggregate_behavior_events(transactions: List[DCATransaction]) -> Dict[str, 
                 "weighted_price_sum": 0.0,
                 "tx_ids": [],
                 "trade_ids": [],
+                "manual_flags": [],
                 "sources": set(),
             }
             ordered_keys.append(key)
@@ -1044,6 +1045,7 @@ def _aggregate_behavior_events(transactions: List[DCATransaction]) -> Dict[str, 
         group["tx_ids"].append(tx.id)
         if tx.binance_trade_id is not None:
             group["trade_ids"].append(tx.binance_trade_id)
+        group["manual_flags"].append(bool(tx.is_manual))
         group["sources"].add(tx.source or "UNKNOWN")
 
         weight = amount_usd if amount_usd > 0 else amount_btc
@@ -1073,6 +1075,7 @@ def _aggregate_behavior_events(transactions: List[DCATransaction]) -> Dict[str, 
                 "avg_price_usd": float(avg_price),
                 "fee_usd": float(group["fee_usd"]),
                 "source_types": sorted(group["sources"]),
+                "manual_flags": group["manual_flags"],
                 "tx_ids": [tid for tid in group["tx_ids"] if tid is not None],
                 "trade_ids": group["trade_ids"],
             }
@@ -1104,6 +1107,7 @@ def _trading_style_source_signature(events: List[Dict[str, Any]]) -> str:
                 "avg_price_usd": round(float(e.get("avg_price_usd", 0.0)), 8),
                 "fee_usd": round(float(e.get("fee_usd", 0.0)), 8),
                 "source_types": e.get("source_types", []),
+                "manual_flags": e.get("manual_flags", []),
                 "trade_ids": e.get("trade_ids", []),
             }
         )
@@ -1140,6 +1144,12 @@ def _build_behavior_analysis(events: List[Dict[str, Any]], aggregate_meta: Dict[
                 "weekend_ratio": 0.0,
                 "manual_event_ratio": 0.0,
                 "dca_event_ratio": 0.0,
+                "active_buy_event_ratio": 0.0,
+                "active_buy_usd_ratio": 0.0,
+                "dca_usd_ratio": 0.0,
+                "active_buy_avg_cost_usd": None,
+                "dca_avg_cost_usd": None,
+                "active_buy_cost_premium_pct": None,
             },
             "style_tags": ["No Data"],
             "issues": [{"severity": "info", "title": "No transactions", "detail": "No successful buy transaction found."}],
@@ -1158,6 +1168,11 @@ def _build_behavior_analysis(events: List[Dict[str, Any]], aggregate_meta: Dict[
     weekend_count = 0
     manual_count = 0
     dca_count = 0
+    active_buy_count = 0
+    active_buy_usd = 0.0
+    active_buy_btc = 0.0
+    dca_usd = 0.0
+    dca_btc = 0.0
     price_positions: List[float] = []
 
     diagnostics: List[Dict[str, Any]] = []
@@ -1165,10 +1180,21 @@ def _build_behavior_analysis(events: List[Dict[str, Any]], aggregate_meta: Dict[
         ts = event["timestamp"]
         if ts.weekday() >= 5:
             weekend_count += 1
-        if "MANUAL" in event["source_types"]:
+        purchase_type = _classify_purchase_trigger(
+            event.get("source_types", []),
+            event.get("manual_flags", []),
+        )
+        if "MANUAL" in event["source_types"] or purchase_type == "ACTIVE_BUY":
             manual_count += 1
-        if "DCA" in event["source_types"]:
+        if "DCA" in event["source_types"] or purchase_type == "DCA":
             dca_count += 1
+        if purchase_type == "ACTIVE_BUY":
+            active_buy_count += 1
+            active_buy_usd += max(float(event["amount_usd"]), 0.0)
+            active_buy_btc += max(float(event["amount_btc"]), 0.0)
+        elif purchase_type == "DCA":
+            dca_usd += max(float(event["amount_usd"]), 0.0)
+            dca_btc += max(float(event["amount_btc"]), 0.0)
 
         prev_event = events[idx - 1] if idx > 0 else None
         interval_days = None
@@ -1225,6 +1251,7 @@ def _build_behavior_analysis(events: List[Dict[str, Any]], aggregate_meta: Dict[
                 "fill_count": event["fill_count"],
                 "fee_usd": event["fee_usd"],
                 "source_types": event["source_types"],
+                "purchase_type": purchase_type,
                 "interval_since_prev_days": interval_days,
                 "relative_amount_to_past_median": relative_amount,
                 "relative_amount_label": relative_amount_label,
@@ -1237,6 +1264,13 @@ def _build_behavior_analysis(events: List[Dict[str, Any]], aggregate_meta: Dict[
     total_invested_usd = float(sum(event_amounts))
     total_btc = float(sum(max(e["amount_btc"], 0.0) for e in events))
     weighted_avg_buy_price_usd = (total_invested_usd / total_btc) if total_btc > 0 else None
+    active_buy_avg_cost_usd = (active_buy_usd / active_buy_btc) if active_buy_btc > 0 else None
+    dca_avg_cost_usd = (dca_usd / dca_btc) if dca_btc > 0 else None
+    active_buy_cost_premium_pct = (
+        ((active_buy_avg_cost_usd - dca_avg_cost_usd) / dca_avg_cost_usd) * 100.0
+        if active_buy_avg_cost_usd is not None and dca_avg_cost_usd is not None and dca_avg_cost_usd > 0
+        else None
+    )
     all_prices = [max(e["avg_price_usd"], 0.0) for e in events if e["avg_price_usd"] > 0]
     weighted_avg_price_position = None
     if weighted_avg_buy_price_usd is not None and all_prices:
@@ -1288,6 +1322,16 @@ def _build_behavior_analysis(events: List[Dict[str, Any]], aggregate_meta: Dict[
         "weekend_ratio": float(weekend_count / event_count) if event_count > 0 else 0.0,
         "manual_event_ratio": float(manual_count / event_count) if event_count > 0 else 0.0,
         "dca_event_ratio": float(dca_count / event_count) if event_count > 0 else 0.0,
+        "active_buy_event_ratio": float(active_buy_count / event_count) if event_count > 0 else 0.0,
+        "active_buy_usd_ratio": float(active_buy_usd / total_invested_usd) if total_invested_usd > 0 else 0.0,
+        "dca_usd_ratio": float(dca_usd / total_invested_usd) if total_invested_usd > 0 else 0.0,
+        "active_buy_avg_cost_usd": (
+            float(active_buy_avg_cost_usd) if active_buy_avg_cost_usd is not None else None
+        ),
+        "dca_avg_cost_usd": float(dca_avg_cost_usd) if dca_avg_cost_usd is not None else None,
+        "active_buy_cost_premium_pct": (
+            float(active_buy_cost_premium_pct) if active_buy_cost_premium_pct is not None else None
+        ),
     }
 
     style_tags: List[str] = []
@@ -1597,6 +1641,27 @@ def _build_add_position_guidance(
         if isinstance(e.get("timestamp"), datetime)
         and (now_utc - e["timestamp"]).total_seconds() <= 72 * 3600
     )
+    recent_active_buy_24h_count = sum(
+        1
+        for e in events
+        if isinstance(e.get("timestamp"), datetime)
+        and (now_utc - e["timestamp"]).total_seconds() <= 24 * 3600
+        and _classify_purchase_trigger(e.get("source_types", []), e.get("manual_flags", [])) == "ACTIVE_BUY"
+    )
+    recent_active_buy_48h_count = sum(
+        1
+        for e in events
+        if isinstance(e.get("timestamp"), datetime)
+        and (now_utc - e["timestamp"]).total_seconds() <= 48 * 3600
+        and _classify_purchase_trigger(e.get("source_types", []), e.get("manual_flags", [])) == "ACTIVE_BUY"
+    )
+    recent_active_buy_72h_count = sum(
+        1
+        for e in events
+        if isinstance(e.get("timestamp"), datetime)
+        and (now_utc - e["timestamp"]).total_seconds() <= 72 * 3600
+        and _classify_purchase_trigger(e.get("source_types", []), e.get("manual_flags", [])) == "ACTIVE_BUY"
+    )
     last_event_ts = events[-1]["timestamp"] if events and isinstance(events[-1].get("timestamp"), datetime) else None
 
     recent_trade_prices = [float(e.get("avg_price_usd", 0.0)) for e in events[-14:] if float(e.get("avg_price_usd", 0.0)) > 0]
@@ -1620,6 +1685,12 @@ def _build_add_position_guidance(
     low_zone_ratio = float(summary.get("low_zone_buy_ratio", 0.0) or 0.0)
     high_zone_usd_ratio = float(summary.get("high_zone_usd_ratio", 0.0) or 0.0)
     low_zone_usd_ratio = float(summary.get("low_zone_usd_ratio", 0.0) or 0.0)
+    active_buy_event_ratio = float(summary.get("active_buy_event_ratio", 0.0) or 0.0)
+    active_buy_usd_ratio = float(summary.get("active_buy_usd_ratio", 0.0) or 0.0)
+    dca_usd_ratio = float(summary.get("dca_usd_ratio", 0.0) or 0.0)
+    active_buy_avg_cost_usd = _as_float(summary.get("active_buy_avg_cost_usd"))
+    dca_avg_cost_usd = _as_float(summary.get("dca_avg_cost_usd"))
+    active_buy_cost_premium_pct = _as_float(summary.get("active_buy_cost_premium_pct"))
 
     burst_habit = bool(burst_ratio >= 0.45 and event_count >= 8)
     inconsistent_habit = bool(event_amount_cv >= 0.9 and event_count >= 8)
@@ -1638,6 +1709,23 @@ def _build_add_position_guidance(
     else:
         cadence_label = "mixed buy cadence"
         source_mix_label = "mixed"
+
+    price_vs_avg_cost_pct = (
+        ((current_price_usd - current_avg_cost_usd) / current_avg_cost_usd) * 100.0
+        if current_avg_cost_usd
+        else None
+    )
+    if price_vs_avg_cost_pct is None:
+        active_buy_drawdown_tier = None
+    elif price_vs_avg_cost_pct <= -35.0:
+        active_buy_drawdown_tier = "35%"
+    elif price_vs_avg_cost_pct <= -25.0:
+        active_buy_drawdown_tier = "25%"
+    elif price_vs_avg_cost_pct <= -15.0:
+        active_buy_drawdown_tier = "15%"
+    else:
+        active_buy_drawdown_tier = None
+    active_buy_drawdown_gate = active_buy_drawdown_tier is not None
 
     macro_risk_score = _as_float(macro_ctx.get("macro_risk_score"))
     macro_risk_regime = str(macro_ctx.get("macro_risk_regime") or "").strip().lower() or None
@@ -1743,13 +1831,40 @@ def _build_add_position_guidance(
             and (oi_30d_change_pct is None or oi_30d_change_pct >= 5.0)
         )
     ongoing_dense_flow = bool(recent_24h_count >= 1 or recent_72h_count >= 2)
-    no_extra_add_needed_mode = bool(
+    active_buy_dominant = bool(
+        event_count >= 8
+        and active_buy_usd_ratio >= 0.70
+        and active_buy_event_ratio >= 0.50
+    )
+    active_buy_underperforming_dca = bool(
+        active_buy_cost_premium_pct is not None
+        and active_buy_cost_premium_pct >= 3.0
+    )
+    recent_active_buy_dense = bool(recent_active_buy_24h_count >= 1 or recent_active_buy_72h_count >= 2)
+    active_buy_pressure = bool(
+        dense_buy_mode
+        and active_buy_dominant
+        and recent_active_buy_dense
+        and (active_buy_underperforming_dca or high_cost_weighted_habit)
+    )
+    dense_sideways_no_extra_mode = bool(
         dense_buy_mode
         and ongoing_dense_flow
         and (local_sideways_by_trades or sideways_30d)
         and not macro_takeoff_mode
         and not strong_dip_add_mode
         and not persistent_value_regime
+    )
+    active_buy_discipline_mode = bool(
+        active_buy_pressure
+        and not active_buy_drawdown_gate
+        and not macro_takeoff_mode
+        and not strong_dip_add_mode
+        and not persistent_value_regime
+    )
+    no_extra_add_needed_mode = bool(
+        dense_sideways_no_extra_mode
+        or active_buy_discipline_mode
     )
 
     reasons: List[str] = []
@@ -1898,8 +2013,13 @@ def _build_add_position_guidance(
             multiplier *= 1.25
             reasons.append("Multi-signal capitulation setup confirmed, so larger add size is allowed.")
     elif no_extra_add_needed_mode:
-        multiplier *= 0.68
-        reasons.append(f"Market is sideways while your {cadence_label} is already dense, so extra add is usually unnecessary.")
+        multiplier *= 0.50 if active_buy_discipline_mode else 0.68
+        if active_buy_discipline_mode:
+            reasons.append(
+                "Active buys are already dense, dominant, and more expensive than DCA; wait for DCA or a 15%+ cost-basis drawdown."
+            )
+        else:
+            reasons.append(f"Market is sideways while your {cadence_label} is already dense, so extra add is usually unnecessary.")
     elif macro_takeoff_mode:
         multiplier *= 1.15
         reasons.append("Macro takeoff signals are aligned, so adding above baseline is justified.")
@@ -2071,6 +2191,9 @@ def _build_add_position_guidance(
         multiplier *= 0.85
         applied_lessons.append("Your high-cost exposure is already meaningful; high-zone adds get an extra size haircut.")
 
+    if active_buy_pressure and not active_buy_drawdown_gate:
+        applied_lessons.append("Dense active-buy pressure is active; discretionary adds wait for DCA or a 15%+ cost-basis drawdown.")
+
     suggested_amount = max(10.0, baseline_amount * multiplier)
     if inconsistent_habit:
         # Keep size executable and stable, but allow wider ranges in deep drawdowns.
@@ -2146,7 +2269,12 @@ def _build_add_position_guidance(
         input_alignment = "WAIT"
         action_now = "No buy now."
         if no_extra_add_needed_mode:
-            if recent_trade_range_pct is not None:
+            if active_buy_discipline_mode:
+                call_reason = (
+                    "No extra active buy: active buys are already dense, dominant, and more expensive than DCA; "
+                    "wait for DCA or a 15%+ cost-basis drawdown."
+                )
+            elif recent_trade_range_pct is not None:
                 call_reason = (
                     f"No extra add needed: dense {cadence_label} already active and your recent range is only {recent_trade_range_pct:.2f}%."
                 )
@@ -2390,6 +2518,23 @@ def _build_add_position_guidance(
             "source_mix_label": source_mix_label,
             "dca_event_ratio": dca_event_ratio,
             "manual_event_ratio": manual_event_ratio,
+            "active_buy_event_ratio": active_buy_event_ratio,
+            "active_buy_usd_ratio": active_buy_usd_ratio,
+            "dca_usd_ratio": dca_usd_ratio,
+            "active_buy_avg_cost_usd": (
+                float(active_buy_avg_cost_usd) if active_buy_avg_cost_usd is not None else None
+            ),
+            "dca_avg_cost_usd": float(dca_avg_cost_usd) if dca_avg_cost_usd is not None else None,
+            "active_buy_cost_premium_pct": (
+                float(active_buy_cost_premium_pct) if active_buy_cost_premium_pct is not None else None
+            ),
+            "active_buy_dominant": active_buy_dominant,
+            "active_buy_underperforming_dca": active_buy_underperforming_dca,
+            "active_buy_pressure": active_buy_pressure,
+            "active_buy_drawdown_gate": active_buy_drawdown_gate,
+            "active_buy_drawdown_tier": active_buy_drawdown_tier,
+            "active_buy_discipline_mode": active_buy_discipline_mode,
+            "dense_sideways_no_extra_mode": dense_sideways_no_extra_mode,
             "no_extra_add_needed_mode": no_extra_add_needed_mode,
             "recent_sideways_by_trades": local_sideways_by_trades,
             "recent_trade_range_pct": float(recent_trade_range_pct) if recent_trade_range_pct is not None else None,
@@ -2399,6 +2544,9 @@ def _build_add_position_guidance(
             "recent_events_24h": recent_24h_count,
             "recent_events_48h": recent_48h_count,
             "recent_events_72h": recent_72h_count,
+            "recent_active_buy_events_24h": recent_active_buy_24h_count,
+            "recent_active_buy_events_48h": recent_active_buy_48h_count,
+            "recent_active_buy_events_72h": recent_active_buy_72h_count,
             "last_event_time": last_event_ts.isoformat() if isinstance(last_event_ts, datetime) else None,
         },
         "cost_basis_context": {
