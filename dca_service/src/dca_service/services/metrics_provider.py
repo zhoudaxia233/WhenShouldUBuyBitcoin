@@ -2,10 +2,9 @@ import csv
 import json
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from typing import Dict, Optional, Union, Protocol, Any
+from typing import Dict, Optional, Protocol, Any
 from dataclasses import dataclass
 import sys
-import os
 
 # Add the parent directory to sys.path to allow importing from whenshouldubuybitcoin
 # This is needed because dca_service is a subdirectory of the main repo
@@ -575,16 +574,26 @@ def get_drawdown_context(current_price: float) -> Optional[Dict[str, Any]]:
         if len(rows) < 2:
             return None
 
-        prices = [p for _, p in rows]
+        history_start_date = rows[0][0]
+        history_end_date = rows[-1][0]
+        history_age_days = None
+        history_stale = False
+        try:
+            history_end_dt = datetime.strptime(history_end_date, "%Y-%m-%d").replace(tzinfo=timezone.utc)
+            history_age_hours = (datetime.now(timezone.utc) - history_end_dt).total_seconds() / 3600.0
+            history_age_days = max(0, int(history_age_hours // 24))
+            history_stale = history_age_hours > settings.METRICS_MAX_AGE_HOURS
+        except ValueError:
+            history_stale = False
 
         def _hist_drawdowns(window_days: Optional[int]) -> list[dict[str, Any]]:
             out: list[dict[str, Any]] = []
             for i, (date_str, price) in enumerate(rows):
                 if window_days is None:
-                    peak = max(prices[: i + 1])
+                    peak_date, peak = max(rows[: i + 1], key=lambda row: row[1])
                 else:
                     start = max(0, i - window_days + 1)
-                    peak = max(prices[start : i + 1])
+                    peak_date, peak = max(rows[start : i + 1], key=lambda row: row[1])
                 if peak <= 0:
                     continue
                 dd = max(0.0, min(1.0, (peak - price) / peak))
@@ -593,24 +602,28 @@ def get_drawdown_context(current_price: float) -> Optional[Dict[str, Any]]:
                         "date": date_str,
                         "price": price,
                         "peak": peak,
+                        "peak_date": peak_date,
                         "drawdown_ratio": dd,
                     }
                 )
             return out
 
-        def _current_peak(window_days: Optional[int]) -> float:
+        def _current_peak(window_days: Optional[int]) -> tuple[float, Optional[str]]:
             if window_days is None:
-                hist_peak = max(prices)
+                hist_peak_date, hist_peak = max(rows, key=lambda row: row[1])
             else:
-                hist_peak = max(prices[-window_days:])
-            return max(hist_peak, current_price)
+                window_rows = rows[-window_days:]
+                hist_peak_date, hist_peak = max(window_rows, key=lambda row: row[1])
+            if current_price > hist_peak:
+                return current_price, None
+            return hist_peak, hist_peak_date
 
         def _compute_one(window_label: str, window_days: Optional[int]) -> Dict[str, Any]:
             hist = _hist_drawdowns(window_days)
             if not hist:
                 return {}
 
-            peak_now = _current_peak(window_days)
+            peak_now, peak_now_date = _current_peak(window_days)
             current_dd = max(0.0, min(1.0, (peak_now - current_price) / peak_now))
 
             less_or_equal = sum(1 for item in hist if item["drawdown_ratio"] <= current_dd)
@@ -635,7 +648,12 @@ def get_drawdown_context(current_price: float) -> Optional[Dict[str, Any]]:
             return {
                 "window": window_label,
                 "current_peak": peak_now,
+                "current_peak_date": peak_now_date,
                 "current_price": current_price,
+                "history_start_date": history_start_date,
+                "history_end_date": history_end_date,
+                "history_age_days": history_age_days,
+                "history_stale": history_stale,
                 "current_drawdown_ratio": current_dd,
                 "percentile_rank": percentile,
                 "deeper_than_pct": percentile,

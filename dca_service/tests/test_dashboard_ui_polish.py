@@ -299,6 +299,26 @@ def test_dashboard_dca_strategy_uses_structured_reference_cards():
     assert "display: none;" in mobile_css
 
 
+def test_dashboard_drawdown_comparable_shows_peak_and_price_dates():
+    html = _dashboard_html()
+
+    assert "function _formatPeakToPrice(item)" in html
+    assert "item.peak_date" in html
+    assert "item.date" in html
+    assert "peakDate ? ` (${peakDate})` : ''" in html
+    assert "priceDate ? ` (${priceDate})` : ''" in html
+
+
+def test_dashboard_drawdown_context_shows_history_freshness():
+    html = _dashboard_html()
+
+    assert 'id="drawdownHistoryMeta"' in html
+    assert "item.history_end_date" in html
+    assert "item.history_stale" in html
+    assert "History stale: through" in html
+    assert "History through" in html
+
+
 def test_dashboard_history_resync_action_uses_short_mobile_friendly_label():
     html = _dashboard_html()
 

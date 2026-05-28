@@ -1280,6 +1280,7 @@
                                     <div class="drawdown-kicker">Percentile</div>
                                     <strong class="drawdown-large-value" id="drawdownPercentile">--</strong>
                                     <div class="metric-subtext" id="drawdownDeeper">--</div>
+                                    <div class="metric-subtext" id="drawdownHistoryMeta">--</div>
                                     <div class="drawdown-comparable">Recent Comparable</div>
                                     <div><strong id="drawdownComparableDate">--</strong></div>
                                     <div class="drawdown-comparable-range" id="drawdownComparableRange">--</div>
@@ -1872,7 +1873,11 @@
 
         function _formatPeakToPrice(item) {
             if (!item) return '--';
-            return `$${Number(item.peak).toLocaleString(undefined, { maximumFractionDigits: 2 })} -> $${Number(item.price).toLocaleString(undefined, { maximumFractionDigits: 2 })}`;
+            const peakDate = item.peak_date || '';
+            const priceDate = item.date || '';
+            const peakDateLabel = peakDate ? ` (${peakDate})` : '';
+            const priceDateLabel = priceDate ? ` (${priceDate})` : '';
+            return `$${Number(item.peak).toLocaleString(undefined, { maximumFractionDigits: 2 })}${peakDateLabel} -> $${Number(item.price).toLocaleString(undefined, { maximumFractionDigits: 2 })}${priceDateLabel}`;
         }
 
         window.renderDrawdownContextCompact = function renderDrawdownContextCompact(decisionLike) {
@@ -1882,6 +1887,7 @@
             const percentEl = document.getElementById('drawdownPercent');
             const percentileEl = document.getElementById('drawdownPercentile');
             const deeperEl = document.getElementById('drawdownDeeper');
+            const historyMetaEl = document.getElementById('drawdownHistoryMeta');
             const comparableDateEl = document.getElementById('drawdownComparableDate');
             const comparableRangeEl = document.getElementById('drawdownComparableRange');
             const ctx = decisionLike?.drawdown_context;
@@ -1889,6 +1895,7 @@
                 if (drawdownDetailsEl) drawdownDetailsEl.textContent = 'Drawdown context unavailable.';
                 setDashboardTextIfPresent('drawdownPercent', '--');
                 setDashboardTextIfPresent('drawdownPercentile', '--');
+                setDashboardTextIfPresent('drawdownHistoryMeta', '--');
                 setDashboardTextIfPresent('drawdownCompactLabel', `${currentDrawdownMode.toUpperCase()} --`);
                 return;
             }
@@ -1902,6 +1909,10 @@
             const percentText = `${dd.toFixed(2)}%`;
             const percentileText = `P${rank.toFixed(1)}`;
             const deeperText = `(deeper than ${deeper.toFixed(1)}% history)`;
+            const historyEndDate = item.history_end_date || '';
+            const historyText = historyEndDate
+                ? `${item.history_stale ? 'History stale: through' : 'History through'} ${historyEndDate}`
+                : '--';
             const comparableDate = recentComparable ? recentComparable.date : '--';
             const comparableRange = recentComparable ? _formatPeakToPrice(recentComparable) : '--';
 
@@ -1910,11 +1921,13 @@
             if (percentEl) percentEl.textContent = percentText;
             if (percentileEl) percentileEl.textContent = percentileText;
             if (deeperEl) deeperEl.textContent = deeperText;
+            if (historyMetaEl) historyMetaEl.textContent = historyText;
             if (comparableDateEl) comparableDateEl.textContent = comparableDate;
             if (comparableRangeEl) comparableRangeEl.textContent = comparableRange;
             if (drawdownDetailsEl) {
                 drawdownDetailsEl.innerHTML = `
                 <div><strong>${name}</strong> Drawdown: ${dd.toFixed(2)}% | Percentile: P${rank.toFixed(1)} (deeper than ${deeper.toFixed(1)}% history)</div>
+                <div class="mt-1">${historyText}</div>
                 <div class="mt-1">Recent Comparable: ${recentComparable ? recentComparable.date : '--'} (${_formatPeakToPrice(recentComparable)})</div>
             `;
             }
