@@ -5,16 +5,15 @@ and integration with DCA engine.
 Merged from: test_metrics.py, test_metrics_pluggable.py, test_metrics_source_and_transactions.py
 """
 import pytest
-from unittest.mock import patch, mock_open, MagicMock
+from unittest.mock import patch
 from datetime import datetime, timedelta, timezone
-from pathlib import Path
 from sqlmodel import Session
 
 from dca_service.services.metrics_provider import (
     CsvMetricsBackend,
     RealtimeMetricsBackend,
     get_latest_metrics,
-    Metrics,
+    get_drawdown_context,
     COL_DATE, COL_PRICE, COL_AHR999
 )
 from dca_service.config import settings
@@ -122,6 +121,49 @@ def test_csv_backend_missing_columns(tmp_path):
     # Should raise error due to missing columns
     with pytest.raises((KeyError, ValueError)):
         backend.get_latest_metrics()
+
+
+def test_drawdown_context_includes_rolling_peak_date(tmp_path):
+    """Rolling drawdown context should identify when the peak happened."""
+    p = tmp_path / "metrics.csv"
+    p.write_text(
+        f"{COL_DATE},{COL_PRICE},{COL_AHR999}\n"
+        "2025-10-05,100.0,1.0\n"
+        "2025-10-06,125.0,1.1\n"
+        "2026-05-26,75.0,0.5\n",
+        encoding="utf-8",
+    )
+    settings.METRICS_CSV_PATH = str(p)
+
+    context = get_drawdown_context(73.5)
+
+    assert context is not None
+    assert context["365d"]["current_peak"] == 125.0
+    assert context["365d"]["current_peak_date"] == "2025-10-06"
+    assert context["365d"]["recent_comparable"]["date"] == "2026-05-26"
+    assert context["365d"]["recent_comparable"]["peak"] == 125.0
+    assert context["365d"]["recent_comparable"]["peak_date"] == "2025-10-06"
+
+
+def test_drawdown_context_marks_stale_history_snapshot(tmp_path):
+    """Drawdown context should expose the historical CSV freshness."""
+    p = tmp_path / "metrics.csv"
+    p.write_text(
+        f"{COL_DATE},{COL_PRICE},{COL_AHR999}\n"
+        "2020-01-01,100.0,1.0\n"
+        "2020-01-02,125.0,1.1\n"
+        "2020-01-03,75.0,0.5\n",
+        encoding="utf-8",
+    )
+    settings.METRICS_CSV_PATH = str(p)
+    settings.METRICS_MAX_AGE_HOURS = 48
+
+    context = get_drawdown_context(75.0)
+
+    assert context is not None
+    assert context["365d"]["history_end_date"] == "2020-01-03"
+    assert context["365d"]["history_stale"] is True
+    assert context["365d"]["history_age_days"] >= 1
 
 # ============================================================================
 # REALTIME BACKEND TESTS
