@@ -2710,8 +2710,18 @@
                         statusEl.textContent = `Call: ${decision}`;
                     }
                 }
-                setAddPositionActionMode('buy');
-                notyf.success('Advice ready. Click Buy to confirm.');
+                const actionCode = payload?.guidance?.action_code;
+                if (actionCode === 'NO_BUY') {
+                    setAddPositionActionMode('advice');
+                    const hint = document.getElementById('addPositionActionHint');
+                    if (hint) {
+                        hint.textContent = 'Advice says no buy right now.';
+                    }
+                    notyf.success('Advice ready: no buy right now.');
+                } else {
+                    setAddPositionActionMode('buy');
+                    notyf.success('Advice ready. Click Buy to confirm.');
+                }
             } catch (error) {
                 console.error('Failed to run add-position advice:', error);
                 if (statusEl) statusEl.textContent = 'Guidance request failed.';
