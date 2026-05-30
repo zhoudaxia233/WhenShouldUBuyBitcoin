@@ -1654,12 +1654,7 @@
             ) {
                 const todayIso = new Date().toISOString();
                 const walletValue = latestWalletSummary.total_btc * latestWalletSummary.current_price;
-                const walletInvested = (
-                    Number.isFinite(latestWalletSummary.hot_wallet_avg_price) &&
-                    latestWalletSummary.hot_wallet_avg_price > 0
-                )
-                    ? latestWalletSummary.total_btc * latestWalletSummary.hot_wallet_avg_price
-                    : (performanceInvested[performanceInvested.length - 1] || 0);
+                const walletInvested = performanceInvested[performanceInvested.length - 1] || 0;
                 const lastIdx = performanceLabels.length - 1;
                 const lastKey = lastIdx >= 0 ? performanceDateKey(performanceLabels[lastIdx]) : null;
                 const todayKey = performanceDateKey(todayIso);
