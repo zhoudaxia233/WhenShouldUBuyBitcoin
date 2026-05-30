@@ -79,6 +79,48 @@ def test_stats_pnl(client: TestClient, session: Session):
     assert data["value"][1] == 3000.0
 
 
+def test_stats_pnl_uses_effective_execution_fields_and_current_price_point(
+    client: TestClient,
+    session: Session,
+):
+    tx = DCATransaction(
+        status="SUCCESS",
+        fiat_amount=100.0,
+        btc_amount=0.001,
+        price=100000.0,
+        ahr999=0.5,
+        notes="Live buy with legacy intent fields",
+        timestamp=datetime.now(timezone.utc) - timedelta(days=2),
+        executed_amount_usd=50.0,
+        executed_amount_btc=0.001,
+        avg_execution_price_usd=50000.0,
+    )
+    session.add(tx)
+    session.commit()
+
+    tx_day = tx.timestamp.date().isoformat()
+    today = datetime.now(timezone.utc).date().isoformat()
+    with patch(
+        "dca_service.api.stats_api._build_market_price_series",
+        return_value=([tx_day, today], [50000.0, 80000.0], [50000.0, 50000.0]),
+    ):
+        response = client.get("/api/stats/pnl")
+
+    assert response.status_code == 200
+    data = response.json()
+
+    assert data["invested"][0] == 50.0
+    assert data["value"][0] == 50.0
+    assert data["avg_price"][0] == 50000.0
+    assert data["prices"][0] == 50000.0
+    assert data["purchase_usd"][0] == 50.0
+    assert data["purchase_btc"][0] == 0.001
+
+    assert data["performance_dates"] == [tx_day, today]
+    assert data["performance_invested"][-1] == 50.0
+    assert data["performance_value"][-1] == 80.0
+
+
 def test_trading_style_analysis_aggregates_split_fills(client: TestClient, session: Session):
     tx1 = DCATransaction(
         status="SUCCESS",

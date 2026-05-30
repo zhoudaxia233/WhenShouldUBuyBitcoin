@@ -1626,8 +1626,61 @@
             if (el) el.className = value;
         }
 
+        function performanceDateKey(value) {
+            const date = new Date(value);
+            if (!Number.isNaN(date.getTime())) {
+                return date.toISOString().slice(0, 10);
+            }
+            return String(value || '').slice(0, 10);
+        }
+
+        function buildPerformanceChartSeries(data) {
+            const performanceLabels = Array.isArray(data.performance_dates) && data.performance_dates.length > 0
+                ? [...data.performance_dates]
+                : [...(Array.isArray(data.dates) ? data.dates : [])];
+            const performanceInvested = Array.isArray(data.performance_invested) && data.performance_invested.length > 0
+                ? [...data.performance_invested]
+                : [...(Array.isArray(data.invested) ? data.invested : [])];
+            const performanceValue = Array.isArray(data.performance_value) && data.performance_value.length > 0
+                ? [...data.performance_value]
+                : [...(Array.isArray(data.value) ? data.value : [])];
+
+            if (
+                latestWalletSummary &&
+                Number.isFinite(latestWalletSummary.current_price) &&
+                latestWalletSummary.current_price > 0 &&
+                Number.isFinite(latestWalletSummary.total_btc) &&
+                latestWalletSummary.total_btc > 0
+            ) {
+                const todayIso = new Date().toISOString();
+                const walletValue = latestWalletSummary.total_btc * latestWalletSummary.current_price;
+                const walletInvested = (
+                    Number.isFinite(latestWalletSummary.hot_wallet_avg_price) &&
+                    latestWalletSummary.hot_wallet_avg_price > 0
+                )
+                    ? latestWalletSummary.total_btc * latestWalletSummary.hot_wallet_avg_price
+                    : (performanceInvested[performanceInvested.length - 1] || 0);
+                const lastIdx = performanceLabels.length - 1;
+                const lastKey = lastIdx >= 0 ? performanceDateKey(performanceLabels[lastIdx]) : null;
+                const todayKey = performanceDateKey(todayIso);
+
+                if (lastKey === todayKey && lastIdx >= 0) {
+                    performanceLabels[lastIdx] = todayIso;
+                    performanceInvested[lastIdx] = walletInvested;
+                    performanceValue[lastIdx] = walletValue;
+                } else {
+                    performanceLabels.push(todayIso);
+                    performanceInvested.push(walletInvested);
+                    performanceValue.push(walletValue);
+                }
+            }
+
+            return { performanceLabels, performanceInvested, performanceValue };
+        }
+
         function renderChart(data) {
-            if (data.dates.length === 0) return;
+            const { performanceLabels, performanceInvested, performanceValue } = buildPerformanceChartSeries(data);
+            if (performanceLabels.length === 0) return;
             const isMobileViewport = window.matchMedia('(max-width: 575px)').matches;
 
             const ctx = document.getElementById('pnlChart').getContext('2d');
@@ -1639,11 +1692,11 @@
             pnlChartInstance = new Chart(ctx, {
                 type: 'line',
                 data: {
-                    labels: data.dates.map(d => new Date(d).toLocaleDateString()),
+                    labels: performanceLabels.map(d => new Date(d).toLocaleDateString()),
                     datasets: [
                         {
                             label: 'Invested Capital',
-                            data: data.invested,
+                            data: performanceInvested,
                             borderColor: '#6c757d',
                             backgroundColor: 'rgba(108, 117, 125, 0.1)',
                             fill: true,
@@ -1653,7 +1706,7 @@
                         },
                         {
                             label: 'Portfolio Value',
-                            data: data.value,
+                            data: performanceValue,
                             borderColor: '#28a745',
                             backgroundColor: 'rgba(40, 167, 69, 0.1)',
                             fill: true,
@@ -2127,6 +2180,7 @@
                     latestWalletSummary = cachedWallet.data;
                     updateWalletBalanceUI(cachedWallet.data);
                     if (latestStatsPnlData) {
+                        renderChart(latestStatsPnlData);
                         updateSaylorSummary(latestStatsPnlData);
                     }
                     return;
@@ -2136,6 +2190,7 @@
                     updateWalletBalanceUI(cachedWallet.data);
                     latestWalletSummary = cachedWallet.data;
                     if (latestStatsPnlData) {
+                        renderChart(latestStatsPnlData);
                         updateSaylorSummary(latestStatsPnlData);
                     }
                 }
@@ -2148,6 +2203,7 @@
 
                 updateWalletBalanceUI(walletData);
                 if (latestStatsPnlData) {
+                    renderChart(latestStatsPnlData);
                     updateSaylorSummary(latestStatsPnlData);
                 }
             } catch (error) {
