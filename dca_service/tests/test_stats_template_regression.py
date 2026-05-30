@@ -274,6 +274,20 @@ def test_performance_chart_uses_dedicated_performance_series():
     assert "renderChart(latestStatsPnlData);" in html
 
 
+def test_performance_chart_does_not_reprice_invested_capital_from_wallet_avg_cost():
+    html = _load_stats_template()
+    chart_series_match = re.search(
+        r"function buildPerformanceChartSeries\(data\) \{(?P<body>[\s\S]*?)\n        \}\n\n        function renderChart",
+        html,
+    )
+    assert chart_series_match is not None
+    chart_series_body = chart_series_match.group("body")
+
+    assert "latestWalletSummary.total_btc * latestWalletSummary.hot_wallet_avg_price" not in chart_series_body
+    assert "const walletInvested = performanceInvested[performanceInvested.length - 1] || 0;" in chart_series_body
+    assert "performanceValue.push(walletValue);" in chart_series_body
+
+
 def test_trading_style_supports_language_toggle_and_language_aware_request():
     html = _load_stats_template()
     assert 'id="tradingStyleLangEn"' in html

@@ -1,6 +1,6 @@
 [project]
 name = "whenshouldubuybitcoin"
-version = "0.1.36"
+version = "0.1.37"
 description = ""
 authors = [
     {name = "Your Name",email = "you@example.com"}
