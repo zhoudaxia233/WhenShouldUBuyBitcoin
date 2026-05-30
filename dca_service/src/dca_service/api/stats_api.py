@@ -636,6 +636,48 @@ def _build_market_price_series(
         return tx_dates, tx_prices, tx_avg_prices
 
 
+def _build_performance_series(
+    market_dates: List[str],
+    market_prices: List[float],
+    tx_dates: List[str],
+    tx_invested: List[float],
+    tx_value: List[float],
+    tx_btc_balance: List[float],
+) -> Tuple[List[str], List[float], List[float]]:
+    """
+    Build chart-ready portfolio performance points from market prices.
+
+    Transaction arrays remain order-level data for purchase markers. This series
+    carries the latest cumulative invested capital and BTC balance across each
+    market date so the Performance chart reflects market movement between buys.
+    """
+    tx_states = sorted(
+        (date[:10], invested, btc_balance)
+        for date, invested, btc_balance in zip(tx_dates, tx_invested, tx_btc_balance)
+    )
+    if not market_dates or not market_prices or not tx_states:
+        return tx_dates, tx_invested, tx_value
+
+    performance_dates: List[str] = []
+    performance_invested: List[float] = []
+    performance_value: List[float] = []
+    tx_idx = 0
+    running_invested = 0.0
+    running_btc = 0.0
+
+    for date_str, price in zip(market_dates, market_prices):
+        date_key = date_str[:10]
+        while tx_idx < len(tx_states) and tx_states[tx_idx][0] <= date_key:
+            _, running_invested, running_btc = tx_states[tx_idx]
+            tx_idx += 1
+
+        performance_dates.append(date_str)
+        performance_invested.append(running_invested)
+        performance_value.append(running_btc * price)
+
+    return performance_dates, performance_invested, performance_value
+
+
 
 
 
@@ -865,18 +907,15 @@ def get_pnl_data(
     cumulative_fees = 0.0
     
     for tx in txs:
-        cumulative_btc += (tx.btc_amount or 0.0)
-        cumulative_cost += (tx.fiat_amount or 0.0)
+        amount_btc = _effective_btc_amount(tx)
+        amount_usd = _effective_fiat_amount(tx)
+        current_price = _effective_price(tx)
+
+        cumulative_btc += amount_btc
+        cumulative_cost += amount_usd
         
         # Add fees (approximate USD value for BTC fees)
-        fee_amount = tx.fee_amount or 0.0
-        fee_asset = tx.fee_asset or "USDC"
-        if fee_asset == "BTC":
-            cumulative_fees += fee_amount * (tx.price or 0.0)
-        else:
-            cumulative_fees += fee_amount
-        
-        current_price = tx.price or 0.0
+        cumulative_fees += _fee_to_usd(tx, current_price)
         current_value = cumulative_btc * current_price
         
         avg_price = cumulative_cost / cumulative_btc if cumulative_btc > 0 else 0.0
@@ -889,8 +928,8 @@ def get_pnl_data(
             "avg_price": avg_price,
             "fees": cumulative_fees,
             "current_price": current_price,
-            "purchase_btc": tx.btc_amount or 0.0,
-            "purchase_usd": tx.fiat_amount or 0.0,
+            "purchase_btc": amount_btc,
+            "purchase_usd": amount_usd,
         })
 
     tx_dates = [d["date"] for d in data]
@@ -902,20 +941,34 @@ def get_pnl_data(
         tx_prices=tx_prices,
         tx_avg_prices=tx_avg_prices,
     )
+    tx_invested = [d["invested"] for d in data]
+    tx_value = [d["value"] for d in data]
+    tx_btc_balance = [d["btc_balance"] for d in data]
+    performance_dates, performance_invested, performance_value = _build_performance_series(
+        market_dates=market_dates,
+        market_prices=market_prices,
+        tx_dates=tx_dates,
+        tx_invested=tx_invested,
+        tx_value=tx_value,
+        tx_btc_balance=tx_btc_balance,
+    )
         
     return {
         "dates": tx_dates,
-        "invested": [d["invested"] for d in data],
-        "value": [d["value"] for d in data],
+        "invested": tx_invested,
+        "value": tx_value,
         "avg_price": tx_avg_prices,
         "fees": [d["fees"] for d in data],
         "prices": tx_prices,
         "purchase_btc": [d["purchase_btc"] for d in data],
         "purchase_usd": [d["purchase_usd"] for d in data],
-        "btc_balance": [d["btc_balance"] for d in data],
+        "btc_balance": tx_btc_balance,
         "market_dates": market_dates,
         "market_prices": market_prices,
         "avg_price_timeline": avg_price_timeline,
+        "performance_dates": performance_dates,
+        "performance_invested": performance_invested,
+        "performance_value": performance_value,
     }
 
 

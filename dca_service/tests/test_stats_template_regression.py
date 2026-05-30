@@ -263,6 +263,17 @@ def test_performance_chart_has_mobile_safe_wrapper_and_legend_config():
     assert "display: !isMobileViewport" in html
 
 
+def test_performance_chart_uses_dedicated_performance_series():
+    html = _load_stats_template()
+    assert "function buildPerformanceChartSeries(data)" in html
+    assert "const performanceLabels = Array.isArray(data.performance_dates)" in html
+    assert "data: performanceInvested" in html
+    assert "data: performanceValue" in html
+    assert "latestWalletSummary.current_price" in html
+    assert "latestWalletSummary.hot_wallet_avg_price" in html
+    assert "renderChart(latestStatsPnlData);" in html
+
+
 def test_trading_style_supports_language_toggle_and_language_aware_request():
     html = _load_stats_template()
     assert 'id="tradingStyleLangEn"' in html
