@@ -929,12 +929,25 @@
                 line-height: 1.2;
             }
             .strategy-advanced-summary {
-                display: block;
+                display: flex;
+                flex-wrap: wrap;
+                gap: 0.28rem;
                 margin-top: 0.16rem;
                 color: var(--dashboard-muted);
                 font-size: 0.7rem;
                 font-weight: 650;
                 line-height: 1.25;
+            }
+            .strategy-advanced-chip {
+                display: inline-flex;
+                align-items: center;
+                min-height: 20px;
+                border: 1px solid var(--dashboard-border);
+                border-radius: 999px;
+                background: var(--dashboard-bg);
+                color: var(--dashboard-muted);
+                padding: 0.12rem 0.42rem;
+                white-space: nowrap;
             }
             .strategy-advanced-body {
                 padding: 0 0.5rem 0.5rem;
@@ -1230,7 +1243,11 @@
                     <div class="strategy-advanced-header" role="button" tabindex="0" data-strategy-accordion-toggle aria-expanded="false" aria-controls="strategyAdvancedBody">
                         <div class="strategy-advanced-title">
                             <strong>Advanced</strong>
-                            <span class="strategy-advanced-summary">Status · Drawdown Context · Bottoming Checklist</span>
+                            <span class="strategy-advanced-summary" aria-label="Advanced sections">
+                                <span class="strategy-advanced-chip">Status</span>
+                                <span class="strategy-advanced-chip">Drawdown Context</span>
+                                <span class="strategy-advanced-chip">Bottoming Checklist</span>
+                            </span>
                         </div>
                         <span class="strategy-card-collapse-toggle" aria-hidden="true">
                             <i class="bi bi-chevron-down"></i>
@@ -2071,13 +2088,15 @@
                 const statusClass = tx.status === 'SUCCESS' ? 'bg-success' : 
                                   tx.status === 'FAILED' ? 'bg-danger' : 'bg-secondary';
                 
-                // Source badge - SIMULATED (gray), DCA (green), MANUAL (SatsFlow accent)
+                // Source badge - SIMULATED (gray), DCA (green), EXTRA BUY/MANUAL (SatsFlow accent)
                 const source = tx.source || 'SIMULATED';
                 let sourceBadge = '';
                 if (source === 'SIMULATED') {
                     sourceBadge = '<span class="badge bg-secondary status-badge">SIMULATED</span>';
                 } else if (source === 'DCA') {
                     sourceBadge = '<span class="badge bg-success status-badge">DCA</span>';
+                } else if (source === 'EXTRA BUY') {
+                    sourceBadge = '<span class="badge satsflow-info-badge status-badge">EXTRA BUY</span>';
                 } else if (source === 'MANUAL') {
                     sourceBadge = '<span class="badge satsflow-info-badge status-badge">MANUAL</span>';
                 } else {

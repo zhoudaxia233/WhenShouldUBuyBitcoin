@@ -29,6 +29,18 @@ def _source_restore_priority(source: str | None) -> int:
     return 0
 
 
+def _transaction_display_source_and_type(tx: DCATransaction) -> tuple[str, str]:
+    if tx.source == "SIMULATED":
+        return "SIMULATED", "DCA"
+    if tx.source == "DCA":
+        return "DCA", "DCA"
+    if tx.source == "BINANCE" and bool(tx.is_manual):
+        return "EXTRA BUY", "MANUAL"
+    if bool(tx.is_manual):
+        return "MANUAL", "MANUAL"
+    return "DCA", "DCA"
+
+
 def _build_order_metadata_snapshot(session: Session) -> Dict[int, Dict[str, Any]]:
     """
     Snapshot metadata that Binance re-sync cannot reconstruct, keyed by order_id.
@@ -341,16 +353,7 @@ async def read_transactions(
     unified_list = []
     
     for tx in transactions:
-        # Determine badge
-        if tx.is_manual:
-            badge = "MANUAL"
-            tx_type = "MANUAL"
-        elif tx.source == "SIMULATED":
-            badge = "SIMULATED"
-            tx_type = "DCA"
-        else:
-            badge = "DCA"
-            tx_type = "DCA"
+        badge, tx_type = _transaction_display_source_and_type(tx)
             
         # Ensure timestamp is timezone-aware
         tx_timestamp = tx.timestamp
