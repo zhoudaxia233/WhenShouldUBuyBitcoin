@@ -646,7 +646,8 @@ def test_add_position_advice_uses_split_fill_merged_behavior_events(client: Test
     assert payload["guidance"]["final_call"]
     assert payload["guidance"]["call_reason"]
     assert payload["guidance"]["analysis_text"]
-    assert "Call:" in payload["guidance"]["analysis_text"]
+    assert "Strategy check:" in payload["guidance"]["analysis_text"]
+    assert "Call:" not in payload["guidance"]["analysis_text"]
     assert "Do now:" in payload["guidance"]["analysis_text"]
     assert "Short reason:" in payload["guidance"]["analysis_text"]
     assert payload["guidance"]["method_constraints"]["no_hindsight"]
@@ -1074,6 +1075,8 @@ def test_add_position_confirm_records_simulated_buy_transaction(client: TestClie
     assert payload["transaction"]["fiat_amount"] == 120.0
     assert payload["transaction"]["price"] == 60000.0
     assert payload["transaction"]["btc_amount"] == 0.002
+    assert "Extra Buy confirmed after strategy check" in payload["transaction"]["notes"]
+    assert "Add Position" not in payload["transaction"]["notes"]
     assert mock_email_task.call_count == 1
 
 
@@ -1122,6 +1125,8 @@ def test_add_position_confirm_executes_live_mode_when_strategy_is_live(client: T
     assert payload["transaction"]["binance_order_id"] == 99887766
     assert payload["transaction"]["executed_amount_btc"] == 0.00195
     assert payload["transaction"]["fee_amount"] == 0.04
+    assert "Extra Buy confirmed after strategy check" in payload["transaction"]["notes"]
+    assert "Add Position" not in payload["transaction"]["notes"]
 
 
 def test_add_position_advice_deep_value_regime_does_not_auto_discourage_large_size(client: TestClient, session: Session):
@@ -1196,7 +1201,7 @@ def test_add_position_advice_deep_value_regime_does_not_auto_discourage_large_si
     assert payload["guidance"]["risk_level"] in {"low", "medium"}
     assert payload["guidance"]["final_call"].startswith("BUY ")
     assert "deep pullback zone" in payload["guidance"]["analysis_text"].lower()
-    assert "call: buy " in payload["guidance"]["analysis_text"].lower()
+    assert "strategy check: buy " in payload["guidance"]["analysis_text"].lower()
 
 
 def test_add_position_advice_sideways_dense_dca_waits_without_takeoff_macro(client: TestClient, session: Session):
