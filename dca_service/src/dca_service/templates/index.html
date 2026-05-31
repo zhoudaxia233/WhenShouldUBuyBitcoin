@@ -1217,7 +1217,7 @@
                     </div>
                     <div class="strategy-metric">
                         <div class="strategy-metric-content">
-                            <div class="strategy-label mb-3">Suggested Action</div>
+                            <div class="strategy-label mb-3">Next Scheduled Action</div>
                             <div class="strategy-value-row">
                                 <div class="strategy-value strategy-action" id="previewAction">--</div>
                                 <span class="strategy-action-coin" aria-hidden="true">₿</span>
@@ -1327,7 +1327,7 @@
 
                 <div class="strategy-actions">
                     <button id="openAddPositionBtn" class="btn btn-dashboard-accent" disabled data-bs-toggle="modal" data-bs-target="#addPositionModal">
-                        Add Position
+                        Extra Buy
                     </button>
                 </div>
             </div>
@@ -1555,9 +1555,9 @@
                 if (previewActionEl && typeof preview.can_execute === 'boolean') {
                     let actionText = '--';
                     if (preview.can_execute && suggestedAmount !== null) {
-                        actionText = `BUY $${suggestedAmount.toFixed(2)}`;
+                        actionText = `Will buy $${suggestedAmount.toFixed(2)}`;
                     } else if (!preview.can_execute) {
-                        actionText = 'WAIT';
+                        actionText = 'Will wait';
                     }
                     previewActionEl.textContent = actionText;
                     setDashboardTextIfPresent('mobilePreviewAction', actionText);
@@ -1626,15 +1626,18 @@
         </div>
     </div>
 
-    <!-- Add Position Advisory Modal -->
+    <!-- Extra buy strategy-check modal -->
     <div class="modal fade" id="addPositionModal" tabindex="-1" aria-labelledby="addPositionModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-lg modal-dialog-scrollable">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="addPositionModalLabel">Add Position</h5>
+                    <h5 class="modal-title" id="addPositionModalLabel">Extra BTC Buy</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
+                    <div class="alert alert-satsflow small">
+                        One-time buy outside your DCA schedule.
+                    </div>
                     <form id="addPositionForm" class="row g-3">
                         <div class="col-md-6">
                             <label for="addPositionUsdcInput" class="form-label">USDC Amount</label>
@@ -1653,17 +1656,17 @@
                             <div class="small text-muted" id="addPositionBtcEstimate">Estimated BTC: --</div>
                         </div>
                         <div class="col-12 d-grid d-md-flex justify-content-md-end">
-                            <button id="addPositionAnalyzeBtn" type="submit" class="btn btn-primary">Generate Advice</button>
+                            <button id="addPositionAnalyzeBtn" type="submit" class="btn btn-primary">Check Strategy</button>
                         </div>
                         <div class="col-12">
                             <div class="small text-muted" id="addPositionActionHint">
-                                Review advice first. Then this button will switch to Buy.
+                                Check the current strategy first. Then this button will switch to confirm the extra buy.
                             </div>
                         </div>
                     </form>
                     <hr>
                     <div class="mb-2 small text-muted" id="addPositionAdviceStatus">Waiting for inputs.</div>
-                    <pre id="addPositionAdviceText" class="small mb-0 p-3 border rounded bg-body-tertiary" style="white-space: pre-wrap; min-height: 210px;">No advice yet.</pre>
+                    <pre id="addPositionAdviceText" class="small mb-0 p-3 border rounded bg-body-tertiary" style="white-space: pre-wrap; min-height: 210px;">No strategy check yet.</pre>
                 </div>
             </div>
         </div>
@@ -2396,8 +2399,8 @@
             document.getElementById('previewBand').textContent = bandText;
             setDashboardTextIfPresent('mobilePreviewBand', bandText);
             const actionText = decision.can_execute
-                ? `BUY $${decision.suggested_amount_usd.toFixed(2)}` 
-                : 'WAIT';
+                ? `Will buy $${decision.suggested_amount_usd.toFixed(2)}`
+                : 'Will wait';
             document.getElementById('previewAction').textContent = actionText;
             setDashboardTextIfPresent('mobilePreviewAction', actionText);
             
@@ -2490,7 +2493,7 @@
                     trigger: 'hover'
                 });
             }
-            // Update Add Position Button State
+            // Update extra buy button state
             const addPositionBtn = document.getElementById('openAddPositionBtn');
             const warningBox = document.getElementById('metricsWarning');
             if (addPositionBtn && warningBox) {
@@ -2501,7 +2504,7 @@
                 } else {
                     warningBox.classList.add('d-none');
                     addPositionBtn.disabled = false;
-                    addPositionBtn.textContent = 'Add Position';
+                    addPositionBtn.textContent = 'Extra Buy';
                 }
             }
 
@@ -2624,18 +2627,18 @@
             if (!btn) return;
 
             if (addPositionActionMode === 'buy') {
-                btn.textContent = 'Buy (Confirm)';
+                btn.textContent = 'Confirm Extra Buy';
                 btn.classList.remove('btn-primary');
                 btn.classList.add('btn-success');
                 if (hint) {
-                    hint.textContent = 'Advice generated. Click Buy to confirm this add position.';
+                    hint.textContent = 'Strategy check complete. Confirm this one-time extra buy.';
                 }
             } else {
-                btn.textContent = 'Generate Advice';
+                btn.textContent = 'Check Strategy';
                 btn.classList.remove('btn-success');
                 btn.classList.add('btn-primary');
                 if (hint) {
-                    hint.textContent = 'Review advice first. Then this button will switch to Buy.';
+                    hint.textContent = 'Check the current strategy first. Then this button will switch to confirm the extra buy.';
                 }
             }
         }
@@ -2693,9 +2696,9 @@
 
             if (submitBtn) {
                 submitBtn.disabled = true;
-                submitBtn.textContent = 'Generating...';
+                submitBtn.textContent = 'Checking...';
             }
-            if (statusEl) statusEl.textContent = 'Running add-position guidance...';
+            if (statusEl) statusEl.textContent = 'Checking the current strategy for this extra buy...';
 
             try {
                 const response = await fetch('/api/stats/add-position/advice', {
@@ -2709,7 +2712,7 @@
                 });
                 const payload = await response.json();
                 if (!response.ok) {
-                    throw new Error('Advice request failed');
+                    throw new Error('Strategy check request failed');
                 }
 
                 const guidanceText = payload?.guidance?.analysis_text || 'No guidance returned.';
@@ -2717,10 +2720,10 @@
                 if (statusEl) {
                     const finalCall = payload?.guidance?.final_call;
                     if (finalCall) {
-                        statusEl.textContent = `Call: ${finalCall}`;
+                        statusEl.textContent = `Strategy check: ${finalCall}`;
                     } else {
                         const decision = payload?.guidance?.decision || 'UNKNOWN';
-                        statusEl.textContent = `Call: ${decision}`;
+                        statusEl.textContent = `Strategy check: ${decision}`;
                     }
                 }
                 const actionCode = payload?.guidance?.action_code;
@@ -2728,25 +2731,25 @@
                     setAddPositionActionMode('advice');
                     const hint = document.getElementById('addPositionActionHint');
                     if (hint) {
-                        hint.textContent = 'Advice says no buy right now.';
+                        hint.textContent = 'Strategy check says no extra buy right now.';
                     }
-                    notyf.success('Advice ready: no buy right now.');
+                    notyf.success('Strategy check ready: no extra buy right now.');
                 } else {
                     setAddPositionActionMode('buy');
-                    notyf.success('Advice ready. Click Buy to confirm.');
+                    notyf.success('Strategy check ready. Confirm the extra buy to continue.');
                 }
             } catch (error) {
-                console.error('Failed to run add-position advice:', error);
-                if (statusEl) statusEl.textContent = 'Guidance request failed.';
-                if (textEl) textEl.textContent = 'Unable to generate guidance right now. Please try again later or ask an admin to check diagnostics.';
-                notyf.error('Add-position advice failed');
+                console.error('Failed to run extra-buy strategy check:', error);
+                if (statusEl) statusEl.textContent = 'Strategy check failed.';
+                if (textEl) textEl.textContent = 'Unable to check the strategy right now. Please try again later or ask an admin to check diagnostics.';
+                notyf.error('Extra buy strategy check failed');
             } finally {
                 if (submitBtn) {
                     submitBtn.disabled = false;
                     if (addPositionActionMode === 'buy') {
-                        submitBtn.textContent = 'Buy (Confirm)';
+                        submitBtn.textContent = 'Confirm Extra Buy';
                     } else {
-                        submitBtn.textContent = 'Generate Advice';
+                        submitBtn.textContent = 'Check Strategy';
                     }
                 }
             }
@@ -2781,7 +2784,7 @@
                         amount_usdc: amount,
                         price_usd: price,
                         symbol: 'BTCUSDC',
-                        notes: 'Add Position confirmed after advice'
+                        notes: 'Extra Buy confirmed after strategy check'
                     })
                 });
                 const payload = await response.json();
@@ -2867,7 +2870,7 @@
             if (addPositionModalEl) {
                 addPositionModalEl.addEventListener('shown.bs.modal', async () => {
                     if (adviceStatus) adviceStatus.textContent = 'Loading realtime BTC price...';
-                    if (adviceText) adviceText.textContent = 'No advice yet.';
+                    if (adviceText) adviceText.textContent = 'No strategy check yet.';
                     if (amountInput) amountInput.value = '';
                     setAddPositionActionMode('advice');
                     await fetchRealtimePriceForAddPosition();
