@@ -223,10 +223,8 @@ def test_dashboard_dca_strategy_uses_structured_reference_cards():
     assert 'class="strategy-advanced-panel mobile-collapsible is-collapsed mb-3"' in html
     assert 'class="strategy-advanced-header" role="button" tabindex="0" data-strategy-accordion-toggle aria-expanded="false" aria-controls="strategyAdvancedBody"' in html
     assert "<strong>Advanced</strong>" in html
-    assert "Status · Drawdown Context · Bottoming Checklist" not in html
-    assert 'class="strategy-advanced-summary" aria-label="Advanced sections"' in html
-    for label in ["Status", "Drawdown Context", "Bottoming Checklist"]:
-        assert f'<span class="strategy-advanced-chip">{label}</span>' in html
+    assert '<span class="strategy-advanced-summary">Status · Drawdown Context · Bottoming Checklist</span>' in html
+    assert "strategy-advanced-chip" not in html
     assert 'class="strategy-advanced-body strategy-card-grid" id="strategyAdvancedBody"' in html
     assert 'class="dashboard-info-panel strategy-detail-card strategy-status-card mobile-collapsible is-collapsed"' in html
     assert 'class="strategy-detail-card-header" role="button" tabindex="0" data-strategy-accordion-toggle aria-expanded="false" aria-controls="strategyStatusBody"' in html
@@ -282,7 +280,6 @@ def test_dashboard_dca_strategy_uses_structured_reference_cards():
     assert "font-family: var(--bs-body-font-family);" in html
     assert ".strategy-card-collapse-toggle {" in mobile_css
     assert ".strategy-advanced-header {" in mobile_css
-    assert ".strategy-advanced-chip {" in mobile_css
     assert ".strategy-advanced-panel.is-collapsed .strategy-advanced-body {" in mobile_css
     assert "display: none;" in mobile_css
     assert ".strategy-advanced-panel:not(.is-collapsed) .strategy-advanced-body {" in mobile_css
