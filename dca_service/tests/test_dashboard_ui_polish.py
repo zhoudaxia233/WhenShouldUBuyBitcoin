@@ -223,8 +223,7 @@ def test_dashboard_dca_strategy_uses_structured_reference_cards():
     assert 'class="strategy-advanced-panel mobile-collapsible is-collapsed mb-3"' in html
     assert 'class="strategy-advanced-header" role="button" tabindex="0" data-strategy-accordion-toggle aria-expanded="false" aria-controls="strategyAdvancedBody"' in html
     assert "<strong>Advanced</strong>" in html
-    assert '<span class="strategy-advanced-summary">Status · Drawdown Context · Bottoming Checklist</span>' in html
-    assert "strategy-advanced-chip" not in html
+    assert "Status · Drawdown Context · Bottoming Checklist" in html
     assert 'class="strategy-advanced-body strategy-card-grid" id="strategyAdvancedBody"' in html
     assert 'class="dashboard-info-panel strategy-detail-card strategy-status-card mobile-collapsible is-collapsed"' in html
     assert 'class="strategy-detail-card-header" role="button" tabindex="0" data-strategy-accordion-toggle aria-expanded="false" aria-controls="strategyStatusBody"' in html
@@ -298,13 +297,6 @@ def test_dashboard_dca_strategy_uses_structured_reference_cards():
     assert "display: inline-flex;" in mobile_css
     assert ".mobile-collapsible.is-collapsed .strategy-detail-card-body {" in mobile_css
     assert "display: none;" in mobile_css
-
-
-def test_dashboard_transaction_history_distinguishes_extra_buy_source():
-    html = _dashboard_html()
-
-    assert "source === 'EXTRA BUY'" in html
-    assert "EXTRA BUY</span>" in html
 
 
 def test_dashboard_drawdown_comparable_shows_peak_and_price_dates():

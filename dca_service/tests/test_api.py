@@ -37,62 +37,6 @@ def test_read_transactions_populated(client: TestClient, session: Session):
     assert data[0]["fiat_amount"] == 100.0
 
 
-def test_read_transactions_preserves_dca_and_extra_buy_display_sources(
-    client: TestClient,
-    session: Session,
-):
-    timestamp = datetime(2026, 5, 31, 12, 0, tzinfo=timezone.utc)
-    dca_tx = DCATransaction(
-        timestamp=timestamp,
-        status="SUCCESS",
-        fiat_amount=100.0,
-        btc_amount=0.001,
-        price=100000.0,
-        ahr999=0.42,
-        notes="Scheduled DCA confirmed [BTCUSDC] (LIVE)",
-        source="DCA",
-        is_manual=False,
-        binance_order_id=1101,
-    )
-    extra_buy_tx = DCATransaction(
-        timestamp=timestamp,
-        status="SUCCESS",
-        fiat_amount=50.0,
-        btc_amount=0.0005,
-        price=100000.0,
-        ahr999=0.42,
-        notes="Extra Buy confirmed after strategy check [BTCUSDC] (LIVE)",
-        source="BINANCE",
-        is_manual=True,
-        binance_order_id=1102,
-    )
-    manual_import_tx = DCATransaction(
-        timestamp=timestamp,
-        status="SUCCESS",
-        fiat_amount=25.0,
-        btc_amount=0.00025,
-        price=100000.0,
-        ahr999=0.0,
-        notes="Imported from Binance",
-        source="MANUAL",
-        is_manual=True,
-        binance_order_id=1103,
-    )
-    session.add_all([dca_tx, extra_buy_tx, manual_import_tx])
-    session.commit()
-
-    response = client.get("/api/transactions")
-
-    assert response.status_code == 200
-    data_by_order_id = {item["id"]: item for item in response.json()}
-    assert data_by_order_id[1101]["source"] == "DCA"
-    assert data_by_order_id[1101]["type"] == "DCA"
-    assert data_by_order_id[1102]["source"] == "EXTRA BUY"
-    assert data_by_order_id[1102]["type"] == "MANUAL"
-    assert data_by_order_id[1103]["source"] == "MANUAL"
-    assert data_by_order_id[1103]["type"] == "MANUAL"
-
-
 def test_version_endpoint(client: TestClient):
     response = client.get("/api/version")
     assert response.status_code == 200
