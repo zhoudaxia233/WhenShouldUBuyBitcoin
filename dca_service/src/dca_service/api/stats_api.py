@@ -2445,7 +2445,7 @@ def _build_add_position_guidance(
         suggested_avg_cost_after_buy = (total_invested_usd + suggested_amount) / (total_btc + estimated_btc)
         if current_avg_cost_usd is not None:
             suggested_avg_cost_delta = suggested_avg_cost_after_buy - current_avg_cost_usd
-    lines: List[str] = [f"Call: {final_call}"]
+    lines: List[str] = [f"Strategy check: {final_call}"]
     if decision == "BUY":
         lines.append(
             f"Input: ${amount_usdc:,.2f} | Suggested now: ${suggested_amount:,.2f} "
@@ -3065,7 +3065,7 @@ def confirm_add_position(
     current_user: User = Depends(get_current_user),
 ):
     """
-    Confirm add-position after reviewing advice.
+    Confirm an extra buy after checking the current strategy.
     This records a simulated buy event for tracking and analytics.
     """
     normalized_symbol = _normalize_symbol(payload.symbol)
@@ -3079,7 +3079,7 @@ def confirm_add_position(
     if execution_mode not in {"DRY_RUN", "LIVE"}:
         execution_mode = "DRY_RUN"
 
-    notes = (payload.notes or "").strip() or "Add Position confirmed after advice"
+    notes = (payload.notes or "").strip() or "Extra Buy confirmed after strategy check"
     notes = f"{notes} [{normalized_symbol}] ({execution_mode})"
 
     if execution_mode == "LIVE":

@@ -8,7 +8,16 @@ def test_dashboard_add_position_modal_and_safe_polling_are_present():
 
     assert 'id="openAddPositionBtn"' in html
     assert 'data-bs-target="#addPositionModal"' in html
-    assert "Add Position" in html
+    assert "Extra Buy" in html
+    assert "Extra BTC Buy" in html
+    assert "One-time buy outside your DCA schedule." in html
+    assert "Check Strategy" in html
+    assert "Confirm Extra Buy" in html
+    assert "Add Position" not in html
+    assert "Generate Advice" not in html
+    assert "Buy (Confirm)" not in html
+    assert "No advice yet." not in html
+    assert "No strategy check yet." in html
     assert 'id="addPositionModal"' in html
     assert 'id="addPositionUsdcInput"' in html
     assert 'id="addPositionPriceInput"' in html
@@ -16,10 +25,22 @@ def test_dashboard_add_position_modal_and_safe_polling_are_present():
     assert "const ADD_POSITION_PRICE_POLL_INTERVAL_MS = 3000;" in html
     assert "fetch('/api/stats/realtime-price?symbol=BTCUSDC')" in html
     assert "fetch('/api/stats/add-position/advice'" in html
-    assert "Buy (Confirm)" in html
     assert "fetch('/api/stats/add-position/confirm'" in html
     assert "previewCache.suggested_amount_usd" not in html
     assert "if (amountInput) amountInput.value = '';" in html
+
+
+def test_dashboard_copy_distinguishes_scheduled_action_from_extra_buy():
+    repo_root = Path(__file__).resolve().parents[2]
+    template_path = repo_root / "dca_service" / "src" / "dca_service" / "templates" / "index.html"
+    html = template_path.read_text(encoding="utf-8")
+
+    assert "Next Scheduled Action" in html
+    assert "Suggested Action" not in html
+    assert "actionText = `Will buy $${suggestedAmount.toFixed(2)}`;" in html
+    assert "actionText = 'Will wait';" in html
+    assert "? `Will buy $${decision.suggested_amount_usd.toFixed(2)}`" in html
+    assert ": 'Will wait';" in html
 
 
 def test_dashboard_add_position_button_uses_accent_class_without_success_flash():
@@ -44,5 +65,5 @@ def test_add_position_no_buy_advice_does_not_enable_confirm_buy():
 
     assert "const actionCode = payload?.guidance?.action_code;" in html
     assert "if (actionCode === 'NO_BUY')" in html
-    assert "Advice says no buy right now." in html
+    assert "Strategy check says no extra buy right now." in html
     assert "setAddPositionActionMode('advice');" in html
