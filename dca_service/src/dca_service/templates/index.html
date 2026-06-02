@@ -1844,7 +1844,7 @@
         const rowsPerPage = 20;
         let currentDrawdownMode = '180d';
         const ADD_POSITION_PRICE_POLL_INTERVAL_MS = 3000;
-        let addPositionPricePollTimer = null;
+        let dashboardPricePollTimer = null;
         let addPositionActionMode = 'advice'; // 'advice' -> 'buy'
         const THEME_STORAGE_KEY = 'dca_theme';
         const BOTTOMING_SIGNAL_CACHE_KEY = 'bottoming_signal_preview';
@@ -2643,6 +2643,68 @@
             }
         }
 
+        function updateDashboardRealtimePrice(payload) {
+            const previewPriceEl = document.getElementById('previewPrice');
+            const price = Number(payload?.price);
+            if (!previewPriceEl || !Number.isFinite(price) || price <= 0) {
+                return false;
+            }
+
+            previewPriceEl.textContent = `$${price.toLocaleString()}`;
+            window.__dashboardPriceUsd = price;
+            updateMobileFiatEstimate();
+            return true;
+        }
+
+        function updateAddPositionRealtimePrice(payload) {
+            const priceInput = document.getElementById('addPositionPriceInput');
+            const metaEl = document.getElementById('addPositionPriceMeta');
+            if (!priceInput || !metaEl) return false;
+
+            const price = Number(payload?.price);
+            if (Number.isFinite(price) && price > 0) {
+                priceInput.value = price.toFixed(2);
+                updateAddPositionEstimate();
+            }
+
+            const sourceText = payload?.stale_fallback
+                ? 'Price source: stale cache'
+                : payload?.cache_hit
+                    ? 'Price source: cache'
+                    : 'Price source: Binance live';
+            metaEl.textContent = sourceText;
+            return true;
+        }
+
+        async function fetchRealtimePriceForDashboard({ silent = true } = {}) {
+            try {
+                const response = await fetch('/api/stats/realtime-price?symbol=BTCUSDC');
+                const payload = await response.json();
+                if (!response.ok) {
+                    throw new Error('Price fetch failed');
+                }
+
+                updateDashboardRealtimePrice(payload);
+                updateAddPositionRealtimePrice(payload);
+                return payload;
+            } catch (error) {
+                console.error('Failed to refresh dashboard BTC price');
+                if (!silent) {
+                    notyf.error('Failed to refresh BTC price');
+                }
+                return null;
+            }
+        }
+
+        function startDashboardPricePolling() {
+            if (dashboardPricePollTimer !== null) {
+                clearInterval(dashboardPricePollTimer);
+            }
+            dashboardPricePollTimer = setInterval(() => {
+                fetchRealtimePriceForDashboard({ silent: true });
+            }, ADD_POSITION_PRICE_POLL_INTERVAL_MS);
+        }
+
         async function fetchRealtimePriceForAddPosition({ silent = false } = {}) {
             const priceInput = document.getElementById('addPositionPriceInput');
             const metaEl = document.getElementById('addPositionPriceMeta');
@@ -2655,18 +2717,8 @@
                     throw new Error('Price fetch failed');
                 }
 
-                const price = Number(payload.price);
-                if (Number.isFinite(price) && price > 0) {
-                    priceInput.value = price.toFixed(2);
-                    updateAddPositionEstimate();
-                }
-
-                const sourceText = payload.stale_fallback
-                    ? 'Price source: stale cache'
-                    : payload.cache_hit
-                        ? 'Price source: cache'
-                        : 'Price source: Binance live';
-                metaEl.textContent = sourceText;
+                updateDashboardRealtimePrice(payload);
+                updateAddPositionRealtimePrice(payload);
                 return payload;
             } catch (error) {
                 console.error('Failed to fetch realtime BTC price:', error);
@@ -2825,19 +2877,10 @@
         }
 
         function startAddPositionPricePolling() {
-            if (addPositionPricePollTimer !== null) {
-                clearInterval(addPositionPricePollTimer);
-            }
-            addPositionPricePollTimer = setInterval(() => {
-                fetchRealtimePriceForAddPosition({ silent: true });
-            }, ADD_POSITION_PRICE_POLL_INTERVAL_MS);
+            startDashboardPricePolling();
         }
 
         function stopAddPositionPricePolling() {
-            if (addPositionPricePollTimer !== null) {
-                clearInterval(addPositionPricePollTimer);
-                addPositionPricePollTimer = null;
-            }
         }
 
         document.addEventListener('DOMContentLoaded', function() {
@@ -3197,6 +3240,8 @@
             await loadTransactions();
             await loadPreview();
             await loadWalletSummary();
+            await fetchRealtimePriceForDashboard();
+            startDashboardPricePolling();
             connectSSE();  // Connect to server-sent events for real-time updates
         }
 
