@@ -30,6 +30,31 @@ def test_dashboard_add_position_modal_and_safe_polling_are_present():
     assert "if (amountInput) amountInput.value = '';" in html
 
 
+def test_dashboard_current_price_uses_extra_buy_realtime_poll_interval():
+    repo_root = Path(__file__).resolve().parents[2]
+    template_path = repo_root / "dca_service" / "src" / "dca_service" / "templates" / "index.html"
+    html = template_path.read_text(encoding="utf-8")
+
+    assert "function updateDashboardRealtimePrice(payload)" in html
+    assert "function fetchRealtimePriceForDashboard({ silent = true } = {})" in html
+    assert "let dashboardPricePollTimer = null;" in html
+    assert "setInterval(() => {\n                fetchRealtimePriceForDashboard({ silent: true });\n            }, ADD_POSITION_PRICE_POLL_INTERVAL_MS);" in html
+    assert "previewPriceEl.textContent = `$${price.toLocaleString()}`;" in html
+    assert "window.__dashboardPriceUsd = price;" in html
+    assert "updateMobileFiatEstimate();" in html
+
+
+def test_extra_buy_reuses_dashboard_realtime_price_polling_loop():
+    repo_root = Path(__file__).resolve().parents[2]
+    template_path = repo_root / "dca_service" / "src" / "dca_service" / "templates" / "index.html"
+    html = template_path.read_text(encoding="utf-8")
+
+    assert "function updateAddPositionRealtimePrice(payload)" in html
+    assert "startAddPositionPricePolling() {\n            startDashboardPricePolling();\n        }" in html
+    assert "let addPositionPricePollTimer = null;" not in html
+    assert "fetchRealtimePriceForAddPosition({ silent: true });" not in html
+
+
 def test_dashboard_copy_distinguishes_scheduled_action_from_extra_buy():
     repo_root = Path(__file__).resolve().parents[2]
     template_path = repo_root / "dca_service" / "src" / "dca_service" / "templates" / "index.html"

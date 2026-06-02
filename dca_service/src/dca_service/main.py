@@ -30,6 +30,17 @@ from dca_service.core.logging import logger
 from fastapi.responses import RedirectResponse
 import time
 
+QUIET_SUCCESS_REQUEST_PATHS = {"/api/stats/realtime-price"}
+SLOW_REQUEST_LOG_THRESHOLD_MS = 1000.0
+
+
+def _should_log_request(path: str, status_code: int, duration_ms: float) -> bool:
+    is_quiet_success_path = path in QUIET_SUCCESS_REQUEST_PATHS
+    is_success = 200 <= status_code < 400
+    is_fast = duration_ms < SLOW_REQUEST_LOG_THRESHOLD_MS
+    return not (is_quiet_success_path and is_success and is_fast)
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     create_db_and_tables()
@@ -69,8 +80,12 @@ async def log_requests(request: Request, call_next):
     start_time = time.time()
     response = await call_next(request)
     duration = (time.time() - start_time) * 1000
-    # Filter out health checks or noise if needed, but for now log all
-    logger.info(f"{request.method} {request.url.path} -> {response.status_code} ({duration:.2f} ms)")
+    if _should_log_request(request.url.path, response.status_code, duration):
+        message = f"{request.method} {request.url.path} -> {response.status_code} ({duration:.2f} ms)"
+        if response.status_code >= 500 or duration >= SLOW_REQUEST_LOG_THRESHOLD_MS:
+            logger.warning(message)
+        else:
+            logger.info(message)
     return response
 
 # Add session middleware for authentication
@@ -201,4 +216,4 @@ def read_admin_data_sources_page(
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("dca_service.main:app", host="0.0.0.0", port=8000, reload=True)
+    uvicorn.run("dca_service.main:app", host="0.0.0.0", port=8000, reload=True, access_log=False)

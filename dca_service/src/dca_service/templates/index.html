@@ -447,6 +447,40 @@
             background: var(--dashboard-accent) !important;
             color: #fff !important;
         }
+        #execModeBadge.live-mode-active {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.38rem;
+        }
+        .live-mode-dot {
+            width: 0.5rem;
+            height: 0.5rem;
+            flex: 0 0 auto;
+            border-radius: 50%;
+            background: #ef4444;
+            box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.46);
+            animation: liveModePulse 1.2s ease-in-out infinite;
+        }
+        @keyframes liveModePulse {
+            0%,
+            100% {
+                opacity: 0.58;
+                transform: scale(0.82);
+                box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.38);
+            }
+            50% {
+                opacity: 1;
+                transform: scale(1);
+                box-shadow: 0 0 0 5px rgba(239, 68, 68, 0);
+            }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            .live-mode-dot {
+                animation: none;
+                opacity: 1;
+                transform: none;
+            }
+        }
         .strategy-card-grid {
             display: grid;
             grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -852,6 +886,13 @@
                 font-size: 0.64rem;
                 padding: 0.24rem 0.34rem;
                 white-space: nowrap;
+            }
+            #execModeBadge.live-mode-active {
+                gap: 0.26rem;
+            }
+            .live-mode-dot {
+                width: 0.42rem;
+                height: 0.42rem;
             }
             .strategy-metric-grid {
                 grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -1385,17 +1426,48 @@
             if (!element) return;
             element.dataset.fullText = fullText;
             element.dataset.compactText = compactText || fullText;
-            element.textContent = isDashboardCompactViewport()
+            const textTarget = getResponsiveBadgeTextTarget(element);
+            textTarget.textContent = isDashboardCompactViewport()
                 ? element.dataset.compactText
                 : element.dataset.fullText;
         }
 
         function refreshResponsiveBadgeText() {
             document.querySelectorAll('[data-full-text][data-compact-text]').forEach((element) => {
-                element.textContent = isDashboardCompactViewport()
+                const textTarget = getResponsiveBadgeTextTarget(element);
+                textTarget.textContent = isDashboardCompactViewport()
                     ? element.dataset.compactText
                     : element.dataset.fullText;
             });
+        }
+
+        function getResponsiveBadgeTextTarget(element) {
+            return element.querySelector('[data-badge-text-target="true"]') || element;
+        }
+
+        function ensureLiveModeBadgeDot(badge) {
+            if (!badge || badge.querySelector('.live-mode-dot')) return;
+
+            const currentText = badge.textContent.trim();
+            const dot = document.createElement('span');
+            dot.className = 'live-mode-dot';
+            dot.setAttribute('aria-hidden', 'true');
+
+            const textTarget = document.createElement('span');
+            textTarget.className = 'mode-badge-text';
+            textTarget.dataset.badgeTextTarget = 'true';
+            textTarget.textContent = currentText;
+
+            badge.textContent = '';
+            badge.append(dot, textTarget);
+        }
+
+        function removeLiveModeBadgeDot(badge) {
+            if (!badge) return;
+            const textTarget = badge.querySelector('[data-badge-text-target="true"]');
+            if (textTarget) {
+                badge.textContent = textTarget.textContent;
+            }
         }
 
         function formatStrategyFrequency(value) {
@@ -1844,7 +1916,7 @@
         const rowsPerPage = 20;
         let currentDrawdownMode = '180d';
         const ADD_POSITION_PRICE_POLL_INTERVAL_MS = 3000;
-        let addPositionPricePollTimer = null;
+        let dashboardPricePollTimer = null;
         let addPositionActionMode = 'advice'; // 'advice' -> 'buy'
         const THEME_STORAGE_KEY = 'dca_theme';
         const BOTTOMING_SIGNAL_CACHE_KEY = 'bottoming_signal_preview';
@@ -2643,6 +2715,68 @@
             }
         }
 
+        function updateDashboardRealtimePrice(payload) {
+            const previewPriceEl = document.getElementById('previewPrice');
+            const price = Number(payload?.price);
+            if (!previewPriceEl || !Number.isFinite(price) || price <= 0) {
+                return false;
+            }
+
+            previewPriceEl.textContent = `$${price.toLocaleString()}`;
+            window.__dashboardPriceUsd = price;
+            updateMobileFiatEstimate();
+            return true;
+        }
+
+        function updateAddPositionRealtimePrice(payload) {
+            const priceInput = document.getElementById('addPositionPriceInput');
+            const metaEl = document.getElementById('addPositionPriceMeta');
+            if (!priceInput || !metaEl) return false;
+
+            const price = Number(payload?.price);
+            if (Number.isFinite(price) && price > 0) {
+                priceInput.value = price.toFixed(2);
+                updateAddPositionEstimate();
+            }
+
+            const sourceText = payload?.stale_fallback
+                ? 'Price source: stale cache'
+                : payload?.cache_hit
+                    ? 'Price source: cache'
+                    : 'Price source: Binance live';
+            metaEl.textContent = sourceText;
+            return true;
+        }
+
+        async function fetchRealtimePriceForDashboard({ silent = true } = {}) {
+            try {
+                const response = await fetch('/api/stats/realtime-price?symbol=BTCUSDC');
+                const payload = await response.json();
+                if (!response.ok) {
+                    throw new Error('Price fetch failed');
+                }
+
+                updateDashboardRealtimePrice(payload);
+                updateAddPositionRealtimePrice(payload);
+                return payload;
+            } catch (error) {
+                console.error('Failed to refresh dashboard BTC price');
+                if (!silent) {
+                    notyf.error('Failed to refresh BTC price');
+                }
+                return null;
+            }
+        }
+
+        function startDashboardPricePolling() {
+            if (dashboardPricePollTimer !== null) {
+                clearInterval(dashboardPricePollTimer);
+            }
+            dashboardPricePollTimer = setInterval(() => {
+                fetchRealtimePriceForDashboard({ silent: true });
+            }, ADD_POSITION_PRICE_POLL_INTERVAL_MS);
+        }
+
         async function fetchRealtimePriceForAddPosition({ silent = false } = {}) {
             const priceInput = document.getElementById('addPositionPriceInput');
             const metaEl = document.getElementById('addPositionPriceMeta');
@@ -2655,18 +2789,8 @@
                     throw new Error('Price fetch failed');
                 }
 
-                const price = Number(payload.price);
-                if (Number.isFinite(price) && price > 0) {
-                    priceInput.value = price.toFixed(2);
-                    updateAddPositionEstimate();
-                }
-
-                const sourceText = payload.stale_fallback
-                    ? 'Price source: stale cache'
-                    : payload.cache_hit
-                        ? 'Price source: cache'
-                        : 'Price source: Binance live';
-                metaEl.textContent = sourceText;
+                updateDashboardRealtimePrice(payload);
+                updateAddPositionRealtimePrice(payload);
                 return payload;
             } catch (error) {
                 console.error('Failed to fetch realtime BTC price:', error);
@@ -2825,19 +2949,10 @@
         }
 
         function startAddPositionPricePolling() {
-            if (addPositionPricePollTimer !== null) {
-                clearInterval(addPositionPricePollTimer);
-            }
-            addPositionPricePollTimer = setInterval(() => {
-                fetchRealtimePriceForAddPosition({ silent: true });
-            }, ADD_POSITION_PRICE_POLL_INTERVAL_MS);
+            startDashboardPricePolling();
         }
 
         function stopAddPositionPricePolling() {
-            if (addPositionPricePollTimer !== null) {
-                clearInterval(addPositionPricePollTimer);
-                addPositionPricePollTimer = null;
-            }
         }
 
         document.addEventListener('DOMContentLoaded', function() {
@@ -3047,9 +3162,12 @@
             
             if (mode === 'LIVE') {
                 badge.className = 'badge bg-danger me-2';
+                badge.classList.add('live-mode-active');
+                ensureLiveModeBadgeDot(badge);
                 setResponsiveBadgeText(badge, 'Mode: LIVE', 'LIVE');
             } else {
                 badge.className = 'badge bg-secondary me-2';
+                removeLiveModeBadgeDot(badge);
                 setResponsiveBadgeText(badge, 'Mode: Dry Run', 'Dry Run');
             }
         }
@@ -3197,6 +3315,8 @@
             await loadTransactions();
             await loadPreview();
             await loadWalletSummary();
+            await fetchRealtimePriceForDashboard();
+            startDashboardPricePolling();
             connectSSE();  // Connect to server-sent events for real-time updates
         }
 

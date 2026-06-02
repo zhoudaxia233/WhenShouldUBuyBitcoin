@@ -576,6 +576,7 @@ def test_realtime_price_endpoint_reuses_cache(client: TestClient):
     assert second_payload["cache_hit"] is True
     assert second_payload["price"] == first_payload["price"]
     assert second_payload["poll_recommendation_seconds"] == 3
+    assert first_payload["cache_ttl_seconds"] > first_payload["poll_recommendation_seconds"]
     assert mock_client.get.call_count == 1
 
 
