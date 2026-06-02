@@ -188,6 +188,11 @@ def test_dashboard_mobile_strategy_badges_use_compact_single_row_labels():
     assert "setResponsiveBadgeText(sourceBadge, `Source: ${metricsSource.label}`, metricsSource.label);" in html
     assert "setResponsiveBadgeText(badge, 'Mode: LIVE', 'LIVE');" in html
     assert "setResponsiveBadgeText(badge, 'Mode: Dry Run', 'Dry Run');" in html
+    assert ".live-mode-dot {" in html
+    assert "@keyframes liveModePulse" in html
+    assert "ensureLiveModeBadgeDot(badge);" in html
+    assert "badge.classList.add('live-mode-active');" in html
+    assert "removeLiveModeBadgeDot(badge);" in html
     assert ".strategy-status-pills {" in mobile_css
     assert "flex-wrap: nowrap;" in mobile_css
     assert "overflow-x: hidden;" in mobile_css
