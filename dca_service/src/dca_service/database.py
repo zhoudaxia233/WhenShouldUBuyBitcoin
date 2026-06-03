@@ -166,6 +166,7 @@ def _migrate_strategy_table():
                 ('accumulated_savings', 'REAL', 0.0),  # Default 0.0
                 ('last_monthly_inflow', 'TIMESTAMP', None),  # Default None
                 ('time_display_mode', 'TEXT', "'UTC'"),  # UTC or LOCAL
+                ('fixed_dca_stop_price_usd', 'REAL', None),
             ]
             
             # Check and add each column

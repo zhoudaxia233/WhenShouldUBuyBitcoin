@@ -1081,6 +1081,42 @@ def test_add_position_confirm_records_simulated_buy_transaction(client: TestClie
     assert mock_email_task.call_count == 1
 
 
+def test_add_position_confirm_ignores_fixed_dca_stop_price(client: TestClient, session: Session):
+    strategy = DCAStrategy(
+        is_active=True,
+        total_budget_usd=1000.0,
+        ahr999_multiplier_low=0.5,
+        ahr999_multiplier_mid=1.0,
+        ahr999_multiplier_high=1.5,
+        strategy_type="fixed_dca",
+        fixed_dca_stop_price_usd=1.0,
+        execution_mode="DRY_RUN",
+    )
+    session.add(strategy)
+    session.commit()
+
+    with patch("dca_service.api.stats_api._send_add_position_email_task") as mock_email_task:
+        response = client.post(
+            "/api/stats/add-position/confirm",
+            json={
+                "amount_usdc": 120.0,
+                "price_usd": 60000.0,
+                "symbol": "BTCUSDC",
+            },
+        )
+
+    assert response.status_code == 200
+    payload = response.json()
+
+    assert payload["success"] is True
+    assert payload["transaction"]["source"] == "MANUAL"
+    assert payload["transaction"]["is_manual"] is True
+    assert payload["transaction"]["fiat_amount"] == 120.0
+    assert payload["transaction"]["price"] == 60000.0
+    assert "Extra Buy confirmed after strategy check" in payload["transaction"]["notes"]
+    assert mock_email_task.call_count == 1
+
+
 def test_add_position_confirm_executes_live_mode_when_strategy_is_live(client: TestClient, session: Session):
     strategy = DCAStrategy(
         is_active=True,
