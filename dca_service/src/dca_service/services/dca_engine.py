@@ -271,6 +271,8 @@ def calculate_dca_decision(session: Session) -> DCADecision:
             "historical_price": nearest_180.get("price"),
         }
 
+    fixed_dca_stop_price_hit = False
+
     # 2. Determine Band & Multiplier
     if strategy.strategy_type == "dynamic_ahr999":
         # Dynamic Strategy Logic
@@ -426,6 +428,16 @@ def calculate_dca_decision(session: Session) -> DCADecision:
         multiplier = 1.0
         suggested_amount = base_amount
         reason = "Fixed DCA: Monthly Budget ÷ Frequency (AHR999 shown for reference only)"
+
+        stop_price = strategy.fixed_dca_stop_price_usd
+        if stop_price is not None and stop_price > 0 and price >= stop_price:
+            fixed_dca_stop_price_hit = True
+            multiplier = 0.0
+            suggested_amount = 0.0
+            reason = (
+                "Fixed DCA stop price reached: "
+                f"current BTC price ${price:,.2f} is at or above stop price ${stop_price:,.2f}"
+            )
 
     elif strategy.strategy_type == "ahr999_fixed_range":
         # AHR999 Fixed Range Strategy Logic (8-range system matching backtest)
@@ -648,6 +660,34 @@ def calculate_dca_decision(session: Session) -> DCADecision:
             {
                 "can_execute": False,
                 "reason": "Strategy is inactive",
+                "ahr999_value": ahr999,
+                "ahr_band": band,
+                "multiplier": multiplier,
+                "base_amount_usd": base_amount,
+                "suggested_amount_usd": suggested_amount,
+                "price_usd": price,
+                "metrics_source": {"backend": source_backend, "label": source_label},
+                "remaining_budget": remaining_budget if strategy.enforce_monthly_cap else None,
+                "budget_resets": budget_resets,
+                "time_until_reset": time_until_reset,
+                "peak_price_usd": display_peak_price,
+                "drawdown_ratio": display_drawdown_ratio,
+                "drawdown_percentile": display_drawdown_snapshot["drawdown_percentile"] if display_drawdown_snapshot else None,
+                "drawdown_hist_date": display_drawdown_snapshot["historical_date"] if display_drawdown_snapshot else None,
+                "drawdown_hist_peak_price_usd": display_drawdown_snapshot["historical_peak"] if display_drawdown_snapshot else None,
+                "drawdown_hist_price_usd": display_drawdown_snapshot["historical_price"] if display_drawdown_snapshot else None,
+                "drawdown_context": drawdown_context,
+                "bottoming_signal": bottoming_signal,
+            }
+        )
+        return DCADecision(**decision_data)
+
+    if fixed_dca_stop_price_hit:
+        decision_data = base_decision.copy()
+        decision_data.update(
+            {
+                "can_execute": False,
+                "reason": reason,
                 "ahr999_value": ahr999,
                 "ahr_band": band,
                 "multiplier": multiplier,

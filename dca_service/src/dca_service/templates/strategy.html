@@ -368,7 +368,7 @@
                             <select class="form-select" id="strategy_type">
                                 <option value="legacy_band">AHR999 Percentile Strategy</option>
                                 <option value="ahr999_fixed_range">AHR999 Fixed Range Strategy</option>
-                                <option value="fixed_dca">Fixed DCA (Budget Only)</option>
+                                <option value="fixed_dca">Fixed DCA</option>
                                 <option value="dynamic_ahr999">Dynamic AHR999 Strategy (Advanced)</option>
                             </select>
                             <div class="form-text text-muted">
@@ -379,13 +379,20 @@
 
                     <div id="fixedDcaConfigSection" class="d-none">
                         <div class="alert alert-satsflow mt-2">
-                            <strong>Fixed DCA:</strong> No extra inputs required. Each execution buys a fixed amount:
+                            <strong>Fixed DCA:</strong> Each execution buys a fixed amount based on monthly budget and schedule:
                             <br>
                             Daily: Monthly Budget / 30.44
                             <br>
                             Weekly: Monthly Budget / 4
                             <br>
                             AHR999 is still displayed for reference, but does not change buy size.
+                        </div>
+                        <div class="row mt-3">
+                            <div class="col-md-6 mb-3">
+                                <label for="fixed_dca_stop_price_usd" class="form-label">Stop Buying At or Above BTC Price (USD)</label>
+                                <input type="number" class="form-control" id="fixed_dca_stop_price_usd" min="0" step="0.01" placeholder="Optional">
+                                <div class="form-text text-muted">Leave blank to keep Fixed DCA running at every scheduled execution.</div>
+                            </div>
                         </div>
                     </div>
 
@@ -781,6 +788,7 @@
                     
                     // Strategy Type
                     document.getElementById('strategy_type').value = strategy.strategy_type || 'legacy_band';
+                    document.getElementById('fixed_dca_stop_price_usd').value = strategy.fixed_dca_stop_price_usd ?? '';
 
                     // Execution Mode (Phase 9)
                     const executionMode = strategy.execution_mode || 'DRY_RUN';
@@ -1114,6 +1122,7 @@
         });
         
         async function saveStrategy() {
+            const fixedDcaStopPrice = parseFloat(document.getElementById('fixed_dca_stop_price_usd').value);
             const data = {
                 is_active: document.getElementById('is_active').checked,
                 total_budget_usd: parseFloat(document.getElementById('total_budget_usd').value),
@@ -1126,6 +1135,7 @@
                 
                 // Strategy Type
                 strategy_type: document.getElementById('strategy_type').value,
+                fixed_dca_stop_price_usd: Number.isFinite(fixedDcaStopPrice) && fixedDcaStopPrice > 0 ? fixedDcaStopPrice : null,
                 
                 // Execution Mode (Phase 9)
                 execution_mode: document.querySelector('input[name="execution_mode"]:checked').value,

@@ -20,6 +20,14 @@ router = APIRouter(prefix="/admin", tags=["admin"])
 _SENSITIVE_LOG_PATTERNS = [
     (
         re.compile(
+            r"(?i)\bhttps?connectionpool\(host='[^']+',\s*port=\d+\):\s*"
+            r"(?:read timed out\.?(?:\s*\(read timeout=[^)]+\))?|[^\n\"']*)"
+        ),
+        "External HTTP request timed out.",
+    ),
+    (re.compile(r"(?i)\braw socket details\b"), "request details redacted"),
+    (
+        re.compile(
             r"(?i)\b(api[_-]?key|api[_-]?secret|authorization|bearer|password|secret|token)"
             r"(\s*[:=]\s*)(?:Bearer\s+)?([^\s,;]+)"
         ),

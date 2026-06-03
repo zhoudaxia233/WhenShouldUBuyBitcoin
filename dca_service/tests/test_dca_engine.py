@@ -248,6 +248,56 @@ def test_fixed_dca_ignores_ahr_for_sizing(mock_metrics, session: Session, fixed_
     assert decision_low.multiplier == 1.0
     assert decision_high.multiplier == 1.0
 
+
+@patch('dca_service.services.dca_engine.get_latest_metrics')
+def test_fixed_dca_stops_at_or_above_stop_price(mock_metrics, session: Session, fixed_dca_strategy: DCAStrategy):
+    """Fixed DCA should skip buying when BTC price is at the configured stop price."""
+    fixed_dca_strategy.fixed_dca_stop_price_usd = 70000.0
+    session.add(fixed_dca_strategy)
+    session.commit()
+
+    mock_metrics.return_value = {
+        "ahr999": 0.25,
+        "price_usd": 70000.0,
+        "peak180": 100000.0,
+        "timestamp": datetime.now(timezone.utc),
+        "source": "csv",
+        "source_label": "Test"
+    }
+
+    decision = calculate_dca_decision(session)
+
+    assert decision.can_execute is False
+    assert decision.multiplier == 0.0
+    assert decision.suggested_amount_usd == 0.0
+    assert "stop price" in decision.reason.lower()
+    assert "$70,000.00" in decision.reason
+
+
+@patch('dca_service.services.dca_engine.get_latest_metrics')
+def test_fixed_dca_buys_below_stop_price(mock_metrics, session: Session, fixed_dca_strategy: DCAStrategy):
+    """Fixed DCA should keep buying when BTC price is below the configured stop price."""
+    fixed_dca_strategy.fixed_dca_stop_price_usd = 70000.0
+    session.add(fixed_dca_strategy)
+    session.commit()
+
+    mock_metrics.return_value = {
+        "ahr999": 1.5,
+        "price_usd": 69999.0,
+        "peak180": 100000.0,
+        "timestamp": datetime.now(timezone.utc),
+        "source": "csv",
+        "source_label": "Test"
+    }
+
+    decision = calculate_dca_decision(session)
+
+    assert decision.can_execute is True
+    assert decision.multiplier == 1.0
+    assert abs(decision.base_amount_usd - 10.0) < 0.01
+    assert abs(decision.suggested_amount_usd - 10.0) < 0.01
+
+
 @pytest.fixture
 def dynamic_strategy(session: Session):
     """Strategy using dynamic AHR999 approach"""

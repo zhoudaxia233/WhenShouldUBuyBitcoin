@@ -416,6 +416,71 @@
             color: var(--dashboard-accent-strong) !important;
             white-space: nowrap;
         }
+        .strategy-action-panel {
+            min-height: 84px;
+            margin-bottom: 0;
+            padding: 0.82rem 1rem;
+            border: 0;
+            border-radius: 0;
+            background:
+                radial-gradient(circle at 18% 8%, rgba(255, 138, 0, 0.12), transparent 38%),
+                linear-gradient(135deg, color-mix(in srgb, var(--dashboard-card-bg-solid) 88%, var(--dashboard-accent) 12%), var(--dashboard-card-bg-solid));
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            overflow: hidden;
+        }
+        .strategy-action-panel-content {
+            min-width: 0;
+            flex: 1 1 auto;
+        }
+        .strategy-action-main {
+            display: flex;
+            align-items: center;
+            gap: 0.48rem;
+            min-width: 0;
+        }
+        .strategy-action-copy {
+            min-width: 0;
+        }
+        .strategy-action-status-icon {
+            width: 24px;
+            height: 24px;
+            border: 1px solid currentColor;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            flex: 0 0 auto;
+            font-size: 0.84rem;
+        }
+        .strategy-action-panel .strategy-action {
+            font-size: 0.98rem;
+            line-height: 1.12;
+        }
+        .strategy-action-panel-desktop .strategy-label {
+            font-size: 0.84rem;
+            white-space: nowrap;
+        }
+        .strategy-action-subtext {
+            margin-top: 0.24rem;
+            color: var(--dashboard-muted);
+            font-size: 0.72rem;
+            font-weight: 560;
+            line-height: 1.25;
+        }
+        .strategy-action-panel-mobile {
+            display: none;
+        }
+        .strategy-action-panel.is-buying .strategy-action,
+        .strategy-action-panel.is-buying .strategy-action-status-icon {
+            color: var(--dashboard-accent-strong) !important;
+        }
+        .strategy-action-panel.is-waiting .strategy-action,
+        .strategy-action-panel.is-waiting .strategy-action-status-icon {
+            color: #f4bd21 !important;
+        }
         .strategy-action-coin {
             width: 26px;
             height: 26px;
@@ -446,6 +511,27 @@
             border-color: var(--dashboard-accent);
             background: var(--dashboard-accent) !important;
             color: #fff !important;
+        }
+        #fixedDcaCapBadge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.34rem;
+            border: 1px solid var(--dashboard-border);
+            border-radius: 7px;
+            background: color-mix(in srgb, var(--dashboard-card-bg-solid) 86%, #ffffff 14%) !important;
+            color: var(--dashboard-muted) !important;
+            font-size: 0.85rem;
+            font-weight: 650;
+            padding: 0.46rem 0.65rem;
+        }
+        #fixedDcaCapBadge.d-none {
+            display: none !important;
+        }
+        #fixedDcaCapBadgeText {
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
         }
         #execModeBadge.live-mode-active {
             display: inline-flex;
@@ -882,9 +968,20 @@
             }
             #scheduleDisplay,
             #execModeBadge,
-            #dataSourceBadge {
+            #dataSourceBadge,
+            #fixedDcaCapBadge {
                 font-size: 0.64rem;
                 padding: 0.24rem 0.34rem;
+                white-space: nowrap;
+            }
+            #fixedDcaCapBadge {
+                max-width: 8.6rem;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+            #fixedDcaCapBadgeText {
+                overflow: hidden;
+                text-overflow: ellipsis;
                 white-space: nowrap;
             }
             #execModeBadge.live-mode-active {
@@ -895,7 +992,7 @@
                 height: 0.42rem;
             }
             .strategy-metric-grid {
-                grid-template-columns: repeat(3, minmax(0, 1fr));
+                grid-template-columns: repeat(2, minmax(0, 1fr));
                 margin-bottom: 0.6rem !important;
             }
             .strategy-metric,
@@ -904,11 +1001,8 @@
                 border-right: 1px solid var(--dashboard-border);
                 border-bottom: 1px solid var(--dashboard-border);
             }
-            .strategy-metric:nth-child(3n) {
+            .strategy-metric:nth-child(2n) {
                 border-right: 0;
-            }
-            .strategy-metric:nth-child(n + 4) {
-                border-bottom: 0;
             }
             .strategy-metric:last-child {
                 border-right: 0;
@@ -934,6 +1028,40 @@
             }
             .strategy-value {
                 font-size: 0.78rem;
+            }
+            .strategy-action-panel-desktop {
+                display: none;
+            }
+            .strategy-action-panel-mobile {
+                display: flex;
+            }
+            .strategy-action-panel {
+                min-height: 94px;
+                margin-bottom: 0.6rem;
+                padding: 0.72rem 0.72rem;
+                border: 1px solid var(--dashboard-border);
+                border-radius: 10px;
+                gap: 0.7rem;
+            }
+            .strategy-action-panel .strategy-label {
+                font-size: 0.67rem;
+                margin-bottom: 0.62rem !important;
+            }
+            .strategy-action-main {
+                gap: 0.56rem;
+            }
+            .strategy-action-status-icon {
+                width: 24px;
+                height: 24px;
+                font-size: 0.84rem;
+            }
+            .strategy-action-panel .strategy-action {
+                font-size: 1.08rem;
+                line-height: 1.1;
+            }
+            .strategy-action-subtext {
+                margin-top: 0.36rem;
+                font-size: 0.76rem;
             }
             .strategy-card-grid {
                 grid-template-columns: 1fr;
@@ -1224,6 +1352,10 @@
                     <span id="execModeBadge" class="badge bg-secondary">Mode: Loading...</span>
                     <span id="dataSourceBadge" class="badge bg-secondary">Source: --</span>
                     <span id="scheduleDisplay" class="badge satsflow-info-badge">Loading Schedule...</span>
+                    <span class="badge d-none" id="fixedDcaCapBadge" title="">
+                        <i class="bi bi-shield-check" aria-hidden="true"></i>
+                        <span id="fixedDcaCapBadgeText"></span>
+                    </span>
                 </div>
             </div>
             <div class="card-body">
@@ -1256,15 +1388,37 @@
                             <div class="metric-subtext">Monthly</div>
                         </div>
                     </div>
-                    <div class="strategy-metric">
-                        <div class="strategy-metric-content">
+                    <div class="strategy-action-panel strategy-action-panel-desktop is-waiting" id="strategyActionPanel">
+                        <div class="strategy-action-panel-content">
                             <div class="strategy-label mb-3">Next Scheduled Action</div>
-                            <div class="strategy-value-row">
-                                <div class="strategy-value strategy-action" id="previewAction">--</div>
-                                <span class="strategy-action-coin" aria-hidden="true">₿</span>
+                            <div class="strategy-action-main">
+                                <span class="strategy-action-status-icon" aria-hidden="true">
+                                    <i class="bi bi-clock"></i>
+                                </span>
+                                <div class="strategy-action-copy">
+                                    <div class="strategy-value strategy-action" id="previewAction">--</div>
+                                    <div class="strategy-action-subtext" id="previewActionSubtext">--</div>
+                                </div>
+                            </div>
+                        </div>
+                        <span class="strategy-action-coin" aria-hidden="true">₿</span>
+                    </div>
+                </div>
+
+                <div class="strategy-action-panel strategy-action-panel-mobile is-waiting" id="strategyActionPanelMobile">
+                    <div class="strategy-action-panel-content">
+                        <div class="strategy-label mb-3">Next Scheduled Action</div>
+                        <div class="strategy-action-main">
+                            <span class="strategy-action-status-icon" aria-hidden="true">
+                                <i class="bi bi-clock"></i>
+                            </span>
+                            <div class="strategy-action-copy">
+                                <div class="strategy-value strategy-action" id="previewActionMobile">--</div>
+                                <div class="strategy-action-subtext" id="previewActionSubtextMobile">--</div>
                             </div>
                         </div>
                     </div>
+                    <span class="strategy-action-coin" aria-hidden="true">₿</span>
                 </div>
                 
                 <div class="strategy-advanced-panel mobile-collapsible is-collapsed mb-3">
@@ -1545,6 +1699,10 @@
             const wallet = parseCache('wallet_summary');
             const strategy = parseCache('strategy_config');
             const preview = parseCache('dca_preview');
+            window.__dashboardStrategy = strategy || null;
+            if (typeof updateFixedDcaStopCapDisplay === 'function') {
+                updateFixedDcaStopCapDisplay(strategy);
+            }
 
             if (wallet && wallet.total_btc !== undefined && wallet.total_btc !== null) {
                 const binance = parseCache('binance_holdings');
@@ -1625,14 +1783,10 @@
                     setDashboardTextIfPresent('mobilePreviewBand', bandText);
                 }
                 if (previewActionEl && typeof preview.can_execute === 'boolean') {
-                    let actionText = '--';
-                    if (preview.can_execute && suggestedAmount !== null) {
-                        actionText = `Will buy $${suggestedAmount.toFixed(2)}`;
-                    } else if (!preview.can_execute) {
-                        actionText = 'Will wait';
+                    window.__latestDrawdownDecision = preview;
+                    if (typeof updatePreviewActionState === 'function') {
+                        updatePreviewActionState(preview);
                     }
-                    previewActionEl.textContent = actionText;
-                    setDashboardTextIfPresent('mobilePreviewAction', actionText);
                 }
                 if (previewReasonEl && typeof preview.reason === 'string' && preview.reason.trim() !== '') {
                     previewReasonEl.textContent = formatDashboardStatusReason(preview.reason);
@@ -2265,7 +2419,121 @@
 
 
 
+        function toFiniteDashboardNumber(value) {
+            const num = Number(value);
+            return Number.isFinite(num) ? num : null;
+        }
+
+        function getFixedDcaStopCap(strategy) {
+            const stopPrice = Number(strategy?.fixed_dca_stop_price_usd);
+            if (
+                strategy &&
+                strategy.strategy_type === 'fixed_dca' &&
+                Number.isFinite(stopPrice) &&
+                stopPrice > 0
+            ) {
+                return stopPrice;
+            }
+            return null;
+        }
+
+        function formatDashboardUsd(value) {
+            return `$${value.toLocaleString(undefined, {
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 2
+            })}`;
+        }
+
+        function getDashboardScheduleRunText(strategy) {
+            if (!strategy || !strategy.execution_frequency || !strategy.execution_time_utc) {
+                return 'scheduled time';
+            }
+            const freq = formatStrategyFrequency(strategy.execution_frequency);
+            const mode = (strategy.time_display_mode || 'UTC').toUpperCase();
+            const modeLabel = mode === 'LOCAL' ? window.LOCAL_TIMEZONE : 'UTC';
+            return `${freq} ${strategy.execution_time_utc} (${modeLabel})`;
+        }
+
+        function isFixedDcaPriceAboveCap(strategy, decision) {
+            const stopCap = getFixedDcaStopCap(strategy);
+            const price = toFiniteDashboardNumber(decision?.price_usd);
+            return stopCap !== null && price !== null && price >= stopCap;
+        }
+
+        function updateFixedDcaStopCapDisplay(strategy) {
+            const badgeEl = document.getElementById('fixedDcaCapBadge');
+            const textEl = document.getElementById('fixedDcaCapBadgeText');
+            if (!badgeEl || !textEl) return;
+
+            const stopPrice = getFixedDcaStopCap(strategy);
+
+            if (stopPrice !== null) {
+                const formatted = `$${stopPrice.toLocaleString(undefined, {
+                    maximumFractionDigits: 2
+                })}`;
+                textEl.textContent = `Cap ≤ ${formatted}`;
+                badgeEl.classList.remove('d-none');
+                badgeEl.title = `Automatic Fixed DCA waits at or above ${formatted}. Extra Buy is not affected.`;
+                badgeEl.setAttribute('aria-label', `Automatic Fixed DCA guardrail ${formatted}. Extra Buy is not affected.`);
+            } else {
+                textEl.textContent = '';
+                badgeEl.classList.add('d-none');
+                badgeEl.removeAttribute('title');
+                badgeEl.removeAttribute('aria-label');
+            }
+        }
+
+        function updatePreviewActionState(decision) {
+            const panels = [
+                document.getElementById('strategyActionPanel'),
+                document.getElementById('strategyActionPanelMobile')
+            ].filter(Boolean);
+            const actionEls = [
+                document.getElementById('previewAction'),
+                document.getElementById('previewActionMobile')
+            ].filter(Boolean);
+            const subtextEls = [
+                document.getElementById('previewActionSubtext'),
+                document.getElementById('previewActionSubtextMobile')
+            ].filter(Boolean);
+            if (!panels.length || !actionEls.length || !subtextEls.length || !decision) return;
+
+            const strategy = window.__dashboardStrategy || null;
+            const suggestedAmount = toFiniteDashboardNumber(decision.suggested_amount_usd);
+            const canBuy = decision.can_execute === true && suggestedAmount !== null && suggestedAmount > 0;
+
+            panels.forEach((panelEl) => {
+                panelEl.classList.remove('is-buying', 'is-waiting');
+            });
+
+            let actionText = 'Will wait';
+            let subtext = `Next run at ${getDashboardScheduleRunText(strategy)}`;
+
+            if (canBuy) {
+                actionText = `Will buy ${formatDashboardUsd(suggestedAmount)}`;
+                panels.forEach((panelEl) => panelEl.classList.add('is-buying'));
+            } else {
+                panels.forEach((panelEl) => panelEl.classList.add('is-waiting'));
+                if (isFixedDcaPriceAboveCap(strategy, decision)) {
+                    subtext = 'Price above cap';
+                }
+            }
+
+            actionEls.forEach((actionEl) => {
+                actionEl.textContent = actionText;
+            });
+            subtextEls.forEach((subtextEl) => {
+                subtextEl.textContent = subtext;
+            });
+            setDashboardTextIfPresent('mobilePreviewAction', actionText);
+        }
+
         function updateStrategyUI(strategy) {
+            window.__dashboardStrategy = strategy || null;
+            updateFixedDcaStopCapDisplay(strategy);
+            if (window.__latestDrawdownDecision) {
+                updatePreviewActionState(window.__latestDrawdownDecision);
+            }
             if (strategy) {
                 currentTimeDisplayMode = (strategy.time_display_mode || 'UTC').toUpperCase();
                 setStrategyScheduleBadge(strategy);
@@ -2470,11 +2738,8 @@
             const bandText = decision.ahr_band.toUpperCase();
             document.getElementById('previewBand').textContent = bandText;
             setDashboardTextIfPresent('mobilePreviewBand', bandText);
-            const actionText = decision.can_execute
-                ? `Will buy $${decision.suggested_amount_usd.toFixed(2)}`
-                : 'Will wait';
-            document.getElementById('previewAction').textContent = actionText;
-            setDashboardTextIfPresent('mobilePreviewAction', actionText);
+            window.__latestDrawdownDecision = decision;
+            updatePreviewActionState(decision);
             
             // Update data source (Phase 6)
             const metricsSource = decision.metrics_source || {backend: 'unknown', label: 'Unknown'};
@@ -2491,7 +2756,6 @@
             }
             renderBottomingSignalPreview(decision.bottoming_signal || null);
 
-            window.__latestDrawdownDecision = decision;
             window.renderDrawdownContextCompact(decision);
             
             // Update global refresh timestamp
