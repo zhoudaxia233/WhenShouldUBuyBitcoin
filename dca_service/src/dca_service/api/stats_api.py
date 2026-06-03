@@ -47,7 +47,7 @@ def _normalize_language(language: str | None) -> str:
 
 
 class AddPositionAdviceRequest(BaseModel):
-    amount_usdc: float = Field(gt=0)
+    amount_usdc: Optional[float] = Field(default=None, gt=0)
     current_price_usd: Optional[float] = Field(default=None, gt=0)
     symbol: str = Field(default="BTCUSDC", min_length=6, max_length=20)
 
@@ -1545,7 +1545,7 @@ def _build_add_position_guidance(
     *,
     behavior_data: Dict[str, Any],
     events: List[Dict[str, Any]],
-    amount_usdc: float,
+    amount_usdc: Optional[float],
     current_price_usd: float,
     market_context: Optional[Dict[str, Any]] = None,
     macro_context: Optional[Dict[str, Any]] = None,
@@ -1560,15 +1560,17 @@ def _build_add_position_guidance(
 
     summary = behavior_data.get("summary", {}) or {}
     style_tags = behavior_data.get("style_tags", []) or []
+    input_amount = _as_float(amount_usdc)
+    has_input_amount = bool(input_amount is not None and input_amount > 0)
     total_invested_usd = float(summary.get("total_invested_usd", 0.0) or 0.0)
     total_btc = float(summary.get("total_btc", 0.0) or 0.0)
     current_avg_cost_usd = (total_invested_usd / total_btc) if total_btc > 0 else None
-    proposed_btc = amount_usdc / current_price_usd if current_price_usd > 0 else 0.0
+    proposed_btc = (input_amount / current_price_usd) if has_input_amount and current_price_usd > 0 else None
     proposed_avg_cost_after_buy = None
     proposed_avg_cost_delta = None
     proposed_avg_cost_delta_pct = None
-    if total_btc + proposed_btc > 0:
-        proposed_avg_cost_after_buy = (total_invested_usd + amount_usdc) / (total_btc + proposed_btc)
+    if proposed_btc is not None and total_btc + proposed_btc > 0:
+        proposed_avg_cost_after_buy = (total_invested_usd + input_amount) / (total_btc + proposed_btc)
         if current_avg_cost_usd is not None:
             proposed_avg_cost_delta = proposed_avg_cost_after_buy - current_avg_cost_usd
             proposed_avg_cost_delta_pct = (
@@ -1668,12 +1670,15 @@ def _build_add_position_guidance(
     )
 
     recent_amounts = [float(e.get("amount_usd", 0.0)) for e in events[-10:] if float(e.get("amount_usd", 0.0)) > 0]
-    baseline_amount = _safe_median(recent_amounts, fallback=float(summary.get("avg_event_usd", amount_usdc) or amount_usdc))
+    fallback_baseline = _as_float(summary.get("avg_event_usd"))
+    if fallback_baseline is None or fallback_baseline <= 0:
+        fallback_baseline = input_amount if has_input_amount else 10.0
+    baseline_amount = _safe_median(recent_amounts, fallback=fallback_baseline)
     if baseline_amount <= 0:
-        baseline_amount = amount_usdc
+        baseline_amount = input_amount if has_input_amount else 10.0
 
-    relative_amount = amount_usdc / baseline_amount if baseline_amount > 0 else 1.0
-    relative_amount_label = _classify_relative_amount(relative_amount)
+    relative_amount = (input_amount / baseline_amount) if has_input_amount and baseline_amount > 0 else None
+    relative_amount_label = _classify_relative_amount(relative_amount) if relative_amount is not None else "not_provided"
 
     now_utc = datetime.now(timezone.utc)
     recent_24h_count = sum(
@@ -2262,7 +2267,7 @@ def _build_add_position_guidance(
     if inconsistent_habit:
         # Keep size executable and stable, but allow wider ranges in deep drawdowns.
         if strong_dip_add_mode or persistent_value_regime:
-            upper = max(baseline_amount * 10.0, amount_usdc * 1.10)
+            upper = baseline_amount * 10.0
         else:
             upper = baseline_amount * (3.00 if deep_value_regime else 1.20)
         lower = baseline_amount * 0.85
@@ -2270,7 +2275,11 @@ def _build_add_position_guidance(
         applied_lessons.append("Your historical sizing is unstable; suggestion is anchored to reduce noise in outcomes.")
 
     suggested_amount = round(max(10.0, suggested_amount), 2)
-    proposed_gap_pct = ((amount_usdc - suggested_amount) / suggested_amount * 100.0) if suggested_amount > 0 else 0.0
+    proposed_gap_pct = (
+        ((input_amount - suggested_amount) / suggested_amount * 100.0)
+        if has_input_amount and suggested_amount > 0
+        else None
+    )
 
     decision = "BUY"
     if active_buy_intraday_cooldown_mode:
@@ -2286,15 +2295,27 @@ def _build_add_position_guidance(
         elif (
             (breakout_high_regime or new_ath)
             and recent_48h_count >= 1
-            and amount_usdc > suggested_amount * 1.10
+            and has_input_amount
+            and input_amount > suggested_amount * 1.10
             and not macro_takeoff_mode
         ):
             decision = "WAIT"
             reasons.append("You already bought recently and price is in a breakout-high state; skip this add now.")
-        elif near_ath and burst_habit and amount_usdc > suggested_amount * 1.30 and not macro_takeoff_mode:
+        elif (
+            near_ath
+            and burst_habit
+            and has_input_amount
+            and input_amount > suggested_amount * 1.30
+            and not macro_takeoff_mode
+        ):
             decision = "WAIT"
             reasons.append("Near-high price plus your burst habit makes this add low quality right now.")
-        elif macro_risk_score is not None and macro_risk_score >= 80 and amount_usdc > suggested_amount:
+        elif (
+            macro_risk_score is not None
+            and macro_risk_score >= 80
+            and has_input_amount
+            and input_amount > suggested_amount
+        ):
             decision = "WAIT"
             reasons.append("Macro stress is elevated and your proposed size is above model size.")
 
@@ -2321,8 +2342,8 @@ def _build_add_position_guidance(
 
     lower_alignment_factor = 0.65 if (deep_value_regime or persistent_value_regime) else 0.85
     upper_alignment_factor = 1.35 if (deep_value_regime or persistent_value_regime) else 1.15
-    input_below_suggested = bool(amount_usdc < suggested_amount * lower_alignment_factor)
-    input_above_suggested = bool(amount_usdc > suggested_amount * upper_alignment_factor)
+    input_below_suggested = bool(has_input_amount and input_amount < suggested_amount * lower_alignment_factor)
+    input_above_suggested = bool(has_input_amount and input_amount > suggested_amount * upper_alignment_factor)
 
     if not reasons:
         reasons.append("No major risk signal is active; this setup is close to your normal decision profile.")
@@ -2366,7 +2387,13 @@ def _build_add_position_guidance(
         final_call = "NO BUY"
     else:
         advised_amount_usdc = suggested_amount
-        if input_above_suggested:
+        if not has_input_amount:
+            action_code = "RECOMMENDATION_ONLY"
+            input_alignment = "NOT_PROVIDED"
+            action_now = "Enter an amount to evaluate this one-time buy."
+            call_reason = "Current market conditions define the suggested range before your order amount."
+            final_call = "RECOMMENDATION READY"
+        elif input_above_suggested:
             action_code = "BUY_LESS"
             input_alignment = "ABOVE_SUGGESTED"
             action_now = f"Buy less: ${suggested_amount:,.2f}."
@@ -2387,21 +2414,21 @@ def _build_add_position_guidance(
         elif strong_dip_add_mode:
             action_code = "BUY_AS_PLANNED"
             input_alignment = "ALIGNED_CAPITULATION"
-            action_now = f"Buy ${amount_usdc:,.2f} now."
+            action_now = f"Buy ${input_amount:,.2f} now."
             call_reason = "Capitulation setup is confirmed across multiple signals."
-            final_call = f"BUY AS PLANNED: ${amount_usdc:,.2f}"
+            final_call = f"BUY AS PLANNED: ${input_amount:,.2f}"
         elif persistent_value_regime:
             action_code = "BUY_AS_PLANNED"
             input_alignment = "ALIGNED_DEEP_VALUE"
-            action_now = f"Buy ${amount_usdc:,.2f} now."
+            action_now = f"Buy ${input_amount:,.2f} now."
             call_reason = "Double-undervaluation and cost-basis repair both support this add."
-            final_call = f"BUY AS PLANNED: ${amount_usdc:,.2f}"
+            final_call = f"BUY AS PLANNED: ${input_amount:,.2f}"
         else:
             action_code = "BUY_AS_PLANNED"
             input_alignment = "ALIGNED"
-            action_now = f"Buy ${amount_usdc:,.2f} now."
+            action_now = f"Buy ${input_amount:,.2f} now."
             call_reason = "Your plan size is already in the rational range."
-            final_call = f"BUY AS PLANNED: ${amount_usdc:,.2f}"
+            final_call = f"BUY AS PLANNED: ${input_amount:,.2f}"
 
     risk_score = 35
     if breakout_high_regime or new_ath:
@@ -2447,13 +2474,22 @@ def _build_add_position_guidance(
             suggested_avg_cost_delta = suggested_avg_cost_after_buy - current_avg_cost_usd
     lines: List[str] = [f"Strategy check: {final_call}"]
     if decision == "BUY":
-        lines.append(
-            f"Input: ${amount_usdc:,.2f} | Suggested now: ${suggested_amount:,.2f} "
-            f"(range ${range_min:,.2f}-${range_max:,.2f}, {size_bucket.lower()})."
-        )
+        if has_input_amount:
+            lines.append(
+                f"Input: ${input_amount:,.2f} | Suggested now: ${suggested_amount:,.2f} "
+                f"(range ${range_min:,.2f}-${range_max:,.2f}, {size_bucket.lower()})."
+            )
+        else:
+            lines.append(
+                f"Suggested range now: ${range_min:,.2f}-${range_max:,.2f} "
+                f"({size_bucket.lower()})."
+            )
         lines.append(f"Estimated BTC now: {estimated_btc:.8f} BTC")
     else:
-        lines.append(f"Input: ${amount_usdc:,.2f} | Suggested now: skip this entry.")
+        if has_input_amount:
+            lines.append(f"Input: ${input_amount:,.2f} | Suggested now: skip this entry.")
+        else:
+            lines.append("Suggested now: skip this entry.")
     lines.append(f"Do now: {action_now}")
     lines.append(f"Short reason: {call_reason}")
     if freshness_notes:
@@ -2556,8 +2592,8 @@ def _build_add_position_guidance(
         "action_now": action_now,
         "input_alignment": input_alignment,
         "suggested_amount_usdc": suggested_amount if decision == "BUY" else 0.0,
-        "proposed_amount_usdc": float(amount_usdc),
-        "proposed_gap_pct_vs_suggested": float(proposed_gap_pct),
+        "proposed_amount_usdc": float(input_amount) if has_input_amount else None,
+        "proposed_gap_pct_vs_suggested": float(proposed_gap_pct) if proposed_gap_pct is not None else None,
         "reasons": reasons,
         "applied_lessons": applied_lessons,
         "price_context": {
@@ -2570,7 +2606,7 @@ def _build_add_position_guidance(
         },
         "sizing_context": {
             "baseline_event_usd": float(baseline_amount),
-            "relative_size_to_baseline": float(relative_amount),
+            "relative_size_to_baseline": float(relative_amount) if relative_amount is not None else None,
             "relative_amount_label": relative_amount_label,
             "recommended_range_usdc": {
                 "min": range_min,
@@ -2636,7 +2672,7 @@ def _build_add_position_guidance(
                 else None
             ),
             "cost_basis_repair_opportunity": bool(cost_basis_repair_opportunity),
-            "proposed_btc": float(proposed_btc),
+            "proposed_btc": float(proposed_btc) if proposed_btc is not None else None,
             "proposed_avg_cost_after_buy_usd": (
                 float(proposed_avg_cost_after_buy) if proposed_avg_cost_after_buy is not None else None
             ),
@@ -3030,7 +3066,7 @@ def get_add_position_advice(
     guidance = _build_add_position_guidance(
         behavior_data=behavior_data,
         events=aggregate_meta.get("events", []) or [],
-        amount_usdc=float(payload.amount_usdc),
+        amount_usdc=float(payload.amount_usdc) if payload.amount_usdc is not None else None,
         current_price_usd=float(price_snapshot["price"]),
         market_context=market_context,
         macro_context=macro_context,
@@ -3041,7 +3077,7 @@ def get_add_position_advice(
         "source_signature": source_signature,
         "symbol": normalized_symbol,
         "input": {
-            "amount_usdc": float(payload.amount_usdc),
+            "amount_usdc": float(payload.amount_usdc) if payload.amount_usdc is not None else None,
             "current_price_usd": float(price_snapshot["price"]),
         },
         "price_snapshot": price_snapshot,
