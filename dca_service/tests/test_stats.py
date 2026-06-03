@@ -654,6 +654,57 @@ def test_add_position_advice_uses_split_fill_merged_behavior_events(client: Test
     assert payload["guidance"]["method_constraints"]["no_hindsight"]
 
 
+def test_add_position_advice_returns_recommendation_before_user_enters_amount(client: TestClient, session: Session):
+    tx1 = DCATransaction(
+        status="SUCCESS",
+        fiat_amount=100.0,
+        btc_amount=0.0011111111,
+        price=90000.0,
+        ahr999=0.56,
+        notes="Prior buy 1",
+        timestamp=datetime(2026, 1, 1, tzinfo=timezone.utc),
+        source="MANUAL",
+        is_manual=True,
+    )
+    tx2 = DCATransaction(
+        status="SUCCESS",
+        fiat_amount=100.0,
+        btc_amount=0.00125,
+        price=80000.0,
+        ahr999=0.56,
+        notes="Prior buy 2",
+        timestamp=datetime(2026, 1, 6, tzinfo=timezone.utc),
+        source="MANUAL",
+        is_manual=True,
+    )
+    session.add(tx1)
+    session.add(tx2)
+    session.commit()
+
+    response = client.post(
+        "/api/stats/add-position/advice",
+        json={
+            "current_price_usd": 76000.0,
+            "symbol": "BTCUSDC",
+        },
+    )
+
+    assert response.status_code == 200
+    payload = response.json()
+    guidance = payload["guidance"]
+    recommended_range = guidance["sizing_context"]["recommended_range_usdc"]
+
+    assert payload["input"]["amount_usdc"] is None
+    assert guidance["action_code"] == "RECOMMENDATION_ONLY"
+    assert guidance["input_alignment"] == "NOT_PROVIDED"
+    assert guidance["proposed_amount_usdc"] is None
+    assert guidance["proposed_gap_pct_vs_suggested"] is None
+    assert recommended_range["min"] > 0
+    assert recommended_range["max"] >= recommended_range["min"]
+    assert guidance["cost_basis_context"]["proposed_avg_cost_after_buy_usd"] is None
+    assert guidance["cost_basis_context"]["proposed_avg_cost_delta_usd"] is None
+
+
 def test_add_position_advice_reports_cost_basis_impact():
     base_time = datetime(2026, 1, 1, tzinfo=timezone.utc)
     events = [
@@ -1054,6 +1105,105 @@ def test_add_position_advice_deep_value_uses_wide_band_not_unlimited_planned_siz
     assert huge["suggested_amount_usdc"] < huge["proposed_amount_usdc"]
     assert huge["input_alignment"] == "ABOVE_SUGGESTED"
     assert "\nApplied lesson:\n3. " in planned["analysis_text"]
+
+
+def test_add_position_recommendation_range_is_available_without_input_and_stable():
+    base_time = datetime(2026, 1, 1, tzinfo=timezone.utc)
+    events = [
+        {
+            "event_key": "order:1",
+            "event_type": "ORDER",
+            "binance_order_id": 1,
+            "timestamp": base_time,
+            "timestamp_end": base_time,
+            "fill_count": 1,
+            "amount_usd": 100.0,
+            "amount_btc": 0.0011111111,
+            "avg_price_usd": 90000.0,
+            "fee_usd": 0.0,
+            "source_types": ["MANUAL"],
+            "tx_ids": [1],
+            "trade_ids": [1],
+        },
+        {
+            "event_key": "order:2",
+            "event_type": "ORDER",
+            "binance_order_id": 2,
+            "timestamp": base_time + timedelta(days=5),
+            "timestamp_end": base_time + timedelta(days=5),
+            "fill_count": 1,
+            "amount_usd": 100.0,
+            "amount_btc": 0.00125,
+            "avg_price_usd": 80000.0,
+            "fee_usd": 0.0,
+            "source_types": ["MANUAL"],
+            "tx_ids": [2],
+            "trade_ids": [2],
+        },
+    ]
+    behavior_data = stats_api._build_behavior_analysis(
+        events,
+        {
+            "raw_fill_count": len(events),
+            "event_count": len(events),
+            "split_event_count": 0,
+            "split_fill_extra_count": 0,
+        },
+    )
+    market_context = {
+        "available": True,
+        "is_stale": False,
+        "is_double_undervalued": True,
+        "ratio_dca_current": 0.97,
+        "ratio_trend_current": 0.57,
+        "ahr999": 0.56,
+        "ahr999_sub_1": True,
+        "current_vs_180d_low_pct": 23.0,
+        "drop_24h_pct": -0.4,
+    }
+    macro_context = {
+        "available": True,
+        "is_stale": False,
+        "report_age_days": 1,
+        "macro_risk_score": 31.0,
+        "stress_flags": 0,
+        "net_liquidity_90d_delta": 207.0,
+        "ma_regime": "bearish",
+        "ma_spread": -3468.0,
+    }
+
+    no_input = stats_api._build_add_position_guidance(
+        behavior_data=behavior_data,
+        events=events,
+        amount_usdc=None,
+        current_price_usd=76000.0,
+        market_context=market_context,
+        macro_context=macro_context,
+    )
+    small = stats_api._build_add_position_guidance(
+        behavior_data=behavior_data,
+        events=events,
+        amount_usdc=50.0,
+        current_price_usd=76000.0,
+        market_context=market_context,
+        macro_context=macro_context,
+    )
+    huge = stats_api._build_add_position_guidance(
+        behavior_data=behavior_data,
+        events=events,
+        amount_usdc=3000.0,
+        current_price_usd=76000.0,
+        market_context=market_context,
+        macro_context=macro_context,
+    )
+
+    assert no_input["action_code"] == "RECOMMENDATION_ONLY"
+    assert no_input["input_alignment"] == "NOT_PROVIDED"
+    assert no_input["proposed_amount_usdc"] is None
+    assert no_input["proposed_gap_pct_vs_suggested"] is None
+    assert no_input["sizing_context"]["recommended_range_usdc"] == small["sizing_context"]["recommended_range_usdc"]
+    assert no_input["sizing_context"]["recommended_range_usdc"] == huge["sizing_context"]["recommended_range_usdc"]
+    assert no_input["suggested_amount_usdc"] == small["suggested_amount_usdc"] == huge["suggested_amount_usdc"]
 
 
 def test_add_position_confirm_records_simulated_buy_transaction(client: TestClient, session: Session):
