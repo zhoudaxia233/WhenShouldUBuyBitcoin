@@ -97,6 +97,47 @@ def test_switch_time_mode_keeps_wall_clock_execution_time(client: TestClient, se
     assert data["time_display_mode"] == "UTC"
     assert data["execution_time_utc"] == "00:00"
 
+
+def test_strategy_persists_fixed_dca_stop_price(client: TestClient, session: Session):
+    strategy = DCAStrategy(
+        is_active=True,
+        total_budget_usd=1000.0,
+        enforce_monthly_cap=True,
+        ahr999_multiplier_low=5.0,
+        ahr999_multiplier_mid=2.0,
+        ahr999_multiplier_high=0.0,
+        strategy_type="fixed_dca",
+        fixed_dca_stop_price_usd=120000.0,
+    )
+    session.add(strategy)
+    session.commit()
+
+    response = client.get("/api/strategy")
+    assert response.status_code == 200
+    assert response.json()["fixed_dca_stop_price_usd"] == 120000.0
+
+    update_payload = response.json()
+    update_payload.pop("id", None)
+    update_payload.pop("created_at", None)
+    update_payload.pop("updated_at", None)
+    update_payload["fixed_dca_stop_price_usd"] = 130000.0
+
+    response = client.put("/api/strategy", json=update_payload)
+    assert response.status_code == 200
+    assert response.json()["fixed_dca_stop_price_usd"] == 130000.0
+
+    response = client.get("/api/strategy")
+    assert response.status_code == 200
+    assert response.json()["fixed_dca_stop_price_usd"] == 130000.0
+
+
+def test_strategy_page_fixed_dca_stop_price_ui(client: TestClient):
+    response = client.get("/strategy")
+    assert response.status_code == 200
+    assert "Fixed DCA (Budget Only)" not in response.text
+    assert '<option value="fixed_dca">Fixed DCA</option>' in response.text
+    assert 'id="fixed_dca_stop_price_usd"' in response.text
+
 # ============================================================================
 # DCA API TESTS
 # ============================================================================

@@ -163,8 +163,11 @@ def test_dashboard_mobile_keeps_reference_density_and_card_shapes():
     assert ".wallet-card-grid .metric-card:not(.metric-card-primary) .metric-value {" in mobile_css
     assert "white-space: nowrap;" in mobile_css
     assert ".strategy-metric-grid {" in mobile_css
-    assert "grid-template-columns: repeat(3, minmax(0, 1fr));" in mobile_css
+    assert "grid-template-columns: repeat(2, minmax(0, 1fr));" in mobile_css
     assert "min-height: 44px;" in mobile_css
+    assert ".strategy-action-panel" in mobile_css
+    assert "min-height: 94px;" in mobile_css
+    assert ".strategy-action-status-icon" in mobile_css
     assert "#bottomingSignalBox {" not in mobile_css
     assert 'id="bottomingSignalStatus"' in html
     assert 'id="bottomingSignalMetrics"' in html
