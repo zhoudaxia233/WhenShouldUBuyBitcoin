@@ -276,29 +276,60 @@
             color: #fff;
         }
         .extra-buy-modal-dialog {
-            max-width: 1180px;
+            max-width: min(92vw, 840px);
         }
         .extra-buy-modal-content {
-            border: 1px solid var(--dashboard-border);
-            border-radius: 12px;
-            background: var(--dashboard-card-bg-solid);
+            --dashboard-text: #f5f7fa;
+            --dashboard-muted: #aeb7c2;
+            --dashboard-border: rgba(180, 194, 208, 0.24);
+            --dashboard-border-strong: rgba(180, 194, 208, 0.46);
+            border: 1px solid color-mix(in srgb, var(--dashboard-border-strong) 76%, #52606d 24%);
+            border-radius: 18px;
+            background-color: #0d141b;
+            background-image:
+                radial-gradient(circle at 18% 0%, rgba(48, 61, 72, 0.46), transparent 34%),
+                linear-gradient(145deg, #151e27 0%, #0d141b 100%);
             color: var(--dashboard-text);
-            box-shadow: var(--dashboard-shadow);
+            box-shadow: 0 28px 80px rgba(0, 0, 0, 0.48);
             overflow: hidden;
+        }
+        .extra-buy-modal-content .btn-close {
+            filter: invert(1);
+            opacity: 0.72;
+        }
+        .extra-buy-modal-content .btn-close:hover,
+        .extra-buy-modal-content .btn-close:focus-visible {
+            opacity: 1;
         }
         .extra-buy-modal-content .modal-header {
             align-items: flex-start;
             border-color: var(--dashboard-border);
-            padding: 1rem 1.3rem 0.95rem;
-            background:
-                radial-gradient(circle at 12% 0%, var(--dashboard-accent-softer), transparent 36%),
-                color-mix(in srgb, var(--dashboard-card-bg-solid) 94%, var(--dashboard-accent) 6%);
+            padding: 0.84rem 1rem 0.78rem;
+            background: transparent;
+        }
+        .extra-buy-title-row {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.72rem;
+        }
+        .extra-buy-header-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: color-mix(in srgb, var(--dashboard-accent) 28%, transparent);
+            color: var(--dashboard-accent-strong);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            flex: 0 0 auto;
+            font-size: 1.12rem;
         }
         .extra-buy-modal-content .modal-title {
             color: var(--dashboard-text);
-            font-size: 1.42rem;
+            font-size: 1.36rem;
             font-weight: 800;
             letter-spacing: 0;
+            line-height: 1.06;
         }
         .extra-buy-title-wrap {
             min-width: 0;
@@ -308,92 +339,91 @@
             display: flex;
             align-items: center;
             gap: 0.5rem;
-            font-size: 0.86rem;
+            font-size: 0.82rem;
             font-weight: 620;
-            line-height: 1.35;
-            margin-top: 0.42rem;
+            line-height: 1.25;
+            margin-top: 0.34rem;
         }
         .extra-buy-layout {
             display: grid;
-            grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+            grid-template-columns: 1fr;
             grid-template-areas:
-                "hero controls"
-                "signals signals"
-                "impact impact"
-                "cta cta"
-                "advanced advanced";
-            gap: 0.75rem;
-            padding: 1rem 1.1rem 1.1rem;
+                "hero"
+                "controls"
+                "impact"
+                "decision"
+                "signals"
+                "cta"
+                "footnote";
+            gap: 0.52rem;
+            padding: 0.72rem 0.8rem 0.78rem;
             align-items: start;
         }
         .extra-buy-hero {
             grid-area: hero;
             display: grid;
-            grid-template-columns: auto minmax(0, 1fr);
-            gap: 0.78rem 1rem;
+            grid-template-columns: auto minmax(0, 1fr) auto;
+            gap: 0.55rem 0.72rem;
             align-items: center;
-            border: 1px solid var(--dashboard-border);
-            border-radius: 12px;
+            border: 1px solid color-mix(in srgb, var(--dashboard-success) 35%, var(--dashboard-border));
+            border-radius: 14px;
             background:
-                radial-gradient(circle at 0% 0%, var(--dashboard-success-soft), transparent 32%),
-                color-mix(in srgb, var(--dashboard-card-bg-solid) 96%, var(--dashboard-success) 4%);
-            min-height: 218px;
-            padding: 1.25rem 1.35rem;
+                radial-gradient(circle at 5% 50%, color-mix(in srgb, var(--dashboard-success) 18%, transparent), transparent 22%),
+                linear-gradient(90deg, color-mix(in srgb, var(--dashboard-success) 10%, transparent), transparent 45%),
+                #0f2020;
+            padding: 0.72rem 0.84rem;
         }
         .extra-buy-opportunity-icon {
-            width: 72px;
-            height: 72px;
+            width: 48px;
+            height: 48px;
             border-radius: 50%;
-            background: var(--dashboard-success-soft);
-            color: var(--dashboard-success);
+            background: color-mix(in srgb, var(--dashboard-success) 20%, transparent);
+            color: color-mix(in srgb, var(--dashboard-success) 86%, #d7ffe5 14%);
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.75rem;
+            font-size: 1.18rem;
         }
         .extra-buy-opportunity-title {
-            color: var(--dashboard-success);
-            font-size: clamp(1.28rem, 2.1vw, 1.55rem);
+            color: var(--dashboard-text);
+            font-size: 1.08rem;
             font-weight: 820;
-            line-height: 1.15;
-            margin: 0 0 0.35rem;
+            line-height: 1.2;
+            margin: 0 0 0.24rem;
         }
         .extra-buy-confidence {
-            color: var(--dashboard-muted);
             display: flex;
-            align-items: baseline;
-            gap: 0.9rem;
-            font-size: 0.92rem;
-            font-weight: 640;
+            align-items: center;
+            gap: 0.48rem;
+            color: var(--dashboard-success);
+            font-size: 0.86rem;
+            font-weight: 780;
         }
         .extra-buy-confidence strong {
             color: var(--dashboard-success);
-            font-size: 1.02rem;
-            font-weight: 820;
+            font-size: inherit;
+            font-weight: inherit;
         }
-        .extra-buy-hero-divider {
-            grid-column: 1 / -1;
-            border-top: 1px solid var(--dashboard-border);
-            margin: 0.24rem 0 0;
-        }
-        .extra-buy-range {
-            grid-column: 1 / -1;
-        }
-        .extra-buy-eyebrow {
+        .extra-buy-signal-copy {
             color: var(--dashboard-muted);
-            font-size: 0.9rem;
-            font-weight: 700;
+            font-size: 0.82rem;
+            font-weight: 600;
+            line-height: 1.35;
+            margin: 0;
         }
-        .extra-buy-recommendation-value {
-            color: var(--dashboard-text);
-            font-size: clamp(2.2rem, 3.4vw, 2.8rem);
-            font-weight: 820;
-            line-height: 1;
-            letter-spacing: 0;
-            margin: 0.48rem 0 0.3rem;
+        .extra-buy-confidence-card {
+            display: grid;
+            gap: 0.42rem;
+            justify-items: end;
+            min-width: 178px;
+            text-align: right;
         }
-        .extra-buy-estimate,
-        .extra-buy-range-caption {
+        .extra-buy-disclaimer {
+            color: var(--dashboard-muted);
+            font-size: 0.78rem;
+            font-weight: 600;
+        }
+        .extra-buy-estimate {
             color: var(--dashboard-muted);
             display: inline-flex;
             align-items: center;
@@ -425,59 +455,83 @@
         .extra-buy-controls {
             grid-area: controls;
             display: grid;
-            gap: 0.74rem;
+            gap: 0.54rem;
             border: 1px solid var(--dashboard-border);
-            border-radius: 12px;
+            border-radius: 14px;
             background:
-                radial-gradient(circle at 0% 0%, var(--dashboard-accent-softer), transparent 38%),
-                color-mix(in srgb, var(--dashboard-card-bg-solid) 96%, var(--dashboard-accent) 4%);
-            min-height: 218px;
-            padding: 1.15rem 1.25rem;
+                radial-gradient(circle at 0% 0%, rgba(87, 103, 119, 0.14), transparent 34%),
+                #121b24;
+            padding: 0.72rem 0.86rem 0.68rem;
         }
         .extra-buy-order-heading {
-            color: var(--dashboard-accent-strong);
-            display: flex;
-            align-items: center;
-            gap: 0.62rem;
-            font-size: 0.8rem;
-            font-weight: 820;
-            letter-spacing: 0.02em;
-        }
-        .extra-buy-order-heading i {
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            background: color-mix(in srgb, var(--dashboard-accent) 22%, transparent);
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
+            color: var(--dashboard-text);
+            display: block;
             font-size: 0.9rem;
+            font-weight: 820;
+            letter-spacing: 0;
         }
+        .extra-buy-order-heading i { display: none; }
         .extra-buy-control-card {
             min-width: 0;
         }
         .extra-buy-control-card .form-label {
             color: var(--dashboard-text);
-            font-size: 0.9rem;
-            font-weight: 760;
-            margin-bottom: 0.42rem;
+            font-size: 1.18rem;
+            font-weight: 820;
+            margin-bottom: 0.9rem;
         }
         .extra-buy-amount-input-wrap {
             position: relative;
         }
+        .extra-buy-input-lock {
+            position: absolute;
+            left: 0.82rem;
+            top: 50%;
+            z-index: 2;
+            width: 24px;
+            height: 24px;
+            border: 1px solid color-mix(in srgb, var(--dashboard-muted) 44%, transparent);
+            border-radius: 50%;
+            background: color-mix(in srgb, var(--dashboard-muted) 14%, #121b24 86%);
+            color: color-mix(in srgb, var(--dashboard-muted) 88%, var(--dashboard-text));
+            display: none;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.72rem;
+            pointer-events: none;
+            transform: translateY(-50%);
+        }
+        .extra-buy-amount-input-wrap.is-disabled .extra-buy-input-lock {
+            display: inline-flex;
+        }
+        .extra-buy-amount-input-wrap.is-disabled .form-control {
+            border-style: dashed;
+            padding-left: 3.05rem;
+            box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.02);
+        }
+        .extra-buy-amount-input-wrap.is-disabled .extra-buy-input-suffix {
+            color: color-mix(in srgb, var(--dashboard-muted) 82%, transparent);
+        }
         .extra-buy-control-card .form-control {
-            min-height: 48px;
-            border-color: var(--dashboard-border-strong);
-            border-radius: 7px;
-            background: color-mix(in srgb, var(--dashboard-card-bg-solid) 94%, var(--dashboard-accent) 6%);
+            min-height: 46px;
+            border: 1px solid color-mix(in srgb, var(--dashboard-muted) 74%, var(--dashboard-border));
+            border-radius: 9px;
+            background: rgba(7, 13, 20, 0.46);
             color: var(--dashboard-text);
-            font-size: 1rem;
+            font-size: 0.95rem;
             font-weight: 700;
-            padding-right: 4.1rem;
+            padding: 0.66rem 4rem 0.66rem 0.92rem;
         }
         .extra-buy-control-card .form-control:focus {
             border-color: var(--dashboard-accent);
             box-shadow: 0 0 0 0.16rem var(--dashboard-accent-soft);
+        }
+        .extra-buy-control-card .form-control:disabled {
+            border-color: color-mix(in srgb, var(--dashboard-border-strong) 52%, transparent);
+            background: rgba(70, 82, 94, 0.28);
+            color: color-mix(in srgb, var(--dashboard-text) 56%, var(--dashboard-muted));
+            cursor: not-allowed;
+            opacity: 1;
         }
         .extra-buy-control-card .form-control[type="number"] {
             -moz-appearance: textfield;
@@ -490,51 +544,52 @@
         }
         .extra-buy-input-suffix {
             position: absolute;
-            right: 1rem;
+            right: 0.86rem;
             top: 50%;
             transform: translateY(-50%);
             color: var(--dashboard-muted);
-            font-size: 0.9rem;
+            font-size: 0.82rem;
             font-weight: 760;
             pointer-events: none;
         }
-        .extra-buy-quick-grid {
-            display: grid;
-            grid-template-columns: repeat(4, minmax(0, 1fr));
-            gap: 0.55rem;
+        .extra-buy-price-strip {
+            display: flex;
+            align-items: center;
+            gap: 0.62rem;
+            color: var(--dashboard-muted);
+            font-size: 0.84rem;
+            font-weight: 650;
+            margin-top: 0.2rem;
+            min-width: 0;
         }
-        .extra-buy-quick-btn {
-            min-height: 40px;
-            border: 1px solid var(--dashboard-border-strong);
-            border-radius: 7px;
-            background: color-mix(in srgb, var(--dashboard-card-bg-solid) 96%, var(--dashboard-accent) 4%);
-            color: var(--dashboard-accent-strong);
-            font-size: 0.9rem;
-            font-weight: 780;
+        .extra-buy-price-token {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: var(--dashboard-accent);
+            color: #fff;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.82rem;
+            font-weight: 820;
         }
-        .extra-buy-quick-btn:hover,
-        .extra-buy-quick-btn:focus-visible {
-            border-color: var(--dashboard-accent);
-            color: var(--dashboard-accent-strong);
+        .extra-buy-price-label {
+            color: var(--dashboard-text);
+            font-size: 0.92rem;
+            font-weight: 760;
+        }
+        .extra-buy-price-divider {
+            color: color-mix(in srgb, var(--dashboard-muted) 56%, transparent);
         }
         .extra-buy-price-card {
-            display: flex;
+            display: contents;
             align-items: center;
             justify-content: space-between;
             gap: 0.55rem;
-            border: 1px solid color-mix(in srgb, var(--dashboard-accent) 44%, var(--dashboard-border));
-            border-radius: 8px;
-            background: color-mix(in srgb, var(--dashboard-card-bg-solid) 90%, var(--dashboard-accent) 10%);
-            padding: 0.4rem 0.48rem;
             min-width: 0;
         }
-        .extra-buy-estimate-row {
-            display: flex;
-            align-items: flex-end;
-            justify-content: space-between;
-            gap: 0.7rem;
-            min-width: 0;
-        }
+        .extra-buy-estimate-row { display: contents; }
         .extra-buy-estimate-label {
             color: var(--dashboard-muted);
             display: inline-flex;
@@ -557,23 +612,30 @@
             display: none;
         }
         .extra-buy-price-card .form-text {
-            color: var(--dashboard-text);
-            font-size: 0.95rem;
-            font-weight: 820;
+            color: var(--dashboard-muted);
+            font-size: 0.84rem;
+            font-weight: 650;
             margin: 0;
             white-space: nowrap;
         }
         .extra-buy-price-card .btn {
-            width: 32px;
-            height: 32px;
+            width: auto;
+            height: auto;
             min-height: 0;
-            border-radius: 50%;
+            border: 0;
+            border-radius: 0;
+            background: transparent;
+            color: var(--dashboard-muted);
             display: inline-flex;
             align-items: center;
             justify-content: center;
             padding: 0;
-            font-size: 0.9rem;
+            gap: 0.46rem;
+            font-size: 0.84rem;
             font-weight: 720;
+        }
+        .extra-buy-price-card .btn::after {
+            content: "Refresh";
         }
         .extra-buy-status {
             color: var(--dashboard-muted);
@@ -583,19 +645,29 @@
         .extra-buy-cta-btn {
             grid-area: cta;
             width: 100%;
-            min-height: 54px;
+            min-height: 46px;
             border: 0;
-            border-radius: 8px;
+            border-radius: 10px;
             display: inline-flex;
             align-items: center;
             justify-content: center;
             gap: 0.6rem;
-            font-size: 1.02rem;
+            font-size: 1rem;
             font-weight: 820;
             line-height: 1.15;
+            margin-top: 0;
         }
         .extra-buy-cta-btn i {
             font-size: 1.34rem;
+        }
+        .extra-buy-cta-btn:not(:disabled) {
+            background: linear-gradient(90deg, var(--dashboard-accent), var(--dashboard-accent-strong));
+            color: #fff;
+            box-shadow: 0 10px 28px rgba(245, 134, 34, 0.18);
+        }
+        .extra-buy-cta-btn.btn-success:not(:disabled) {
+            background: linear-gradient(90deg, var(--dashboard-success), color-mix(in srgb, var(--dashboard-success) 72%, #fff 28%));
+            color: #07130d;
         }
         .extra-buy-cta-copy {
             display: grid;
@@ -607,160 +679,82 @@
             font-weight: 680;
             opacity: 0.86;
         }
+        .extra-buy-cta-btn:disabled {
+            background: linear-gradient(90deg, rgba(92, 99, 104, 0.72), rgba(82, 88, 94, 0.78));
+            color: color-mix(in srgb, var(--dashboard-text) 62%, var(--dashboard-muted));
+            opacity: 1;
+        }
         .extra-buy-action-status {
-            color: var(--dashboard-muted);
-            font-size: 0.82rem;
-            font-weight: 650;
-            grid-column: 1 / -1;
-            margin-top: -0.22rem;
-            min-height: 1.2rem;
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
         }
         .extra-buy-section {
             grid-area: impact;
             display: grid;
-            grid-template-columns: minmax(260px, 1fr) minmax(0, 2.4fr);
-            gap: 0.88rem;
-            align-items: center;
+            gap: 0.56rem;
             border: 1px solid var(--dashboard-border);
-            border-radius: 12px;
+            border-radius: 14px;
             background:
-                radial-gradient(circle at 0% 0%, var(--dashboard-accent-softer), transparent 30%),
-                var(--dashboard-card-bg-solid);
-            padding: 0.9rem 1rem;
+                radial-gradient(circle at 0% 0%, rgba(87, 103, 119, 0.12), transparent 32%),
+                #121b24;
+            padding: 0.72rem 0.86rem;
         }
         .extra-buy-section-header {
             display: flex;
-            align-items: flex-start;
+            align-items: center;
             gap: 0.72rem;
             margin-bottom: 0;
         }
-        .extra-buy-section-icon {
-            width: 34px;
-            height: 34px;
-            border-radius: 50%;
-            background: var(--dashboard-accent-soft);
-            color: var(--dashboard-accent-strong);
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            flex: 0 0 auto;
-            font-size: 0.92rem;
-        }
         .extra-buy-section-title {
             color: var(--dashboard-text);
-            font-size: 1rem;
+            font-size: 0.9rem;
             font-weight: 800;
             line-height: 1.2;
             margin: 0;
         }
         .extra-buy-section-subtitle {
             color: var(--dashboard-muted);
-            margin: 0.38rem 0 0;
+            margin: 0.24rem 0 0;
             font-size: 0.84rem;
             font-weight: 600;
             line-height: 1.45;
         }
-        .extra-buy-signals {
-            grid-area: signals;
-        }
-        .extra-buy-summary-grid {
+        .extra-buy-preview-grid {
             display: grid;
-            grid-template-columns: repeat(4, minmax(0, 1fr));
-            gap: 0.75rem;
+            grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) auto minmax(0, 1fr);
+            gap: 0.72rem;
+            align-items: center;
         }
-        .extra-buy-reason-card,
-        .extra-buy-impact-box {
-            min-width: 0;
-            border: 1px solid var(--dashboard-border);
-            border-radius: 12px;
-            background: color-mix(in srgb, var(--dashboard-card-bg-solid) 92%, var(--dashboard-accent) 8%);
-            padding: 0.85rem;
-        }
-        .extra-buy-reason-card {
+        .extra-buy-preview-item {
             display: grid;
             grid-template-columns: auto minmax(0, 1fr);
-            grid-template-areas:
-                "icon title"
-                "icon value"
-                "icon status";
-            column-gap: 0.72rem;
-            align-items: start;
-            min-height: 112px;
+            gap: 0.58rem;
+            align-items: center;
+            min-width: 0;
         }
-        .extra-buy-card-icon {
-            color: var(--dashboard-accent-strong);
-            grid-area: icon;
-            width: 36px;
-            height: 36px;
-            border-radius: 50%;
-            background: color-mix(in srgb, var(--dashboard-accent) 18%, transparent);
+        .extra-buy-preview-icon {
+            width: 30px;
+            height: 30px;
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.05rem;
-            line-height: 1;
-        }
-        .extra-buy-card-title {
-            color: var(--dashboard-text);
-            grid-area: title;
-            display: block;
-            font-size: 0.88rem;
-            font-weight: 800;
-            line-height: 1.2;
-            margin: 0.08rem 0 0;
-        }
-        .extra-buy-card-copy {
-            color: var(--dashboard-muted);
-            grid-area: value;
-            display: block;
-            font-size: 0.8rem;
-            font-weight: 600;
-            line-height: 1.28;
-            margin-top: 0.45rem;
-        }
-        .extra-buy-card-value {
-            color: var(--dashboard-text);
-            grid-area: value;
-            display: block;
-            font-size: 1.5rem;
-            font-weight: 820;
-            line-height: 1.1;
-            margin: 0.46rem 0 0.3rem;
-        }
-        .extra-buy-card-status {
-            color: var(--dashboard-muted);
-            grid-area: status;
-            display: block;
-            font-size: 0.82rem;
-            font-weight: 760;
-            line-height: 1.2;
-        }
-        .extra-buy-summary-grid .extra-buy-reason-card:nth-child(1) .extra-buy-card-icon {
-            color: var(--dashboard-accent);
-            background: color-mix(in srgb, var(--dashboard-accent) 18%, transparent);
-        }
-        .extra-buy-summary-grid .extra-buy-reason-card:nth-child(2) .extra-buy-card-icon {
-            color: #a855f7;
-            background: color-mix(in srgb, #a855f7 18%, transparent);
-        }
-        .extra-buy-summary-grid .extra-buy-reason-card:nth-child(3) .extra-buy-card-icon {
             color: var(--dashboard-accent-strong);
-            background: color-mix(in srgb, var(--dashboard-accent) 18%, transparent);
+            font-size: 1.2rem;
         }
-        .extra-buy-summary-grid .extra-buy-reason-card:nth-child(4) .extra-buy-card-icon {
-            color: var(--dashboard-success);
-            background: var(--dashboard-success-soft);
+        .extra-buy-preview-icon.is-purple {
+            color: #bb86fc;
         }
-        .extra-buy-card-status.extra-buy-tone-success,
-        .extra-buy-card-value.extra-buy-tone-success {
-            color: var(--dashboard-success) !important;
+        .extra-buy-preview-icon.is-green {
+            color: #79d69b;
         }
-        .extra-buy-card-status.extra-buy-tone-danger,
-        .extra-buy-card-value.extra-buy-tone-danger {
-            color: var(--dashboard-danger) !important;
-        }
-        .extra-buy-card-status.extra-buy-tone-accent {
-            color: var(--dashboard-accent-strong) !important;
+        .extra-buy-preview-divider {
+            width: 1px;
+            height: 44px;
+            background: var(--dashboard-border);
         }
         .extra-buy-impact-meta {
             color: var(--dashboard-muted);
@@ -781,16 +775,16 @@
         .extra-buy-impact-label {
             color: var(--dashboard-muted);
             display: block;
-            font-size: 0.82rem;
-            font-weight: 680;
+            font-size: 0.78rem;
+            font-weight: 660;
             margin-bottom: 0.24rem;
         }
         .extra-buy-impact-value {
             color: var(--dashboard-text);
             display: block;
-            font-size: 1.02rem;
-            font-weight: 820;
-            line-height: 1.12;
+            font-size: 0.88rem;
+            font-weight: 720;
+            line-height: 1.28;
         }
         .extra-buy-tone-success {
             color: var(--dashboard-success) !important;
@@ -799,79 +793,164 @@
             color: var(--dashboard-danger) !important;
         }
         .extra-buy-footnote {
-            display: none;
+            grid-area: footnote;
+            display: inline-flex;
+            justify-content: center;
+            color: var(--dashboard-muted);
+            font-size: 0.84rem;
+            gap: 0.46rem;
+            margin-top: -0.2rem;
         }
-        .extra-buy-advanced-panel {
-            grid-area: advanced;
+        .extra-buy-decision-panel {
+            grid-area: decision;
+            display: grid;
+            grid-template-columns: auto minmax(0, 1fr);
+            gap: 0.66rem;
+            align-items: center;
             border: 1px solid var(--dashboard-border);
-            border-radius: 12px;
-            background: var(--dashboard-card-bg-solid);
-            overflow: hidden;
+            border-radius: 14px;
+            background:
+                radial-gradient(circle at 0% 0%, rgba(87, 103, 119, 0.12), transparent 32%),
+                #121b24;
+            padding: 0.72rem 0.9rem;
         }
-        .extra-buy-advanced-toggle {
-            width: 100%;
-            border: 0;
-            background: transparent;
-            color: var(--dashboard-text);
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 0.65rem;
-            padding: 0.82rem 1rem;
-            text-align: left;
+        .extra-buy-decision-panel.d-none {
+            display: none !important;
         }
-        .extra-buy-advanced-toggle:focus-visible {
-            outline: 2px solid var(--dashboard-accent);
-            outline-offset: -3px;
+        .extra-buy-decision-panel.is-waiting {
+            border-color: color-mix(in srgb, var(--dashboard-danger) 34%, var(--dashboard-border));
+            background:
+                radial-gradient(circle at 0% 0%, color-mix(in srgb, var(--dashboard-danger) 10%, transparent), transparent 34%),
+                #151b24;
         }
-        .extra-buy-advanced-title {
-            display: flex;
-            align-items: center;
-            gap: 0.68rem;
-            min-width: 0;
+        .extra-buy-decision-panel.is-ready {
+            border-color: color-mix(in srgb, var(--dashboard-success) 30%, var(--dashboard-border));
         }
-        .extra-buy-advanced-title i {
+        .extra-buy-decision-icon {
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            background: color-mix(in srgb, var(--dashboard-accent) 16%, transparent);
             color: var(--dashboard-accent-strong);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
             font-size: 1rem;
         }
-        .extra-buy-advanced-title strong,
-        .extra-buy-advanced-title span {
-            display: block;
+        .extra-buy-decision-panel.is-waiting .extra-buy-decision-icon {
+            background: color-mix(in srgb, var(--dashboard-danger) 14%, transparent);
+            color: var(--dashboard-danger);
         }
-        .extra-buy-advanced-title strong {
+        .extra-buy-decision-panel.is-ready .extra-buy-decision-icon {
+            background: var(--dashboard-success-soft);
+            color: var(--dashboard-success);
+        }
+        .extra-buy-decision-title {
             color: var(--dashboard-text);
             font-size: 0.9rem;
             font-weight: 800;
             line-height: 1.25;
+            margin: 0 0 0.22rem;
         }
-        .extra-buy-advanced-title span {
+        .extra-buy-decision-reason {
             color: var(--dashboard-muted);
-            font-size: 0.8rem;
+            font-size: 0.82rem;
             font-weight: 620;
-            line-height: 1.35;
-            margin-top: 0.05rem;
-        }
-        .extra-buy-advanced-panel.is-collapsed .extra-buy-advanced-body {
-            display: none;
-        }
-        .extra-buy-advanced-panel:not(.is-collapsed) .extra-buy-advanced-toggle .bi-chevron-down {
-            transform: rotate(180deg);
-        }
-        .extra-buy-advanced-toggle .bi-chevron-down {
-            color: var(--dashboard-muted);
-            transition: transform 0.18s ease;
-        }
-        .extra-buy-advanced-body {
-            border-top: 1px solid var(--dashboard-border);
-            padding: 0.65rem 0.72rem;
-        }
-        .extra-buy-advanced-text {
-            color: var(--dashboard-muted);
-            font-family: var(--bs-font-monospace);
-            font-size: 0.72rem;
-            line-height: 1.48;
-            white-space: pre-wrap;
+            line-height: 1.38;
             margin: 0;
+        }
+        .extra-buy-buy-signals {
+            grid-area: signals;
+            display: grid;
+            gap: 0.55rem;
+            border: 1px solid var(--dashboard-border);
+            border-radius: 14px;
+            background:
+                radial-gradient(circle at 0% 0%, rgba(87, 103, 119, 0.12), transparent 32%),
+                #121b24;
+            padding: 0.72rem 0.85rem;
+        }
+        .extra-buy-buy-signals.d-none {
+            display: none !important;
+        }
+        .extra-buy-signal-heading {
+            color: var(--dashboard-text);
+            font-size: 0.9rem;
+            font-weight: 800;
+            line-height: 1.2;
+            margin: 0;
+        }
+        .extra-buy-summary-grid {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 0.62rem;
+        }
+        .extra-buy-reason-card {
+            display: grid;
+            grid-template-columns: auto minmax(0, 1fr);
+            grid-template-areas:
+                "icon title"
+                "icon value"
+                "icon status";
+            column-gap: 0.58rem;
+            row-gap: 0.08rem;
+            align-items: center;
+            min-height: 60px;
+            border: 1px solid var(--dashboard-border);
+            border-radius: 10px;
+            background: rgba(7, 13, 20, 0.34);
+            padding: 0.54rem 0.6rem;
+            min-width: 0;
+        }
+        .extra-buy-reason-icon {
+            grid-area: icon;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: color-mix(in srgb, var(--dashboard-accent) 18%, transparent);
+            color: var(--dashboard-accent-strong);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.94rem;
+        }
+        .extra-buy-reason-title {
+            grid-area: title;
+            color: var(--dashboard-text);
+            font-size: 0.78rem;
+            font-weight: 760;
+            line-height: 1.18;
+        }
+        .extra-buy-reason-value {
+            grid-area: value;
+            color: var(--dashboard-text);
+            font-size: 1.04rem;
+            font-weight: 820;
+            line-height: 1.16;
+            min-width: 0;
+        }
+        .extra-buy-reason-status {
+            grid-area: status;
+            color: var(--dashboard-muted);
+            font-size: 0.72rem;
+            font-weight: 680;
+            line-height: 1.18;
+            min-width: 0;
+        }
+        .extra-buy-reason-card.is-success .extra-buy-reason-icon,
+        .extra-buy-reason-card.is-success .extra-buy-reason-status {
+            color: var(--dashboard-success);
+        }
+        .extra-buy-reason-card.is-danger .extra-buy-reason-icon,
+        .extra-buy-reason-card.is-danger .extra-buy-reason-status {
+            color: var(--dashboard-danger);
+        }
+        .extra-buy-reason-card.is-purple .extra-buy-reason-icon,
+        .extra-buy-reason-card.is-purple .extra-buy-reason-status {
+            color: #bb86fc;
+        }
+        .extra-buy-reason-card.is-neutral .extra-buy-reason-icon {
+            color: var(--dashboard-muted);
         }
         @media (min-width: 768px) and (max-height: 760px) {
             .extra-buy-modal-content .modal-header {
@@ -890,19 +969,18 @@
             }
             .extra-buy-hero,
             .extra-buy-controls {
-                min-height: 178px;
                 padding: 0.78rem 0.92rem;
             }
             .extra-buy-hero {
                 gap: 0.52rem 0.74rem;
             }
             .extra-buy-opportunity-icon {
-                width: 54px;
-                height: 54px;
-                font-size: 1.28rem;
+                width: 40px;
+                height: 40px;
+                font-size: 0.96rem;
             }
             .extra-buy-opportunity-title {
-                font-size: clamp(1.05rem, 1.8vw, 1.22rem);
+                font-size: 1rem;
                 margin-bottom: 0.18rem;
             }
             .extra-buy-confidence {
@@ -911,17 +989,6 @@
             }
             .extra-buy-confidence strong {
                 font-size: 0.86rem;
-            }
-            .extra-buy-hero-divider {
-                margin-top: 0.05rem;
-            }
-            .extra-buy-eyebrow,
-            .extra-buy-range-caption {
-                font-size: 0.74rem;
-            }
-            .extra-buy-recommendation-value {
-                font-size: clamp(1.8rem, 2.8vw, 2.32rem);
-                margin: 0.3rem 0 0.18rem;
             }
             .extra-buy-controls {
                 gap: 0.44rem;
@@ -943,13 +1010,6 @@
                 min-height: 38px;
                 font-size: 0.88rem;
             }
-            .extra-buy-quick-grid {
-                gap: 0.38rem;
-            }
-            .extra-buy-quick-btn {
-                min-height: 31px;
-                font-size: 0.78rem;
-            }
             .extra-buy-estimate-label,
             .extra-buy-price-card .form-text {
                 font-size: 0.72rem;
@@ -961,33 +1021,6 @@
                 width: 28px;
                 height: 28px;
                 font-size: 0.78rem;
-            }
-            .extra-buy-summary-grid {
-                gap: 0.5rem;
-            }
-            .extra-buy-reason-card,
-            .extra-buy-impact-box {
-                padding: 0.58rem 0.72rem;
-            }
-            .extra-buy-reason-card {
-                min-height: 88px;
-                column-gap: 0.48rem;
-            }
-            .extra-buy-card-icon {
-                width: 28px;
-                height: 28px;
-                font-size: 0.82rem;
-            }
-            .extra-buy-card-title {
-                font-size: 0.72rem;
-            }
-            .extra-buy-card-value {
-                font-size: 1.1rem;
-                margin: 0.25rem 0 0.16rem;
-            }
-            .extra-buy-card-status,
-            .extra-buy-card-copy {
-                font-size: 0.68rem;
             }
             .extra-buy-section {
                 gap: 0.58rem;
@@ -1029,20 +1062,22 @@
             .extra-buy-cta-copy small {
                 font-size: 0.7rem;
             }
-            .extra-buy-advanced-toggle {
-                padding: 0.58rem 0.72rem;
+            .extra-buy-decision-panel {
+                gap: 0.55rem;
+                padding: 0.62rem 0.72rem;
             }
-            .extra-buy-advanced-title {
-                gap: 0.46rem;
+            .extra-buy-decision-icon {
+                width: 30px;
+                height: 30px;
+                font-size: 0.85rem;
             }
-            .extra-buy-advanced-title i {
-                font-size: 0.86rem;
+            .extra-buy-decision-title {
+                font-size: 0.8rem;
+                margin-bottom: 0.12rem;
             }
-            .extra-buy-advanced-title strong {
-                font-size: 0.76rem;
-            }
-            .extra-buy-advanced-title span {
+            .extra-buy-decision-reason {
                 font-size: 0.68rem;
+                line-height: 1.28;
             }
         }
         .wallet-card-grid {
@@ -1999,10 +2034,15 @@
                 margin: 0.45rem;
             }
             .extra-buy-modal-content .modal-header {
-                padding: 0.56rem 0.7rem;
+                padding: 0.76rem 0.9rem;
             }
             .extra-buy-modal-content .modal-title {
                 font-size: 1.05rem;
+            }
+            .extra-buy-header-icon {
+                width: 36px;
+                height: 36px;
+                font-size: 1rem;
             }
             .extra-buy-header-note {
                 font-size: 0.66rem;
@@ -2013,12 +2053,13 @@
                 grid-template-areas:
                     "hero"
                     "controls"
-                    "signals"
                     "impact"
+                    "decision"
+                    "signals"
                     "cta"
-                    "advanced";
-                gap: 0.34rem;
-                padding: 0.38rem;
+                    "footnote";
+                gap: 0.42rem;
+                padding: 0.42rem;
             }
             .extra-buy-hero {
                 grid-template-columns: auto minmax(0, 1fr);
@@ -2042,12 +2083,15 @@
             .extra-buy-confidence strong {
                 font-size: 0.74rem;
             }
-            .extra-buy-hero-divider {
-                margin-top: 0;
+            .extra-buy-confidence-card {
+                grid-column: 2;
+                justify-items: start;
+                min-width: 0;
+                text-align: left;
+                gap: 0.1rem;
             }
-            .extra-buy-eyebrow,
-            .extra-buy-range-caption {
-                font-size: 0.66rem;
+            .extra-buy-disclaimer {
+                display: none;
             }
             .extra-buy-primary-actions {
                 justify-items: stretch;
@@ -2074,19 +2118,14 @@
             .extra-buy-cta-copy small {
                 font-size: 0.6rem;
             }
-            .extra-buy-recommendation-value {
-                font-size: 1.28rem;
-                margin: 0.18rem 0 0.08rem;
-            }
             .extra-buy-controls {
                 grid-template-columns: 1fr;
-                gap: 0.32rem;
+                gap: 0.5rem;
                 min-height: 0;
                 padding: 0.5rem 0.56rem;
             }
             .extra-buy-order-heading {
-                font-size: 0.62rem;
-                gap: 0.35rem;
+                font-size: 0.7rem;
             }
             .extra-buy-order-heading i {
                 width: 20px;
@@ -2098,7 +2137,7 @@
                 margin-bottom: 0.14rem;
             }
             .extra-buy-control-card .form-control {
-                min-height: 34px;
+                min-height: 42px;
                 font-size: 16px;
                 padding-right: 3.2rem;
             }
@@ -2106,21 +2145,13 @@
                 right: 0.72rem;
                 font-size: 0.72rem;
             }
-            .extra-buy-price-card {
+            .extra-buy-price-strip {
                 display: flex;
                 align-items: center;
-                justify-content: space-between;
-                gap: 0.4rem;
-                margin-top: 0.18rem;
-                padding: 0.32rem 0.42rem;
+                flex-wrap: wrap;
+                gap: 0.38rem 0.5rem;
+                margin-top: 0.34rem;
                 width: 100%;
-            }
-            .extra-buy-quick-grid {
-                gap: 0.2rem;
-            }
-            .extra-buy-quick-btn {
-                min-height: 28px;
-                font-size: 0.68rem;
             }
             .extra-buy-estimate-label {
                 font-size: 0.62rem;
@@ -2136,8 +2167,6 @@
                 gap: 0.45rem;
             }
             .extra-buy-price-card .btn {
-                width: 28px;
-                height: 28px;
                 flex: 0 0 auto;
                 font-size: 0.74rem;
             }
@@ -2170,34 +2199,6 @@
             .extra-buy-section-subtitle {
                 display: none;
             }
-            .extra-buy-summary-grid {
-                grid-template-columns: repeat(2, minmax(0, 1fr));
-                gap: 0.28rem;
-            }
-            .extra-buy-reason-card {
-                min-height: 72px;
-                padding: 0.38rem 0.42rem;
-                column-gap: 0.3rem;
-            }
-            .extra-buy-card-icon {
-                width: 22px;
-                height: 22px;
-                font-size: 0.65rem;
-            }
-            .extra-buy-card-title {
-                font-size: 0.6rem;
-            }
-            .extra-buy-card-copy {
-                font-size: 0.56rem;
-                line-height: 1.14;
-            }
-            .extra-buy-card-value {
-                font-size: 0.84rem;
-                margin: 0.16rem 0 0.08rem;
-            }
-            .extra-buy-card-status {
-                font-size: 0.56rem;
-            }
             .extra-buy-impact-grid {
                 grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) minmax(88px, 0.8fr);
                 gap: 0.25rem;
@@ -2215,31 +2216,75 @@
             .extra-buy-impact-value {
                 font-size: 0.62rem;
             }
+            .extra-buy-buy-signals {
+                gap: 0.38rem;
+                padding: 0.45rem 0.5rem;
+            }
+            .extra-buy-signal-heading {
+                font-size: 0.72rem;
+            }
+            .extra-buy-summary-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 0.36rem;
+            }
+            .extra-buy-reason-card {
+                min-height: 54px;
+                column-gap: 0.36rem;
+                padding: 0.42rem 0.44rem;
+            }
+            .extra-buy-reason-icon {
+                width: 24px;
+                height: 24px;
+                font-size: 0.72rem;
+            }
+            .extra-buy-reason-title {
+                font-size: 0.58rem;
+            }
+            .extra-buy-reason-value {
+                font-size: 0.72rem;
+            }
+            .extra-buy-reason-status {
+                font-size: 0.54rem;
+            }
             .extra-buy-impact-arrow {
                 transform: none;
                 justify-self: center;
             }
-            .extra-buy-footnote {
-                align-items: flex-start;
-                font-size: 0.82rem;
+            .extra-buy-preview-grid {
+                grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) auto minmax(0, 1fr);
+                gap: 0.3rem;
             }
-            .extra-buy-advanced-toggle {
-                padding: 0.46rem 0.5rem;
+            .extra-buy-preview-item {
+                grid-template-columns: 1fr;
+                gap: 0.12rem;
             }
-            .extra-buy-advanced-title {
-                gap: 0.28rem;
-            }
-            .extra-buy-advanced-title strong {
-                font-size: 0.64rem;
-            }
-            .extra-buy-advanced-title span {
-                font-size: 0.56rem;
-            }
-            .extra-buy-advanced-title span span {
+            .extra-buy-preview-icon {
                 display: none;
             }
-            .extra-buy-advanced-body {
-                padding: 0.82rem;
+            .extra-buy-preview-divider {
+                height: 38px;
+            }
+            .extra-buy-footnote {
+                align-items: center;
+                font-size: 0.72rem;
+                margin-top: 0;
+            }
+            .extra-buy-decision-panel {
+                gap: 0.42rem;
+                padding: 0.46rem 0.5rem;
+            }
+            .extra-buy-decision-icon {
+                width: 24px;
+                height: 24px;
+                font-size: 0.72rem;
+            }
+            .extra-buy-decision-title {
+                font-size: 0.64rem;
+                margin-bottom: 0.08rem;
+            }
+            .extra-buy-decision-reason {
+                font-size: 0.56rem;
+                line-height: 1.16;
             }
             .transactions-table-wrap {
                 display: none;
@@ -2881,11 +2926,13 @@
         <div class="modal-dialog modal-lg modal-dialog-scrollable extra-buy-modal-dialog">
             <div class="modal-content extra-buy-modal-content">
                 <div class="modal-header">
-                    <div class="extra-buy-title-wrap">
-                        <h5 class="modal-title" id="addPositionModalLabel">Extra BTC Buy</h5>
-                        <div class="extra-buy-header-note">
-                            <i class="bi bi-shield-check" aria-hidden="true"></i>
-                            <span>One-time manual action</span>
+                    <div class="extra-buy-title-row">
+                        <span class="extra-buy-header-icon" aria-hidden="true"><i class="bi bi-currency-bitcoin"></i></span>
+                        <div class="extra-buy-title-wrap">
+                            <h5 class="modal-title" id="addPositionModalLabel">Extra BTC Buy</h5>
+                            <div class="extra-buy-header-note">
+                                <span>One-time manual action</span>
+                            </div>
                         </div>
                     </div>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
@@ -2893,124 +2940,111 @@
                 <div class="modal-body p-0">
                     <form id="addPositionForm" class="extra-buy-form">
                         <div class="extra-buy-layout">
-                            <div class="extra-buy-hero">
+                            <section class="extra-buy-hero" aria-labelledby="addPositionOpportunityTitle">
                                 <span class="extra-buy-opportunity-icon" aria-hidden="true">
-                                    <i class="bi bi-graph-up-arrow"></i>
+                                    <i class="bi bi-broadcast-pin"></i>
                                 </span>
                                 <div>
-                                    <h6 class="extra-buy-opportunity-title" id="addPositionOpportunityTitle" data-buy-title="Strong Buy Opportunity">Strategy Check Ready</h6>
+                                    <h6 class="extra-buy-opportunity-title" id="addPositionOpportunityTitle">Strategy signals available</h6>
+                                    <p class="extra-buy-signal-copy" id="addPositionSignalCopy">Review the signal, choose your own amount, then preview before confirming.</p>
+                                </div>
+                                <div class="extra-buy-confidence-card">
                                     <div class="extra-buy-confidence">
-                                        <span>Confidence</span>
-                                        <strong id="addPositionConfidence">--/100</strong>
+                                        <i class="bi bi-shield-check" aria-hidden="true"></i>
+                                        <span>Confidence:</span>
+                                        <strong id="addPositionConfidence">Loading</strong>
                                     </div>
+                                    <span class="extra-buy-disclaimer">This is not financial advice.</span>
                                 </div>
-                                <div class="extra-buy-hero-divider" aria-hidden="true"></div>
-                                <div class="extra-buy-range">
-                                    <div class="extra-buy-eyebrow">Suggested Range</div>
-                                    <div class="extra-buy-recommendation-value" id="addPositionRecommendedRange">$-- - $--</div>
-                                    <div class="extra-buy-range-caption">Current recommendation</div>
-                                </div>
-                            </div>
+                            </section>
 
-                            <div class="extra-buy-controls">
+                            <section class="extra-buy-controls" aria-label="Choose amount">
                                 <div class="extra-buy-order-heading">
-                                    <i class="bi bi-pencil" aria-hidden="true"></i>
-                                    <span>YOUR ORDER</span>
+                                    <span>Amount to Buy</span>
                                 </div>
                                 <div class="extra-buy-control-card">
-                                    <label for="addPositionUsdcInput" class="form-label">Amount to Buy</label>
+                                    <label for="addPositionUsdcInput" class="visually-hidden">Amount to Buy</label>
                                     <div class="extra-buy-amount-input-wrap">
-                                        <input id="addPositionUsdcInput" type="number" min="1" step="0.01" class="form-control" required placeholder="Enter amount">
+                                        <span class="extra-buy-input-lock" id="addPositionAmountLock" aria-hidden="true"><i class="bi bi-lock-fill"></i></span>
+                                        <input id="addPositionUsdcInput" type="number" min="1" step="0.01" class="form-control" required placeholder="Enter USDC amount">
                                         <span class="extra-buy-input-suffix">USDC</span>
                                     </div>
-                                    <div class="extra-buy-quick-grid" aria-label="Quick amount shortcuts">
-                                        <button type="button" class="extra-buy-quick-btn" data-add-amount="10">+10</button>
-                                        <button type="button" class="extra-buy-quick-btn" data-add-amount="25">+25</button>
-                                        <button type="button" class="extra-buy-quick-btn" data-add-amount="50">+50</button>
-                                        <button type="button" class="extra-buy-quick-btn" data-add-amount="100">+100</button>
-                                    </div>
-                                    <div class="extra-buy-estimate-row">
+                                    <div class="extra-buy-price-strip">
+                                        <span class="extra-buy-price-token" aria-hidden="true">₿</span>
+                                        <strong class="extra-buy-price-label" id="addPositionPriceDisplay">$--</strong>
+                                        <span class="form-text" id="addPositionPriceMeta">Price pending</span>
+                                        <span class="extra-buy-price-divider" aria-hidden="true">|</span>
                                         <div>
-                                            <span class="extra-buy-estimate-label">Estimated BTC</span>
-                                            <strong class="extra-buy-estimate-value" id="addPositionBtcEstimate">-- BTC</strong>
-                                        </div>
-                                        <div class="extra-buy-control-card extra-buy-price-card">
-                                            <div>
+                                            <div class="extra-buy-control-card extra-buy-price-card">
                                                 <label for="addPositionPriceInput" class="form-label">BTC Price (USDC)</label>
                                                 <input id="addPositionPriceInput" type="number" min="1" step="0.01" class="form-control" required readonly>
-                                                <div class="form-text" id="addPositionPriceMeta">BTC Price: --</div>
+                                                <button id="addPositionRefreshPriceBtn" type="button" class="btn btn-outline-secondary" aria-label="Refresh current price"><i class="bi bi-arrow-clockwise" aria-hidden="true"></i></button>
                                             </div>
-                                            <button id="addPositionRefreshPriceBtn" type="button" class="btn btn-outline-secondary" aria-label="Refresh BTC price"><i class="bi bi-arrow-clockwise" aria-hidden="true"></i></button>
                                         </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <section class="extra-buy-signals" aria-label="Market signals">
-                                <div class="extra-buy-summary-grid" id="addPositionSummaryGrid">
-                                    <div class="extra-buy-reason-card">
-                                        <i class="bi bi-sliders extra-buy-card-icon" aria-hidden="true"></i>
-                                        <strong class="extra-buy-card-title">Strategy check</strong>
-                                        <span class="extra-buy-card-copy">Run the check to summarize the available signals.</span>
                                     </div>
                                 </div>
                             </section>
 
                             <section class="extra-buy-section" id="addPositionImpactPanel" aria-labelledby="addPositionImpactTitle">
                                 <div class="extra-buy-section-header">
-                                    <span class="extra-buy-section-icon" aria-hidden="true"><i class="bi bi-bullseye"></i></span>
                                     <div>
-                                        <h6 class="extra-buy-section-title" id="addPositionImpactTitle">Impact on your position</h6>
-                                        <p class="extra-buy-section-subtitle">Enter an amount to see how this buy would impact your average cost.</p>
+                                        <h6 class="extra-buy-section-title" id="addPositionImpactTitle">Impact preview <i class="bi bi-info-circle extra-buy-info-icon" aria-hidden="true"></i></h6>
+                                        <p class="extra-buy-section-subtitle">Enter an amount to preview impact</p>
                                     </div>
                                 </div>
-                                <div class="extra-buy-impact-grid">
-                                    <div>
-                                        <span class="extra-buy-impact-label">Current Avg Cost</span>
-                                        <strong class="extra-buy-impact-value" id="addPositionImpactCurrentCost">$--</strong>
+                                <div class="extra-buy-preview-grid">
+                                    <div class="extra-buy-preview-item">
+                                        <span class="extra-buy-preview-icon" aria-hidden="true"><i class="bi bi-display"></i></span>
+                                        <div>
+                                            <span class="extra-buy-impact-label">Estimated BTC</span>
+                                            <strong class="extra-buy-impact-value" id="addPositionBtcEstimate">--</strong>
+                                        </div>
                                     </div>
-                                    <i class="bi bi-arrow-right extra-buy-impact-arrow" aria-hidden="true"></i>
-                                    <div>
-                                        <span class="extra-buy-impact-label">After This Buy</span>
-                                        <strong class="extra-buy-impact-value" id="addPositionImpactAfterCost">$--</strong>
+                                    <span class="extra-buy-preview-divider" aria-hidden="true"></span>
+                                    <div class="extra-buy-preview-item">
+                                        <span class="extra-buy-preview-icon is-purple" aria-hidden="true"><i class="bi bi-graph-up-arrow"></i></span>
+                                        <div>
+                                            <span class="extra-buy-impact-label">Average cost</span>
+                                            <strong class="extra-buy-impact-value" id="addPositionImpactAfterCost">--</strong>
+                                            <span class="visually-hidden" id="addPositionImpactCurrentCost">Enter an amount</span>
+                                        </div>
                                     </div>
-                                    <div class="extra-buy-impact-box">
-                                        <span class="extra-buy-impact-label">Improvement</span>
-                                        <strong class="extra-buy-impact-value" id="addPositionImpactDelta">$--</strong>
-                                        <span class="extra-buy-impact-meta" id="addPositionImpactDeltaPct">--</span>
+                                    <span class="extra-buy-preview-divider" aria-hidden="true"></span>
+                                    <div class="extra-buy-preview-item">
+                                        <span class="extra-buy-preview-icon is-green" aria-hidden="true"><i class="bi bi-record-circle"></i></span>
+                                        <div>
+                                            <span class="extra-buy-impact-label">Position impact</span>
+                                            <strong class="extra-buy-impact-value" id="addPositionImpactDelta">--</strong>
+                                            <span class="extra-buy-impact-meta" id="addPositionImpactDeltaPct"></span>
+                                        </div>
                                     </div>
                                 </div>
                             </section>
 
-                            <div class="extra-buy-footnote">
-                                <i class="bi bi-shield-check" aria-hidden="true"></i>
-                                <span>This action won't change your DCA settings.</span>
-                            </div>
-
+                            <section class="extra-buy-decision-panel" id="addPositionDecisionPanel" aria-labelledby="addPositionDecisionTitle" aria-live="polite">
+                                <span class="extra-buy-decision-icon" aria-hidden="true">
+                                    <i class="bi bi-info-circle"></i>
+                                </span>
+                                <div>
+                                    <h6 class="extra-buy-decision-title" id="addPositionDecisionTitle">Decision reason</h6>
+                                    <p class="extra-buy-decision-reason" id="addPositionDecisionReason">Strategy decision pending.</p>
+                                </div>
+                            </section>
+                            <section class="extra-buy-buy-signals d-none" id="addPositionBuySignalsPanel" aria-labelledby="addPositionBuySignalsTitle">
+                                <h6 class="extra-buy-signal-heading" id="addPositionBuySignalsTitle">Buy signals</h6>
+                                <div class="extra-buy-summary-grid" id="addPositionSummaryGrid"></div>
+                            </section>
                             <button id="addPositionAnalyzeBtn" type="submit" class="btn btn-primary extra-buy-primary-btn extra-buy-cta-btn" disabled>
-                                <i class="bi bi-cart" aria-hidden="true"></i>
+                                <i class="bi bi-pencil-square" id="addPositionCtaIcon" aria-hidden="true"></i>
                                 <span class="extra-buy-cta-copy">
-                                    <span id="addPositionConfirmText">Enter amount to continue</span>
-                                    <small id="addPositionConfirmSubtext">Check strategy before purchase</small>
+                                    <span id="addPositionConfirmText">Enter amount to preview</span>
                                 </span>
                             </button>
-                            <div class="extra-buy-action-status" id="addPositionAdviceStatus" aria-live="polite">Waiting for inputs.</div>
-
-                            <div class="extra-buy-advanced-panel is-collapsed" id="addPositionAdvancedPanel">
-                                <button class="extra-buy-advanced-toggle" id="addPositionAdvancedToggle" type="button" aria-expanded="false" aria-controls="addPositionAdvancedBody">
-                                    <span class="extra-buy-advanced-title">
-                                        <i class="bi bi-sliders" aria-hidden="true"></i>
-                                        <span>
-                                            <strong>Advanced analysis (show details)</strong>
-                                            <span>View full reasoning, indicators, and context</span>
-                                        </span>
-                                    </span>
-                                    <i class="bi bi-chevron-down" aria-hidden="true"></i>
-                                </button>
-                                <div class="extra-buy-advanced-body" id="addPositionAdvancedBody">
-                                    <div id="addPositionAdviceText" class="extra-buy-advanced-text">No strategy check yet.</div>
-                                </div>
+                            <div class="extra-buy-footnote">
+                                <i class="bi bi-shield-check" aria-hidden="true"></i>
+                                <span id="addPositionConfirmSubtext">Preview first. Confirmation happens on the next step.</span>
                             </div>
+                            <div class="extra-buy-action-status" id="addPositionAdviceStatus" aria-live="polite">Waiting for inputs.</div>
                         </div>
                     </form>
                 </div>
@@ -3190,12 +3224,12 @@
         const rowsPerPage = 20;
         let currentDrawdownMode = '180d';
         const ADD_POSITION_PRICE_POLL_INTERVAL_MS = 3000;
+        const ADD_POSITION_DEFAULT_SIGNAL_COPY = 'Review the signal, choose your own amount, then preview before confirming.';
         let dashboardPricePollTimer = null;
         let addPositionActionMode = 'advice'; // 'advice' -> 'confirm'
         let addPositionConfirmToken = null;
         let addPositionHardBlocked = false;
         let addPositionLastImpactBasis = null;
-        let addPositionLastRecommendedRange = null;
         const THEME_STORAGE_KEY = 'dca_theme';
         const BOTTOMING_SIGNAL_CACHE_KEY = 'bottoming_signal_preview';
         const THEME_ICON_SUN = '<svg class="theme-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"></circle><line x1="12" y1="2.5" x2="12" y2="5"></line><line x1="12" y1="19" x2="12" y2="21.5"></line><line x1="2.5" y1="12" x2="5" y2="12"></line><line x1="19" y1="12" x2="21.5" y2="12"></line><line x1="5.2" y1="5.2" x2="6.9" y2="6.9"></line><line x1="17.1" y1="17.1" x2="18.8" y2="18.8"></line><line x1="17.1" y1="6.9" x2="18.8" y2="5.2"></line><line x1="5.2" y1="18.8" x2="6.9" y2="17.1"></line></svg>';
@@ -4065,7 +4099,7 @@
             const estimateEl = document.getElementById('addPositionBtcEstimate');
             if (!estimateEl) return;
             if (!Number.isFinite(amount) || amount <= 0 || !Number.isFinite(price) || price <= 0) {
-                estimateEl.textContent = '-- BTC';
+                estimateEl.textContent = '--';
                 return;
             }
             estimateEl.textContent = `${(amount / price).toFixed(8)} BTC`;
@@ -4120,30 +4154,29 @@
             });
         }
 
-        function getAddPositionRecommendedRange(guidance) {
-            const range = guidance?.sizing_context?.recommended_range_usdc || {};
-            const rangeMin = toExtraBuyFiniteNumber(range.min);
-            const rangeMax = toExtraBuyFiniteNumber(range.max);
-            if (rangeMin !== null && rangeMax !== null) {
-                return {
-                    min: Math.min(rangeMin, rangeMax),
-                    max: Math.max(rangeMin, rangeMax)
-                };
-            }
-            const suggested = toExtraBuyFiniteNumber(guidance?.suggested_amount_usdc);
-            if (suggested !== null) {
-                return { min: suggested, max: suggested };
-            }
-            return null;
+        function formatExtraBuyConfidenceLabel(riskScore, actionCode) {
+            if (actionCode === 'NO_BUY') return 'Cautious';
+            const score = toExtraBuyFiniteNumber(riskScore);
+            if (score === null) return 'Loading';
+            if (score <= 30) return 'Strong';
+            if (score <= 55) return 'Moderate';
+            return 'Cautious';
         }
 
-        function formatExtraBuyUsdRange(range) {
-            if (!range) return '$-- - $--';
-            const min = toExtraBuyFiniteNumber(range.min);
-            const max = toExtraBuyFiniteNumber(range.max);
-            if (min === null || max === null) return '$-- - $--';
-            if (min === max) return formatExtraBuyUsdCompact(min);
-            return `${formatExtraBuyUsdCompact(min)} - ${formatExtraBuyUsdCompact(max)}`;
+        function setAddPositionAmountDisabled(disabled) {
+            const amountInput = document.getElementById('addPositionUsdcInput');
+            if (!amountInput) return;
+            const amountWrap = amountInput.closest('.extra-buy-amount-input-wrap');
+            if (amountWrap) amountWrap.classList.toggle('is-disabled', Boolean(disabled));
+            amountInput.disabled = Boolean(disabled);
+            amountInput.setAttribute('aria-disabled', disabled ? 'true' : 'false');
+            amountInput.placeholder = disabled ? 'Strategy says wait' : 'Enter USDC amount';
+        }
+
+        function setAddPositionCtaIcon(iconName) {
+            const icon = document.getElementById('addPositionCtaIcon');
+            if (!icon) return;
+            icon.className = `bi bi-${iconName}`;
         }
 
         function updateAddPositionInputState() {
@@ -4157,32 +4190,35 @@
             if (!btn) return;
             btn.disabled = !(hasAmount && hasPrice) || addPositionHardBlocked;
             if (addPositionHardBlocked) {
+                setAddPositionCtaIcon('lock');
                 if (confirmText) {
-                    confirmText.textContent = 'No buy now';
+                    confirmText.textContent = 'Strategy says wait';
                 } else {
-                    btn.textContent = 'No buy now';
+                    btn.textContent = 'Strategy says wait';
                 }
-                setExtraBuyText('addPositionConfirmSubtext', 'Strategy says wait right now.');
+                setExtraBuyText('addPositionConfirmSubtext', 'Close this flow or refresh after the next review.');
                 return;
             }
             if (addPositionActionMode === 'confirm') {
+                setAddPositionCtaIcon(hasAmount ? 'check-circle' : 'pencil-square');
                 if (confirmText) {
-                    confirmText.textContent = hasAmount ? `Confirm buy ${formatExtraBuyUsdcCompact(amount)} USDC` : 'Enter amount to continue';
+                    confirmText.textContent = hasAmount ? `Confirm ${formatExtraBuyUsdcCompact(amount)} USDC buy` : 'Enter amount to preview';
                 } else {
-                    btn.textContent = hasAmount ? `Confirm buy ${formatExtraBuyUsdcCompact(amount)} USDC` : 'Enter amount to continue';
+                    btn.textContent = hasAmount ? `Confirm ${formatExtraBuyUsdcCompact(amount)} USDC buy` : 'Enter amount to preview';
                 }
-                setExtraBuyText('addPositionConfirmSubtext', 'Confirm to execute this buy now.');
+                setExtraBuyText('addPositionConfirmSubtext', 'Records this manual buy now.');
                 return;
             }
 
+            setAddPositionCtaIcon(hasAmount ? 'eye' : 'pencil-square');
             if (confirmText) {
-                confirmText.textContent = hasAmount ? `Buy ${formatExtraBuyUsdcCompact(amount)} USDC` : 'Enter amount to continue';
+                confirmText.textContent = hasAmount ? `Preview ${formatExtraBuyUsdcCompact(amount)} USDC buy` : 'Enter amount to preview';
             } else {
-                btn.textContent = hasAmount ? `Buy ${formatExtraBuyUsdcCompact(amount)} USDC` : 'Enter amount to continue';
+                btn.textContent = hasAmount ? `Preview ${formatExtraBuyUsdcCompact(amount)} USDC buy` : 'Enter amount to preview';
             }
             setExtraBuyText(
                 'addPositionConfirmSubtext',
-                hasAmount ? 'Checks strategy first. No purchase yet.' : 'Check strategy before purchase'
+                hasAmount ? 'Strategy check first. No purchase yet.' : 'Preview first. Confirmation happens on the next step.'
             );
         }
 
@@ -4204,161 +4240,217 @@
 
         function formatExtraBuyCardCopy(value, maxLength = 118) {
             if (typeof value !== 'string') return '';
-            const normalized = value.trim().replace(/\s+/g, ' ');
+            const normalized = sanitizeExtraBuySuggestionCopy(value).trim().replace(/\s+/g, ' ');
             if (normalized.length <= maxLength) return normalized;
             return `${normalized.slice(0, Math.max(0, maxLength - 3)).trimEnd()}...`;
         }
 
+        function sanitizeExtraBuySuggestionCopy(text) {
+            if (typeof text !== 'string') return '';
+            const suggestionPattern = /(suggested\s+(range|amount)|recommended\s+(range|amount)|estimated\s+btc\s+now|best\s+amount)/i;
+            const lines = text
+                .split(/\r?\n/)
+                .map((line) => line.trim())
+                .filter((line) => line.length > 0)
+                .filter((line) => !suggestionPattern.test(line));
+            const cleaned = lines.join('\n').trim();
+            if (cleaned) return cleaned;
+            return suggestionPattern.test(text)
+                ? 'Current market conditions support reviewing an extra buy before confirming.'
+                : '';
+        }
+
+        function formatExtraBuyAnalysisText(guidance) {
+            const cleaned = sanitizeExtraBuySuggestionCopy(guidance?.analysis_text || '');
+            return cleaned || 'No detailed strategy analysis returned.';
+        }
+
+        function formatExtraBuySignalStatus(value, fallback = 'Not available') {
+            return typeof value === 'string' && value.trim() ? value.trim() : fallback;
+        }
+
+        function formatExtraBuyAhrStatus(value) {
+            if (value === null) return 'Not available';
+            if (value < 0.45) return 'Extreme value';
+            if (value < 0.7) return 'Deep value';
+            if (value < 1) return 'Undervalued';
+            return 'Neutral';
+        }
+
+        function formatExtraBuyFearStatus(value) {
+            if (value === null) return 'Not available';
+            if (value <= 15) return 'Extreme fear';
+            if (value <= 25) return 'Fear';
+            if (value <= 55) return 'Neutral';
+            return 'Greed';
+        }
+
+        function formatExtraBuyBottomingStatus(bias, hits) {
+            if (typeof bias === 'string' && bias.trim()) {
+                return bias.trim().charAt(0).toUpperCase() + bias.trim().slice(1);
+            }
+            if (hits === null) return 'Not available';
+            if (hits >= 3) return 'Strong';
+            if (hits >= 1) return 'Building';
+            return 'Quiet';
+        }
+
         function createExtraBuyCard(card) {
-            const element = document.createElement('div');
-            element.className = 'extra-buy-reason-card';
+            const element = document.createElement('article');
+            element.className = `extra-buy-reason-card is-${card.tone || 'neutral'}`;
 
-            const icon = document.createElement('i');
-            icon.className = `bi ${card.icon || 'bi-info-circle'} extra-buy-card-icon`;
+            const icon = document.createElement('span');
+            icon.className = 'extra-buy-reason-icon';
             icon.setAttribute('aria-hidden', 'true');
+            icon.innerHTML = `<i class="${card.icon || 'bi bi-info-circle'}"></i>`;
 
-            const title = document.createElement('strong');
-            title.className = 'extra-buy-card-title';
+            const title = document.createElement('span');
+            title.className = 'extra-buy-reason-title';
             title.textContent = card.title;
 
-            element.append(icon, title);
-            if (card.value !== undefined && card.value !== null) {
-                const value = document.createElement('strong');
-                value.className = 'extra-buy-card-value';
-                if (card.valueTone) value.classList.add(`extra-buy-tone-${card.valueTone}`);
-                value.textContent = card.value;
-                element.appendChild(value);
-            }
-            if (card.status) {
-                const status = document.createElement('span');
-                status.className = 'extra-buy-card-status';
-                if (card.statusTone) status.classList.add(`extra-buy-tone-${card.statusTone}`);
-                status.textContent = card.status;
-                element.appendChild(status);
-            } else {
-                const copy = document.createElement('span');
-                copy.className = 'extra-buy-card-copy';
-                copy.textContent = formatExtraBuyCardCopy(card.copy);
-                element.appendChild(copy);
-            }
+            const value = document.createElement('strong');
+            value.className = 'extra-buy-reason-value';
+            value.textContent = card.value;
+
+            const status = document.createElement('span');
+            status.className = 'extra-buy-reason-status';
+            status.textContent = card.status;
+
+            element.append(icon, title, value, status);
             return element;
         }
 
-        function renderExtraBuyCards(containerId, cards, fallbackCard) {
+        function renderExtraBuyCards(containerId, cards) {
             const container = document.getElementById(containerId);
             if (!container) return;
-            container.replaceChildren();
-            const cardsToRender = cards.length > 0 ? cards.slice(0, 4) : [fallbackCard];
-            cardsToRender.forEach((card) => {
-                container.appendChild(createExtraBuyCard(card));
-            });
+            container.innerHTML = '';
+            cards.forEach((card) => container.appendChild(createExtraBuyCard(card)));
         }
 
         function buildAddPositionSummaryCards(guidance) {
-            const summaryCards = [];
-            const cost = guidance.cost_basis_context || {};
-            const practical = guidance.practical_signal_context || {};
+            const cost = guidance?.cost_basis_context || {};
+            const practical = guidance?.practical_signal_context || {};
+            const technical = guidance?.technical_bottoming_context || {};
             const valuation = practical.valuation || {};
             const bottoming = practical.bottoming || {};
-            const technical = guidance.technical_bottoming_context || {};
-            const reasons = Array.isArray(guidance.reasons) ? guidance.reasons : [];
-            const appliedLessons = Array.isArray(guidance.applied_lessons) ? guidance.applied_lessons : [];
-
-            const priceVsAvg = toExtraBuyFiniteNumber(cost.price_vs_avg_cost_pct);
-            if (priceVsAvg !== null) {
-                summaryCards.push({
-                    icon: 'bi-currency-bitcoin',
-                    title: priceVsAvg < 0 ? 'Below Avg Cost' : 'Above Avg Cost',
-                    value: formatExtraBuyPercent(priceVsAvg),
-                    valueTone: priceVsAvg < 0 ? 'success' : 'danger',
-                    status: priceVsAvg < 0 ? 'Bullish' : 'Expensive',
-                    statusTone: priceVsAvg < 0 ? 'success' : 'danger',
-                    copy: formatExtraBuyCardCopy(`BTC is ${Math.abs(priceVsAvg).toFixed(2)}% ${priceVsAvg < 0 ? 'below' : 'above'} your average cost.`)
-                });
-            }
-
-            const ahr999 = (
-                toExtraBuyFiniteNumber(valuation.ahr999) ??
-                toExtraBuyFiniteNumber(technical.ahr999)
+            const priceVsAvg = (
+                toExtraBuyFiniteNumber(cost.price_vs_avg_cost_pct) ??
+                toExtraBuyFiniteNumber(practical.cost_basis?.price_vs_avg_cost_pct)
             );
-            if (ahr999 !== null) {
-                summaryCards.push({
-                    icon: 'bi-speedometer2',
-                    title: 'AHR999',
-                    value: ahr999.toFixed(2),
-                    status: ahr999 < 0.7 ? 'Deep Value' : (ahr999 < 1 ? 'Undervalued' : 'Neutral'),
-                    statusTone: ahr999 < 1 ? 'accent' : null,
-                    copy: formatExtraBuyCardCopy(`AHR999 is ${ahr999.toFixed(2)}${ahr999 < 1 ? ' (< 1.0).' : ' (>= 1.0).'}`),
-                });
-            }
-
+            const ahr999 = (
+                toExtraBuyFiniteNumber(technical.ahr999) ??
+                toExtraBuyFiniteNumber(valuation.ahr999)
+            );
             const fearValue = toExtraBuyFiniteNumber(technical.fear_greed_value);
-            if (fearValue !== null) {
-                summaryCards.push({
-                    icon: 'bi-speedometer',
-                    title: 'Fear & Greed',
-                    value: fearValue.toFixed(0),
-                    status: fearValue <= 25 ? 'Extreme Fear' : (fearValue >= 75 ? 'Greed' : 'Neutral'),
-                    statusTone: fearValue <= 25 ? 'danger' : null,
-                    copy: formatExtraBuyCardCopy(`Index value ${fearValue.toFixed(0)} from strategy context.`),
-                });
-            }
-
             const bottomingHits = (
                 toExtraBuyFiniteNumber(bottoming.tech_signal_hits) ??
                 toExtraBuyFiniteNumber(technical.tech_signal_hits)
             );
-            const bottomingSignals = Array.isArray(bottoming.signals) ? bottoming.signals : [];
-            if (bottomingHits !== null && bottomingHits > 0) {
-                summaryCards.push({
-                    icon: 'bi-shield-check',
+            const bottomingStatus = formatExtraBuyBottomingStatus(bottoming.bias, bottomingHits);
+
+            return [
+                {
+                    title: priceVsAvg !== null && priceVsAvg <= 0 ? 'Below Avg Cost' : 'Above Avg Cost',
+                    value: priceVsAvg === null ? '--' : formatExtraBuyPercent(priceVsAvg),
+                    status: priceVsAvg === null
+                        ? 'Not available'
+                        : (priceVsAvg <= 0 ? 'Supportive' : 'Above cost'),
+                    icon: 'bi bi-currency-bitcoin',
+                    tone: priceVsAvg === null ? 'neutral' : (priceVsAvg <= 0 ? 'success' : 'danger'),
+                },
+                {
+                    title: 'AHR999',
+                    value: ahr999 === null ? '--' : ahr999.toFixed(2),
+                    status: formatExtraBuyAhrStatus(ahr999),
+                    icon: 'bi bi-speedometer2',
+                    tone: ahr999 !== null && ahr999 < 1 ? 'purple' : 'neutral',
+                },
+                {
+                    title: 'Fear & Greed',
+                    value: fearValue === null ? '--' : String(Math.round(fearValue)),
+                    status: formatExtraBuyFearStatus(fearValue),
+                    icon: 'bi bi-emoji-frown',
+                    tone: fearValue !== null && fearValue <= 25 ? 'success' : 'neutral',
+                },
+                {
                     title: 'Bottoming Signals',
-                    value: `${bottomingHits.toFixed(0)} Active`,
-                    status: bottomingHits >= 2 ? 'Strong' : 'Building',
-                    statusTone: 'success',
-                    copy: formatExtraBuyCardCopy(bottomingHits >= 2
-                        ? `${bottomingHits.toFixed(0)} technical bottoming signals are active.`
-                        : (bottomingSignals[0] || 'One technical bottoming signal is active.')),
-                });
-            } else if (bottomingSignals.length > 0) {
-                summaryCards.push({
-                    icon: 'bi-shield-check',
-                    title: 'Bottoming context',
-                    copy: formatExtraBuyCardCopy(bottomingSignals[0]),
-                });
-            }
-
-            if (guidance.call_reason && summaryCards.length < 4) {
-                summaryCards.push({
-                    icon: 'bi-chat-left-text',
-                    title: 'Strategy reason',
-                    copy: formatExtraBuyCardCopy(guidance.call_reason),
-                });
-            }
-            if (reasons.length > 0 && summaryCards.length < 4) {
-                summaryCards.push({
-                    icon: 'bi-list-check',
-                    title: 'Why',
-                    copy: formatExtraBuyCardCopy(reasons[0]),
-                });
-            }
-            if (appliedLessons.length > 0 && summaryCards.length < 4) {
-                summaryCards.push({
-                    icon: 'bi-journal-check',
-                    title: 'Applied lesson',
-                    copy: formatExtraBuyCardCopy(appliedLessons[0]),
-                });
-            }
-
-            return summaryCards;
+                    value: bottomingHits === null ? '--' : `${Math.round(bottomingHits)} Active`,
+                    status: formatExtraBuySignalStatus(bottomingStatus),
+                    icon: 'bi bi-shield-check',
+                    tone: bottomingHits !== null && bottomingHits >= 2 ? 'success' : 'neutral',
+                },
+            ];
         }
 
-        function setAddPositionAdvancedCollapsed(collapsed) {
-            const panel = document.getElementById('addPositionAdvancedPanel');
-            const toggle = document.getElementById('addPositionAdvancedToggle');
-            if (!panel || !toggle) return;
-            panel.classList.toggle('is-collapsed', collapsed);
-            toggle.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+        function hideAddPositionBuySignals() {
+            const panel = document.getElementById('addPositionBuySignalsPanel');
+            const grid = document.getElementById('addPositionSummaryGrid');
+            if (grid) grid.innerHTML = '';
+            if (panel) panel.classList.add('d-none');
+        }
+
+        function renderAddPositionBuySignals(payload) {
+            const guidance = payload?.guidance || {};
+            const panel = document.getElementById('addPositionBuySignalsPanel');
+            if (!panel || guidance.action_code === 'NO_BUY' || payload?.confirm_blocked) {
+                hideAddPositionBuySignals();
+                return;
+            }
+            renderExtraBuyCards('addPositionSummaryGrid', buildAddPositionSummaryCards(guidance));
+            panel.classList.remove('d-none');
+        }
+
+        function setAddPositionDecisionTone(tone) {
+            const panel = document.getElementById('addPositionDecisionPanel');
+            const icon = panel?.querySelector('.extra-buy-decision-icon i');
+            if (!panel) return;
+            panel.classList.toggle('d-none', tone === 'ready' || tone === 'waiting');
+            panel.classList.remove('is-ready', 'is-waiting');
+            if (tone === 'ready' || tone === 'waiting') {
+                panel.classList.add(`is-${tone}`);
+            }
+            if (icon) {
+                icon.className = tone === 'waiting'
+                    ? 'bi bi-exclamation-triangle'
+                    : (tone === 'ready' ? 'bi bi-check-circle' : 'bi bi-info-circle');
+            }
+        }
+
+        function setAddPositionDecisionReason(title, reason, tone = null) {
+            setExtraBuyText('addPositionDecisionTitle', title);
+            setExtraBuyText('addPositionDecisionReason', reason);
+            setAddPositionDecisionTone(tone);
+        }
+
+        function getAddPositionDecisionReason(guidance) {
+            const reason = (
+                guidance?.call_reason ||
+                guidance?.final_call ||
+                guidance?.analysis_text ||
+                ''
+            );
+            const cleanedReason = sanitizeExtraBuySuggestionCopy(reason);
+            return formatExtraBuyCardCopy(cleanedReason, 180) || 'Strategy check says wait right now.';
+        }
+
+        function renderAddPositionDecisionReason(payload) {
+            const guidance = payload?.guidance || {};
+            const actionCode = guidance.action_code;
+            if (actionCode === 'NO_BUY' || payload?.confirm_blocked) {
+                setExtraBuyText('addPositionSignalCopy', getAddPositionDecisionReason(guidance));
+                setAddPositionDecisionReason(
+                    'Strategy says wait',
+                    getAddPositionDecisionReason(guidance),
+                    'waiting'
+                );
+                return;
+            }
+            setExtraBuyText('addPositionSignalCopy', ADD_POSITION_DEFAULT_SIGNAL_COPY);
+            setAddPositionDecisionReason(
+                'Strategy signals available',
+                'Choose your own amount, then preview before confirming.',
+                'ready'
+            );
         }
 
         function scrollAddPositionModalToTop() {
@@ -4368,16 +4460,25 @@
         }
 
         function clearAddPositionImpactValues() {
-            setExtraBuyText('addPositionImpactCurrentCost', '$--');
-            setExtraBuyText('addPositionImpactAfterCost', '$--');
-            setExtraBuyText('addPositionImpactDelta', '$--');
-            setExtraBuyText('addPositionImpactDeltaPct', '--');
+            setExtraBuyText('addPositionImpactCurrentCost', 'Enter an amount');
+            setExtraBuyText('addPositionImpactAfterCost', '--');
+            setExtraBuyText('addPositionImpactDelta', '--');
+            setExtraBuyText('addPositionImpactDeltaPct', '');
+            setExtraBuyTone('addPositionImpactDelta', null);
+            setExtraBuyTone('addPositionImpactDeltaPct', null);
+        }
+
+        function setAddPositionImpactUnavailable() {
+            setExtraBuyText('addPositionImpactCurrentCost', 'Position data unavailable');
+            setExtraBuyText('addPositionImpactAfterCost', 'Cannot preview yet');
+            setExtraBuyText('addPositionImpactDelta', 'No cost basis');
+            setExtraBuyText('addPositionImpactDeltaPct', 'Load position data to preview impact');
             setExtraBuyTone('addPositionImpactDelta', null);
             setExtraBuyTone('addPositionImpactDeltaPct', null);
         }
 
         function clearAddPositionImpact() {
-            setExtraBuyText('addPositionOpportunityTitle', 'Strategy Check Ready');
+            setExtraBuyText('addPositionOpportunityTitle', 'Strategy signals available');
             clearAddPositionImpactValues();
         }
 
@@ -4390,12 +4491,18 @@
                 amount === null ||
                 amount <= 0 ||
                 price === null ||
-                price <= 0 ||
+                price <= 0
+            ) {
+                clearAddPositionImpactValues();
+                return;
+            }
+
+            if (
                 !basis ||
                 basis.totalInvestedUsd === null ||
                 basis.totalBtc === null
             ) {
-                clearAddPositionImpactValues();
+                setAddPositionImpactUnavailable();
                 return;
             }
 
@@ -4428,7 +4535,10 @@
 
         function invalidateAddPositionConfirmState() {
             addPositionConfirmToken = null;
-            addPositionHardBlocked = false;
+            if (addPositionHardBlocked) {
+                updateAddPositionInputState();
+                return;
+            }
             if (addPositionActionMode === 'confirm') {
                 setAddPositionActionMode('advice');
             } else {
@@ -4439,29 +4549,24 @@
         function resetAddPositionGuidanceSummary() {
             addPositionConfirmToken = null;
             addPositionHardBlocked = false;
+            setAddPositionAmountDisabled(false);
             addPositionLastImpactBasis = null;
-            addPositionLastRecommendedRange = null;
-            setExtraBuyText('addPositionOpportunityTitle', 'Strategy Check Ready');
-            setExtraBuyText('addPositionConfidence', '--/100');
-            setExtraBuyText('addPositionRecommendedRange', '$-- - $--');
-            setExtraBuyText('addPositionBtcEstimate', '-- BTC');
+            setExtraBuyText('addPositionOpportunityTitle', 'Strategy signals available');
+            setExtraBuyText('addPositionSignalCopy', ADD_POSITION_DEFAULT_SIGNAL_COPY);
+            setExtraBuyText('addPositionConfidence', 'Loading');
+            setExtraBuyText('addPositionBtcEstimate', '--');
             setExtraBuyText('addPositionAdviceStatus', 'Waiting for inputs.');
-            setExtraBuyText('addPositionAdviceText', 'No strategy check yet.');
-            renderExtraBuyCards(
-                'addPositionSummaryGrid',
-                [],
-                {
-                    icon: 'bi-sliders',
-                    title: 'Strategy check',
-                    copy: 'Run the check to summarize the available signals.',
-                }
+            hideAddPositionBuySignals();
+            setAddPositionDecisionReason(
+                'Decision reason',
+                'Strategy decision pending.',
+                null
             );
             clearAddPositionImpact();
             [
                 'addPositionMarketPriceMove',
                 'addPositionMarketCostDelta'
             ].forEach((id) => setExtraBuyTone(id, null));
-            setAddPositionAdvancedCollapsed(true);
             updateAddPositionInputState();
         }
 
@@ -4471,8 +4576,8 @@
             const input = payload?.input || {};
 
             const actionCode = guidance.action_code;
-            const recommendedRange = getAddPositionRecommendedRange(guidance);
-            const hasInputAmount = toExtraBuyFiniteNumber(input.amount_usdc) !== null;
+            addPositionHardBlocked = Boolean(actionCode === 'NO_BUY' || payload?.confirm_blocked);
+            setAddPositionAmountDisabled(addPositionHardBlocked);
             const currentPrice = (
                 toExtraBuyFiniteNumber(input.current_price_usd) ??
                 toExtraBuyFiniteNumber(payload?.price_snapshot?.price) ??
@@ -4488,31 +4593,25 @@
                 ? enteredAmount / currentPrice
                 : null;
 
-            addPositionLastRecommendedRange = recommendedRange;
-            setExtraBuyText('addPositionRecommendedRange', formatExtraBuyUsdRange(recommendedRange));
             const riskScore = toExtraBuyFiniteNumber(guidance.risk_score);
-            const confidence = riskScore === null ? null : Math.max(0, Math.min(100, Math.round(100 - riskScore)));
-            setExtraBuyText('addPositionConfidence', confidence === null ? '--/100' : `${confidence}/100`);
+            setExtraBuyText('addPositionConfidence', formatExtraBuyConfidenceLabel(riskScore, actionCode));
             setExtraBuyText(
                 'addPositionOpportunityTitle',
                 actionCode === 'NO_BUY'
-                    ? 'Wait for Better Setup'
-                    : (hasInputAmount ? 'Strong Buy Opportunity' : 'Strategy Check Ready')
+                    ? 'Wait for better setup'
+                    : 'Strategy signals available'
             );
             setExtraBuyText(
                 'addPositionBtcEstimate',
-                estimatedBtc === null ? '-- BTC' : `${estimatedBtc.toFixed(8)} BTC`
+                estimatedBtc === null ? '--' : `${estimatedBtc.toFixed(8)} BTC`
             );
 
-            renderExtraBuyCards(
-                'addPositionSummaryGrid',
-                buildAddPositionSummaryCards(guidance),
-                {
-                    icon: 'bi-chat-left-text',
-                    title: 'Strategy reason',
-                    copy: formatExtraBuyCardCopy(guidance.call_reason || 'No compact summary returned.'),
-                }
-            );
+            renderAddPositionDecisionReason(payload);
+            if (actionCode === 'NO_BUY' || payload?.confirm_blocked) {
+                hideAddPositionBuySignals();
+            } else {
+                renderAddPositionBuySignals(payload);
+            }
 
             const totalInvestedUsd = toExtraBuyFiniteNumber(cost.total_invested_usd);
             const totalBtc = toExtraBuyFiniteNumber(cost.total_btc);
@@ -4530,7 +4629,6 @@
                 }
                 : null;
             updateAddPositionImpactFromInputs();
-            setExtraBuyText('addPositionAdviceText', guidance.analysis_text || 'No detailed strategy analysis returned.');
             updateAddPositionInputState();
             scrollAddPositionModalToTop();
         }
@@ -4538,27 +4636,21 @@
         function setAddPositionActionMode(mode) {
             addPositionActionMode = mode === 'confirm' ? 'confirm' : 'advice';
             const btn = document.getElementById('addPositionAnalyzeBtn');
-            const hint = document.getElementById('addPositionActionHint');
             if (!btn) return;
 
             if (addPositionActionMode === 'confirm') {
                 btn.classList.remove('btn-primary');
                 btn.classList.add('btn-success');
-                if (hint) {
-                    hint.textContent = 'Strategy check complete. Confirm this one-time extra buy with your input amount.';
-                }
             } else {
                 btn.classList.remove('btn-success');
                 btn.classList.add('btn-primary');
-                if (hint) {
-                    hint.textContent = 'Enter an amount, then check the current strategy.';
-                }
             }
             updateAddPositionInputState();
         }
 
         function setAddPositionHardBlocked(blocked) {
             addPositionHardBlocked = Boolean(blocked);
+            setAddPositionAmountDisabled(addPositionHardBlocked);
             if (addPositionHardBlocked) {
                 addPositionConfirmToken = null;
                 setAddPositionActionMode('advice');
@@ -4591,11 +4683,13 @@
 
         function updateAddPositionRealtimePrice(payload) {
             const priceInput = document.getElementById('addPositionPriceInput');
+            const displayEl = document.getElementById('addPositionPriceDisplay');
             const metaEl = document.getElementById('addPositionPriceMeta');
-            if (!priceInput || !metaEl) return false;
+            if (!priceInput || !displayEl || !metaEl) return false;
 
             const price = Number(payload?.price);
-            if (Number.isFinite(price) && price > 0) {
+            const hasPrice = Number.isFinite(price) && price > 0;
+            if (hasPrice) {
                 const previousPrice = Number(priceInput.value);
                 priceInput.value = price.toFixed(2);
                 if (
@@ -4610,7 +4704,8 @@
                 updateAddPositionInputState();
             }
 
-            metaEl.textContent = Number.isFinite(price) && price > 0 ? `BTC Price: ${formatExtraBuyUsd(price)}` : 'BTC Price: --';
+            displayEl.textContent = hasPrice ? formatExtraBuyUsd(price) : '$--';
+            metaEl.textContent = hasPrice ? 'Updated just now' : 'Price pending';
             return true;
         }
 
@@ -4626,9 +4721,9 @@
                 updateAddPositionRealtimePrice(payload);
                 return payload;
             } catch (error) {
-                console.error('Failed to refresh dashboard BTC price');
+                console.error('Failed to refresh dashboard price');
                 if (!silent) {
-                    notyf.error('Failed to refresh BTC price');
+                    notyf.error('Failed to refresh current price');
                 }
                 return null;
             }
@@ -4645,8 +4740,9 @@
 
         async function fetchRealtimePriceForAddPosition({ silent = false } = {}) {
             const priceInput = document.getElementById('addPositionPriceInput');
+            const displayEl = document.getElementById('addPositionPriceDisplay');
             const metaEl = document.getElementById('addPositionPriceMeta');
-            if (!priceInput || !metaEl) return null;
+            if (!priceInput || !displayEl || !metaEl) return null;
 
             try {
                 const response = await fetch('/api/stats/realtime-price?symbol=BTCUSDC');
@@ -4659,11 +4755,12 @@
                 updateAddPositionRealtimePrice(payload);
                 return payload;
             } catch (error) {
-                console.error('Failed to fetch realtime BTC price:', error);
+                console.error('Failed to fetch realtime price:', error);
                 if (!silent) {
-                    notyf.error('Failed to refresh BTC price');
+                    notyf.error('Failed to refresh current price');
                 }
-                metaEl.textContent = 'BTC Price: unavailable';
+                displayEl.textContent = '$--';
+                metaEl.textContent = 'Price unavailable';
                 return null;
             }
         }
@@ -4694,19 +4791,21 @@
 
         async function runAddPositionRecommendationOnly(price) {
             const statusEl = document.getElementById('addPositionAdviceStatus');
-            const textEl = document.getElementById('addPositionAdviceText');
             if (!Number.isFinite(price) || price <= 0) return;
-            if (statusEl) statusEl.textContent = 'Loading current recommendation...';
+            if (statusEl) statusEl.textContent = 'Loading strategy signal...';
             try {
                 const payload = await fetchAddPositionAdvice(price);
-                if (textEl) textEl.textContent = payload?.guidance?.analysis_text || 'No guidance returned.';
                 renderAddPositionGuidanceSummary(payload);
-                if (statusEl) statusEl.textContent = 'Current recommendation loaded.';
+                if (statusEl) statusEl.textContent = 'Strategy signal loaded.';
                 setAddPositionActionMode('advice');
             } catch (error) {
                 console.error('Failed to load extra-buy recommendation:', error);
-                if (statusEl) statusEl.textContent = 'Recommendation unavailable.';
-                if (textEl) textEl.textContent = 'Unable to load the current recommendation right now. Enter an amount and try the strategy check later.';
+                if (statusEl) statusEl.textContent = 'Strategy signal unavailable.';
+                setAddPositionDecisionReason(
+                    'Strategy signal unavailable',
+                    'Enter an amount and try the strategy check later.',
+                    null
+                );
             }
         }
 
@@ -4719,7 +4818,6 @@
             const amount = Number(document.getElementById('addPositionUsdcInput')?.value);
             const price = Number(document.getElementById('addPositionPriceInput')?.value);
             const statusEl = document.getElementById('addPositionAdviceStatus');
-            const textEl = document.getElementById('addPositionAdviceText');
             const submitBtn = document.getElementById('addPositionAnalyzeBtn');
             const confirmText = document.getElementById('addPositionConfirmText');
 
@@ -4729,7 +4827,7 @@
                 return;
             }
             if (!Number.isFinite(price) || price <= 0) {
-                if (statusEl) statusEl.textContent = 'Enter a valid BTC price first.';
+                if (statusEl) statusEl.textContent = 'Enter a valid current price first.';
                 updateAddPositionInputState();
                 return;
             }
@@ -4744,29 +4842,25 @@
                 const payload = await fetchAddPositionAdvice(price, amount);
                 addPositionConfirmToken = payload?.confirm_token || null;
 
-                const guidanceText = payload?.guidance?.analysis_text || 'No guidance returned.';
-                if (textEl) textEl.textContent = guidanceText;
                 renderAddPositionGuidanceSummary(payload);
+                const actionCode = payload?.guidance?.action_code;
                 if (statusEl) {
-                    const finalCall = payload?.guidance?.final_call;
-                    if (finalCall) {
-                        statusEl.textContent = `Strategy check: ${finalCall}`;
+                    if (actionCode === 'NO_BUY' || payload?.confirm_blocked) {
+                        statusEl.textContent = `Strategy says wait: ${getAddPositionDecisionReason(payload?.guidance || {})}`;
                     } else {
-                        const decision = payload?.guidance?.decision || 'UNKNOWN';
-                        statusEl.textContent = `Strategy check: ${decision}`;
+                        statusEl.textContent = 'Strategy check complete.';
                     }
                 }
-                const actionCode = payload?.guidance?.action_code;
                 if (actionCode === 'NO_BUY' || payload?.confirm_blocked) {
                     addPositionConfirmToken = null;
                     setAddPositionActionMode('advice');
                     setAddPositionHardBlocked(true);
-                    const hint = document.getElementById('addPositionActionHint');
-                    if (hint) {
-                        hint.textContent = 'Strategy check says no extra buy right now.';
-                    }
+                    hideAddPositionBuySignals();
+                    setExtraBuyText('addPositionDecisionTitle', 'Strategy says wait');
+                    renderAddPositionDecisionReason(payload);
                 } else if (addPositionConfirmToken) {
                     addPositionHardBlocked = false;
+                    setAddPositionAmountDisabled(false);
                     setAddPositionActionMode('confirm');
                 } else {
                     setAddPositionActionMode('advice');
@@ -4775,7 +4869,11 @@
             } catch (error) {
                 console.error('Failed to run extra-buy strategy check:', error);
                 if (statusEl) statusEl.textContent = 'Strategy check failed.';
-                if (textEl) textEl.textContent = 'Unable to check the strategy right now. Please try again later or ask an admin to check diagnostics.';
+                setAddPositionDecisionReason(
+                    'Strategy check failed',
+                    'Unable to check the strategy right now. Please try again later.',
+                    null
+                );
                 notyf.error('Extra buy strategy check failed');
             } finally {
                 if (submitBtn) {
@@ -4789,7 +4887,6 @@
             const amount = Number(document.getElementById('addPositionUsdcInput')?.value);
             const price = Number(document.getElementById('addPositionPriceInput')?.value);
             const statusEl = document.getElementById('addPositionAdviceStatus');
-            const textEl = document.getElementById('addPositionAdviceText');
             const submitBtn = document.getElementById('addPositionAnalyzeBtn');
             const confirmText = document.getElementById('addPositionConfirmText');
             const modalEl = document.getElementById('addPositionModal');
@@ -4830,7 +4927,9 @@
                 }
 
                 if (statusEl) statusEl.textContent = 'Buy recorded.';
-                if (textEl && payload?.message) textEl.textContent = payload.message;
+                if (payload?.message) {
+                    setAddPositionDecisionReason('Buy recorded', payload.message, 'ready');
+                }
                 notyf.success('Buy recorded to transaction history');
                 confirmSuccess = true;
 
@@ -4847,7 +4946,11 @@
             } catch (error) {
                 console.error('Failed to confirm add-position buy:', error);
                 if (statusEl) statusEl.textContent = 'Buy failed.';
-                if (textEl) textEl.textContent = 'Unable to record the buy right now. Please try again later or ask an admin to check diagnostics.';
+                setAddPositionDecisionReason(
+                    'Buy failed',
+                    'Unable to record the buy right now. Please try again later.',
+                    null
+                );
                 notyf.error('Buy confirmation failed');
             } finally {
                 if (submitBtn) {
@@ -4877,9 +4980,6 @@
             const amountInput = document.getElementById('addPositionUsdcInput');
             const priceInput = document.getElementById('addPositionPriceInput');
             const adviceStatus = document.getElementById('addPositionAdviceStatus');
-            const adviceText = document.getElementById('addPositionAdviceText');
-            const advancedToggle = document.getElementById('addPositionAdvancedToggle');
-            const addPositionQuickAmountBtns = document.querySelectorAll('[data-add-amount]');
 
             if (refreshPriceBtn) {
                 refreshPriceBtn.addEventListener('click', async () => {
@@ -4890,26 +4990,6 @@
                     updateAddPositionEstimate();
                 });
             }
-
-            if (advancedToggle) {
-                advancedToggle.addEventListener('click', () => {
-                    const panel = document.getElementById('addPositionAdvancedPanel');
-                    const isCollapsed = panel ? panel.classList.contains('is-collapsed') : true;
-                    setAddPositionAdvancedCollapsed(!isCollapsed);
-                });
-            }
-
-            addPositionQuickAmountBtns.forEach((button) => {
-                button.addEventListener('click', () => {
-                    if (!amountInput) return;
-                    const increment = Number(button.dataset.addAmount);
-                    const current = Number(amountInput.value);
-                    const nextAmount = (Number.isFinite(current) && current > 0 ? current : 0) + increment;
-                    amountInput.value = nextAmount.toFixed(2).replace(/\.00$/, '');
-                    amountInput.dispatchEvent(new Event('input', { bubbles: true }));
-                    amountInput.focus();
-                });
-            });
 
             if (addPositionForm) {
                 addPositionForm.addEventListener('submit', async (event) => {
@@ -4924,11 +5004,10 @@
 
             if (addPositionModalEl) {
                 addPositionModalEl.addEventListener('shown.bs.modal', async () => {
-                    if (adviceStatus) adviceStatus.textContent = 'Loading realtime BTC price...';
-                    if (adviceText) adviceText.textContent = 'No strategy check yet.';
+                    if (adviceStatus) adviceStatus.textContent = 'Loading realtime price...';
                     if (amountInput) amountInput.value = '';
                     resetAddPositionGuidanceSummary();
-                    if (adviceStatus) adviceStatus.textContent = 'Loading realtime BTC price...';
+                    if (adviceStatus) adviceStatus.textContent = 'Loading realtime price...';
                     setAddPositionActionMode('advice');
                     await fetchRealtimePriceForAddPosition();
                     await loadAddPositionRecommendation();
