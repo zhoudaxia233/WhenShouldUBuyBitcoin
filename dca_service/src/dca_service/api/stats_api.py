@@ -1,12 +1,14 @@
 from fastapi import APIRouter, Depends, Query, HTTPException, BackgroundTasks, Response
 from sqlmodel import Session, select, col
 from typing import List, Dict, Any, Tuple, Optional
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timezone, timedelta, date
+import base64
 import pandas as pd
 import httpx
 import math
 import json
 import hashlib
+import hmac
 import logging
 import csv
 import io
@@ -39,6 +41,9 @@ BINANCE_TICKER_REQUEST_WEIGHT = 2
 BINANCE_PRICE_CACHE: Dict[str, Dict[str, Any]] = {}
 MARKET_CONTEXT_MAX_AGE_DAYS = 3
 MACRO_CONTEXT_MAX_AGE_DAYS = 7
+ADD_POSITION_CONFIRM_TOKEN_TTL_SECONDS = 300
+ADD_POSITION_CONFIRM_TOKEN_VERSION = 1
+ADD_POSITION_CONFIRM_FLOAT_TOLERANCE = 1e-8
 
 
 def _normalize_language(language: str | None) -> str:
@@ -57,11 +62,112 @@ class AddPositionConfirmRequest(BaseModel):
     price_usd: float = Field(gt=0)
     symbol: str = Field(default="BTCUSDC", min_length=6, max_length=20)
     notes: Optional[str] = Field(default=None, max_length=300)
+    confirm_token: Optional[str] = Field(default=None, min_length=20, max_length=4096)
 
 
 def _normalize_symbol(symbol: str | None) -> str:
     normalized = (symbol or "BTCUSDC").strip().upper()
     return normalized or "BTCUSDC"
+
+
+def _add_position_confirm_secret() -> bytes:
+    return settings.SESSION_SECRET.encode("utf-8")
+
+
+def _encode_add_position_token_payload(payload: Dict[str, Any]) -> str:
+    raw = json.dumps(payload, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    encoded = base64.urlsafe_b64encode(raw).decode("ascii").rstrip("=")
+    signature = hmac.new(_add_position_confirm_secret(), raw, hashlib.sha256).hexdigest()
+    return f"{encoded}.{signature}"
+
+
+def _decode_add_position_token_payload(token: str) -> Dict[str, Any]:
+    try:
+        encoded, signature = token.split(".", 1)
+        padded = encoded + ("=" * ((4 - len(encoded) % 4) % 4))
+        raw = base64.urlsafe_b64decode(padded.encode("ascii"))
+        expected = hmac.new(_add_position_confirm_secret(), raw, hashlib.sha256).hexdigest()
+        if not hmac.compare_digest(signature, expected):
+            raise ValueError("invalid signature")
+        decoded = json.loads(raw.decode("utf-8"))
+    except Exception as exc:
+        raise HTTPException(
+            status_code=409,
+            detail="Strategy check is invalid. Please run it again.",
+        ) from exc
+    if not isinstance(decoded, dict):
+        raise HTTPException(status_code=409, detail="Strategy check is invalid. Please run it again.")
+    return decoded
+
+
+def _create_add_position_confirm_token(
+    *,
+    current_user: User,
+    symbol: str,
+    amount_usdc: float,
+    price_usd: float,
+    source_signature: str,
+    action_code: str,
+) -> tuple[str, str]:
+    expires_at = datetime.now(timezone.utc) + timedelta(seconds=ADD_POSITION_CONFIRM_TOKEN_TTL_SECONDS)
+    payload = {
+        "version": ADD_POSITION_CONFIRM_TOKEN_VERSION,
+        "user_id": current_user.id,
+        "symbol": symbol,
+        "amount_usdc": round(float(amount_usdc), 8),
+        "price_usd": round(float(price_usd), 8),
+        "source_signature": source_signature,
+        "action_code": action_code,
+        "expires_at": expires_at.isoformat(),
+    }
+    return _encode_add_position_token_payload(payload), expires_at.isoformat()
+
+
+def _verify_add_position_confirm_token(
+    token: str | None,
+    *,
+    current_user: User,
+    symbol: str,
+    amount_usdc: float,
+    price_usd: float,
+    source_signature: str,
+) -> None:
+    if not token:
+        raise HTTPException(status_code=409, detail="Run strategy check before confirming this buy.")
+
+    payload = _decode_add_position_token_payload(token)
+    if payload.get("version") != ADD_POSITION_CONFIRM_TOKEN_VERSION:
+        raise HTTPException(status_code=409, detail="Strategy check is invalid. Please run it again.")
+
+    expires_at_raw = payload.get("expires_at")
+    try:
+        expires_at = datetime.fromisoformat(str(expires_at_raw))
+    except ValueError as exc:
+        raise HTTPException(status_code=409, detail="Strategy check is invalid. Please run it again.") from exc
+    if expires_at.tzinfo is None:
+        expires_at = expires_at.replace(tzinfo=timezone.utc)
+    if datetime.now(timezone.utc) >= expires_at:
+        raise HTTPException(status_code=409, detail="Strategy check expired. Please run it again.")
+
+    if payload.get("user_id") != current_user.id or payload.get("symbol") != symbol:
+        raise HTTPException(status_code=409, detail="Strategy check does not match this buy. Please run it again.")
+
+    if payload.get("action_code") == "NO_BUY":
+        raise HTTPException(status_code=409, detail="Strategy check says NO BUY. This buy is blocked.")
+
+    try:
+        token_amount = float(payload.get("amount_usdc"))
+        token_price = float(payload.get("price_usd"))
+    except (TypeError, ValueError) as exc:
+        raise HTTPException(status_code=409, detail="Strategy check is invalid. Please run it again.") from exc
+    if (
+        abs(token_amount - round(float(amount_usdc), 8)) > ADD_POSITION_CONFIRM_FLOAT_TOLERANCE
+        or abs(token_price - round(float(price_usd), 8)) > ADD_POSITION_CONFIRM_FLOAT_TOLERANCE
+    ):
+        raise HTTPException(status_code=409, detail="Strategy check does not match current amount or price. Please run it again.")
+
+    if payload.get("source_signature") != source_signature:
+        raise HTTPException(status_code=409, detail="Position changed since strategy check. Please run it again.")
 
 
 def _extract_http_error_detail(resp: httpx.Response) -> str:
@@ -154,6 +260,117 @@ def _fetch_binance_realtime_price(symbol: str) -> Dict[str, Any]:
         raise HTTPException(status_code=502, detail=f"Failed to fetch realtime price: {e}")
 
 
+def _calculate_harmonic_dca_cost_with_current_price(prices: List[float], current_price_usd: float) -> Optional[float]:
+    if len(prices) < 199 or current_price_usd <= 0:
+        return None
+    prices_200 = [float(p) for p in prices[-199:] if p and p > 0] + [float(current_price_usd)]
+    if len(prices_200) != 200:
+        return None
+    denom = sum(1.0 / p for p in prices_200)
+    if denom <= 0:
+        return None
+    return 200.0 / denom
+
+
+def _derive_current_trend_value_from_series(
+    trend_points: List[Tuple[date, float]],
+    current_date: date,
+) -> Optional[float]:
+    if len(trend_points) < 10:
+        return None
+    genesis_date = date(2009, 1, 3)
+    xs: List[float] = []
+    ys: List[float] = []
+    for metric_date, trend_value in trend_points:
+        age_days = (metric_date - genesis_date).days
+        if age_days <= 0 or trend_value <= 0:
+            continue
+        xs.append(math.log(float(age_days)))
+        ys.append(math.log(float(trend_value)))
+    if len(xs) < 10:
+        return None
+
+    mean_x = sum(xs) / len(xs)
+    mean_y = sum(ys) / len(ys)
+    denom = sum((x - mean_x) ** 2 for x in xs)
+    if denom <= 0:
+        return None
+    slope = sum((x - mean_x) * (y - mean_y) for x, y in zip(xs, ys)) / denom
+    intercept = mean_y - slope * mean_x
+    current_age_days = (current_date - genesis_date).days
+    if current_age_days <= 0:
+        return None
+    trend_value = math.exp(intercept) * (float(current_age_days) ** slope)
+    return trend_value if math.isfinite(trend_value) and trend_value > 0 else None
+
+
+def _calculate_rsi_from_prices(prices: List[float], period: int = 14) -> Optional[float]:
+    clean_prices = [float(p) for p in prices if p and math.isfinite(float(p)) and float(p) > 0]
+    if len(clean_prices) < period + 1:
+        return None
+    try:
+        series = pd.Series(clean_prices, dtype=float)
+        delta = series.diff()
+        gains = delta.clip(lower=0)
+        losses = -delta.clip(upper=0)
+        avg_gain = gains.ewm(alpha=1 / period, adjust=False, min_periods=period).mean().iloc[-1]
+        avg_loss = losses.ewm(alpha=1 / period, adjust=False, min_periods=period).mean().iloc[-1]
+        if pd.isna(avg_gain) or pd.isna(avg_loss):
+            return None
+        if avg_loss == 0:
+            return 100.0 if avg_gain > 0 else 50.0
+        rs = avg_gain / avg_loss
+        rsi = 100.0 - (100.0 / (1.0 + rs))
+        return float(rsi) if math.isfinite(float(rsi)) else None
+    except Exception:
+        return None
+
+
+def _calculate_weekly_rsi_from_price_points(
+    price_points: List[Tuple[date, float]],
+    period: int = 14,
+) -> Optional[float]:
+    if len(price_points) < period * 5:
+        return None
+    try:
+        df = pd.DataFrame(
+            {
+                "date": [pd.Timestamp(metric_date) for metric_date, _ in price_points],
+                "close_price": [float(price) for _, price in price_points],
+            }
+        ).dropna()
+        if df.empty:
+            return None
+        weekly_prices = (
+            df.sort_values("date")
+            .set_index("date")["close_price"]
+            .resample("W-SUN")
+            .last()
+            .dropna()
+            .astype(float)
+            .tolist()
+        )
+        return _calculate_rsi_from_prices(weekly_prices, period=period)
+    except Exception:
+        return None
+
+
+def _price_points_with_current_price(
+    price_points: List[Tuple[Optional[date], float]],
+    current_price_usd: float,
+    current_date: date,
+) -> List[Tuple[date, float]]:
+    dated_points = [(metric_date, price) for metric_date, price in price_points if metric_date is not None]
+    if not dated_points:
+        return [(current_date, float(current_price_usd))]
+    current_points = list(dated_points)
+    if current_points[-1][0] == current_date:
+        current_points[-1] = (current_date, float(current_price_usd))
+    else:
+        current_points.append((current_date, float(current_price_usd)))
+    return current_points
+
+
 def _load_recent_market_context(current_price_usd: float) -> Dict[str, Any]:
     """
     Build short-horizon market context from metrics CSV.
@@ -184,8 +401,12 @@ def _load_recent_market_context(current_price_usd: float) -> Dict[str, Any]:
         "ahr999": None,
         "ahr999_sub_1": None,
         "ahr999_sub_07": None,
+        "ahr999_source": None,
+        "valuation_source": None,
         "rsi14": None,
         "rsi14w": None,
+        "rsi14_source": None,
+        "rsi14w_source": None,
         "is_rsi_daily_oversold": None,
         "is_rsi_weekly_oversold_proxy": None,
         "is_rsi_bottoming_signal": None,
@@ -197,36 +418,58 @@ def _load_recent_market_context(current_price_usd: float) -> Dict[str, Any]:
         "is_stale": True,
         "freshness_max_age_days": MARKET_CONTEXT_MAX_AGE_DAYS,
         "dca_cost": None,
+        "dca_cost_source": None,
         "trend_value": None,
+        "trend_value_source": None,
         "ratio_dca_current": None,
         "ratio_trend_current": None,
         "is_double_undervalued": False,
+        "range_30d_source": None,
     }
     try:
         csv_path = _resolve_metrics_csv_path()
         if not csv_path.exists():
             return context
 
-        prices: List[float] = []
+        price_points: List[Tuple[Optional[date], float]] = []
+        trend_points: List[Tuple[date, float]] = []
         last_row: Optional[Dict[str, Any]] = None
         last_metric_date = None
+
+        def _parse_finite_float(value: Any) -> Optional[float]:
+            if value in (None, "", "nan", "NaN"):
+                return None
+            try:
+                parsed = float(value)
+                return parsed if math.isfinite(parsed) else None
+            except (TypeError, ValueError):
+                return None
+
         with open(csv_path, "r", encoding="utf-8") as f:
             reader = csv.DictReader(f)
             for row in reader:
                 last_row = row
                 date_str = row.get("date")
+                parsed_date = None
                 if date_str:
                     try:
-                        last_metric_date = datetime.strptime(date_str[:10], "%Y-%m-%d").date()
+                        parsed_date = datetime.strptime(date_str[:10], "%Y-%m-%d").date()
+                        last_metric_date = parsed_date
                     except (ValueError, TypeError):
                         pass
                 price_str = row.get("close_price")
-                if not price_str:
-                    continue
-                try:
-                    prices.append(float(price_str))
-                except (ValueError, TypeError):
-                    continue
+                price = _parse_finite_float(price_str)
+                if price is not None and price > 0:
+                    price_points.append((parsed_date, price))
+                trend_value = _parse_finite_float(row.get("trend_value"))
+                if parsed_date is not None and trend_value is not None and trend_value > 0:
+                    trend_points.append((parsed_date, trend_value))
+
+        current_price = _parse_finite_float(current_price_usd)
+        if current_price is None or current_price <= 0:
+            return context
+
+        prices = [price for _, price in price_points]
 
         if len(prices) < 2:
             return context
@@ -242,7 +485,10 @@ def _load_recent_market_context(current_price_usd: float) -> Dict[str, Any]:
         high_180d = max(window)
         ath_price = max(prices)
         prev_close = prices[-1]
-        window_30d = prices[-30:] if len(prices) >= 30 else prices
+        current_date = datetime.now(timezone.utc).date()
+        current_price_points = _price_points_with_current_price(price_points, current_price, current_date)
+        current_prices = [price for _, price in current_price_points]
+        window_30d = current_prices[-30:] if len(current_prices) >= 30 else current_prices
         low_30d = min(window_30d)
         high_30d = max(window_30d)
         range_30d_pct = ((high_30d - low_30d) / low_30d) * 100.0 if low_30d > 0 else None
@@ -259,17 +505,17 @@ def _load_recent_market_context(current_price_usd: float) -> Dict[str, Any]:
             except Exception:
                 realized_vol_30d_pct = None
 
-        current_vs_low_pct = ((current_price_usd - low_180d) / low_180d) * 100.0 if low_180d > 0 else None
-        current_vs_high_pct = ((current_price_usd - high_180d) / high_180d) * 100.0 if high_180d > 0 else None
-        current_vs_ath_pct = ((current_price_usd - ath_price) / ath_price) * 100.0 if ath_price > 0 else None
-        drop_24h_pct = ((current_price_usd - prev_close) / prev_close) * 100.0 if prev_close > 0 else None
+        current_vs_low_pct = ((current_price - low_180d) / low_180d) * 100.0 if low_180d > 0 else None
+        current_vs_high_pct = ((current_price - high_180d) / high_180d) * 100.0 if high_180d > 0 else None
+        current_vs_ath_pct = ((current_price - ath_price) / ath_price) * 100.0 if ath_price > 0 else None
+        drop_24h_pct = ((current_price - prev_close) / prev_close) * 100.0 if prev_close > 0 else None
 
         near_180d_low = (current_vs_low_pct is not None) and (current_vs_low_pct <= 1.5)
-        new_180d_low = current_price_usd < low_180d
+        new_180d_low = current_price < low_180d
         near_180d_high = (current_vs_high_pct is not None) and (current_vs_high_pct >= -1.0)
-        new_180d_high = current_price_usd > high_180d
+        new_180d_high = current_price > high_180d
         near_ath = (current_vs_ath_pct is not None) and (current_vs_ath_pct >= -1.0)
-        new_ath = current_price_usd > ath_price
+        new_ath = current_price > ath_price
         deep_value_regime = bool(near_180d_low and drop_24h_pct is not None and drop_24h_pct <= -6.0)
         breakout_high_regime = bool((near_ath or new_ath) and drop_24h_pct is not None and drop_24h_pct >= 3.5)
         sideways_30d = bool(
@@ -282,14 +528,7 @@ def _load_recent_market_context(current_price_usd: float) -> Dict[str, Any]:
         def _maybe_float_from_last(key: str) -> Optional[float]:
             if not last_row:
                 return None
-            raw = last_row.get(key)
-            if raw in (None, "", "nan", "NaN"):
-                return None
-            try:
-                val = float(raw)
-                return val if math.isfinite(val) else None
-            except (TypeError, ValueError):
-                return None
+            return _parse_finite_float(last_row.get(key))
 
         def _maybe_bool_from_last(key: str) -> Optional[bool]:
             if not last_row:
@@ -299,12 +538,33 @@ def _load_recent_market_context(current_price_usd: float) -> Dict[str, Any]:
                 return None
             return str(raw).strip().lower() in {"1", "true", "yes"}
 
-        ahr999_val = _maybe_float_from_last("ahr999")
-        dca_cost = _maybe_float_from_last("dca_cost")
-        trend_value = _maybe_float_from_last("trend_value")
-        ratio_dca_current = (current_price_usd / dca_cost) if dca_cost and dca_cost > 0 else _maybe_float_from_last("ratio_dca")
-        ratio_trend_current = (
-            current_price_usd / trend_value if trend_value and trend_value > 0 else _maybe_float_from_last("ratio_trend")
+        csv_ahr999_val = _maybe_float_from_last("ahr999")
+        csv_dca_cost = _maybe_float_from_last("dca_cost")
+        csv_trend_value = _maybe_float_from_last("trend_value")
+
+        dca_cost = _calculate_harmonic_dca_cost_with_current_price(prices, current_price)
+        dca_cost_source = "current_price_recalculated" if dca_cost is not None else None
+        if dca_cost is None:
+            dca_cost = csv_dca_cost
+            dca_cost_source = "csv_last_row" if dca_cost is not None else None
+
+        trend_value = _derive_current_trend_value_from_series(trend_points, current_date)
+        trend_value_source = "current_date_recalculated" if trend_value is not None else None
+        if trend_value is None:
+            trend_value = csv_trend_value
+            trend_value_source = "csv_last_row" if trend_value is not None else None
+
+        ratio_dca_current = (current_price / dca_cost) if dca_cost and dca_cost > 0 else None
+        ratio_trend_current = (current_price / trend_value) if trend_value and trend_value > 0 else None
+        ahr999_val = (
+            ratio_dca_current * ratio_trend_current
+            if ratio_dca_current is not None and ratio_trend_current is not None
+            else csv_ahr999_val
+        )
+        ahr999_source = (
+            "current_price_recalculated"
+            if ratio_dca_current is not None and ratio_trend_current is not None
+            else ("csv_last_row" if csv_ahr999_val is not None else None)
         )
         is_double_undervalued = bool(
             ratio_dca_current is not None
@@ -312,12 +572,27 @@ def _load_recent_market_context(current_price_usd: float) -> Dict[str, Any]:
             and ratio_dca_current < 1.0
             and ratio_trend_current < 1.0
         )
-        rsi14_val = _maybe_float_from_last("rsi14")
-        rsi14w_val = _maybe_float_from_last("rsi14w")
+        rsi14_val = _calculate_rsi_from_prices(current_prices)
+        rsi14_source = "current_price_recalculated" if rsi14_val is not None else None
+        if rsi14_val is None:
+            rsi14_val = _maybe_float_from_last("rsi14")
+            rsi14_source = "csv_last_row" if rsi14_val is not None else None
+
+        rsi14w_val = _calculate_weekly_rsi_from_price_points(current_price_points)
+        rsi14w_source = "current_price_recalculated" if rsi14w_val is not None else None
+        if rsi14w_val is None:
+            rsi14w_val = _maybe_float_from_last("rsi14w")
+            rsi14w_source = "csv_last_row" if rsi14w_val is not None else None
+
         volume_ratio_30 = _maybe_float_from_last("volume_ratio_30")
-        is_rsi_daily_oversold = _maybe_bool_from_last("is_rsi_daily_oversold")
-        is_rsi_weekly_oversold_proxy = _maybe_bool_from_last("is_rsi_weekly_oversold_proxy")
-        is_rsi_bottoming_signal = _maybe_bool_from_last("is_rsi_bottoming_signal")
+        is_rsi_daily_oversold = bool(rsi14_val < 30.0) if rsi14_val is not None else _maybe_bool_from_last("is_rsi_daily_oversold")
+        is_rsi_weekly_oversold_proxy = (
+            bool(rsi14w_val <= 35.0) if rsi14w_val is not None else _maybe_bool_from_last("is_rsi_weekly_oversold_proxy")
+        )
+        if is_rsi_daily_oversold is not None and is_rsi_weekly_oversold_proxy is not None:
+            is_rsi_bottoming_signal = bool(is_rsi_daily_oversold and is_rsi_weekly_oversold_proxy)
+        else:
+            is_rsi_bottoming_signal = _maybe_bool_from_last("is_rsi_bottoming_signal")
         is_post_panic_volume_contraction = _maybe_bool_from_last("is_post_panic_volume_contraction")
         bottoming_tech_signal_count = 0
         if ahr999_val is not None and ahr999_val < 1.0:
@@ -347,12 +622,17 @@ def _load_recent_market_context(current_price_usd: float) -> Dict[str, Any]:
             "breakout_high_regime": bool(breakout_high_regime),
             "range_30d_pct": float(range_30d_pct) if range_30d_pct is not None else None,
             "realized_vol_30d_pct": float(realized_vol_30d_pct) if realized_vol_30d_pct is not None else None,
+            "range_30d_source": "current_price_recalculated",
             "sideways_30d": bool(sideways_30d),
             "ahr999": float(ahr999_val) if ahr999_val is not None else None,
             "ahr999_sub_1": bool(ahr999_val < 1.0) if ahr999_val is not None else None,
             "ahr999_sub_07": bool(ahr999_val < 0.7) if ahr999_val is not None else None,
+            "ahr999_source": ahr999_source,
+            "valuation_source": ahr999_source,
             "rsi14": float(rsi14_val) if rsi14_val is not None else None,
             "rsi14w": float(rsi14w_val) if rsi14w_val is not None else None,
+            "rsi14_source": rsi14_source,
+            "rsi14w_source": rsi14w_source,
             "is_rsi_daily_oversold": is_rsi_daily_oversold,
             "is_rsi_weekly_oversold_proxy": is_rsi_weekly_oversold_proxy,
             "is_rsi_bottoming_signal": is_rsi_bottoming_signal,
@@ -364,7 +644,9 @@ def _load_recent_market_context(current_price_usd: float) -> Dict[str, Any]:
             "is_stale": bool(metrics_is_stale),
             "freshness_max_age_days": MARKET_CONTEXT_MAX_AGE_DAYS,
             "dca_cost": float(dca_cost) if dca_cost is not None else None,
+            "dca_cost_source": dca_cost_source,
             "trend_value": float(trend_value) if trend_value is not None else None,
+            "trend_value_source": trend_value_source,
             "ratio_dca_current": float(ratio_dca_current) if ratio_dca_current is not None else None,
             "ratio_trend_current": float(ratio_trend_current) if ratio_trend_current is not None else None,
             "is_double_undervalued": bool(is_double_undervalued),
@@ -3027,7 +3309,40 @@ def get_realtime_price(
     Return realtime ticker price from Binance public API with a short TTL cache.
     Cache + client polling guidance are tuned to stay far below Binance limits.
     """
-    return _fetch_binance_realtime_price(symbol)
+    price_snapshot = _fetch_binance_realtime_price(symbol)
+    market_context = _load_recent_market_context(float(price_snapshot["price"]))
+    price_snapshot.update(
+        {
+            "ahr999": market_context.get("ahr999"),
+            "ahr999_sub_1": market_context.get("ahr999_sub_1"),
+            "ahr999_sub_07": market_context.get("ahr999_sub_07"),
+            "ahr999_source": market_context.get("ahr999_source"),
+            "valuation_source": market_context.get("valuation_source"),
+            "dca_cost": market_context.get("dca_cost"),
+            "dca_cost_source": market_context.get("dca_cost_source"),
+            "trend_value": market_context.get("trend_value"),
+            "trend_value_source": market_context.get("trend_value_source"),
+            "ratio_dca_current": market_context.get("ratio_dca_current"),
+            "ratio_trend_current": market_context.get("ratio_trend_current"),
+            "is_double_undervalued": market_context.get("is_double_undervalued"),
+            "metrics_as_of_date": market_context.get("metrics_as_of_date"),
+            "metrics_age_days": market_context.get("metrics_age_days"),
+            "metrics_is_stale": market_context.get("is_stale"),
+            "freshness_max_age_days": market_context.get("freshness_max_age_days"),
+            "valuation_context": {
+                "available": market_context.get("available"),
+                "ahr999": market_context.get("ahr999"),
+                "ahr999_source": market_context.get("ahr999_source"),
+                "ratio_dca_current": market_context.get("ratio_dca_current"),
+                "ratio_trend_current": market_context.get("ratio_trend_current"),
+                "is_double_undervalued": market_context.get("is_double_undervalued"),
+                "metrics_as_of_date": market_context.get("metrics_as_of_date"),
+                "metrics_age_days": market_context.get("metrics_age_days"),
+                "is_stale": market_context.get("is_stale"),
+            },
+        }
+    )
+    return price_snapshot
 
 
 @router.post("/stats/add-position/advice")
@@ -3071,11 +3386,29 @@ def get_add_position_advice(
         market_context=market_context,
         macro_context=macro_context,
     )
+    confirm_token = None
+    confirm_token_expires_at = None
+    confirm_blocked = False
+    if payload.amount_usdc is not None:
+        if guidance.get("action_code") == "NO_BUY":
+            confirm_blocked = True
+        else:
+            confirm_token, confirm_token_expires_at = _create_add_position_confirm_token(
+                current_user=current_user,
+                symbol=normalized_symbol,
+                amount_usdc=float(payload.amount_usdc),
+                price_usd=float(price_snapshot["price"]),
+                source_signature=source_signature,
+                action_code=str(guidance.get("action_code") or "UNKNOWN"),
+            )
 
     return {
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "source_signature": source_signature,
         "symbol": normalized_symbol,
+        "confirm_token": confirm_token,
+        "confirm_token_expires_at": confirm_token_expires_at,
+        "confirm_blocked": confirm_blocked,
         "input": {
             "amount_usdc": float(payload.amount_usdc) if payload.amount_usdc is not None else None,
             "current_price_usd": float(price_snapshot["price"]),
@@ -3109,6 +3442,16 @@ def confirm_add_position(
     input_price_usd = float(payload.price_usd)
     if amount_usdc <= 0 or input_price_usd <= 0:
         raise HTTPException(status_code=400, detail="Invalid amount or price.")
+
+    _, _, _, source_signature = _build_buy_behavior_snapshot(session)
+    _verify_add_position_confirm_token(
+        payload.confirm_token,
+        current_user=current_user,
+        symbol=normalized_symbol,
+        amount_usdc=amount_usdc,
+        price_usd=input_price_usd,
+        source_signature=source_signature,
+    )
 
     strategy = session.exec(select(DCAStrategy)).first()
     execution_mode = ((strategy.execution_mode if strategy else "DRY_RUN") or "DRY_RUN").upper()
