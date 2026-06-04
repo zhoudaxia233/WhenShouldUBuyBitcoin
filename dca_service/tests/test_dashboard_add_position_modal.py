@@ -10,19 +10,22 @@ def test_dashboard_add_position_modal_and_safe_polling_are_present():
     assert 'data-bs-target="#addPositionModal"' in html
     assert "Extra Buy" in html
     assert "Extra BTC Buy" in html
-    assert "This action won't change your DCA settings." in html
+    assert "This action won't change your DCA settings." not in html
     assert "Check Strategy" not in html
     assert "Confirm Extra Buy" not in html
-    assert "Buy ${formatExtraBuyUsdcCompact(amount)} USDC" in html
-    assert "Confirm buy ${formatExtraBuyUsdcCompact(amount)} USDC" in html
+    assert "Preview ${formatExtraBuyUsdcCompact(amount)} USDC buy" in html
+    assert "Confirm ${formatExtraBuyUsdcCompact(amount)} USDC buy" in html
+    assert "Enter amount to preview" in html
+    assert "Check strategy before purchase" not in html
     assert "Add Position" not in html
     assert "Generate Advice" not in html
     assert "Buy (Confirm)" not in html
     assert "No advice yet." not in html
-    assert "No strategy check yet." in html
+    assert "Strategy decision pending" in html
     assert 'id="addPositionModal"' in html
     assert 'id="addPositionUsdcInput"' in html
     assert 'id="addPositionPriceInput"' in html
+    assert 'id="addPositionCtaIcon"' in html
     assert 'id="addPositionPriceInput" type="number" min="1" step="0.01" class="form-control" required readonly' in html
     assert "const ADD_POSITION_PRICE_POLL_INTERVAL_MS = 3000;" in html
     assert "fetch('/api/stats/realtime-price?symbol=BTCUSDC')" in html
@@ -33,6 +36,24 @@ def test_dashboard_add_position_modal_and_safe_polling_are_present():
     assert 'id="fixedDcaCapBadge"' in html
     assert 'id="previewActionSubtext"' in html
     assert "Cap ≤" in html
+
+
+def test_extra_buy_cta_icon_tracks_current_action_state():
+    repo_root = Path(__file__).resolve().parents[2]
+    template_path = repo_root / "dca_service" / "src" / "dca_service" / "templates" / "index.html"
+    html = template_path.read_text(encoding="utf-8")
+
+    update_block = html[
+        html.index("function updateAddPositionInputState()")
+        : html.index("function formatExtraBuySignedUsd(value)")
+    ]
+
+    assert '<i class="bi bi-pencil-square" id="addPositionCtaIcon" aria-hidden="true"></i>' in html
+    assert "function setAddPositionCtaIcon(iconName)" in html
+    assert "setAddPositionCtaIcon('lock');" in update_block
+    assert "setAddPositionCtaIcon(hasAmount ? 'check-circle' : 'pencil-square');" in update_block
+    assert "setAddPositionCtaIcon(hasAmount ? 'eye' : 'pencil-square');" in update_block
+    assert '<i class="bi bi-lock" aria-hidden="true"></i>' not in html
 
 
 def test_dashboard_current_price_uses_extra_buy_realtime_poll_interval():
@@ -49,22 +70,33 @@ def test_dashboard_current_price_uses_extra_buy_realtime_poll_interval():
     assert "updateMobileFiatEstimate();" in html
 
 
-def test_extra_buy_realtime_price_is_prominent_on_desktop_and_mobile():
+def test_extra_buy_realtime_price_shows_live_numeric_value_on_desktop_and_mobile():
     repo_root = Path(__file__).resolve().parents[2]
     template_path = repo_root / "dca_service" / "src" / "dca_service" / "templates" / "index.html"
     html = template_path.read_text(encoding="utf-8")
 
-    assert "metaEl.textContent = Number.isFinite(price) && price > 0 ? `BTC Price: ${formatExtraBuyUsd(price)}` : 'BTC Price: --';" in html
-    assert ".extra-buy-price-card {\n            display: flex;" in html
-    assert "background: color-mix(in srgb, var(--dashboard-card-bg-solid) 90%, var(--dashboard-accent) 10%);" in html
-    assert "border: 1px solid color-mix(in srgb, var(--dashboard-accent) 44%, var(--dashboard-border));" in html
-    assert ".extra-buy-price-card .form-text {\n            color: var(--dashboard-text);" in html
-    assert "font-size: 0.95rem;" in html
-    assert "font-weight: 820;" in html
+    realtime_price_block = html[
+        html.index("function updateAddPositionRealtimePrice(payload)")
+        : html.index("async function fetchRealtimePriceForDashboard")
+    ]
+
+    assert "const displayEl = document.getElementById('addPositionPriceDisplay');" in realtime_price_block
+    assert "displayEl.textContent = hasPrice ? formatExtraBuyUsd(price) : '$--';" in realtime_price_block
+    assert "metaEl.textContent = hasPrice ? 'Updated just now' : 'Price pending';" in realtime_price_block
+    assert '<strong class="extra-buy-price-label" id="addPositionPriceDisplay">$--</strong>' in html
+    assert '<strong class="extra-buy-price-label">BTC price</strong>' not in html
+    assert "Loading realtime BTC price" not in html
+    assert "Failed to refresh BTC price" not in html
+    assert "Enter a valid BTC price first." not in html
+    assert ".extra-buy-price-strip {\n            display: flex;" in html
+    assert "gap: 0.62rem;" in html
+    assert ".extra-buy-price-card .form-text {\n            color: var(--dashboard-muted);" in html
+    assert "font-size: 0.96rem;" in html
+    assert "font-weight: 650;" in html
 
     mobile_css = html[html.index("@media (max-width: 768px)"):]
-    assert ".extra-buy-price-card {\n                display: flex;" in mobile_css
-    assert "padding: 0.32rem 0.42rem;" in mobile_css
+    assert ".extra-buy-price-strip {\n                display: flex;" in mobile_css
+    assert "flex-wrap: wrap;" in mobile_css
     assert ".extra-buy-price-card .form-text {\n                font-size: 0.72rem;" in mobile_css
 
 
@@ -82,7 +114,7 @@ def test_extra_buy_mobile_inputs_use_ios_safe_font_size():
     assert "font-size: 0.82rem;" not in mobile_input_rule
 
 
-def test_extra_buy_uses_backend_current_valuation_instead_of_dashboard_override():
+def test_extra_buy_advice_request_does_not_send_dashboard_valuation_override():
     repo_root = Path(__file__).resolve().parents[2]
     template_path = repo_root / "dca_service" / "src" / "dca_service" / "templates" / "index.html"
     html = template_path.read_text(encoding="utf-8")
@@ -91,10 +123,6 @@ def test_extra_buy_uses_backend_current_valuation_instead_of_dashboard_override(
         html.index("function buildAddPositionAdviceRequestBody")
         : html.index("async function fetchAddPositionAdvice")
     ]
-    summary_cards = html[
-        html.index("function buildAddPositionSummaryCards")
-        : html.index("function setAddPositionAdvancedCollapsed")
-    ]
     realtime_update = html[
         html.index("function updateDashboardRealtimePrice")
         : html.index("function updateAddPositionRealtimePrice")
@@ -102,8 +130,7 @@ def test_extra_buy_uses_backend_current_valuation_instead_of_dashboard_override(
 
     assert "dashboard_ahr999" not in request_body
     assert "window.__latestDrawdownDecision?.ahr999_value" not in request_body
-    assert "toExtraBuyFiniteNumber(guidance.dashboard_ahr999)" not in summary_cards
-    assert "toExtraBuyFiniteNumber(valuation.ahr999)" in summary_cards
+    assert "toExtraBuyFiniteNumber(guidance.dashboard_ahr999)" not in html
     assert "const ahr999 = Number(payload?.ahr999);" in realtime_update
     assert "window.__latestDrawdownDecision.ahr999_value = ahr999;" in realtime_update
 
@@ -281,12 +308,159 @@ def test_add_position_no_buy_advice_does_not_enable_confirm_buy():
 
     assert "const actionCode = payload?.guidance?.action_code;" in html
     assert "if (actionCode === 'NO_BUY' || payload?.confirm_blocked)" in html
-    assert "Strategy check says no extra buy right now." in html
+    assert "renderAddPositionDecisionReason(payload);" in html
+    assert "getAddPositionDecisionReason(guidance)" in html
+    assert "Strategy says wait" in html
     assert "setAddPositionHardBlocked(true);" in html
+    assert "function setAddPositionAmountDisabled(disabled)" in html
     assert "setAddPositionActionMode('advice');" in html
 
 
-def test_extra_buy_modal_uses_reference_style_compact_assessment_and_order():
+def test_extra_buy_no_buy_disables_amount_entry_and_hides_buy_signal_cards():
+    repo_root = Path(__file__).resolve().parents[2]
+    template_path = repo_root / "dca_service" / "src" / "dca_service" / "templates" / "index.html"
+    html = template_path.read_text(encoding="utf-8")
+
+    modal_markup = html[
+        html.index('<div class="modal fade" id="addPositionModal"')
+        : html.index('<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js">')
+    ]
+    hard_blocked_block = html[
+        html.index("function setAddPositionHardBlocked(blocked)")
+        : html.index("function updateDashboardRealtimePrice")
+    ]
+    no_buy_block = html[
+        html.index("if (actionCode === 'NO_BUY' || payload?.confirm_blocked)")
+        : html.index("} else if (addPositionConfirmToken)")
+    ]
+    reset_block = html[
+        html.index("function resetAddPositionGuidanceSummary()")
+        : html.index("function renderAddPositionGuidanceSummary(payload)")
+    ]
+
+    assert 'id="addPositionAmountLock"' in modal_markup
+    assert 'class="extra-buy-input-lock"' in modal_markup
+    assert "amountWrap.classList.toggle('is-disabled', Boolean(disabled));" in html
+    assert ".extra-buy-input-lock {" in html
+    assert ".extra-buy-amount-input-wrap.is-disabled .extra-buy-input-lock {" in html
+    assert ".extra-buy-amount-input-wrap.is-disabled .form-control {" in html
+    assert "amountInput.disabled = Boolean(disabled);" in html
+    assert "setAddPositionAmountDisabled(addPositionHardBlocked);" in hard_blocked_block
+    assert "hideAddPositionBuySignals();" in no_buy_block
+    assert "setAddPositionAmountDisabled(false);" in reset_block
+
+
+def test_extra_buy_no_buy_decision_reason_prefers_backend_reason_fields():
+    repo_root = Path(__file__).resolve().parents[2]
+    template_path = repo_root / "dca_service" / "src" / "dca_service" / "templates" / "index.html"
+    html = template_path.read_text(encoding="utf-8")
+
+    modal_markup = html[
+        html.index('<div class="modal fade" id="addPositionModal"')
+        : html.index('<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js">')
+    ]
+    reason_helper = html[
+        html.index("function getAddPositionDecisionReason(guidance)")
+        : html.index("function renderAddPositionDecisionReason(payload)")
+    ]
+    decision_renderer = html[
+        html.index("function renderAddPositionDecisionReason(payload)")
+        : html.index("function scrollAddPositionModalToTop")
+    ]
+    no_buy_decision_branch = decision_renderer[
+        decision_renderer.index("if (actionCode === 'NO_BUY' || payload?.confirm_blocked)")
+        : decision_renderer.index("return;", decision_renderer.index("if (actionCode === 'NO_BUY' || payload?.confirm_blocked)"))
+    ]
+    tone_renderer = html[
+        html.index("function setAddPositionDecisionTone(tone)")
+        : html.index("function setAddPositionDecisionReason")
+    ]
+
+    assert 'id="addPositionSignalCopy"' in modal_markup
+    assert "guidance?.call_reason" in reason_helper
+    assert "guidance?.final_call" in reason_helper
+    assert "guidance?.analysis_text" in reason_helper
+    assert "sanitizeExtraBuySuggestionCopy" in reason_helper
+    assert "setExtraBuyText('addPositionSignalCopy', getAddPositionDecisionReason(guidance));" in no_buy_decision_branch
+    assert "setAddPositionDecisionReason(" in no_buy_decision_branch
+    assert "'Strategy says wait'" in no_buy_decision_branch
+    assert "panel.classList.toggle('d-none', tone === 'ready' || tone === 'waiting');" in tone_renderer
+    assert "Strategy check says no extra buy right now." not in no_buy_decision_branch
+
+
+def test_extra_buy_buy_decision_does_not_surface_amount_sizing_reason():
+    repo_root = Path(__file__).resolve().parents[2]
+    template_path = repo_root / "dca_service" / "src" / "dca_service" / "templates" / "index.html"
+    html = template_path.read_text(encoding="utf-8")
+
+    decision_renderer = html[
+        html.index("function renderAddPositionDecisionReason(payload)")
+        : html.index("function scrollAddPositionModalToTop")
+    ]
+    tone_renderer = html[
+        html.index("function setAddPositionDecisionTone(tone)")
+        : html.index("function setAddPositionDecisionReason")
+    ]
+    ready_branch = decision_renderer[
+        decision_renderer.index("setAddPositionDecisionReason(\n                'Strategy signals available'")
+        :
+    ]
+
+    assert "const ADD_POSITION_DEFAULT_SIGNAL_COPY =" in html
+    assert "'Choose your own amount, then preview before confirming.'" in ready_branch
+    assert "setExtraBuyText('addPositionSignalCopy', ADD_POSITION_DEFAULT_SIGNAL_COPY);" in decision_renderer
+    assert "getAddPositionDecisionReason(guidance)" not in ready_branch
+    assert "call_reason" not in ready_branch
+    assert "panel.classList.toggle('d-none', tone === 'ready' || tone === 'waiting');" in tone_renderer
+
+
+def test_extra_buy_buy_status_does_not_announce_backend_amount_suggestion():
+    repo_root = Path(__file__).resolve().parents[2]
+    template_path = repo_root / "dca_service" / "src" / "dca_service" / "templates" / "index.html"
+    html = template_path.read_text(encoding="utf-8")
+
+    strategy_check_block = html[
+        html.index("async function runAddPositionAdvice()")
+        : html.index("async function confirmAddPositionBuy()")
+    ]
+    status_block = strategy_check_block[
+        strategy_check_block.index("if (statusEl) {")
+        : strategy_check_block.index("}\n                if (actionCode === 'NO_BUY' || payload?.confirm_blocked)")
+    ]
+
+    assert "statusEl.textContent = 'Strategy check complete.';" in status_block
+    assert "finalCall" not in status_block
+    assert "statusEl.textContent = `Strategy check: ${finalCall}`;" not in status_block
+
+
+def test_extra_buy_modal_surfaces_are_opaque_over_dashboard_content():
+    repo_root = Path(__file__).resolve().parents[2]
+    template_path = repo_root / "dca_service" / "src" / "dca_service" / "templates" / "index.html"
+    html = template_path.read_text(encoding="utf-8")
+
+    assert "background-color: #0d141b;" in html
+    assert "rgba(18, 27, 36, 0.74)" not in html
+    assert "rgba(18, 27, 36, 0.72)" not in html
+    assert "rgba(18, 27, 36, 0.76)" not in html
+
+
+def test_extra_buy_modal_uses_readable_dark_surface_tokens_in_light_theme():
+    repo_root = Path(__file__).resolve().parents[2]
+    template_path = repo_root / "dca_service" / "src" / "dca_service" / "templates" / "index.html"
+    html = template_path.read_text(encoding="utf-8")
+
+    modal_content_rule = html[
+        html.index(".extra-buy-modal-content {")
+        : html.index("}", html.index(".extra-buy-modal-content {"))
+    ]
+
+    assert "--dashboard-text: #f5f7fa;" in modal_content_rule
+    assert "--dashboard-muted: #aeb7c2;" in modal_content_rule
+    assert ".extra-buy-modal-content .btn-close {" in html
+    assert "filter: invert(1);" in html
+
+
+def test_extra_buy_modal_uses_streamlined_decision_flow_without_recommendation_amounts():
     repo_root = Path(__file__).resolve().parents[2]
     template_path = repo_root / "dca_service" / "src" / "dca_service" / "templates" / "index.html"
     html = template_path.read_text(encoding="utf-8")
@@ -298,99 +472,174 @@ def test_extra_buy_modal_uses_reference_style_compact_assessment_and_order():
 
     assert 'extra-buy-modal-content' in modal_markup
     assert 'class="modal-dialog modal-lg modal-dialog-scrollable extra-buy-modal-dialog"' in modal_markup
+    assert 'class="extra-buy-header-icon"' in modal_markup
     assert 'id="addPositionRecommendedAmount"' not in modal_markup
     assert 'id="addPositionRecommendedCaption"' not in modal_markup
+    assert 'id="addPositionBuySignalsPanel"' in modal_markup
     assert 'id="addPositionSummaryGrid"' in modal_markup
     assert 'id="addPositionMarketSnapshotGrid"' not in modal_markup
     assert 'id="addPositionImpactPanel"' in modal_markup
-    assert 'id="addPositionAdvancedPanel"' in modal_markup
-    assert 'id="addPositionAdvancedToggle"' in modal_markup
-    assert 'id="addPositionAdviceText"' in modal_markup
+    assert 'id="addPositionAdvancedPanel"' not in modal_markup
+    assert 'id="addPositionAdvancedToggle"' not in modal_markup
+    assert 'id="addPositionAdviceText"' not in modal_markup
+    assert 'id="addPositionDecisionPanel"' in modal_markup
+    assert 'id="addPositionDecisionTitle"' in modal_markup
+    assert 'id="addPositionDecisionReason"' in modal_markup
     assert '<pre id="addPositionAdviceText"' not in modal_markup
     assert "MARKET ASSESSMENT" not in modal_markup
-    assert "Suggested Range" in modal_markup
+    assert "Suggested Range" not in modal_markup
     assert "SUGGESTED RANGE" not in modal_markup
+    assert "Current recommendation" not in modal_markup
+    assert 'id="addPositionRecommendedRange"' not in modal_markup
     assert 'id="addPositionRangeMinLabel"' not in modal_markup
     assert 'id="addPositionRangeMaxLabel"' not in modal_markup
     assert 'id="addPositionRangeMarker"' not in modal_markup
     assert 'id="addPositionBestAmount"' not in modal_markup
     assert "Best Amount" not in modal_markup
     assert "This is a market-based suggestion and is independent of the amount you choose to buy." not in modal_markup
-    assert "YOUR ORDER" in modal_markup
-    assert "Impact on your position" in modal_markup
-    assert "Advanced analysis" in modal_markup
+    assert "Strategy signals available" in modal_markup
+    assert "Review the signal, choose your own amount, then preview before confirming." in modal_markup
+    assert "This is not financial advice." in modal_markup
+    assert "Amount to Buy" in modal_markup
+    assert "Enter USDC amount" in modal_markup
+    assert 'class="extra-buy-amount-mode-grid"' not in modal_markup
+    assert 'data-extra-buy-size' not in modal_markup
+    assert "Small" not in modal_markup
+    assert "Regular" not in modal_markup
+    assert "Large" not in modal_markup
+    assert "Custom" not in modal_markup
+    assert 'id="addPositionPriceDisplay"' in modal_markup
+    assert "BTC price" not in modal_markup
+    assert "Price pending" in modal_markup
+    assert "Refresh" in modal_markup
+    assert "YOUR ORDER" not in modal_markup
+    assert "Impact preview" in modal_markup
+    assert modal_markup.count("Enter an amount to preview impact") == 1
+    assert "Impact on your position" not in modal_markup
+    assert "Average cost" in modal_markup
+    assert "Position impact" in modal_markup
+    assert "Decision reason" in modal_markup
+    assert "Strategy decision pending" in modal_markup
+    assert "Why this signal?" not in modal_markup
+    assert "Key indicators supporting the current market view" not in modal_markup
+    assert "Below Avg Cost" not in modal_markup
+    assert "AHR999" not in modal_markup
+    assert "Fear &amp; Greed" not in modal_markup
+    assert "Bottoming Signals" not in modal_markup
+    assert "Advanced analysis" not in modal_markup
     assert "Why this makes sense" not in modal_markup
     assert "Market snapshot" not in modal_markup
+    assert "Quick amount shortcuts" not in modal_markup
+    assert "data-add-amount" not in modal_markup
 
     assert "function renderAddPositionGuidanceSummary(payload)" in html
+    assert "const input = payload?.input || {};" in html
+    assert "toExtraBuyFiniteNumber(input.current_price_usd)" in html
+    assert "function sanitizeExtraBuySuggestionCopy(text)" in html
+    assert "function formatExtraBuyAnalysisText(guidance)" in html
+    assert "renderAddPositionDecisionReason(payload);" in html
+    assert "setExtraBuyText('addPositionDecisionReason', reason);" in html
+    assert "Current recommendation loaded." not in html
+    assert "Loading current recommendation" not in html
     assert "function resetAddPositionGuidanceSummary()" in html
     assert "renderAddPositionGuidanceSummary(payload);" in html
     assert "resetAddPositionGuidanceSummary();" in html
     assert ".extra-buy-modal-content" in html
-    assert ".extra-buy-recommendation-value" in html
+    assert ".extra-buy-recommendation-value" not in html
+    assert ".extra-buy-quick-grid" not in html
+    assert ".extra-buy-quick-btn" not in html
+    assert ".extra-buy-amount-mode-grid" not in html
+    assert ".extra-buy-amount-mode-btn" not in html
+    assert ".extra-buy-signal-tags" not in html
+    assert ".extra-buy-decision-panel" in html
+    assert ".extra-buy-buy-signals" in html
+    assert ".extra-buy-summary-grid" in html
+    assert ".extra-buy-preview-grid" in html
+    assert "const extraBuyAmountModeBtns = document.querySelectorAll('[data-extra-buy-size]');" not in html
+    assert "extraBuyAmountModeBtns.forEach" not in html
     assert ".extra-buy-range-track" not in html
     assert ".extra-buy-range-rail" not in html
     assert "function updateExtraBuyRangeRail(range, recommendedAmount)" not in html
     assert "updateExtraBuyRangeRail(recommendedRange, recommendedAmount);" not in html
-    assert "max-width: 1180px;" in html
+    assert "max-width: 1180px;" not in html
     assert '"why why"' not in html
-    assert 'grid-template-areas:\n                "hero controls"\n                "signals signals"\n                "impact impact"\n                "cta cta"\n                "advanced advanced";' in html
+    assert 'grid-template-areas:\n                "hero controls"\n                "impact impact"\n                "cta cta"\n                "advanced advanced";' not in html
+    assert 'grid-template-areas:\n                "hero"\n                "controls"\n                "impact"\n                "decision"\n                "signals"\n                "cta"\n                "footnote";' in html
     assert ".extra-buy-hero {\n            grid-area: hero;" in html
-    assert ".extra-buy-signals {\n            grid-area: signals;" in html
+    assert ".extra-buy-signals {" not in html
     assert ".extra-buy-controls {\n            grid-area: controls;" in html
     assert ".extra-buy-section {\n            grid-area: impact;" in html
+    assert ".extra-buy-buy-signals {\n            grid-area: signals;" in html
     assert ".extra-buy-cta-btn {\n            grid-area: cta;" in html
-    assert ".extra-buy-advanced-panel {\n            grid-area: advanced;" in html
-    assert "grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);" in html
-    assert "gap: 0.75rem;\n            padding: 1rem 1.1rem 1.1rem;" in html
+    assert ".extra-buy-advanced-panel" not in html
+    assert ".extra-buy-decision-panel {\n            grid-area: decision;" in html
+    assert "max-width: min(92vw, 840px);" in html
+    assert "max-width: min(96vw, 1500px);" not in html
+    assert "grid-template-columns: 1fr;" in html
+    assert "gap: 0.52rem;\n            padding: 0.72rem 0.8rem 0.78rem;" in html
     assert '"why"' not in html
-    assert "grid-template-columns: 1fr;\n                grid-template-areas:\n                    \"hero\"\n                    \"controls\"\n                    \"signals\"\n                    \"impact\"\n                    \"cta\"\n                    \"advanced\";" in html
+    assert "grid-template-columns: 1fr;\n                grid-template-areas:\n                    \"hero\"\n                    \"controls\"\n                    \"signals\"\n                    \"impact\"\n                    \"cta\"\n                    \"advanced\";" not in html
+    assert "grid-template-columns: 1fr;\n                grid-template-areas:\n                    \"hero\"\n                    \"controls\"\n                    \"impact\"\n                    \"decision\"\n                    \"signals\"\n                    \"cta\"\n                    \"footnote\";" in html
     assert ".extra-buy-market-copy" not in html
     assert ".extra-buy-suggestion-note" not in html
-    assert ".extra-buy-impact-grid {\n                grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) minmax(88px, 0.8fr);" in html
-    assert ".extra-buy-impact-box {\n                grid-column: auto;\n                border: 0;\n                background: transparent;\n                padding: 0;\n            }" in html
-    assert ".extra-buy-impact-arrow {\n                transform: none;" in html
-    assert ".extra-buy-advanced-title span span {\n                display: none;" in html
-    assert ".extra-buy-advanced-title span {\n                display: none;" not in html
+    assert ".extra-buy-preview-grid {\n                grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) auto minmax(0, 1fr);" in html
+    assert ".extra-buy-preview-divider {" in html
+    assert ".extra-buy-advanced-title" not in html
     assert "max-width: 700px;" not in html
     assert "max-width: 800px;" not in html
     assert "max-width: 1120px;" not in html
-    assert "font-size: clamp(2.2rem, 3.4vw, 2.8rem);" in html
-    assert "width: 72px;\n            height: 72px;" in html
+    assert "font-size: clamp(2.2rem, 3.4vw, 2.8rem);" not in html
+    assert "width: 72px;\n            height: 72px;" not in html
     assert "font-size: clamp(2.45rem, 5.2vw, 4.35rem);" not in html
     assert "font-size: 2.45rem;" not in html
-    assert "min-height: 218px;" in html
+    assert "width: 90px;\n            height: 90px;" not in html
+    assert "width: 60px;\n            height: 60px;" not in html
+    assert "width: 48px;\n            height: 48px;" in html
+    preview_icon_rule = html[
+        html.index(".extra-buy-preview-icon {")
+        : html.index("}", html.index(".extra-buy-preview-icon {"))
+    ]
+    assert "width: 48px;" not in preview_icon_rule
+    assert "height: 48px;" not in preview_icon_rule
+    assert "width: 34px;\n            height: 34px;" in html
+    assert "min-height: 218px;" not in html
     assert "min-height: 270px;" not in html
-    assert "gap: 0.75rem;\n            padding: 1rem 1.1rem 1.1rem;" in html
-    assert "min-height: 112px;" in html
+    assert "gap: 0.52rem;\n            padding: 0.72rem 0.8rem 0.78rem;" in html
+    assert ".extra-buy-modal-content .modal-header {\n            align-items: flex-start;\n            border-color: var(--dashboard-border);\n            padding: 0.84rem 1rem 0.78rem;" in html
+    assert "min-height: 72px;" not in html[
+        html.index(".extra-buy-cta-btn {") :
+        html.index("}", html.index(".extra-buy-cta-btn {"))
+    ]
+    assert "min-height: 46px;" in html[
+        html.index(".extra-buy-cta-btn {") :
+        html.index("}", html.index(".extra-buy-cta-btn {"))
+    ]
+    assert "min-height: 112px;" not in html
     assert "min-height: 138px;" not in html
     assert "@media (min-width: 768px) and (max-height: 760px)" in html
-    assert "min-height: 178px;" in html
-    assert "min-height: 88px;" in html
-    assert "padding: 0.58rem 0.72rem;" in html
-    assert ".extra-buy-summary-grid,\n            .extra-buy-impact-grid {\n                grid-template-columns: 1fr;" not in html
-    assert ".extra-buy-summary-grid {" in html
-    assert ".extra-buy-summary-grid {\n                grid-template-columns: repeat(2, minmax(0, 1fr));\n                gap: 0.28rem;" in html
-    assert ".extra-buy-summary-grid {\n            display: grid;\n            grid-template-columns: repeat(4, minmax(0, 1fr));\n            gap: 0.75rem;" in html
+    assert "min-height: 178px;" not in html
+    assert "min-height: 88px;" not in html
+    assert ".extra-buy-decision-panel {\n                gap: 0.55rem;\n                padding: 0.62rem 0.72rem;" in html
+    assert ".extra-buy-summary-grid {\n            display: grid;" in html
+    assert ".extra-buy-signal-tags" not in html
     assert "grid-template-areas:\n                \"icon title\"\n                \"icon value\"\n                \"icon status\";" in html
-    assert ".extra-buy-section {\n            grid-area: impact;\n            display: grid;\n            grid-template-columns: minmax(260px, 1fr) minmax(0, 2.4fr);" in html
+    assert ".extra-buy-section {\n            grid-area: impact;" in html
     assert ".extra-buy-control-card .form-text:not(#addPositionPriceMeta) {\n                display: none;" in html
     assert ".extra-buy-section-subtitle {\n                display: none;" in html
     assert ".extra-buy-manual-note {\n                display: none;" in html
-    assert ".extra-buy-price-card {\n                display: flex;" in html
-    assert "justify-content: space-between;" in html
+    assert ".extra-buy-price-strip {\n                display: flex;" in html
+    assert "flex-wrap: wrap;" in html
     assert "#addPositionPriceMeta" in html
     assert ".extra-buy-status {\n                display: none;" in html
-    assert ".extra-buy-modal-content .modal-header {\n                padding: 0.56rem 0.7rem;" in html
+    assert ".extra-buy-modal-content .modal-header {\n                padding: 0.76rem 0.9rem;" in html
     assert ".extra-buy-layout {\n                grid-template-columns: 1fr;\n                grid-template-areas:" in html
-    assert "gap: 0.34rem;\n                padding: 0.38rem;" in html
-    assert ".extra-buy-reason-card {\n                min-height: 72px;" in html
-    assert "font-size: 1.28rem;\n                margin: 0.18rem 0 0.08rem;" in html
-    assert "Bottoming Signals" in html
+    assert "gap: 0.42rem;\n                padding: 0.42rem;" in html
+    assert ".extra-buy-reason-card {\n                min-height: 72px;" not in html
+    assert "font-size: 1.28rem;\n                margin: 0.18rem 0 0.08rem;" not in html
     assert "const useCents = Math.abs(num) < 100 && Math.abs(num % 1) > 0.005;" in html
 
 
-def test_extra_buy_summary_uses_only_available_guidance_data_not_static_fear_greed_copy():
+def test_extra_buy_allowed_path_renders_four_buy_signal_cards_from_guidance_only():
     repo_root = Path(__file__).resolve().parents[2]
     template_path = repo_root / "dca_service" / "src" / "dca_service" / "templates" / "index.html"
     html = template_path.read_text(encoding="utf-8")
@@ -405,15 +654,20 @@ def test_extra_buy_summary_uses_only_available_guidance_data_not_static_fear_gre
     assert "Fear and Greed data will appear here when available." not in html
     assert "Fear &amp; Greed" not in modal_markup
     assert "function buildAddPositionSummaryCards(guidance)" in html
+    assert "function renderAddPositionBuySignals(payload)" in html
+    assert "function hideAddPositionBuySignals()" in html
     assert "function buildAddPositionMarketCards(guidance, payload)" not in html
     assert "renderExtraBuyCards(\n                'addPositionMarketSnapshotGrid'" not in html
     assert "extra-buy-market-snapshot" not in html
     assert "type === 'market'" not in html
     assert "function formatExtraBuyCardCopy(value, maxLength = 118)" in html
-    assert "copy: formatExtraBuyCardCopy(" in html
+    assert "return formatExtraBuyCardCopy(cleanedReason, 180)" in html
     assert "copy: guidance.call_reason," not in html
-    assert "fearValue !== null" in html
-    assert "summaryCards.push" in html
+    assert "title: priceVsAvg !== null && priceVsAvg <= 0 ? 'Below Avg Cost' : 'Above Avg Cost'," in html
+    assert "title: 'AHR999'," in html
+    assert "title: 'Fear & Greed'," in html
+    assert "title: 'Bottoming Signals'," in html
+    assert "renderAddPositionBuySignals(payload);" in html
 
 
 def test_extra_buy_advice_does_not_overwrite_user_entered_amount():
@@ -432,10 +686,10 @@ def test_extra_buy_advice_does_not_overwrite_user_entered_amount():
     assert "enteredAmount !== null &&\n                currentPrice !== null" in html
     assert "? enteredAmount / currentPrice" in html
     assert "const amount = Number(document.getElementById('addPositionUsdcInput')?.value);" in html
-    assert "Confirm buy ${formatExtraBuyUsdcCompact(amount)} USDC" in html
+    assert "Confirm ${formatExtraBuyUsdcCompact(amount)} USDC buy" in html
 
 
-def test_extra_buy_modal_surfaces_suggested_range_and_user_input_state():
+def test_extra_buy_modal_keeps_recommendation_amounts_out_of_user_input_flow():
     repo_root = Path(__file__).resolve().parents[2]
     template_path = repo_root / "dca_service" / "src" / "dca_service" / "templates" / "index.html"
     html = template_path.read_text(encoding="utf-8")
@@ -445,37 +699,45 @@ def test_extra_buy_modal_surfaces_suggested_range_and_user_input_state():
         : html.index('<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js">')
     ]
 
-    assert "Strong Buy Opportunity" in modal_markup
-    assert "Suggested Range" in modal_markup
+    assert "Strong Buy Opportunity" not in modal_markup
+    assert "Strategy signals available" in modal_markup
+    assert "Suggested Range" not in modal_markup
     assert "SUGGESTED RANGE" not in modal_markup
-    assert 'id="addPositionRecommendedRange"' in modal_markup
+    assert 'id="addPositionRecommendedRange"' not in modal_markup
     assert 'id="addPositionRecommendedCaption"' not in modal_markup
     assert 'id="addPositionAmountStatus"' not in modal_markup
     assert 'id="addPositionAmountAlignment"' not in modal_markup
     assert 'extra-buy-input-state' not in modal_markup
-    assert '<span class="extra-buy-estimate-label">Estimated BTC</span>' in modal_markup
+    assert '<span class="extra-buy-impact-label">Estimated BTC</span>' in modal_markup
     assert '<span class="extra-buy-estimate-label">Estimated BTC <i' not in modal_markup
-    assert 'data-add-amount="10"' in modal_markup
-    assert 'data-add-amount="25"' in modal_markup
-    assert 'data-add-amount="50"' in modal_markup
-    assert 'data-add-amount="100"' in modal_markup
+    assert 'data-add-amount="10"' not in modal_markup
+    assert 'data-add-amount="25"' not in modal_markup
+    assert 'data-add-amount="50"' not in modal_markup
+    assert 'data-add-amount="100"' not in modal_markup
+    assert "Small" not in modal_markup
+    assert "Regular" not in modal_markup
+    assert "Large" not in modal_markup
+    assert "Custom" not in modal_markup
+    assert 'data-extra-buy-size' not in modal_markup
 
-    assert "const recommendedRange = getAddPositionRecommendedRange(guidance);" in html
-    assert "function getAddPositionRecommendedRange(guidance)" in html
-    assert "setExtraBuyText('addPositionRecommendedRange', formatExtraBuyUsdRange(recommendedRange));" in html
+    assert "const recommendedRange = getAddPositionRecommendedRange(guidance);" not in html
+    assert "function getAddPositionRecommendedRange(guidance)" not in html
+    assert "setExtraBuyText('addPositionRecommendedRange', formatExtraBuyUsdRange(recommendedRange));" not in html
     assert "setExtraBuyText('addPositionRecommendedCaption', formatExtraBuyRecommendationCaption(recommendedAmount));" not in html
     assert "function updateAddPositionInputState()" in html
     assert "function formatExtraBuyAmountAlignment(amount, range)" not in html
     assert "formatExtraBuyAmountAlignment(amount, addPositionLastRecommendedRange)" not in html
     assert "Below suggested range" not in html
-    assert "addPositionLastRecommendedRange = recommendedRange;" in html
+    assert "addPositionLastRecommendedRange = recommendedRange;" not in html
     assert "addPositionLastRecommendedAmount = recommendedAmount;" not in html
     assert "function scrollAddPositionModalToTop()" in html
     assert "scrollAddPositionModalToTop();" in html
     assert "addPositionActionMode === 'confirm'" in html
-    assert "'Checks strategy first. No purchase yet.'" in html
-    assert "setExtraBuyText('addPositionConfirmSubtext', 'Confirm to execute this buy now.');" in html
-    assert "addPositionQuickAmountBtns.forEach" in html
+    assert "'Strategy check first. No purchase yet.'" in html
+    assert "setExtraBuyText('addPositionConfirmSubtext', 'Records this manual buy now.');" in html
+    assert "addPositionQuickAmountBtns.forEach" not in html
+    assert "const extraBuyAmountModeBtns = document.querySelectorAll('[data-extra-buy-size]');" not in html
+    assert "extraBuyAmountModeBtns.forEach" not in html
     assert "function updateAddPositionImpactFromInputs()" in html
     assert "const proposedBtc = amount / price;" in html
     assert "const afterCost = (totalInvestedUsd + amount) / afterBtc;" in html
@@ -497,10 +759,14 @@ def test_extra_buy_amount_edits_recalculate_impact_and_invalidate_confirmation()
     assert "function invalidateAddPositionConfirmState()" in html
     assert "let addPositionConfirmToken = null;" in html
     assert "let addPositionLastImpactBasis = null;" in html
-    assert "setExtraBuyText('addPositionOpportunityTitle', 'Strategy Check Ready');" in html
-    assert "setExtraBuyText('addPositionImpactCurrentCost', '$--');" in html
-    assert "setExtraBuyText('addPositionImpactAfterCost', '$--');" in html
-    assert "setExtraBuyText('addPositionImpactDelta', '$--');" in html
+    assert "setExtraBuyText('addPositionOpportunityTitle', 'Strategy signals available');" in html
+    assert "setExtraBuyText('addPositionImpactCurrentCost', 'Enter an amount');" in html
+    assert "setExtraBuyText('addPositionImpactAfterCost', '--');" in html
+    assert "setExtraBuyText('addPositionImpactDelta', '--');" in html
+    assert "function setAddPositionImpactUnavailable()" in html
+    assert "setExtraBuyText('addPositionImpactCurrentCost', 'Position data unavailable');" in html
+    assert "setExtraBuyText('addPositionImpactAfterCost', 'Cannot preview yet');" in html
+    assert "setExtraBuyText('addPositionImpactDelta', 'No cost basis');" in html
 
     start = html.index("if (amountInput) {")
     end = html.index("if (priceInput) {")
@@ -524,7 +790,7 @@ def test_extra_buy_modal_preloads_recommendation_range_before_amount_entry():
     assert "const payload = await fetchAddPositionAdvice(price, amount);" in html
     assert "body: JSON.stringify(buildAddPositionAdviceRequestBody(price, amount))" in html
     assert "setAddPositionActionMode('advice');\n                    await fetchRealtimePriceForAddPosition();\n                    await loadAddPositionRecommendation();" in html
-    assert "Enter amount to continue" in html
+    assert "Enter amount to preview" in html
 
 
 def test_extra_buy_strategy_check_does_not_show_success_toasts_that_cover_the_modal():
