@@ -626,6 +626,64 @@ def test_recent_market_context_recalculates_current_ahr999_from_live_price(tmp_p
     assert context["bottoming_tech_signal_count"] == 0
 
 
+def test_recent_market_context_derives_200wma_from_price_series(tmp_path):
+    csv_path = tmp_path / "btc_metrics.csv"
+    fieldnames = ["date", "close_price"]
+    today = datetime.now(timezone.utc).date()
+    start_day = today - timedelta(days=1500)
+
+    with csv_path.open("w", newline="", encoding="utf-8") as f:
+        writer = csv.DictWriter(f, fieldnames=fieldnames)
+        writer.writeheader()
+        for idx in range(1501):
+            writer.writerow(
+                {
+                    "date": (start_day + timedelta(days=idx)).isoformat(),
+                    "close_price": "100.0",
+                }
+            )
+
+    with patch("dca_service.api.stats_api._resolve_metrics_csv_path", return_value=csv_path):
+        context = stats_api._load_recent_market_context(80.0)
+
+    assert context["available"] is True
+    assert context["ma_200w_source"] == "price_series_recalculated"
+    assert context["ma_200w"] is not None
+    assert 99.0 <= context["ma_200w"] <= 100.0
+    assert context["ratio_200w_current"] == context["current_price_vs_200wma"]
+    assert context["ratio_200w_current"] < 0.82
+    assert context["below_200wma"] is True
+
+
+def test_recent_market_context_uses_csv_200wma_when_price_history_is_insufficient(tmp_path):
+    csv_path = tmp_path / "btc_metrics.csv"
+    fieldnames = ["date", "close_price", "ma_200w"]
+    today = datetime.now(timezone.utc).date()
+
+    with csv_path.open("w", newline="", encoding="utf-8") as f:
+        writer = csv.DictWriter(f, fieldnames=fieldnames)
+        writer.writeheader()
+        writer.writerow(
+            {
+                "date": today.isoformat(),
+                "close_price": "100.0",
+                "ma_200w": "125.0",
+            }
+        )
+
+    with patch("dca_service.api.stats_api._resolve_metrics_csv_path", return_value=csv_path):
+        context = stats_api._load_recent_market_context(100.0)
+
+    assert context["available"] is True
+    assert context["ma_200w_source"] == "csv_last_row"
+    assert context["ma_200w"] == 125.0
+    assert context["ratio_200w_current"] == 0.8
+    assert context["current_price_vs_200wma"] == 0.8
+    assert context["below_200wma"] is True
+    assert context["metrics_as_of_date"] == today.isoformat()
+    assert context["is_stale"] is False
+
+
 def test_realtime_price_endpoint_returns_current_valuation_snapshot(client: TestClient):
     price_snapshot = {
         "symbol": "BTCUSDC",
@@ -2034,6 +2092,110 @@ def test_add_position_advice_three_active_buys_in_24h_overrides_value_mode_befor
     assert guidance["behavior_context"]["active_buy_intraday_cooldown_mode"] is True
     assert guidance["behavior_context"]["active_buy_drawdown_gate"] is False
     assert "3 active buys" in guidance["call_reason"]
+    assert "15%+ cost-basis drawdown" not in guidance["analysis_text"]
+    assert all("15%+ cost-basis drawdown" not in lesson for lesson in guidance["applied_lessons"])
+
+
+def test_add_position_advice_three_active_buys_in_24h_waits_even_with_cost_basis_drawdown():
+    now_utc = datetime.now(timezone.utc)
+    events = []
+    for idx in range(8):
+        ts = now_utc - timedelta(days=10 - idx)
+        events.append(
+            {
+                "event_key": f"order:older-drawdown-active-{idx}",
+                "event_type": "ORDER",
+                "binance_order_id": 70_000 + idx,
+                "timestamp": ts,
+                "timestamp_end": ts,
+                "fill_count": 1,
+                "amount_usd": 120.0,
+                "amount_btc": 120.0 / 100_000.0,
+                "avg_price_usd": 100_000.0,
+                "fee_usd": 0.0,
+                "source_types": ["MANUAL"],
+                "manual_flags": [True],
+                "tx_ids": [700 + idx],
+                "trade_ids": [700 + idx],
+            }
+        )
+
+    for idx, hours_ago in enumerate([20, 11, 4]):
+        ts = now_utc - timedelta(hours=hours_ago)
+        events.append(
+            {
+                "event_key": f"order:today-drawdown-active-{idx}",
+                "event_type": "ORDER",
+                "binance_order_id": 80_000 + idx,
+                "timestamp": ts,
+                "timestamp_end": ts,
+                "fill_count": 1,
+                "amount_usd": 40.0,
+                "amount_btc": 40.0 / 86_000.0,
+                "avg_price_usd": 86_000.0,
+                "fee_usd": 0.0,
+                "source_types": ["MANUAL"],
+                "manual_flags": [True],
+                "tx_ids": [800 + idx],
+                "trade_ids": [800 + idx],
+            }
+        )
+
+    behavior_data = stats_api._build_behavior_analysis(
+        events,
+        {
+            "raw_fill_count": len(events),
+            "event_count": len(events),
+            "split_event_count": 0,
+            "split_fill_extra_count": 0,
+        },
+    )
+
+    guidance = stats_api._build_add_position_guidance(
+        behavior_data=behavior_data,
+        events=events,
+        amount_usdc=100.0,
+        current_price_usd=76_000.0,
+        market_context={
+            "available": True,
+            "is_stale": False,
+            "is_double_undervalued": True,
+            "ratio_dca_current": 0.88,
+            "ratio_trend_current": 0.62,
+            "ahr999": 0.55,
+            "ratio_200w_current": 0.94,
+            "current_price_vs_200wma": 0.94,
+            "below_200wma": True,
+            "ma_200w": 80_850.0,
+            "current_vs_180d_low_pct": 9.0,
+            "current_vs_ath_pct": -42.0,
+            "drop_24h_pct": -2.0,
+            "range_30d_pct": 14.0,
+            "realized_vol_30d_pct": 4.0,
+            "sideways_30d": False,
+        },
+        macro_context={
+            "available": True,
+            "is_stale": False,
+            "report_age_days": 1,
+            "macro_risk_score": 35.0,
+            "stress_flags": 0,
+            "net_liquidity_90d_delta": 40.0,
+            "oi_30d_change_pct": -12.0,
+            "ma_regime": "bearish",
+        },
+    )
+
+    assert guidance["decision"] == "WAIT"
+    assert guidance["action_code"] == "NO_BUY"
+    assert guidance["behavior_context"]["recent_active_buy_events_24h"] == 3
+    assert guidance["behavior_context"]["active_buy_drawdown_gate"] is True
+    assert guidance["behavior_context"]["active_buy_intraday_cooldown_mode"] is True
+    assert "3 active buys" in guidance["call_reason"]
+    assert "200WMA" in guidance["analysis_text"]
+    assert "larger repair add is allowed" not in guidance["analysis_text"]
+    assert "15%+ cost-basis drawdown" not in guidance["analysis_text"]
+    assert all("15%+ cost-basis drawdown" not in lesson for lesson in guidance["applied_lessons"])
 
 
 def test_add_position_advice_sideways_dense_dca_allows_add_with_takeoff_macro(client: TestClient, session: Session):

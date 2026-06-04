@@ -355,6 +355,35 @@ def _calculate_weekly_rsi_from_price_points(
         return None
 
 
+def _calculate_200wma_from_price_points(
+    price_points: List[Tuple[date, float]],
+) -> Optional[float]:
+    try:
+        df = pd.DataFrame(
+            {
+                "date": [point_date for point_date, _ in price_points],
+                "close_price": [price for _, price in price_points],
+            }
+        ).dropna()
+        if df.empty:
+            return None
+        df["date"] = pd.to_datetime(df["date"])
+        weekly_prices = (
+            df.sort_values("date")
+            .set_index("date")["close_price"]
+            .resample("W-SUN")
+            .last()
+            .dropna()
+            .astype(float)
+        )
+        if len(weekly_prices) < 200:
+            return None
+        ma_200w = float(weekly_prices.tail(200).mean())
+        return ma_200w if math.isfinite(ma_200w) and ma_200w > 0 else None
+    except Exception:
+        return None
+
+
 def _price_points_with_current_price(
     price_points: List[Tuple[Optional[date], float]],
     current_price_usd: float,
@@ -423,6 +452,12 @@ def _load_recent_market_context(current_price_usd: float) -> Dict[str, Any]:
         "trend_value_source": None,
         "ratio_dca_current": None,
         "ratio_trend_current": None,
+        "ma_200w": None,
+        "ma_200w_source": None,
+        "ratio_200w_current": None,
+        "current_price_vs_200wma": None,
+        "below_200wma": False,
+        "near_200wma": False,
         "is_double_undervalued": False,
         "range_30d_source": None,
     }
@@ -469,16 +504,55 @@ def _load_recent_market_context(current_price_usd: float) -> Dict[str, Any]:
         if current_price is None or current_price <= 0:
             return context
 
-        prices = [price for _, price in price_points]
+        def _maybe_float_from_last(key: str) -> Optional[float]:
+            if not last_row:
+                return None
+            return _parse_finite_float(last_row.get(key))
 
-        if len(prices) < 2:
-            return context
+        def _maybe_float_from_last_keys(keys: List[str]) -> Optional[float]:
+            for key in keys:
+                parsed = _maybe_float_from_last(key)
+                if parsed is not None:
+                    return parsed
+            return None
+
+        def _maybe_bool_from_last(key: str) -> Optional[bool]:
+            if not last_row:
+                return None
+            raw = last_row.get(key)
+            if raw in (None, ""):
+                return None
+            return str(raw).strip().lower() in {"1", "true", "yes"}
+
+        csv_ma_200w = _maybe_float_from_last_keys(
+            ["ma_200w", "ma200w", "ma_200_week", "ma_200_weekly", "200wma", "200w_ma"]
+        )
 
         metrics_age_days = None
         metrics_is_stale = True
         if last_metric_date is not None:
             metrics_age_days = (datetime.now(timezone.utc).date() - last_metric_date).days
             metrics_is_stale = metrics_age_days < 0 or metrics_age_days > MARKET_CONTEXT_MAX_AGE_DAYS
+
+        prices = [price for _, price in price_points]
+
+        if len(prices) < 2:
+            if csv_ma_200w is not None and csv_ma_200w > 0:
+                ratio_200w_current = current_price / csv_ma_200w
+                return {
+                    **context,
+                    "available": True,
+                    "metrics_as_of_date": last_metric_date.isoformat() if last_metric_date is not None else None,
+                    "metrics_age_days": int(metrics_age_days) if metrics_age_days is not None else None,
+                    "is_stale": bool(metrics_is_stale),
+                    "ma_200w": float(csv_ma_200w),
+                    "ma_200w_source": "csv_last_row",
+                    "ratio_200w_current": float(ratio_200w_current),
+                    "current_price_vs_200wma": float(ratio_200w_current),
+                    "below_200wma": bool(ratio_200w_current <= 1.0),
+                    "near_200wma": bool(1.0 < ratio_200w_current <= 1.05),
+                }
+            return context
 
         window = prices[-180:] if len(prices) >= 180 else prices
         low_180d = min(window)
@@ -525,19 +599,6 @@ def _load_recent_market_context(current_price_usd: float) -> Dict[str, Any]:
             and realized_vol_30d_pct <= 2.0
         )
 
-        def _maybe_float_from_last(key: str) -> Optional[float]:
-            if not last_row:
-                return None
-            return _parse_finite_float(last_row.get(key))
-
-        def _maybe_bool_from_last(key: str) -> Optional[bool]:
-            if not last_row:
-                return None
-            raw = last_row.get(key)
-            if raw in (None, ""):
-                return None
-            return str(raw).strip().lower() in {"1", "true", "yes"}
-
         csv_ahr999_val = _maybe_float_from_last("ahr999")
         csv_dca_cost = _maybe_float_from_last("dca_cost")
         csv_trend_value = _maybe_float_from_last("trend_value")
@@ -554,8 +615,15 @@ def _load_recent_market_context(current_price_usd: float) -> Dict[str, Any]:
             trend_value = csv_trend_value
             trend_value_source = "csv_last_row" if trend_value is not None else None
 
+        ma_200w = _calculate_200wma_from_price_points(current_price_points)
+        ma_200w_source = "price_series_recalculated" if ma_200w is not None else None
+        if ma_200w is None:
+            ma_200w = csv_ma_200w
+            ma_200w_source = "csv_last_row" if ma_200w is not None else None
+
         ratio_dca_current = (current_price / dca_cost) if dca_cost and dca_cost > 0 else None
         ratio_trend_current = (current_price / trend_value) if trend_value and trend_value > 0 else None
+        ratio_200w_current = (current_price / ma_200w) if ma_200w and ma_200w > 0 else None
         ahr999_val = (
             ratio_dca_current * ratio_trend_current
             if ratio_dca_current is not None and ratio_trend_current is not None
@@ -649,6 +717,12 @@ def _load_recent_market_context(current_price_usd: float) -> Dict[str, Any]:
             "trend_value_source": trend_value_source,
             "ratio_dca_current": float(ratio_dca_current) if ratio_dca_current is not None else None,
             "ratio_trend_current": float(ratio_trend_current) if ratio_trend_current is not None else None,
+            "ma_200w": float(ma_200w) if ma_200w is not None else None,
+            "ma_200w_source": ma_200w_source,
+            "ratio_200w_current": float(ratio_200w_current) if ratio_200w_current is not None else None,
+            "current_price_vs_200wma": float(ratio_200w_current) if ratio_200w_current is not None else None,
+            "below_200wma": bool(ratio_200w_current is not None and ratio_200w_current <= 1.0),
+            "near_200wma": bool(ratio_200w_current is not None and 1.0 < ratio_200w_current <= 1.05),
             "is_double_undervalued": bool(is_double_undervalued),
         }
     except Exception:
@@ -1921,6 +1995,20 @@ def _build_add_position_guidance(
         )
         ratio_dca_current = _as_float(market_ctx.get("ratio_dca_current") or market_ctx.get("ratio_dca"))
         ratio_trend_current = _as_float(market_ctx.get("ratio_trend_current") or market_ctx.get("ratio_trend"))
+        ma_200w = _as_float(market_ctx.get("ma_200w"))
+        ratio_200w_current = _as_float(
+            market_ctx.get("ratio_200w_current") or market_ctx.get("current_price_vs_200wma")
+        )
+        below_200wma = (
+            bool(market_ctx.get("below_200wma"))
+            if market_ctx.get("below_200wma") is not None
+            else bool(ratio_200w_current is not None and ratio_200w_current <= 1.0)
+        )
+        near_200wma = (
+            bool(market_ctx.get("near_200wma"))
+            if market_ctx.get("near_200wma") is not None
+            else bool(ratio_200w_current is not None and 1.0 < ratio_200w_current <= 1.05)
+        )
         double_undervalued = bool(market_ctx.get("is_double_undervalued"))
     else:
         deep_value_regime = False
@@ -1941,6 +2029,10 @@ def _build_add_position_guidance(
         is_post_panic_volume_contraction = False
         ratio_dca_current = None
         ratio_trend_current = None
+        ma_200w = None
+        ratio_200w_current = None
+        below_200wma = False
+        near_200wma = False
         double_undervalued = False
 
     persistent_value_regime = bool(
@@ -2187,9 +2279,9 @@ def _build_add_position_guidance(
         and recent_active_buy_dense
         and (active_buy_underperforming_dca or high_cost_weighted_habit)
     )
-    active_buy_intraday_cooldown_mode = bool(
-        recent_active_buy_24h_count >= 3
-        and not active_buy_drawdown_gate
+    active_buy_intraday_cooldown_mode = bool(recent_active_buy_24h_count >= 3)
+    active_buy_intraday_cooldown_reason = (
+        "You already made 3 active buys in the last 24h; wait for DCA or the next daily review."
     )
     dense_sideways_no_extra_mode = bool(
         dense_buy_mode
@@ -2242,6 +2334,13 @@ def _build_add_position_guidance(
                 valuation_support_signals.append(f"trend ratio {ratio_trend_current:.2f}")
             elif ratio_trend_current >= 1.15:
                 valuation_defense_signals.append(f"trend ratio {ratio_trend_current:.2f}")
+        if ratio_200w_current is not None:
+            if below_200wma:
+                valuation_support_signals.append(f"200WMA ratio {ratio_200w_current:.2f}")
+            elif near_200wma:
+                valuation_support_signals.append(f"near 200WMA {ratio_200w_current:.2f}")
+            elif ratio_200w_current >= 1.60:
+                valuation_defense_signals.append(f"200WMA ratio {ratio_200w_current:.2f}")
         if ratio_dca_current is not None:
             if ratio_dca_current < 1.0:
                 valuation_support_signals.append(f"DCA ratio {ratio_dca_current:.2f}")
@@ -2360,9 +2459,7 @@ def _build_add_position_guidance(
     elif no_extra_add_needed_mode:
         multiplier *= 0.45 if active_buy_intraday_cooldown_mode else 0.50 if active_buy_discipline_mode else 0.68
         if active_buy_intraday_cooldown_mode:
-            reasons.append(
-                "You already made 3 active buys in the last 24h; wait for DCA or a 15%+ cost-basis drawdown."
-            )
+            reasons.append(active_buy_intraday_cooldown_reason)
         elif active_buy_discipline_mode:
             reasons.append(
                 "Active buys are already dense, dominant, and more expensive than DCA; wait for DCA or a 15%+ cost-basis drawdown."
@@ -2541,9 +2638,14 @@ def _build_add_position_guidance(
         applied_lessons.append("Your high-cost exposure is already meaningful; high-zone adds get an extra size haircut.")
 
     if active_buy_pressure and not active_buy_drawdown_gate:
-        applied_lessons.append("Dense active-buy pressure is active; discretionary adds wait for DCA or a 15%+ cost-basis drawdown.")
+        applied_lessons.append("Dense active-buy pressure is active; discretionary adds wait for DCA or the next daily review.")
     if active_buy_intraday_cooldown_mode:
-        applied_lessons.append("Intraday active-buy cooldown is active after 3 active buys in 24h.")
+        applied_lessons = [
+            lesson
+            for lesson in applied_lessons
+            if "mostly relaxed" not in lesson and "15%+ cost-basis drawdown" not in lesson
+        ]
+        applied_lessons.insert(0, "Intraday active-buy cooldown is active after 3 active buys in 24h.")
 
     suggested_amount = max(10.0, baseline_amount * multiplier)
     if inconsistent_habit:
@@ -2566,10 +2668,18 @@ def _build_add_position_guidance(
     decision = "BUY"
     if active_buy_intraday_cooldown_mode:
         decision = "WAIT"
-        if not any("3 active buys" in reason for reason in reasons):
-            reasons.append(
-                "You already made 3 active buys in the last 24h; wait for DCA or a 15%+ cost-basis drawdown."
-            )
+        reasons = [
+            active_buy_intraday_cooldown_reason,
+            *[
+                reason
+                for reason in reasons
+                if "3 active buys" not in reason
+                and "larger repair add is allowed" not in reason
+                and "size cap is loosened" not in reason
+                and "allowed with a larger size" not in reason
+                and "larger add size is allowed" not in reason
+            ],
+        ]
     elif not (deep_value_regime or persistent_value_regime):
         if no_extra_add_needed_mode:
             decision = "WAIT"
@@ -2645,7 +2755,7 @@ def _build_add_position_guidance(
             if active_buy_intraday_cooldown_mode:
                 call_reason = (
                     "No extra active buy: 3 active buys in the last 24h; "
-                    "wait for DCA or a 15%+ cost-basis drawdown."
+                    "wait for DCA or the next daily review."
                 )
             elif active_buy_discipline_mode:
                 call_reason = (
@@ -2834,6 +2944,8 @@ def _build_add_position_guidance(
             tech_parts.append(f"vol/30D {float(market_ctx['volume_ratio_30']):.2f}x")
         except (TypeError, ValueError):
             pass
+    if ratio_200w_current is not None:
+        tech_parts.append(f"200WMA ratio {ratio_200w_current:.2f}")
     if fear_greed_value is not None:
         tech_parts.append(f"F&G {fear_greed_value:.0f}")
     if fear_panic_score is not None:
@@ -2983,6 +3095,10 @@ def _build_add_position_guidance(
                 "defense_signals": valuation_defense_signals,
                 "ratio_dca_current": float(ratio_dca_current) if ratio_dca_current is not None else None,
                 "ratio_trend_current": float(ratio_trend_current) if ratio_trend_current is not None else None,
+                "ma_200w": float(ma_200w) if ma_200w is not None else None,
+                "ratio_200w_current": float(ratio_200w_current) if ratio_200w_current is not None else None,
+                "below_200wma": bool(below_200wma),
+                "near_200wma": bool(near_200wma),
                 "ahr999": float(ahr999_now) if ahr999_now is not None else None,
                 "current_vs_180d_low_pct": (
                     float(current_vs_180d_low_pct) if current_vs_180d_low_pct is not None else None
@@ -3051,6 +3167,10 @@ def _build_add_position_guidance(
             "rsi14w": rsi14w_now,
             "is_rsi_bottoming_signal": bool(is_rsi_bottoming_signal),
             "is_post_panic_volume_contraction": bool(is_post_panic_volume_contraction),
+            "ma_200w": ma_200w,
+            "ratio_200w_current": ratio_200w_current,
+            "below_200wma": bool(below_200wma),
+            "near_200wma": bool(near_200wma),
             "fear_greed_value": fear_greed_value,
             "fear_panic_score": fear_panic_score,
             "is_extreme_fear_proxy": bool(is_extreme_fear_proxy),
