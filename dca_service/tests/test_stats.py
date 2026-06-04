@@ -1,5 +1,5 @@
 from fastapi.testclient import TestClient
-from sqlmodel import Session
+from sqlmodel import Session, select
 from unittest.mock import MagicMock, patch
 import csv
 import io
@@ -580,6 +580,97 @@ def test_realtime_price_endpoint_reuses_cache(client: TestClient):
     assert mock_client.get.call_count == 1
 
 
+def test_recent_market_context_recalculates_current_ahr999_from_live_price(tmp_path):
+    csv_path = tmp_path / "btc_metrics.csv"
+    fieldnames = [
+        "date",
+        "close_price",
+        "dca_cost",
+        "trend_value",
+        "ratio_dca",
+        "ratio_trend",
+        "ahr999",
+        "is_rsi_bottoming_signal",
+        "is_post_panic_volume_contraction",
+    ]
+    today = datetime.now(timezone.utc).date()
+    with csv_path.open("w", newline="", encoding="utf-8") as f:
+        writer = csv.DictWriter(f, fieldnames=fieldnames)
+        writer.writeheader()
+        for idx in range(199):
+            day = today - timedelta(days=198 - idx)
+            writer.writerow(
+                {
+                    "date": day.isoformat(),
+                    "close_price": "100.0",
+                    "dca_cost": "100.0",
+                    "trend_value": "200.0",
+                    "ratio_dca": "1.0",
+                    "ratio_trend": "0.5",
+                    "ahr999": "0.42",
+                    "is_rsi_bottoming_signal": "false",
+                    "is_post_panic_volume_contraction": "false",
+                }
+            )
+
+    with patch("dca_service.api.stats_api._resolve_metrics_csv_path", return_value=csv_path):
+        context = stats_api._load_recent_market_context(200.0)
+
+    assert context["available"] is True
+    assert context["ahr999_source"] == "current_price_recalculated"
+    assert context["ahr999"] != 0.42
+    assert abs(context["ahr999"] - (context["ratio_dca_current"] * context["ratio_trend_current"])) < 1e-9
+    assert context["ahr999"] > 1.0
+    assert context["ahr999_sub_1"] is False
+    assert context["ahr999_sub_07"] is False
+    assert context["bottoming_tech_signal_count"] == 0
+
+
+def test_realtime_price_endpoint_returns_current_valuation_snapshot(client: TestClient):
+    price_snapshot = {
+        "symbol": "BTCUSDC",
+        "price": 70000.0,
+        "updated_at": datetime.now(timezone.utc).isoformat(),
+        "cache_hit": False,
+        "stale_fallback": False,
+        "source": "binance_public_api",
+        "cache_ttl_seconds": stats_api.BINANCE_PRICE_CACHE_TTL_SECONDS,
+        "poll_recommendation_seconds": stats_api.BINANCE_SAFE_POLL_SECONDS,
+        "request_weight": stats_api.BINANCE_TICKER_REQUEST_WEIGHT,
+    }
+    market_context = {
+        "available": True,
+        "ahr999": 0.62,
+        "ahr999_sub_1": True,
+        "ahr999_sub_07": True,
+        "ahr999_source": "current_price_recalculated",
+        "dca_cost": 84000.0,
+        "trend_value": 134408.60,
+        "ratio_dca_current": 0.8333333333,
+        "ratio_trend_current": 0.5208,
+        "is_double_undervalued": True,
+        "metrics_as_of_date": "2026-06-04",
+        "metrics_age_days": 0,
+        "is_stale": False,
+        "freshness_max_age_days": 3,
+    }
+
+    with patch("dca_service.api.stats_api._fetch_binance_realtime_price", return_value=price_snapshot):
+        with patch("dca_service.api.stats_api._load_recent_market_context", return_value=market_context) as mock_market:
+            response = client.get("/api/stats/realtime-price?symbol=BTCUSDC")
+
+    assert response.status_code == 200
+    payload = response.json()
+    mock_market.assert_called_once_with(70000.0)
+    assert payload["price"] == 70000.0
+    assert payload["ahr999"] == 0.62
+    assert payload["ahr999_source"] == "current_price_recalculated"
+    assert payload["ratio_dca_current"] == 0.8333333333
+    assert payload["ratio_trend_current"] == 0.5208
+    assert payload["is_double_undervalued"] is True
+    assert payload["metrics_as_of_date"] == "2026-06-04"
+
+
 def test_add_position_advice_uses_split_fill_merged_behavior_events(client: TestClient, session: Session):
     tx1 = DCATransaction(
         status="SUCCESS",
@@ -703,6 +794,61 @@ def test_add_position_advice_returns_recommendation_before_user_enters_amount(cl
     assert recommended_range["max"] >= recommended_range["min"]
     assert guidance["cost_basis_context"]["proposed_avg_cost_after_buy_usd"] is None
     assert guidance["cost_basis_context"]["proposed_avg_cost_delta_usd"] is None
+
+
+def test_add_position_advice_uses_current_market_ahr999_context():
+    base_time = datetime(2026, 1, 1, tzinfo=timezone.utc)
+    events = [
+        {
+            "event_key": "order:1",
+            "event_type": "ORDER",
+            "binance_order_id": 1,
+            "timestamp": base_time,
+            "timestamp_end": base_time,
+            "fill_count": 1,
+            "amount_usd": 100.0,
+            "amount_btc": 0.001,
+            "avg_price_usd": 100000.0,
+            "fee_usd": 0.0,
+            "source_types": ["MANUAL"],
+            "tx_ids": [1],
+            "trade_ids": [1],
+        }
+    ]
+    behavior_data = stats_api._build_behavior_analysis(
+        events,
+        {
+            "raw_fill_count": 1,
+            "event_count": 1,
+            "split_event_count": 0,
+            "split_fill_extra_count": 0,
+        },
+    )
+
+    guidance = stats_api._build_add_position_guidance(
+        behavior_data=behavior_data,
+        events=events,
+        amount_usdc=100.0,
+        current_price_usd=70000.0,
+        market_context={
+            "available": True,
+            "is_stale": False,
+            "is_double_undervalued": True,
+            "ratio_dca_current": 0.74,
+            "ratio_trend_current": 0.58,
+            "ahr999": 0.34,
+            "ahr999_sub_1": True,
+            "ahr999_sub_07": True,
+            "ahr999_source": "current_price_recalculated",
+        },
+        macro_context={"available": False},
+    )
+
+    assert guidance["technical_bottoming_context"]["ahr999"] == 0.34
+    assert guidance["technical_bottoming_context"]["ahr999_sub_07"] is True
+    assert guidance["practical_signal_context"]["valuation"]["ahr999"] == 0.34
+    assert guidance["market_context"]["ahr999_source"] == "current_price_recalculated"
+    assert "AHR999 0.340" in guidance["analysis_text"]
 
 
 def test_add_position_advice_reports_cost_basis_impact():
@@ -1206,7 +1352,142 @@ def test_add_position_recommendation_range_is_available_without_input_and_stable
     assert no_input["suggested_amount_usdc"] == small["suggested_amount_usdc"] == huge["suggested_amount_usdc"]
 
 
+def _mock_buyable_add_position_guidance(amount_usdc: float, price_usd: float) -> dict:
+    return {
+        "decision": "BUY",
+        "action_code": "BUY_AS_PLANNED",
+        "final_call": f"BUY AS PLANNED: ${amount_usdc:,.2f}",
+        "call_reason": "Test strategy context allows this extra buy.",
+        "analysis_text": "Strategy check: BUY\nDo now: Buy as planned.\nShort reason: Test setup.",
+        "method_constraints": {"no_hindsight": True},
+        "cost_basis_context": {
+            "total_invested_usd": 0.0,
+            "total_btc": 0.0,
+            "current_avg_cost_usd": None,
+            "current_price_usd": price_usd,
+            "proposed_btc": amount_usdc / price_usd,
+            "proposed_avg_cost_after_buy_usd": price_usd,
+            "proposed_avg_cost_delta_usd": None,
+            "proposed_avg_cost_delta_pct": None,
+        },
+    }
+
+
+def _mock_no_buy_add_position_guidance() -> dict:
+    return {
+        "decision": "WAIT",
+        "action_code": "NO_BUY",
+        "final_call": "NO BUY",
+        "call_reason": "Test strategy context blocks this extra buy.",
+        "analysis_text": "Strategy check: WAIT\nDo now: No buy now.\nShort reason: Test setup.",
+        "method_constraints": {"no_hindsight": True},
+        "cost_basis_context": {
+            "total_invested_usd": 0.0,
+            "total_btc": 0.0,
+            "current_avg_cost_usd": None,
+            "current_price_usd": 60000.0,
+            "proposed_btc": None,
+            "proposed_avg_cost_after_buy_usd": None,
+            "proposed_avg_cost_delta_usd": None,
+            "proposed_avg_cost_delta_pct": None,
+        },
+    }
+
+
+def _get_add_position_confirm_token(
+    client: TestClient,
+    *,
+    amount_usdc: float = 120.0,
+    price_usd: float = 60000.0,
+    symbol: str = "BTCUSDC",
+) -> str:
+    with patch("dca_service.api.stats_api._load_recent_market_context", return_value={"available": False}):
+        with patch("dca_service.api.stats_api._load_macro_context", return_value={"available": False}):
+            with patch("dca_service.api.stats_api._build_add_position_guidance") as mock_guidance:
+                mock_guidance.return_value = _mock_buyable_add_position_guidance(amount_usdc, price_usd)
+                response = client.post(
+                    "/api/stats/add-position/advice",
+                    json={
+                        "amount_usdc": amount_usdc,
+                        "current_price_usd": price_usd,
+                        "symbol": symbol,
+                    },
+                )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["guidance"]["action_code"] == "BUY_AS_PLANNED"
+    assert payload["confirm_blocked"] is False
+    assert payload["confirm_token"]
+    assert payload["confirm_token_expires_at"]
+    return payload["confirm_token"]
+
+
+def test_add_position_advice_returns_confirm_token_for_buyable_input(client: TestClient, session: Session):
+    token = _get_add_position_confirm_token(client, amount_usdc=100.0, price_usd=61000.0)
+
+    assert isinstance(token, str)
+    assert len(token) > 40
+
+
+def test_add_position_advice_no_buy_does_not_issue_confirm_token(client: TestClient, session: Session):
+    with patch("dca_service.api.stats_api._load_recent_market_context", return_value={"available": False}):
+        with patch("dca_service.api.stats_api._load_macro_context", return_value={"available": False}):
+            with patch("dca_service.api.stats_api._build_add_position_guidance") as mock_guidance:
+                mock_guidance.return_value = _mock_no_buy_add_position_guidance()
+                response = client.post(
+                    "/api/stats/add-position/advice",
+                    json={
+                        "amount_usdc": 120.0,
+                        "current_price_usd": 60000.0,
+                        "symbol": "BTCUSDC",
+                    },
+                )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["guidance"]["action_code"] == "NO_BUY"
+    assert payload["confirm_blocked"] is True
+    assert payload["confirm_token"] is None
+    assert payload["confirm_token_expires_at"] is None
+
+
+def test_add_position_confirm_requires_strategy_check_token(client: TestClient, session: Session):
+    response = client.post(
+        "/api/stats/add-position/confirm",
+        json={
+            "amount_usdc": 120.0,
+            "price_usd": 60000.0,
+            "symbol": "BTCUSDC",
+        },
+    )
+
+    assert response.status_code == 409
+    assert "Run strategy check before confirming this buy" in response.json()["detail"]
+    assert session.exec(select(DCATransaction)).all() == []
+
+
+def test_add_position_confirm_rejects_mismatched_strategy_check_token(client: TestClient, session: Session):
+    token = _get_add_position_confirm_token(client, amount_usdc=120.0, price_usd=60000.0)
+
+    response = client.post(
+        "/api/stats/add-position/confirm",
+        json={
+            "amount_usdc": 121.0,
+            "price_usd": 60000.0,
+            "symbol": "BTCUSDC",
+            "confirm_token": token,
+        },
+    )
+
+    assert response.status_code == 409
+    assert "does not match" in response.json()["detail"]
+    assert session.exec(select(DCATransaction)).all() == []
+
+
 def test_add_position_confirm_records_simulated_buy_transaction(client: TestClient, session: Session):
+    confirm_token = _get_add_position_confirm_token(client, amount_usdc=120.0, price_usd=60000.0)
+
     with patch("dca_service.api.stats_api._send_add_position_email_task") as mock_email_task:
         response = client.post(
             "/api/stats/add-position/confirm",
@@ -1214,6 +1495,7 @@ def test_add_position_confirm_records_simulated_buy_transaction(client: TestClie
                 "amount_usdc": 120.0,
                 "price_usd": 60000.0,
                 "symbol": "BTCUSDC",
+                "confirm_token": confirm_token,
             },
         )
     assert response.status_code == 200
@@ -1245,6 +1527,8 @@ def test_add_position_confirm_ignores_fixed_dca_stop_price(client: TestClient, s
     session.add(strategy)
     session.commit()
 
+    confirm_token = _get_add_position_confirm_token(client, amount_usdc=120.0, price_usd=60000.0)
+
     with patch("dca_service.api.stats_api._send_add_position_email_task") as mock_email_task:
         response = client.post(
             "/api/stats/add-position/confirm",
@@ -1252,6 +1536,7 @@ def test_add_position_confirm_ignores_fixed_dca_stop_price(client: TestClient, s
                 "amount_usdc": 120.0,
                 "price_usd": 60000.0,
                 "symbol": "BTCUSDC",
+                "confirm_token": confirm_token,
             },
         )
 
@@ -1285,6 +1570,8 @@ def test_add_position_confirm_executes_live_mode_when_strategy_is_live(client: T
     session.add(creds)
     session.commit()
 
+    confirm_token = _get_add_position_confirm_token(client, amount_usdc=120.0, price_usd=60000.0)
+
     with patch("dca_service.api.stats_api._execute_live_add_position_order") as mock_exec:
         mock_exec.return_value = {
             "order_id": 99887766,
@@ -1300,6 +1587,7 @@ def test_add_position_confirm_executes_live_mode_when_strategy_is_live(client: T
                 "amount_usdc": 120.0,
                 "price_usd": 60000.0,
                 "symbol": "BTCUSDC",
+                "confirm_token": confirm_token,
             },
         )
 

@@ -11,8 +11,10 @@ def test_dashboard_add_position_modal_and_safe_polling_are_present():
     assert "Extra Buy" in html
     assert "Extra BTC Buy" in html
     assert "This action won't change your DCA settings." in html
-    assert "Check Strategy" in html
-    assert "Confirm Extra Buy" in html
+    assert "Check Strategy" not in html
+    assert "Confirm Extra Buy" not in html
+    assert "Buy ${formatExtraBuyUsdcCompact(amount)} USDC" in html
+    assert "Confirm buy ${formatExtraBuyUsdcCompact(amount)} USDC" in html
     assert "Add Position" not in html
     assert "Generate Advice" not in html
     assert "Buy (Confirm)" not in html
@@ -45,6 +47,65 @@ def test_dashboard_current_price_uses_extra_buy_realtime_poll_interval():
     assert "previewPriceEl.textContent = `$${price.toLocaleString()}`;" in html
     assert "window.__dashboardPriceUsd = price;" in html
     assert "updateMobileFiatEstimate();" in html
+
+
+def test_extra_buy_realtime_price_is_prominent_on_desktop_and_mobile():
+    repo_root = Path(__file__).resolve().parents[2]
+    template_path = repo_root / "dca_service" / "src" / "dca_service" / "templates" / "index.html"
+    html = template_path.read_text(encoding="utf-8")
+
+    assert "metaEl.textContent = Number.isFinite(price) && price > 0 ? `BTC Price: ${formatExtraBuyUsd(price)}` : 'BTC Price: --';" in html
+    assert ".extra-buy-price-card {\n            display: flex;" in html
+    assert "background: color-mix(in srgb, var(--dashboard-card-bg-solid) 90%, var(--dashboard-accent) 10%);" in html
+    assert "border: 1px solid color-mix(in srgb, var(--dashboard-accent) 44%, var(--dashboard-border));" in html
+    assert ".extra-buy-price-card .form-text {\n            color: var(--dashboard-text);" in html
+    assert "font-size: 0.95rem;" in html
+    assert "font-weight: 820;" in html
+
+    mobile_css = html[html.index("@media (max-width: 768px)"):]
+    assert ".extra-buy-price-card {\n                display: flex;" in mobile_css
+    assert "padding: 0.32rem 0.42rem;" in mobile_css
+    assert ".extra-buy-price-card .form-text {\n                font-size: 0.72rem;" in mobile_css
+
+
+def test_extra_buy_mobile_inputs_use_ios_safe_font_size():
+    repo_root = Path(__file__).resolve().parents[2]
+    template_path = repo_root / "dca_service" / "src" / "dca_service" / "templates" / "index.html"
+    html = template_path.read_text(encoding="utf-8")
+    mobile_css = html[html.index("@media (max-width: 768px)"):]
+    mobile_input_rule = mobile_css[
+        mobile_css.index(".extra-buy-control-card .form-control {") :
+        mobile_css.index("}", mobile_css.index(".extra-buy-control-card .form-control {"))
+    ]
+
+    assert "font-size: 16px;" in mobile_input_rule
+    assert "font-size: 0.82rem;" not in mobile_input_rule
+
+
+def test_extra_buy_uses_backend_current_valuation_instead_of_dashboard_override():
+    repo_root = Path(__file__).resolve().parents[2]
+    template_path = repo_root / "dca_service" / "src" / "dca_service" / "templates" / "index.html"
+    html = template_path.read_text(encoding="utf-8")
+
+    request_body = html[
+        html.index("function buildAddPositionAdviceRequestBody")
+        : html.index("async function fetchAddPositionAdvice")
+    ]
+    summary_cards = html[
+        html.index("function buildAddPositionSummaryCards")
+        : html.index("function setAddPositionAdvancedCollapsed")
+    ]
+    realtime_update = html[
+        html.index("function updateDashboardRealtimePrice")
+        : html.index("function updateAddPositionRealtimePrice")
+    ]
+
+    assert "dashboard_ahr999" not in request_body
+    assert "window.__latestDrawdownDecision?.ahr999_value" not in request_body
+    assert "toExtraBuyFiniteNumber(guidance.dashboard_ahr999)" not in summary_cards
+    assert "toExtraBuyFiniteNumber(valuation.ahr999)" in summary_cards
+    assert "const ahr999 = Number(payload?.ahr999);" in realtime_update
+    assert "window.__latestDrawdownDecision.ahr999_value = ahr999;" in realtime_update
 
 
 def test_extra_buy_reuses_dashboard_realtime_price_polling_loop():
@@ -219,8 +280,9 @@ def test_add_position_no_buy_advice_does_not_enable_confirm_buy():
     html = template_path.read_text(encoding="utf-8")
 
     assert "const actionCode = payload?.guidance?.action_code;" in html
-    assert "if (actionCode === 'NO_BUY')" in html
+    assert "if (actionCode === 'NO_BUY' || payload?.confirm_blocked)" in html
     assert "Strategy check says no extra buy right now." in html
+    assert "setAddPositionHardBlocked(true);" in html
     assert "setAddPositionActionMode('advice');" in html
 
 
@@ -315,7 +377,9 @@ def test_extra_buy_modal_uses_reference_style_compact_assessment_and_order():
     assert ".extra-buy-control-card .form-text:not(#addPositionPriceMeta) {\n                display: none;" in html
     assert ".extra-buy-section-subtitle {\n                display: none;" in html
     assert ".extra-buy-manual-note {\n                display: none;" in html
-    assert ".extra-buy-price-card {\n                display: none;" in html
+    assert ".extra-buy-price-card {\n                display: flex;" in html
+    assert "justify-content: space-between;" in html
+    assert "#addPositionPriceMeta" in html
     assert ".extra-buy-status {\n                display: none;" in html
     assert ".extra-buy-modal-content .modal-header {\n                padding: 0.56rem 0.7rem;" in html
     assert ".extra-buy-layout {\n                grid-template-columns: 1fr;\n                grid-template-areas:" in html
@@ -368,7 +432,7 @@ def test_extra_buy_advice_does_not_overwrite_user_entered_amount():
     assert "enteredAmount !== null &&\n                currentPrice !== null" in html
     assert "? enteredAmount / currentPrice" in html
     assert "const amount = Number(document.getElementById('addPositionUsdcInput')?.value);" in html
-    assert "Confirm Extra Buy" in html
+    assert "Confirm buy ${formatExtraBuyUsdcCompact(amount)} USDC" in html
 
 
 def test_extra_buy_modal_surfaces_suggested_range_and_user_input_state():
@@ -408,12 +472,13 @@ def test_extra_buy_modal_surfaces_suggested_range_and_user_input_state():
     assert "addPositionLastRecommendedAmount = recommendedAmount;" not in html
     assert "function scrollAddPositionModalToTop()" in html
     assert "scrollAddPositionModalToTop();" in html
-    assert "btn.textContent = amount > 0 ? `Buy ${formatExtraBuyUsdcCompact(amount)} USDC` : 'Enter amount to continue';" in html
-    assert "setExtraBuyText('addPositionConfirmSubtext', 'Confirm Purchase');" in html
+    assert "addPositionActionMode === 'confirm'" in html
+    assert "'Checks strategy first. No purchase yet.'" in html
+    assert "setExtraBuyText('addPositionConfirmSubtext', 'Confirm to execute this buy now.');" in html
     assert "addPositionQuickAmountBtns.forEach" in html
-    assert "const currentAvgCost = hasInputAmount ? toExtraBuyFiniteNumber(cost.current_avg_cost_usd) : null;" in html
-    assert "const afterCost = hasInputAmount ? toExtraBuyFiniteNumber(cost.proposed_avg_cost_after_buy_usd) : null;" in html
-    assert "const deltaCost = hasInputAmount ? (" in html
+    assert "function updateAddPositionImpactFromInputs()" in html
+    assert "const proposedBtc = amount / price;" in html
+    assert "const afterCost = (totalInvestedUsd + amount) / afterBtc;" in html
     assert "toExtraBuyFiniteNumber(cost.suggested_avg_cost_after_buy_usd)" not in html
     assert "toExtraBuyFiniteNumber(cost.suggested_avg_cost_delta_usd)" not in html
     assert ".extra-buy-control-card .form-control[type=\"number\"]" in html
@@ -422,12 +487,16 @@ def test_extra_buy_modal_surfaces_suggested_range_and_user_input_state():
     assert ".extra-buy-control-card .form-control[type=\"number\"]::-webkit-inner-spin-button" in html
 
 
-def test_extra_buy_amount_edits_clear_stale_strategy_impact():
+def test_extra_buy_amount_edits_recalculate_impact_and_invalidate_confirmation():
     repo_root = Path(__file__).resolve().parents[2]
     template_path = repo_root / "dca_service" / "src" / "dca_service" / "templates" / "index.html"
     html = template_path.read_text(encoding="utf-8")
 
     assert "function clearAddPositionImpact()" in html
+    assert "function updateAddPositionImpactFromInputs()" in html
+    assert "function invalidateAddPositionConfirmState()" in html
+    assert "let addPositionConfirmToken = null;" in html
+    assert "let addPositionLastImpactBasis = null;" in html
     assert "setExtraBuyText('addPositionOpportunityTitle', 'Strategy Check Ready');" in html
     assert "setExtraBuyText('addPositionImpactCurrentCost', '$--');" in html
     assert "setExtraBuyText('addPositionImpactAfterCost', '$--');" in html
@@ -437,8 +506,9 @@ def test_extra_buy_amount_edits_clear_stale_strategy_impact():
     end = html.index("if (priceInput) {")
     amount_input_block = html[start:end]
 
-    assert "clearAddPositionImpact();" in amount_input_block
-    assert "setAddPositionActionMode('advice');" in amount_input_block
+    assert "clearAddPositionImpact();" not in amount_input_block
+    assert "updateAddPositionImpactFromInputs();" in amount_input_block
+    assert "invalidateAddPositionConfirmState();" in amount_input_block
 
 
 def test_extra_buy_modal_preloads_recommendation_range_before_amount_entry():
@@ -468,5 +538,24 @@ def test_extra_buy_strategy_check_does_not_show_success_toasts_that_cover_the_mo
 
     assert "notyf.success('Strategy check ready" not in strategy_check_block
     assert "notyf.success(\"Strategy check ready" not in strategy_check_block
-    assert "setAddPositionActionMode('buy');" in strategy_check_block
+    assert "setAddPositionActionMode('confirm');" in strategy_check_block
+    assert "setAddPositionHardBlocked(true);" in strategy_check_block
     assert "notyf.error('Extra buy strategy check failed')" in strategy_check_block
+
+
+def test_extra_buy_confirm_posts_strategy_check_token_only_after_preflight():
+    repo_root = Path(__file__).resolve().parents[2]
+    template_path = repo_root / "dca_service" / "src" / "dca_service" / "templates" / "index.html"
+    html = template_path.read_text(encoding="utf-8")
+
+    advice_start = html.index("async function runAddPositionAdvice()")
+    advice_end = html.index("async function confirmAddPositionBuy()")
+    advice_block = html[advice_start:advice_end]
+    assert "addPositionConfirmToken = payload?.confirm_token || null;" in advice_block
+    assert "setAddPositionActionMode('confirm');" in advice_block
+
+    confirm_start = html.index("async function confirmAddPositionBuy()")
+    confirm_end = html.index("function startAddPositionPricePolling()")
+    confirm_block = html[confirm_start:confirm_end]
+    assert "if (!addPositionConfirmToken)" in confirm_block
+    assert "confirm_token: addPositionConfirmToken" in confirm_block
