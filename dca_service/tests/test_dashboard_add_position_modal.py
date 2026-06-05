@@ -160,6 +160,51 @@ def test_dashboard_copy_distinguishes_scheduled_action_from_extra_buy():
     assert "subtext = `Next run at ${getDashboardScheduleRunText(strategy)}`;" in html
 
 
+def test_dashboard_scheduled_action_uses_live_price_cap_as_buy_guard():
+    repo_root = Path(__file__).resolve().parents[2]
+    template_path = repo_root / "dca_service" / "src" / "dca_service" / "templates" / "index.html"
+    html = template_path.read_text(encoding="utf-8")
+
+    cap_check_block = html[
+        html.index("function isFixedDcaPriceAboveCap(strategy, decision)")
+        : html.index("function updateFixedDcaStopCapDisplay(strategy)")
+    ]
+    action_block = html[
+        html.index("function updatePreviewActionState(decision)")
+        : html.index("function updateStrategyUI(strategy)")
+    ]
+
+    assert (
+        "const price = toFiniteDashboardNumber(window.__dashboardPriceUsd) ?? "
+        "toFiniteDashboardNumber(decision?.price_usd);"
+    ) in cap_check_block
+    assert "const priceAboveStopCap = isFixedDcaPriceAboveCap(strategy, decision);" in action_block
+    assert (
+        "const canBuy = decision.can_execute === true && "
+        "suggestedAmount !== null && suggestedAmount > 0 && !priceAboveStopCap;"
+    ) in action_block
+    assert "if (priceAboveStopCap) {\n                    subtext = 'Price above cap';\n                }" in action_block
+
+
+def test_dashboard_realtime_price_refreshes_scheduled_action_state():
+    repo_root = Path(__file__).resolve().parents[2]
+    template_path = repo_root / "dca_service" / "src" / "dca_service" / "templates" / "index.html"
+    html = template_path.read_text(encoding="utf-8")
+
+    realtime_block = html[
+        html.index("function updateDashboardRealtimePrice(payload)")
+        : html.index("function updateAddPositionRealtimePrice(payload)")
+    ]
+
+    assert (
+        "if (window.__latestDrawdownDecision) {\n"
+        "                window.__latestDrawdownDecision.price_usd = price;\n"
+        "                updatePreviewActionState(window.__latestDrawdownDecision);\n"
+        "            }\n"
+        "            const ahr999 = Number(payload?.ahr999);"
+    ) in realtime_block
+
+
 def test_dashboard_early_hydration_guards_late_helper_calls():
     repo_root = Path(__file__).resolve().parents[2]
     template_path = repo_root / "dca_service" / "src" / "dca_service" / "templates" / "index.html"
