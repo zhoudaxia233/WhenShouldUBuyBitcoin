@@ -395,6 +395,37 @@ def test_extra_buy_no_buy_disables_amount_entry_and_hides_buy_signal_cards():
     assert "setAddPositionAmountDisabled(false);" in reset_block
 
 
+def test_extra_buy_modal_locks_amount_entry_until_strategy_signal_finishes_loading():
+    repo_root = Path(__file__).resolve().parents[2]
+    template_path = repo_root / "dca_service" / "src" / "dca_service" / "templates" / "index.html"
+    html = template_path.read_text(encoding="utf-8")
+
+    shown_handler = html[
+        html.index("addPositionModalEl.addEventListener('shown.bs.modal', async () => {")
+        : html.index("addPositionModalEl.addEventListener('hidden.bs.modal'", html.index("addPositionModalEl.addEventListener('shown.bs.modal', async () => {"))
+    ]
+
+    reset_index = shown_handler.index("resetAddPositionGuidanceSummary();")
+    lock_index = shown_handler.index("setAddPositionAmountDisabled(true);")
+    recommendation_index = shown_handler.index("await loadAddPositionRecommendation();")
+
+    assert reset_index < lock_index < recommendation_index
+
+
+def test_extra_buy_modal_locks_amount_entry_when_show_transition_starts():
+    repo_root = Path(__file__).resolve().parents[2]
+    template_path = repo_root / "dca_service" / "src" / "dca_service" / "templates" / "index.html"
+    html = template_path.read_text(encoding="utf-8")
+
+    show_handler = html[
+        html.index("addPositionModalEl.addEventListener('show.bs.modal',")
+        : html.index("addPositionModalEl.addEventListener('shown.bs.modal'", html.index("addPositionModalEl.addEventListener('show.bs.modal',"))
+    ]
+
+    assert "if (amountInput) amountInput.value = '';" in show_handler
+    assert "setAddPositionAmountDisabled(true);" in show_handler
+
+
 def test_extra_buy_no_buy_decision_reason_prefers_backend_reason_fields():
     repo_root = Path(__file__).resolve().parents[2]
     template_path = repo_root / "dca_service" / "src" / "dca_service" / "templates" / "index.html"
