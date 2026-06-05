@@ -278,6 +278,9 @@
         .extra-buy-modal-dialog {
             max-width: min(92vw, 840px);
         }
+        #addPositionModal.show .extra-buy-modal-dialog {
+            transform: none;
+        }
         .extra-buy-modal-content {
             --dashboard-text: #f5f7fa;
             --dashboard-muted: #aeb7c2;
@@ -2031,7 +2034,11 @@
                 width: 100%;
             }
             .extra-buy-modal-dialog {
-                margin: 0.45rem;
+                width: calc(100vw - 1.4rem);
+                max-width: calc(100vw - 1.4rem);
+                height: calc(100vh - 1.4rem);
+                height: calc(100dvh - 1.4rem);
+                margin: 0.7rem auto;
             }
             .extra-buy-modal-content .modal-header {
                 padding: 0.76rem 0.9rem;
@@ -2923,7 +2930,7 @@
 
     <!-- Extra buy strategy-check modal -->
     <div class="modal fade" id="addPositionModal" tabindex="-1" aria-labelledby="addPositionModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-lg modal-dialog-scrollable extra-buy-modal-dialog">
+        <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable extra-buy-modal-dialog">
             <div class="modal-content extra-buy-modal-content">
                 <div class="modal-header">
                     <div class="extra-buy-title-row">

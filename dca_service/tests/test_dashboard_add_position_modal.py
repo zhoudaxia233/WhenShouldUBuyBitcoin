@@ -471,7 +471,7 @@ def test_extra_buy_modal_uses_streamlined_decision_flow_without_recommendation_a
     ]
 
     assert 'extra-buy-modal-content' in modal_markup
-    assert 'class="modal-dialog modal-lg modal-dialog-scrollable extra-buy-modal-dialog"' in modal_markup
+    assert 'class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable extra-buy-modal-dialog"' in modal_markup
     assert 'class="extra-buy-header-icon"' in modal_markup
     assert 'id="addPositionRecommendedAmount"' not in modal_markup
     assert 'id="addPositionRecommendedCaption"' not in modal_markup
@@ -637,6 +637,30 @@ def test_extra_buy_modal_uses_streamlined_decision_flow_without_recommendation_a
     assert ".extra-buy-reason-card {\n                min-height: 72px;" not in html
     assert "font-size: 1.28rem;\n                margin: 0.18rem 0 0.08rem;" not in html
     assert "const useCents = Math.abs(num) < 100 && Math.abs(num % 1) > 0.005;" in html
+
+
+def test_extra_buy_mobile_modal_dialog_centers_in_viewport():
+    repo_root = Path(__file__).resolve().parents[2]
+    template_path = repo_root / "dca_service" / "src" / "dca_service" / "templates" / "index.html"
+    html = template_path.read_text(encoding="utf-8")
+
+    modal_markup = html[
+        html.index('<div class="modal fade" id="addPositionModal"')
+        : html.index('<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js">')
+    ]
+    mobile_css = html[html.index("@media (max-width: 768px)"):]
+    mobile_dialog_rule = mobile_css[
+        mobile_css.index(".extra-buy-modal-dialog {")
+        : mobile_css.index("}", mobile_css.index(".extra-buy-modal-dialog {"))
+    ]
+
+    assert 'class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable extra-buy-modal-dialog"' in modal_markup
+    assert "#addPositionModal.show .extra-buy-modal-dialog {\n            transform: none;\n        }" in html
+    assert "width: calc(100vw - 1.4rem);" in mobile_dialog_rule
+    assert "max-width: calc(100vw - 1.4rem);" in mobile_dialog_rule
+    assert "height: calc(100vh - 1.4rem);" in mobile_dialog_rule
+    assert "height: calc(100dvh - 1.4rem);" in mobile_dialog_rule
+    assert "margin: 0.7rem auto;" in mobile_dialog_rule
 
 
 def test_extra_buy_allowed_path_renders_four_buy_signal_cards_from_guidance_only():
