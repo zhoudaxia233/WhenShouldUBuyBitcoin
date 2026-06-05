@@ -4812,11 +4812,13 @@
             } catch (error) {
                 console.error('Failed to load extra-buy recommendation:', error);
                 if (statusEl) statusEl.textContent = 'Strategy signal unavailable.';
+                setAddPositionAmountDisabled(false);
                 setAddPositionDecisionReason(
                     'Strategy signal unavailable',
                     'Enter an amount and try the strategy check later.',
                     null
                 );
+                updateAddPositionInputState();
             }
         }
 
@@ -5014,10 +5016,16 @@
             }
 
             if (addPositionModalEl) {
+                addPositionModalEl.addEventListener('show.bs.modal', () => {
+                    if (amountInput) amountInput.value = '';
+                    setAddPositionAmountDisabled(true);
+                });
+
                 addPositionModalEl.addEventListener('shown.bs.modal', async () => {
                     if (adviceStatus) adviceStatus.textContent = 'Loading realtime price...';
                     if (amountInput) amountInput.value = '';
                     resetAddPositionGuidanceSummary();
+                    setAddPositionAmountDisabled(true);
                     if (adviceStatus) adviceStatus.textContent = 'Loading realtime price...';
                     setAddPositionActionMode('advice');
                     await fetchRealtimePriceForAddPosition();
