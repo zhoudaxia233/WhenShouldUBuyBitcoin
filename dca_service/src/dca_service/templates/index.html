@@ -3621,7 +3621,7 @@
 
         function isFixedDcaPriceAboveCap(strategy, decision) {
             const stopCap = getFixedDcaStopCap(strategy);
-            const price = toFiniteDashboardNumber(decision?.price_usd);
+            const price = toFiniteDashboardNumber(window.__dashboardPriceUsd) ?? toFiniteDashboardNumber(decision?.price_usd);
             return stopCap !== null && price !== null && price >= stopCap;
         }
 
@@ -3665,7 +3665,8 @@
 
             const strategy = window.__dashboardStrategy || null;
             const suggestedAmount = toFiniteDashboardNumber(decision.suggested_amount_usd);
-            const canBuy = decision.can_execute === true && suggestedAmount !== null && suggestedAmount > 0;
+            const priceAboveStopCap = isFixedDcaPriceAboveCap(strategy, decision);
+            const canBuy = decision.can_execute === true && suggestedAmount !== null && suggestedAmount > 0 && !priceAboveStopCap;
 
             panels.forEach((panelEl) => {
                 panelEl.classList.remove('is-buying', 'is-waiting');
@@ -3679,7 +3680,7 @@
                 panels.forEach((panelEl) => panelEl.classList.add('is-buying'));
             } else {
                 panels.forEach((panelEl) => panelEl.classList.add('is-waiting'));
-                if (isFixedDcaPriceAboveCap(strategy, decision)) {
+                if (priceAboveStopCap) {
                     subtext = 'Price above cap';
                 }
             }
@@ -4675,13 +4676,16 @@
 
             previewPriceEl.textContent = `$${price.toLocaleString()}`;
             window.__dashboardPriceUsd = price;
+            if (window.__latestDrawdownDecision) {
+                window.__latestDrawdownDecision.price_usd = price;
+                updatePreviewActionState(window.__latestDrawdownDecision);
+            }
             const ahr999 = Number(payload?.ahr999);
             if (Number.isFinite(ahr999) && ahr999 > 0) {
                 setExtraBuyText('previewAhr', ahr999.toFixed(2));
                 setDashboardTextIfPresent('mobilePreviewAhr', ahr999.toFixed(2));
                 if (window.__latestDrawdownDecision) {
                     window.__latestDrawdownDecision.ahr999_value = ahr999;
-                    window.__latestDrawdownDecision.price_usd = price;
                 }
             }
             updateMobileFiatEstimate();
