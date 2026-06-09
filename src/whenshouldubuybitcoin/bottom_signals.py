@@ -44,7 +44,7 @@ BOTTOM_HIT_MULTIPLE = 1.3
 
 THRESHOLDS = (60, 70, 80)
 DURATIONS = (1, 3, 7)
-# CYCLE_BOTTOMS / BOTTOM_HIT_MULTIPLE / THRESHOLDS / DURATIONS are consumed by the backtest functions (added in a subsequent commit).
+# CYCLE_BOTTOMS / BOTTOM_HIT_MULTIPLE / THRESHOLDS / DURATIONS are consumed by the backtest functions below.
 
 # Sigma-deviation anchor curves: (sigma anchors, score anchors).
 S2_SIGMA_ANCHORS = ([-1.5, 0.0, 2.0], [20.0, 8.0, 0.0])
