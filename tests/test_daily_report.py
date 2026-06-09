@@ -1,5 +1,6 @@
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 from unittest.mock import patch
 
@@ -214,3 +215,77 @@ def test_generate_daily_report_calls_llm_when_source_changes(tmp_path: Path, mon
     assert first["summary_generation"]["api_call_skipped"] is False
     assert second["summary_generation"]["api_call_skipped"] is False
     assert first["summary_source_signature"] != second["summary_source_signature"]
+
+
+def _bottom_signals_snapshot():
+    return {
+        "date": "2026-06-08",
+        "composite": 55.0,
+        "zone": "Watch",
+        "advice": "Not cheap yet — keep watching.",
+        "signals": [
+            {"key": "s1", "label": "Holder cost", "score": 4.2, "status": "Rich side"},
+            {"key": "s2", "label": "MVRV", "score": 14.2, "status": "Leaning cheap"},
+            {"key": "s3", "label": "Supply in loss", "score": 7.1, "status": "Neutral"},
+            {"key": "s4", "label": "Capital flow", "score": 10.0, "status": "Leaning cheap"},
+            {"key": "s5", "label": "Fear & Greed", "score": 20.0, "status": "Bottom zone"},
+        ],
+        "mvrv": 1.18,
+        "supply_loss_pct": 20.6,
+        "realized_cap_change_30d_usd": -2.09e10,
+        "fear_greed": 10.0,
+    }
+
+
+def _minimal_btc_df():
+    # build_report_payload needs at least date, close_price, and the MA columns.
+    n = 250
+    prices = pd.Series(np.linspace(60_000.0, 63_000.0, n))
+    ma50 = prices.rolling(50).mean()
+    ma200 = prices.rolling(200).mean()
+    return pd.DataFrame(
+        {
+            "date": pd.date_range("2025-10-01", periods=n),
+            "close_price": prices,
+            "ma_50": ma50,
+            "ma_200": ma200,
+            "ma_spread": ma50 - ma200,
+            "golden_cross": False,
+            "death_cross": False,
+        }
+    )
+
+
+def test_report_includes_bottom_signals_section():
+    payload = build_report_payload(
+        _minimal_btc_df(), bottom_signals_snapshot=_bottom_signals_snapshot()
+    )
+    sections = {s["chart"]: s for s in payload["sections"]}
+    assert "On-Chain Bottom Signals" in sections
+    metrics = sections["On-Chain Bottom Signals"]["metrics"]
+    assert metrics["composite_score"] == 55.0
+    assert metrics["zone"] == "Watch"
+    assert metrics["s5"] == 20.0
+
+
+def test_bottom_signals_deterministic_summaries():
+    from whenshouldubuybitcoin.daily_report import (
+        _deterministic_en_summary,
+        _deterministic_zh_summary,
+    )
+
+    snapshot = _bottom_signals_snapshot()
+    section = {
+        "chart": "On-Chain Bottom Signals",
+        "metrics": {
+            "composite_score": snapshot["composite"],
+            "zone": snapshot["zone"],
+            "s1": 4.2, "s2": 14.2, "s3": 7.1, "s4": 10.0, "s5": 20.0,
+            "mvrv": 1.18,
+            "supply_loss_pct": 20.6,
+        },
+    }
+    en = _deterministic_en_summary(section)
+    assert "55" in en and "Watch" in en
+    zh = _deterministic_zh_summary(section)
+    assert "55" in zh and "观望" in zh

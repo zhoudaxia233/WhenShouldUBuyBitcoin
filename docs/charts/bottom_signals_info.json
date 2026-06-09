@@ -1,0 +1,52 @@
+{
+  "date": "2026-06-08",
+  "price": 63090.58984375,
+  "chg24h_pct": -0.23550097882448773,
+  "ath": 124752.53125,
+  "from_ath_pct": -49.42740703407571,
+  "composite": 79.59801324937237,
+  "zone": "Undervalued",
+  "zone_color": "#f59e0b",
+  "advice": "Undervalued \u2014 historically a productive DCA zone.",
+  "signals": [
+    {
+      "key": "s1",
+      "label": "Holder cost",
+      "score": 7.5,
+      "status": "Neutral"
+    },
+    {
+      "key": "s2",
+      "label": "MVRV",
+      "score": 16.2,
+      "status": "Bottom zone"
+    },
+    {
+      "key": "s3",
+      "label": "Supply in loss",
+      "score": 17.8,
+      "status": "Bottom zone"
+    },
+    {
+      "key": "s4",
+      "label": "Capital flow",
+      "score": 18.2,
+      "status": "Bottom zone"
+    },
+    {
+      "key": "s5",
+      "label": "Fear & Greed",
+      "score": 20.0,
+      "status": "Bottom zone"
+    }
+  ],
+  "mvrv": 1.1881,
+  "supply_loss_pct": 49.59398373449021,
+  "realized_cap_change_30d_usd": -9830573049.74,
+  "fear_greed": 8.0,
+  "lth_realized_price": 48257.09,
+  "realized_price": 53154.45,
+  "sth_realized_price": 74715.66,
+  "ma120": 71989.98587239583,
+  "ma200": 78240.87494140625
+}
