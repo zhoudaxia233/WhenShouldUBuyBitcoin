@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>On-Chain Bottom Signals · When Should You Buy Bitcoin</title>
+<script src="{{ plotly_cdn }}"></script>
+<style>
+  :root {
+    --bg:#f5f5f7; --card:#ffffff; --card2:#f0f0f2; --border:#e3e3e8;
+    --text:#1d1d1f; --muted:#86868b; --green:#10b981; --gold:#f59e0b;
+    --red:#ef4444; --blue:#3b82f6;
+  }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { background:var(--bg); color:var(--text); padding:24px;
+         font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','Segoe UI',Roboto,sans-serif;
+         line-height:1.5; }
+  .wrap { max-width:1280px; margin:0 auto; }
+  .pagetitle { font-size:13px; color:var(--muted); margin-bottom:16px; }
+  .pagetitle b { color:var(--text); font-size:15px; }
+  .pagetitle a { color:#0066cc; text-decoration:none; }
+  .pagetitle a:hover { text-decoration:underline; }
+
+  .hero { display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-bottom:24px; }
+  .hero-price, .hero-gauge { background:var(--card); border:1px solid var(--border);
+    border-radius:16px; padding:24px; box-shadow:0 2px 8px rgba(0,0,0,0.04); }
+  .hero-price { display:flex; flex-direction:column; justify-content:center; }
+  .hero-price .label { font-size:13px; color:var(--muted); margin-bottom:6px; }
+  .hero-price .big { font-size:46px; font-weight:800; line-height:1.05; letter-spacing:-0.02em; }
+  .hero-price .chg { font-size:19px; margin-top:6px; }
+  .hero-price .meta { margin-top:16px; font-size:13px; color:var(--muted); }
+  .hero-price .meta b { color:var(--text); }
+  .pos { color:var(--green); } .neg { color:var(--red); }
+  .hero-gauge { display:flex; flex-direction:column; align-items:center; }
+  .hero-gauge .glabel { font-size:13px; color:var(--muted); align-self:flex-start; }
+  .gauge-zone { margin-top:6px; padding:6px 18px; border-radius:999px; font-size:15px; font-weight:600; }
+  .gauge-advice { margin-top:8px; font-size:14px; font-weight:600; }
+
+  .section-title { font-size:14px; font-weight:600; margin:8px 0 14px; }
+  .grid { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin-bottom:28px; }
+  .card { background:var(--card); border:1px solid var(--border); border-radius:12px;
+          padding:16px; box-shadow:0 2px 8px rgba(0,0,0,0.04); }
+  .card-head { display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; }
+  .card-title { font-size:14px; font-weight:600; }
+  .card-status { font-size:12px; font-weight:600; }
+  .card-sub { font-size:11px; color:var(--muted); margin:-4px 0 10px; }
+  .card-score { font-size:32px; font-weight:700; line-height:1; }
+  .card-score-max { font-size:15px; color:var(--muted); font-weight:400; }
+  .card-bar { height:5px; background:var(--card2); border-radius:99px; margin:10px 0; overflow:hidden; }
+  .card-bar-fill { height:100%; border-radius:99px; }
+  .card-now { font-size:13px; color:var(--muted); margin-bottom:4px; }
+  .card-now b { font-size:19px; color:var(--text); font-weight:700; }
+  .scale { margin:8px 0 6px; }
+  .scale-bar { position:relative; display:flex; height:8px; border-radius:4px; overflow:hidden; }
+  .scale-bar > div:not(.scale-marker) { height:100%; }
+  .scale-marker { position:absolute; top:-3px; width:3px; height:14px; background:var(--text);
+                  border-radius:2px; transform:translateX(-50%); box-shadow:0 0 4px rgba(0,0,0,0.5); }
+  .scale-labels { display:flex; justify-content:space-between; font-size:10px; color:var(--muted); margin-top:4px; }
+  .s1-lines { display:flex; flex-direction:column; gap:7px; margin:4px 0 8px; }
+  .s1-line { display:grid; grid-template-columns:1fr auto auto; align-items:center; gap:10px; font-size:13px; }
+  .s1-line .s1-name { color:var(--muted); }
+  .s1-line b { color:var(--text); }
+  .s1-line span:last-child { font-size:11px; color:var(--muted); }
+  .card-dist { font-size:12px; color:var(--muted); margin-top:4px; font-style:italic; }
+  .card-spark { margin-top:10px; opacity:0.9; }
+  .ma-rows { display:flex; flex-direction:column; gap:8px; margin-top:4px; }
+  .ma-row { display:flex; justify-content:space-between; align-items:center; font-size:14px; }
+  .ma-row span:first-child { color:var(--muted); }
+
+  .chart-box { background:var(--card); border:1px solid var(--border); border-radius:12px;
+               padding:16px; margin-bottom:24px; box-shadow:0 2px 8px rgba(0,0,0,0.04); }
+  .chart-box h3 { font-size:14px; margin-bottom:4px; }
+  .chart-box .sub { font-size:12px; color:var(--muted); margin-bottom:10px; }
+  .toggles { display:flex; gap:20px; flex-wrap:wrap; align-items:center; margin-bottom:12px; }
+  .toggle-group { display:flex; align-items:center; gap:6px; }
+  .toggle-group .lbl { font-size:12px; color:var(--muted); margin-right:2px; }
+  .tbtn { padding:5px 12px; background:var(--card2); color:var(--muted); border:1px solid var(--border);
+          border-radius:6px; cursor:pointer; font-size:12px; }
+  .tbtn.active { background:var(--green); color:#fff; border-color:var(--green); }
+  .caption { font-size:12px; color:var(--muted); margin-top:8px; }
+
+  table { width:100%; border-collapse:collapse; font-size:13px; }
+  th,td { padding:8px 12px; text-align:left; border-bottom:1px solid var(--border); }
+  th { background:var(--card2); color:var(--muted); font-size:11px; text-transform:uppercase;
+       letter-spacing:.04em; font-weight:500; }
+  td.num,th.num { text-align:right; font-variant-numeric:tabular-nums; }
+  .table-scroll { overflow-x:auto; -webkit-overflow-scrolling:touch; }
+
+  .sys-note { margin-top:18px; padding:16px 18px; background:var(--card); border:1px solid var(--border);
+              border-radius:10px; font-size:13px; line-height:1.85; color:var(--muted); }
+  .sys-note h4 { margin:0 0 8px; font-size:14px; color:var(--text); }
+  .sys-note p { margin:6px 0; }
+  .sys-note b { color:var(--text); }
+  .disclaimer { margin-top:32px; padding-top:18px; border-top:1px solid var(--border);
+                text-align:center; color:var(--muted); font-size:12px; line-height:1.9; }
+  .disclaimer a { color:#0066cc; text-decoration:none; }
+
+  @media(max-width:900px){ .hero{grid-template-columns:1fr;} .grid{grid-template-columns:repeat(2,1fr);} }
+  @media(max-width:600px){
+    body{ padding:14px; }
+    .hero{ gap:14px; margin-bottom:18px; }
+    .hero-price .big{ font-size:38px; }
+    .grid{ grid-template-columns:1fr; gap:12px; }
+    #mainChart{ height:340px !important; }
+    .table-scroll table{ min-width:600px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="pagetitle">
+    <a href="../index.html">← Back to dashboard</a> &nbsp;·&nbsp;
+    <b>⛓️ On-Chain Bottom Signals</b> &nbsp;·&nbsp; data through {{ data_date }}
+  </div>
+
+  <div class="hero">
+    <div class="hero-price">
+      <div class="label">BTC price (USD, daily close)</div>
+      <div class="big">${{ "{:,.0f}".format(price) }}</div>
+      <div class="chg {{ 'neg' if chg24h_pct < 0 else 'pos' }}">{{ "%+.2f"|format(chg24h_pct) }}% <span style="color:var(--muted);font-size:13px;">24h</span></div>
+      <div class="meta">From ATH ${{ "{:,.0f}".format(ath) }}: <b class="{{ 'neg' if from_ath_pct < 0 else 'pos' }}">{{ "%+.1f"|format(from_ath_pct) }}%</b></div>
+    </div>
+    <div class="hero-gauge">
+      <div class="glabel">Composite score</div>
+      {{ gauge|safe }}
+      <div class="gauge-zone" style="background:{{ zone_color }}22;color:{{ zone_color }};">{{ zone }}</div>
+      <div class="gauge-advice" style="color:{{ zone_color }};">{{ advice }}</div>
+    </div>
+  </div>
+
+  <div class="section-title">5 signals + moving-average reference</div>
+  <div class="grid">
+    {% for card in cards %}
+    <div class="card" style="border-color:{{ card.color }}55;">
+      <div class="card-head">
+        <span class="card-title">{{ card.title }}</span>
+        <span class="card-status" style="color:{{ card.color }};">● {{ card.status }}</span>
+      </div>
+      <div class="card-sub">{{ card.subtitle }}</div>
+      <div class="card-score" style="color:{{ card.color }};">{{ card.score_text }}<span class="card-score-max">/20</span></div>
+      <div class="card-bar"><div class="card-bar-fill" style="width:{{ card.bar_pct }}%;background:{{ card.color }};"></div></div>
+      <div class="card-now">{{ card.now_html|safe }}</div>
+      <div class="scale">
+        <div class="scale-bar">
+          <div style="width:25%;background:var(--blue);"></div><div style="width:25%;background:var(--green);"></div><div style="width:25%;background:var(--gold);"></div><div style="width:25%;background:var(--red);"></div>
+          <div class="scale-marker" style="left:{{ card.marker_pct }}%;"></div>
+        </div>
+        <div class="scale-labels"><span>← bottom</span><span>top →</span></div>
+      </div>
+      {% if card.extra_html %}{{ card.extra_html|safe }}{% endif %}
+      {% if card.spark %}
+      <div class="card-spark"><svg width="150" height="36"><polyline points="{{ card.spark }}" fill="none" stroke="{{ card.color }}" stroke-width="1.5" stroke-linejoin="round"/></svg></div>
+      {% endif %}
+    </div>
+    {% endfor %}
+
+    <div class="card">
+      <div class="card-head">
+        <span class="card-title">MA · Long-term averages</span>
+        <span class="card-status" style="color:var(--muted);">reference only</span>
+      </div>
+      <div class="card-sub">Not part of the composite score</div>
+      <div class="ma-rows">
+        <div class="ma-row"><span>MA 120</span><b>${{ "{:,.0f}".format(ma120) }}</b><span class="{{ 'neg' if ma120_dist_pct < 0 else 'pos' }}">{{ "%+.1f"|format(ma120_dist_pct) }}%</span></div>
+        <div class="ma-row"><span>MA 200</span><b>${{ "{:,.0f}".format(ma200) }}</b><span class="{{ 'neg' if ma200_dist_pct < 0 else 'pos' }}">{{ "%+.1f"|format(ma200_dist_pct) }}%</span></div>
+      </div>
+      <div class="card-dist">{{ ma_comment }}</div>
+    </div>
+  </div>
+
+  <div class="chart-box">
+    <h3>📈 Where history triggered: price + composite score + trigger zones</h3>
+    <div class="sub">Green shading = historical trigger segments for the selected combo · red dotted lines = cycle bottoms · right axis = composite score</div>
+    <div class="toggles">
+      <div class="toggle-group"><span class="lbl">Threshold</span>
+        <button class="tbtn th-btn active" data-th="60">≥60</button>
+        <button class="tbtn th-btn" data-th="70">≥70</button>
+        <button class="tbtn th-btn" data-th="80">≥80</button>
+      </div>
+      <div class="toggle-group"><span class="lbl">Duration</span>
+        <button class="tbtn dur-btn active" data-dur="1">same day</button>
+        <button class="tbtn dur-btn" data-dur="3">3 days straight</button>
+        <button class="tbtn dur-btn" data-dur="7">7 days straight</button>
+      </div>
+    </div>
+    <div id="mainChart" style="width:100%;height:480px;"></div>
+    <div class="caption" id="caption"></div>
+  </div>
+
+  <div class="chart-box">
+    <h3>💰 What prices history bought at: trigger segment detail</h3>
+    <div class="sub">Linked to the threshold × duration toggles above · shows each segment's buy range and whether price went lower afterwards</div>
+    <div class="table-scroll">
+      <table>
+        <thead><tr><th>Start</th><th>End</th><th class="num">Days</th><th class="num">Start price</th><th class="num">Segment low</th><th class="num">Low within 90d after</th><th class="num">Low within 180d after</th></tr></thead>
+        <tbody id="segTableBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="chart-box">
+    <h3>🎯 How accurate was it: accuracy matrix</h3>
+    <div class="sub">Cell = number of historical trigger segments · share whose segment low landed within 30% above the nearest cycle bottom</div>
+    <div class="table-scroll">
+      <table>
+        <thead><tr><th>Threshold</th><th class="num">same day</th><th class="num">3 days straight</th><th class="num">7 days straight</th></tr></thead>
+        <tbody>
+          {% for th in thresholds %}
+          <tr>
+            <td>≥{{ th }}</td>
+            {% for dur in durations %}
+            {% set cell = matrix[th|string][dur|string] %}
+            <td class="num">{% if cell.segments %}{{ cell.segments }} seg · {{ cell.accuracy }}%{% else %}—{% endif %}</td>
+            {% endfor %}
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <div class="sys-note">
+      <h4>About this system</h4>
+      <p>Five on-chain/sentiment signals are each scored 0-20 and summed into a 0-100 composite:
+      <b>S1</b> price vs long-term-holder / average / short-term-holder cost basis,
+      <b>S2</b> MVRV deviation from its historical mean (in sigma),
+      <b>S3</b> share of circulating supply in unrealized loss (sigma deviation),
+      <b>S4</b> 30-day realized-cap net change (historical percentile),
+      <b>S5</b> the Fear &amp; Greed Index. Zones: &lt;60 Watch, 60-70 Mildly Undervalued, 70-80 Undervalued, ≥80 Extremely Undervalued.</p>
+      <p><b>Honest caveats:</b> on-chain history comes from a free API limited to the most recent ~4 years, so the backtest covers the {{ cycle_bottoms_label }} bottoms only — far fewer cycles than ideal. Sigma/percentile statistics use the <b>full sample</b> (the same statistics score early and recent dates), which introduces look-ahead bias into the shaded backtest. S3 uses supply-weighted loss share rather than the value-weighted "relative unrealized loss" used by some paid dashboards. None of this is investment advice.</p>
+      <p>Data sources: <a href="https://bitcoin-data.com" style="color:#0066cc;">bitcoin-data.com (BGeometrics)</a> on-chain series · <a href="https://alternative.me/crypto/fear-and-greed-index/" style="color:#0066cc;">alternative.me</a> Fear &amp; Greed. </p>
+    </div>
+  </div>
+
+  <div class="disclaimer">
+    ⚠️ Personal research, not investment advice. DYOR.<br>
+    Part of <a href="../index.html">When Should You Buy Bitcoin</a>.
+  </div>
+</div>
+
+<script>
+const dates = {{ dates_json|safe }};
+const prices = {{ prices_json|safe }};
+const totals = {{ totals_json|safe }};
+const cycleBots = {{ cycle_bots_json|safe }};
+const TRIG = {{ trig_json|safe }};
+const SHADE = {"60":"rgba(16,185,129,0.10)","70":"rgba(16,185,129,0.16)","80":"rgba(16,185,129,0.24)"};
+let curTh = "60", curDur = "1";
+const fmtUSD = v => '$' + Math.round(v).toLocaleString('en-US');
+
+Plotly.newPlot('mainChart', [
+  {x: dates, y: prices, name: 'BTC price', type: 'scatter', mode: 'lines',
+   line: {color: '#1d1d1f', width: 1.4}},
+  {x: dates, y: totals, name: 'Composite score', type: 'scatter', mode: 'lines',
+   line: {color: '#f59e0b', width: 1.2}, yaxis: 'y2'},
+], {
+  margin: {l: 56, r: 48, t: 10, b: 36},
+  paper_bgcolor: '#ffffff', plot_bgcolor: '#ffffff',
+  font: {color: '#1d1d1f', size: 12},
+  xaxis: {gridcolor: '#eeeeef'},
+  yaxis: {title: 'Price (log)', type: 'log', gridcolor: '#eeeeef'},
+  yaxis2: {title: 'Score', overlaying: 'y', side: 'right', range: [0, 100], showgrid: false},
+  legend: {orientation: 'h', y: 1.08},
+}, {responsive: true, displayModeBar: false});
+
+function refresh() {
+  const segs = (TRIG[curTh] && TRIG[curTh][curDur]) || [];
+  const shapes = segs.map(s => ({
+    type: 'rect', xref: 'x', yref: 'paper', x0: s.startDate, x1: s.endDate, y0: 0, y1: 1,
+    fillcolor: SHADE[curTh], line: {width: 0}, layer: 'below',
+  })).concat(cycleBots.map(b => ({
+    type: 'line', xref: 'x', yref: 'paper', x0: b.date, x1: b.date, y0: 0, y1: 1,
+    line: {color: 'rgba(239,68,68,0.5)', width: 1, dash: 'dot'}, layer: 'below',
+  })));
+  Plotly.relayout('mainChart', {shapes});
+  const durLabel = curDur === '1' ? 'same-day trigger' : curDur + ' consecutive days';
+  document.getElementById('caption').textContent =
+    'Current: score ≥' + curTh + ' / ' + durLabel + ' · ' + segs.length + ' historical segment(s)';
+  const tbody = document.getElementById('segTableBody');
+  if (!segs.length) {
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:16px;">(no trigger segments for this combo)</td></tr>';
+  } else {
+    tbody.innerHTML = segs.map(s => '<tr>' +
+      '<td>' + s.startDate + '</td><td>' + s.endDate + '</td>' +
+      '<td class="num">' + s.days + '</td>' +
+      '<td class="num">' + fmtUSD(s.priceStart) + '</td>' +
+      '<td class="num">' + fmtUSD(s.minPrice) + '</td>' +
+      '<td class="num">' + (s.after90 ? fmtUSD(s.after90.min) : '—') + '</td>' +
+      '<td class="num">' + (s.after180 ? fmtUSD(s.after180.min) : '—') + '</td>' +
+    '</tr>').join('');
+  }
+}
+document.querySelectorAll('.th-btn').forEach(b => b.addEventListener('click', () => {
+  curTh = b.dataset.th;
+  document.querySelectorAll('.th-btn').forEach(x => x.classList.toggle('active', x === b));
+  refresh();
+}));
+document.querySelectorAll('.dur-btn').forEach(b => b.addEventListener('click', () => {
+  curDur = b.dataset.dur;
+  document.querySelectorAll('.dur-btn').forEach(x => x.classList.toggle('active', x === b));
+  refresh();
+}));
+refresh();
+</script>
+</body>
+</html>
