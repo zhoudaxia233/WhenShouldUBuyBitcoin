@@ -60,12 +60,6 @@ def _interp(x: float, xs, ys) -> float:
     return float(np.interp(x, xs, ys))
 
 
-def _strictly_increasing(xs) -> np.ndarray:
-    """Force anchor positions to strictly increase (cost lines can cross mid-bear)."""
-    xs = np.maximum.accumulate(np.asarray(xs, dtype=float))
-    return xs + np.arange(len(xs)) * 1e-9
-
-
 def score_s1_holder_cost(price, lth, avg, sth) -> Optional[float]:
     """Price vs holder cost-basis lines, interpolated in log space.
 

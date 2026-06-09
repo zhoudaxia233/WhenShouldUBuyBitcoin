@@ -1068,12 +1068,6 @@ def _interp(x: float, xs, ys) -> float:
     return float(np.interp(x, xs, ys))
 
 
-def _strictly_increasing(xs) -> np.ndarray:
-    """Force anchor positions to strictly increase (cost lines can cross mid-bear)."""
-    xs = np.maximum.accumulate(np.asarray(xs, dtype=float))
-    return xs + np.arange(len(xs)) * 1e-9
-
-
 def score_s1_holder_cost(price, lth, avg, sth) -> Optional[float]:
     """Price vs holder cost-basis lines, interpolated in log space.
 
@@ -1082,9 +1076,14 @@ def score_s1_holder_cost(price, lth, avg, sth) -> Optional[float]:
     vals = [price, lth, avg, sth]
     if any(v is None or pd.isna(v) or v <= 0 for v in vals):
         return None
-    xs = np.log(_strictly_increasing([0.8 * lth, lth, avg, sth, 1.2 * sth]))
+    raw = np.log([0.8 * lth, lth, avg, sth, 1.2 * sth])
+    cum = np.maximum.accumulate(raw)
+    # Nudge only positions that were flattened (ties after cummax), preserving
+    # exact boundary anchors where no crossing occurred.
+    nudge = np.where(cum == raw, 0.0, np.arange(5) * 1e-9)
+    log_xs = cum + nudge
     ys = [20.0, 15.0, 10.0, 5.0, 0.0]
-    return _interp(np.log(price), xs, ys)
+    return _interp(np.log(price), log_xs, ys)
 
 
 def full_sample_deviation(series: pd.Series) -> pd.Series:
