@@ -43,7 +43,8 @@ def parse_series(rows) -> list[tuple[str, float]]:
     """Parse a bitcoin-data.com JSON array into [(YYYY-MM-DD, value), ...].
 
     Rows with a missing date or no numeric metric field are skipped. Output
-    is sorted by date ascending.
+    is sorted by date ascending. Relies on the API placing exactly one
+    non-meta numeric field per row; the fixture-pinned tests catch breakage.
     """
     out: list[tuple[str, float]] = []
     for row in rows or []:
