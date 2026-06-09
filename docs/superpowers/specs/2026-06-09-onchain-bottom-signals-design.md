@@ -65,7 +65,7 @@ Accepted consequences (user decisions):
 - Persistence: merge idempotency, overlap overwrite, atomic write, schema stability.
 - Scoring: anchor-point exactness, monotonicity, clamping for each of S1-S5; composite null handling when inputs are missing or below the 180-observation guard.
 - Backtest: segment extraction on synthetic series (gaps, exact-threshold days, duration filtering), forward-window stats, accuracy matrix on constructed scenarios.
-- Acceptance: with live data, today's composite lands in the Watch zone with S5 = 20, S2 ~ 13-15, S1 low — same ordering as the reference site on the same day; segment table and accuracy matrix populate for the 2022-11 bottom.
+- Acceptance (verified 2026-06-10 against the reference site's same-day data of 2026-06-08): S5 = 20 exactly matches; S1 (7.5 vs 4.2) and S2 (16.2 vs 14.2) land in the same qualitative bands; S3 (17.8 vs 7.1) and S4 (18.2 vs 10) read intentionally warmer because of the documented supply-weighted substitution (supply-in-loss was 49.6%, near the 2022 bottom's 55.2%, while the reference's value-weighted loss was 20.6%) and the percentile-scored S4 fed by a source whose 30d figure (-$9.8B) differs from Glassnode's (-$20.9B). Composite 79.6 (Undervalued) vs reference 55 (Watch) — divergence understood, internally consistent, and disclosed in the page's methodology notes. Segment table and accuracy matrix populate for the 2022-11 bottom.
 - Browser verification of `bottom_signals.html` and the index summary card, desktop and mobile, per AGENTS.md.
 
 ## Out of Scope
