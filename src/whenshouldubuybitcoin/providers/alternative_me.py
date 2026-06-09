@@ -3,7 +3,7 @@ Provider for Fear & Greed Index from alternative.me.
 """
 import requests
 from typing import Optional, Dict, Any
-from datetime import datetime
+from datetime import datetime, timezone
 
 def fetch_fear_and_greed_index() -> Optional[Dict[str, Any]]:
     """
@@ -58,7 +58,7 @@ def fetch_fear_and_greed_history() -> Optional[list]:
                 if "-" in ts:
                     day = ts[:10]
                 else:
-                    day = datetime.utcfromtimestamp(int(ts)).strftime("%Y-%m-%d")
+                    day = datetime.fromtimestamp(int(ts), tz=timezone.utc).strftime("%Y-%m-%d")
                 rows.append({"date": day, "value": int(item["value"])})
             except (KeyError, TypeError, ValueError):
                 continue
