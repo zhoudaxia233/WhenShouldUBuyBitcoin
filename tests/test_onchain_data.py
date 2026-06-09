@@ -129,3 +129,43 @@ def test_normalize_realized_cap_change_billions_vs_usd():
     usd = pd.Series([-2.09e10, 3.0e10])
     assert od._normalize_realized_cap_change(billions).tolist() == [-2.09e10, 3.0e10]
     assert od._normalize_realized_cap_change(usd).tolist() == [-2.09e10, 3.0e10]
+
+
+def test_load_dedupes_duplicate_dates(tmp_path, monkeypatch):
+    monkeypatch.setattr(od, "get_data_dir", lambda: tmp_path)
+    csv = tmp_path / od.ONCHAIN_CSV
+    csv.write_text(
+        "date,mvrv\n2026-06-08,1.0\n2026-06-08,2.0\n2026-06-09,3.0\n"
+    )
+    loaded = od.load_onchain_metrics()
+    assert loaded["date"].tolist() == ["2026-06-08", "2026-06-09"]
+    assert loaded["mvrv"].tolist() == [2.0, 3.0]
+
+
+def test_update_returns_merged_even_when_save_fails(monkeypatch):
+    stale = _frame({"date": ["2026-01-01"], "mvrv": [1.0]})
+    monkeypatch.setattr(od, "load_onchain_metrics", lambda: stale)
+    monkeypatch.setattr(
+        od, "fetch_all_onchain_series",
+        lambda startday=None: {"mvrv": [("2026-06-09", 1.3)]},
+    )
+    monkeypatch.setattr(od, "fetch_fear_and_greed_history", lambda: None)
+    monkeypatch.setattr(od, "save_onchain_metrics", lambda df: False)
+    out = od.update_onchain_metrics()
+    assert out["date"].tolist() == ["2026-01-01", "2026-06-09"]
+
+
+def test_update_with_garbage_dates_falls_back_to_full_fetch(monkeypatch):
+    bad = _frame({"date": ["not-a-date"], "mvrv": [1.0]})
+    monkeypatch.setattr(od, "load_onchain_metrics", lambda: bad)
+    captured = {}
+
+    def fake_fetch_all(startday=None):
+        captured["startday"] = startday
+        return {"mvrv": [("2026-06-09", 1.3)]}
+
+    monkeypatch.setattr(od, "fetch_all_onchain_series", fake_fetch_all)
+    monkeypatch.setattr(od, "fetch_fear_and_greed_history", lambda: None)
+    monkeypatch.setattr(od, "save_onchain_metrics", lambda df: True)
+    od.update_onchain_metrics()
+    assert captured["startday"] is None

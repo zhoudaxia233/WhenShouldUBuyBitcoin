@@ -58,7 +58,8 @@ def load_onchain_metrics() -> Optional[pd.DataFrame]:
             if col == "date":
                 continue
             df[col] = pd.to_numeric(df.get(col), errors="coerce")
-        df = df[ONCHAIN_COLUMNS].sort_values("date").reset_index(drop=True)
+        df = df[ONCHAIN_COLUMNS].sort_values("date")
+        df = df.drop_duplicates(subset=["date"], keep="last").reset_index(drop=True)
         print(f"✓ Loaded {len(df)} on-chain rows from {filepath}")
         return df
     except Exception as e:
@@ -137,7 +138,6 @@ def _series_dict_to_frame(series_by_metric: dict, fng_rows) -> pd.DataFrame:
         return pd.DataFrame(columns=ONCHAIN_COLUMNS)
 
     wide = pd.concat(frames, axis=1, join="outer").reset_index()
-    wide = wide.rename(columns={"index": "date"})
     for col in ("supply_loss_btc", "supply_profit_btc", *ONCHAIN_COLUMNS):
         if col not in wide.columns:
             wide[col] = pd.NA
@@ -168,8 +168,11 @@ def update_onchain_metrics(force: bool = False) -> Optional[pd.DataFrame]:
 
     startday = None
     if existing is not None and not existing.empty:
-        last = date.fromisoformat(str(existing["date"].max())[:10])
-        startday = (last - timedelta(days=REFETCH_OVERLAP_DAYS)).isoformat()
+        try:
+            last = date.fromisoformat(str(existing["date"].max())[:10])
+            startday = (last - timedelta(days=REFETCH_OVERLAP_DAYS)).isoformat()
+        except ValueError:
+            startday = None
 
     series_by_metric = fetch_all_onchain_series(startday=startday)
     fng_rows = fetch_fear_and_greed_history()
@@ -180,5 +183,6 @@ def update_onchain_metrics(force: bool = False) -> Optional[pd.DataFrame]:
         return existing
 
     merged = merge_onchain(existing, new)
-    save_onchain_metrics(merged)
+    if not save_onchain_metrics(merged):
+        print("⚠ Failed to persist on-chain metrics; next run will re-fetch")
     return merged
