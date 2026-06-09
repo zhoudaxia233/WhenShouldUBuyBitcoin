@@ -177,3 +177,91 @@ def compute_bottom_signal_scores(
     df["zone"] = zones.map(lambda z: z[0] if z else None)
     df["zone_color"] = zones.map(lambda z: z[1] if z else None)
     return df
+
+
+def extract_trigger_segments(
+    scores_df: pd.DataFrame, threshold: float, min_duration: int
+) -> list[dict]:
+    """Consecutive-row runs with composite >= threshold, kept when long enough.
+
+    scores_df must be date-sorted with columns date, close_price, composite.
+    Null composites never qualify. Forward 90/180-day windows are relative to
+    the segment end date; None when no data exists beyond the segment.
+    """
+    df = scores_df.reset_index(drop=True)
+    composite = pd.to_numeric(df["composite"], errors="coerce")
+    qualifying = composite.ge(threshold).fillna(False)
+    dates = pd.to_datetime(df["date"])
+
+    segments: list[dict] = []
+    start = None
+    for i in range(len(df) + 1):
+        active = i < len(df) and bool(qualifying.iloc[i])
+        if active and start is None:
+            start = i
+        elif not active and start is not None:
+            end = i - 1
+            if end - start + 1 >= min_duration:
+                seg = df.iloc[start : end + 1]
+                end_date = dates.iloc[end]
+                seg_dict = {
+                    "startDate": str(df["date"].iloc[start]),
+                    "endDate": str(df["date"].iloc[end]),
+                    "days": int(end - start + 1),
+                    "priceStart": float(seg["close_price"].iloc[0]),
+                    "priceEnd": float(seg["close_price"].iloc[-1]),
+                    "minPrice": float(seg["close_price"].min()),
+                    "maxPrice": float(seg["close_price"].max()),
+                    "avgPrice": float(seg["close_price"].mean()),
+                }
+                for horizon in (90, 180):
+                    mask = (dates > end_date) & (
+                        dates <= end_date + pd.Timedelta(days=horizon)
+                    )
+                    window = df.loc[mask, "close_price"]
+                    seg_dict[f"after{horizon}"] = (
+                        {"min": float(window.min()), "max": float(window.max())}
+                        if not window.empty
+                        else None
+                    )
+                segments.append(seg_dict)
+            start = None
+    return segments
+
+
+def assign_cycle_bottom(segment: dict, bottoms=None) -> tuple[str, float]:
+    """Nearest cycle bottom (by days) to the segment midpoint."""
+    bottoms = bottoms or CYCLE_BOTTOMS
+    start = pd.Timestamp(segment["startDate"])
+    end = pd.Timestamp(segment["endDate"])
+    mid = start + (end - start) / 2
+    return min(bottoms, key=lambda b: abs((pd.Timestamp(b[0]) - mid).days))
+
+
+def build_backtest(scores_df: pd.DataFrame) -> dict:
+    """Precompute trigger segments and the accuracy matrix for all combos.
+
+    Returns {"trig": {th: {dur: [segments]}}, "matrix": {th: {dur: cell}}}
+    with string keys ready for JSON embedding; cell accuracy is a rounded
+    percent or None when no segments exist.
+    """
+    trig: dict = {}
+    matrix: dict = {}
+    for th in THRESHOLDS:
+        trig[str(th)] = {}
+        matrix[str(th)] = {}
+        for dur in DURATIONS:
+            segments = extract_trigger_segments(scores_df, th, dur)
+            hits = sum(
+                1
+                for seg in segments
+                if seg["minPrice"]
+                <= assign_cycle_bottom(seg)[1] * BOTTOM_HIT_MULTIPLE
+            )
+            trig[str(th)][str(dur)] = segments
+            matrix[str(th)][str(dur)] = {
+                "segments": len(segments),
+                "hits": hits,
+                "accuracy": round(100.0 * hits / len(segments)) if segments else None,
+            }
+    return {"trig": trig, "matrix": matrix}

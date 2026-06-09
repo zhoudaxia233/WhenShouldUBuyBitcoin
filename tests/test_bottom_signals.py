@@ -179,3 +179,77 @@ def test_compute_scores_accepts_datetime_dates():
     prices = pd.DataFrame({"date": dates.strftime("%Y-%m-%d"), "close_price": 60_000.0})
     df = bs.compute_bottom_signal_scores(onchain, prices)
     assert len(df) == n
+
+
+# ---------- backtest ----------
+
+def _backtest_frame() -> pd.DataFrame:
+    # 30 days around the 2022-11-21 cycle bottom; composite crosses 60 twice
+    dates = pd.date_range("2022-11-10", periods=30).strftime("%Y-%m-%d")
+    composite = [50.0] * 5 + [65.0] * 4 + [55.0] * 6 + [82.0] * 1 + [50.0] * 14
+    prices = np.linspace(17_000, 16_000, 30)
+    return pd.DataFrame({"date": dates, "close_price": prices, "composite": composite})
+
+
+def test_extract_trigger_segments_duration_filter():
+    df = _backtest_frame()
+    segs_1d = bs.extract_trigger_segments(df, 60, 1)
+    assert len(segs_1d) == 2
+    segs_3d = bs.extract_trigger_segments(df, 60, 3)
+    assert len(segs_3d) == 1
+    seg = segs_3d[0]
+    assert seg["startDate"] == "2022-11-15"
+    assert seg["endDate"] == "2022-11-18"
+    assert seg["days"] == 4
+    assert seg["minPrice"] <= seg["maxPrice"]
+    assert seg["after90"]["min"] == pytest.approx(16_000.0)
+    assert seg["after180"]["min"] == pytest.approx(16_000.0)
+
+
+def test_extract_trigger_segments_handles_trailing_run():
+    df = pd.DataFrame(
+        {
+            "date": pd.date_range("2024-01-01", periods=5).strftime("%Y-%m-%d"),
+            "close_price": [1.0, 2.0, 3.0, 4.0, 5.0],
+            "composite": [10.0, 10.0, 90.0, 90.0, 90.0],
+        }
+    )
+    segs = bs.extract_trigger_segments(df, 80, 3)
+    assert len(segs) == 1
+    assert segs[0]["endDate"] == "2024-01-05"
+    assert segs[0]["after90"] is None  # no data beyond the segment end
+
+
+def test_extract_trigger_segments_null_composite_never_qualifies():
+    df = pd.DataFrame(
+        {
+            "date": ["2024-01-01", "2024-01-02"],
+            "close_price": [1.0, 2.0],
+            "composite": [np.nan, 95.0],
+        }
+    )
+    segs = bs.extract_trigger_segments(df, 60, 1)
+    assert len(segs) == 1 and segs[0]["days"] == 1
+
+
+def test_assign_cycle_bottom_picks_nearest():
+    seg = {"startDate": "2022-12-01", "endDate": "2022-12-10"}
+    date, price = bs.assign_cycle_bottom(seg)
+    assert date == "2022-11-21"
+    seg2 = {"startDate": "2024-08-01", "endDate": "2024-08-10"}
+    assert bs.assign_cycle_bottom(seg2)[0] == "2024-09-06"
+
+
+def test_build_backtest_structure_and_accuracy():
+    df = _backtest_frame()
+    out = bs.build_backtest(df)
+    assert set(out) == {"trig", "matrix"}
+    assert set(out["trig"]) == {"60", "70", "80"}
+    assert set(out["trig"]["60"]) == {"1", "3", "7"}
+    cell = out["matrix"]["60"]["1"]
+    # both segments bottom near $16-17k vs bottom 15797.53 * 1.3 = 20536 -> hits
+    assert cell["segments"] == 2
+    assert cell["hits"] == 2
+    assert cell["accuracy"] == 100
+    assert out["matrix"]["80"]["7"]["segments"] == 0
+    assert out["matrix"]["80"]["7"]["accuracy"] is None
