@@ -1500,9 +1500,7 @@ the threshold/duration toggle for the main chart.
 
 import json
 import math
-import tempfile
 from pathlib import Path
-from typing import Optional
 
 import pandas as pd
 from jinja2 import Environment, FileSystemLoader
@@ -2187,8 +2185,13 @@ def generate_bottom_signals_page(
 
     closes = pd.to_numeric(price_df["close_price"], errors="coerce").dropna()
     price = float(latest["close_price"])
+    # 24h change from the scored frame so it describes the same day as `price`
+    # (the full price series can run ahead of the on-chain data date).
+    scored_closes = pd.to_numeric(scored["close_price"], errors="coerce").dropna()
     chg24h = (
-        (closes.iloc[-1] / closes.iloc[-2] - 1.0) * 100.0 if len(closes) >= 2 else 0.0
+        (scored_closes.iloc[-1] / scored_closes.iloc[-2] - 1.0) * 100.0
+        if len(scored_closes) >= 2
+        else 0.0
     )
     ath = float(closes.max())
     ma120 = float(closes.rolling(120).mean().iloc[-1]) if len(closes) >= 120 else price
