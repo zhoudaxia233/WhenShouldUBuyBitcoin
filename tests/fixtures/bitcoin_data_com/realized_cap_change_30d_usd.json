@@ -1,0 +1,7307 @@
+[
+ {
+  "d": "2022-06-09",
+  "unixTs": 1654732800,
+  "realizedCapChange30d": -11725000000.0
+ },
+ {
+  "d": "2022-06-10",
+  "unixTs": 1654819200,
+  "realizedCapChange30d": -9285000000.0
+ },
+ {
+  "d": "2022-06-11",
+  "unixTs": 1654905600,
+  "realizedCapChange30d": -8670000000.0
+ },
+ {
+  "d": "2022-06-12",
+  "unixTs": 1654992000,
+  "realizedCapChange30d": -8411000000.0
+ },
+ {
+  "d": "2022-06-13",
+  "unixTs": 1655078400,
+  "realizedCapChange30d": -13974000000.0
+ },
+ {
+  "d": "2022-06-14",
+  "unixTs": 1655164800,
+  "realizedCapChange30d": -17259000000.0
+ },
+ {
+  "d": "2022-06-15",
+  "unixTs": 1655251200,
+  "realizedCapChange30d": -18696000000.0
+ },
+ {
+  "d": "2022-06-16",
+  "unixTs": 1655337600,
+  "realizedCapChange30d": -20334000000.0
+ },
+ {
+  "d": "2022-06-17",
+  "unixTs": 1655424000,
+  "realizedCapChange30d": -21320000000.0
+ },
+ {
+  "d": "2022-06-18",
+  "unixTs": 1655510400,
+  "realizedCapChange30d": -22548000000.0
+ },
+ {
+  "d": "2022-06-19",
+  "unixTs": 1655596800,
+  "realizedCapChange30d": -21897000000.0
+ },
+ {
+  "d": "2022-06-20",
+  "unixTs": 1655683200,
+  "realizedCapChange30d": -22169000000.0
+ },
+ {
+  "d": "2022-06-21",
+  "unixTs": 1655769600,
+  "realizedCapChange30d": -23016000000.0
+ },
+ {
+  "d": "2022-06-22",
+  "unixTs": 1655856000,
+  "realizedCapChange30d": -23209000000.0
+ },
+ {
+  "d": "2022-06-23",
+  "unixTs": 1655942400,
+  "realizedCapChange30d": -23256000000.0
+ },
+ {
+  "d": "2022-06-24",
+  "unixTs": 1656028800,
+  "realizedCapChange30d": -23452000000.0
+ },
+ {
+  "d": "2022-06-25",
+  "unixTs": 1656115200,
+  "realizedCapChange30d": -22918000000.0
+ },
+ {
+  "d": "2022-06-26",
+  "unixTs": 1656201600,
+  "realizedCapChange30d": -22240000000.0
+ },
+ {
+  "d": "2022-06-27",
+  "unixTs": 1656288000,
+  "realizedCapChange30d": -22824000000.0
+ },
+ {
+  "d": "2022-06-28",
+  "unixTs": 1656374400,
+  "realizedCapChange30d": -23334000000.0
+ },
+ {
+  "d": "2022-06-29",
+  "unixTs": 1656460800,
+  "realizedCapChange30d": -24107000000.0
+ },
+ {
+  "d": "2022-06-30",
+  "unixTs": 1656547200,
+  "realizedCapChange30d": -26061000000.0
+ },
+ {
+  "d": "2022-07-01",
+  "unixTs": 1656633600,
+  "realizedCapChange30d": -25913000000.0
+ },
+ {
+  "d": "2022-07-02",
+  "unixTs": 1656720000,
+  "realizedCapChange30d": -25191000000.0
+ },
+ {
+  "d": "2022-07-03",
+  "unixTs": 1656806400,
+  "realizedCapChange30d": -24992000000.0
+ },
+ {
+  "d": "2022-07-04",
+  "unixTs": 1656892800,
+  "realizedCapChange30d": -24530000000.0
+ },
+ {
+  "d": "2022-07-05",
+  "unixTs": 1656979200,
+  "realizedCapChange30d": -24627000000.0
+ },
+ {
+  "d": "2022-07-06",
+  "unixTs": 1657065600,
+  "realizedCapChange30d": -25287000000.0
+ },
+ {
+  "d": "2022-07-07",
+  "unixTs": 1657152000,
+  "realizedCapChange30d": -24778000000.0
+ },
+ {
+  "d": "2022-07-08",
+  "unixTs": 1657238400,
+  "realizedCapChange30d": -24674000000.0
+ },
+ {
+  "d": "2022-07-09",
+  "unixTs": 1657324800,
+  "realizedCapChange30d": -24712000000.0
+ },
+ {
+  "d": "2022-07-10",
+  "unixTs": 1657411200,
+  "realizedCapChange30d": -24434000000.0
+ },
+ {
+  "d": "2022-07-11",
+  "unixTs": 1657497600,
+  "realizedCapChange30d": -25391000000.0
+ },
+ {
+  "d": "2022-07-12",
+  "unixTs": 1657584000,
+  "realizedCapChange30d": -25161000000.0
+ },
+ {
+  "d": "2022-07-13",
+  "unixTs": 1657670400,
+  "realizedCapChange30d": -20388000000.0
+ },
+ {
+  "d": "2022-07-14",
+  "unixTs": 1657756800,
+  "realizedCapChange30d": -17590000000.0
+ },
+ {
+  "d": "2022-07-15",
+  "unixTs": 1657843200,
+  "realizedCapChange30d": -17202000000.0
+ },
+ {
+  "d": "2022-07-16",
+  "unixTs": 1657929600,
+  "realizedCapChange30d": -15221000000.0
+ },
+ {
+  "d": "2022-07-17",
+  "unixTs": 1658016000,
+  "realizedCapChange30d": -13590000000.0
+ },
+ {
+  "d": "2022-07-18",
+  "unixTs": 1658102400,
+  "realizedCapChange30d": -11870000000.0
+ },
+ {
+  "d": "2022-07-19",
+  "unixTs": 1658188800,
+  "realizedCapChange30d": -12304000000.0
+ },
+ {
+  "d": "2022-07-20",
+  "unixTs": 1658275200,
+  "realizedCapChange30d": -11789000000.0
+ },
+ {
+  "d": "2022-07-21",
+  "unixTs": 1658361600,
+  "realizedCapChange30d": -11773000000.0
+ },
+ {
+  "d": "2022-07-22",
+  "unixTs": 1658448000,
+  "realizedCapChange30d": -11711000000.0
+ },
+ {
+  "d": "2022-07-23",
+  "unixTs": 1658534400,
+  "realizedCapChange30d": -11890000000.0
+ },
+ {
+  "d": "2022-07-24",
+  "unixTs": 1658620800,
+  "realizedCapChange30d": -11558000000.0
+ },
+ {
+  "d": "2022-07-25",
+  "unixTs": 1658707200,
+  "realizedCapChange30d": -12228000000.0
+ },
+ {
+  "d": "2022-07-26",
+  "unixTs": 1658793600,
+  "realizedCapChange30d": -12447000000.0
+ },
+ {
+  "d": "2022-07-27",
+  "unixTs": 1658880000,
+  "realizedCapChange30d": -11619000000.0
+ },
+ {
+  "d": "2022-07-28",
+  "unixTs": 1658966400,
+  "realizedCapChange30d": -10935000000.0
+ },
+ {
+  "d": "2022-07-29",
+  "unixTs": 1659052800,
+  "realizedCapChange30d": -10484000000.0
+ },
+ {
+  "d": "2022-07-30",
+  "unixTs": 1659139200,
+  "realizedCapChange30d": -8977000000.0
+ },
+ {
+  "d": "2022-07-31",
+  "unixTs": 1659225600,
+  "realizedCapChange30d": -8423000000.0
+ },
+ {
+  "d": "2022-08-01",
+  "unixTs": 1659312000,
+  "realizedCapChange30d": -8168000000.0
+ },
+ {
+  "d": "2022-08-02",
+  "unixTs": 1659398400,
+  "realizedCapChange30d": -8072000000.0
+ },
+ {
+  "d": "2022-08-03",
+  "unixTs": 1659484800,
+  "realizedCapChange30d": -8230000000.0
+ },
+ {
+  "d": "2022-08-04",
+  "unixTs": 1659571200,
+  "realizedCapChange30d": -8381000000.0
+ },
+ {
+  "d": "2022-08-05",
+  "unixTs": 1659657600,
+  "realizedCapChange30d": -7555000000.0
+ },
+ {
+  "d": "2022-08-06",
+  "unixTs": 1659744000,
+  "realizedCapChange30d": -7571000000.0
+ },
+ {
+  "d": "2022-08-07",
+  "unixTs": 1659830400,
+  "realizedCapChange30d": -7386000000.0
+ },
+ {
+  "d": "2022-08-08",
+  "unixTs": 1659916800,
+  "realizedCapChange30d": -6671000000.0
+ },
+ {
+  "d": "2022-08-09",
+  "unixTs": 1660003200,
+  "realizedCapChange30d": -7075000000.0
+ },
+ {
+  "d": "2022-08-10",
+  "unixTs": 1660089600,
+  "realizedCapChange30d": -5327000000.0
+ },
+ {
+  "d": "2022-08-11",
+  "unixTs": 1660176000,
+  "realizedCapChange30d": -5031000000.0
+ },
+ {
+  "d": "2022-08-12",
+  "unixTs": 1660262400,
+  "realizedCapChange30d": -4855000000.0
+ },
+ {
+  "d": "2022-08-13",
+  "unixTs": 1660348800,
+  "realizedCapChange30d": -4500000000.0
+ },
+ {
+  "d": "2022-08-14",
+  "unixTs": 1660435200,
+  "realizedCapChange30d": -2988000000.0
+ },
+ {
+  "d": "2022-08-15",
+  "unixTs": 1660521600,
+  "realizedCapChange30d": -3162000000.0
+ },
+ {
+  "d": "2022-08-16",
+  "unixTs": 1660608000,
+  "realizedCapChange30d": -3098000000.0
+ },
+ {
+  "d": "2022-08-17",
+  "unixTs": 1660694400,
+  "realizedCapChange30d": -3455000000.0
+ },
+ {
+  "d": "2022-08-18",
+  "unixTs": 1660780800,
+  "realizedCapChange30d": -3064000000.0
+ },
+ {
+  "d": "2022-08-19",
+  "unixTs": 1660867200,
+  "realizedCapChange30d": -4082000000.0
+ },
+ {
+  "d": "2022-08-20",
+  "unixTs": 1660953600,
+  "realizedCapChange30d": -3429000000.0
+ },
+ {
+  "d": "2022-08-21",
+  "unixTs": 1661040000,
+  "realizedCapChange30d": -2639000000.0
+ },
+ {
+  "d": "2022-08-22",
+  "unixTs": 1661126400,
+  "realizedCapChange30d": -2616000000.0
+ },
+ {
+  "d": "2022-08-23",
+  "unixTs": 1661212800,
+  "realizedCapChange30d": -2664000000.0
+ },
+ {
+  "d": "2022-08-24",
+  "unixTs": 1661299200,
+  "realizedCapChange30d": -2268000000.0
+ },
+ {
+  "d": "2022-08-25",
+  "unixTs": 1661385600,
+  "realizedCapChange30d": -2096000000.0
+ },
+ {
+  "d": "2022-08-26",
+  "unixTs": 1661472000,
+  "realizedCapChange30d": -2720000000.0
+ },
+ {
+  "d": "2022-08-27",
+  "unixTs": 1661558400,
+  "realizedCapChange30d": -3204000000.0
+ },
+ {
+  "d": "2022-08-28",
+  "unixTs": 1661644800,
+  "realizedCapChange30d": -3245000000.0
+ },
+ {
+  "d": "2022-08-29",
+  "unixTs": 1661731200,
+  "realizedCapChange30d": -3200000000.0
+ },
+ {
+  "d": "2022-08-30",
+  "unixTs": 1661817600,
+  "realizedCapChange30d": -3604000000.0
+ },
+ {
+  "d": "2022-08-31",
+  "unixTs": 1661904000,
+  "realizedCapChange30d": -3823000000.0
+ },
+ {
+  "d": "2022-09-01",
+  "unixTs": 1661990400,
+  "realizedCapChange30d": -3876000000.0
+ },
+ {
+  "d": "2022-09-02",
+  "unixTs": 1662076800,
+  "realizedCapChange30d": -4105000000.0
+ },
+ {
+  "d": "2022-09-03",
+  "unixTs": 1662163200,
+  "realizedCapChange30d": -3823000000.0
+ },
+ {
+  "d": "2022-09-04",
+  "unixTs": 1662249600,
+  "realizedCapChange30d": -3808000000.0
+ },
+ {
+  "d": "2022-09-05",
+  "unixTs": 1662336000,
+  "realizedCapChange30d": -3919000000.0
+ },
+ {
+  "d": "2022-09-06",
+  "unixTs": 1662422400,
+  "realizedCapChange30d": -4529000000.0
+ },
+ {
+  "d": "2022-09-07",
+  "unixTs": 1662508800,
+  "realizedCapChange30d": -4769000000.0
+ },
+ {
+  "d": "2022-09-08",
+  "unixTs": 1662595200,
+  "realizedCapChange30d": -4446000000.0
+ },
+ {
+  "d": "2022-09-09",
+  "unixTs": 1662681600,
+  "realizedCapChange30d": -4466000000.0
+ },
+ {
+  "d": "2022-09-10",
+  "unixTs": 1662768000,
+  "realizedCapChange30d": -4344000000.0
+ },
+ {
+  "d": "2022-09-11",
+  "unixTs": 1662854400,
+  "realizedCapChange30d": -4558000000.0
+ },
+ {
+  "d": "2022-09-12",
+  "unixTs": 1662940800,
+  "realizedCapChange30d": -4486000000.0
+ },
+ {
+  "d": "2022-09-13",
+  "unixTs": 1663027200,
+  "realizedCapChange30d": -5784000000.0
+ },
+ {
+  "d": "2022-09-14",
+  "unixTs": 1663113600,
+  "realizedCapChange30d": -6061000000.0
+ },
+ {
+  "d": "2022-09-15",
+  "unixTs": 1663200000,
+  "realizedCapChange30d": -6602000000.0
+ },
+ {
+  "d": "2022-09-16",
+  "unixTs": 1663286400,
+  "realizedCapChange30d": -6470000000.0
+ },
+ {
+  "d": "2022-09-17",
+  "unixTs": 1663372800,
+  "realizedCapChange30d": -6443000000.0
+ },
+ {
+  "d": "2022-09-18",
+  "unixTs": 1663459200,
+  "realizedCapChange30d": -5726000000.0
+ },
+ {
+  "d": "2022-09-19",
+  "unixTs": 1663545600,
+  "realizedCapChange30d": -5910000000.0
+ },
+ {
+  "d": "2022-09-20",
+  "unixTs": 1663632000,
+  "realizedCapChange30d": -6239000000.0
+ },
+ {
+  "d": "2022-09-21",
+  "unixTs": 1663718400,
+  "realizedCapChange30d": -6338000000.0
+ },
+ {
+  "d": "2022-09-22",
+  "unixTs": 1663804800,
+  "realizedCapChange30d": -6209000000.0
+ },
+ {
+  "d": "2022-09-23",
+  "unixTs": 1663891200,
+  "realizedCapChange30d": -6150000000.0
+ },
+ {
+  "d": "2022-09-24",
+  "unixTs": 1663977600,
+  "realizedCapChange30d": -6071000000.0
+ },
+ {
+  "d": "2022-09-25",
+  "unixTs": 1664064000,
+  "realizedCapChange30d": -5812000000.0
+ },
+ {
+  "d": "2022-09-26",
+  "unixTs": 1664150400,
+  "realizedCapChange30d": -5622000000.0
+ },
+ {
+  "d": "2022-09-27",
+  "unixTs": 1664236800,
+  "realizedCapChange30d": -5882000000.0
+ },
+ {
+  "d": "2022-09-28",
+  "unixTs": 1664323200,
+  "realizedCapChange30d": -6167000000.0
+ },
+ {
+  "d": "2022-09-29",
+  "unixTs": 1664409600,
+  "realizedCapChange30d": -5785000000.0
+ },
+ {
+  "d": "2022-09-30",
+  "unixTs": 1664496000,
+  "realizedCapChange30d": -5891000000.0
+ },
+ {
+  "d": "2022-10-01",
+  "unixTs": 1664582400,
+  "realizedCapChange30d": -5712000000.0
+ },
+ {
+  "d": "2022-10-02",
+  "unixTs": 1664668800,
+  "realizedCapChange30d": -5461000000.0
+ },
+ {
+  "d": "2022-10-03",
+  "unixTs": 1664755200,
+  "realizedCapChange30d": -5413000000.0
+ },
+ {
+  "d": "2022-10-04",
+  "unixTs": 1664841600,
+  "realizedCapChange30d": -5478000000.0
+ },
+ {
+  "d": "2022-10-05",
+  "unixTs": 1664928000,
+  "realizedCapChange30d": -5469000000.0
+ },
+ {
+  "d": "2022-10-06",
+  "unixTs": 1665014400,
+  "realizedCapChange30d": -5000000000.0
+ },
+ {
+  "d": "2022-10-07",
+  "unixTs": 1665100800,
+  "realizedCapChange30d": -5037000000.0
+ },
+ {
+  "d": "2022-10-08",
+  "unixTs": 1665187200,
+  "realizedCapChange30d": -4981000000.0
+ },
+ {
+  "d": "2022-10-09",
+  "unixTs": 1665273600,
+  "realizedCapChange30d": -5302000000.0
+ },
+ {
+  "d": "2022-10-10",
+  "unixTs": 1665360000,
+  "realizedCapChange30d": -5521000000.0
+ },
+ {
+  "d": "2022-10-11",
+  "unixTs": 1665446400,
+  "realizedCapChange30d": -5608000000.0
+ },
+ {
+  "d": "2022-10-12",
+  "unixTs": 1665532800,
+  "realizedCapChange30d": -6102000000.0
+ },
+ {
+  "d": "2022-10-13",
+  "unixTs": 1665619200,
+  "realizedCapChange30d": -4849000000.0
+ },
+ {
+  "d": "2022-10-14",
+  "unixTs": 1665705600,
+  "realizedCapChange30d": -4563000000.0
+ },
+ {
+  "d": "2022-10-15",
+  "unixTs": 1665792000,
+  "realizedCapChange30d": -4045000000.0
+ },
+ {
+  "d": "2022-10-16",
+  "unixTs": 1665878400,
+  "realizedCapChange30d": -3967000000.0
+ },
+ {
+  "d": "2022-10-17",
+  "unixTs": 1665964800,
+  "realizedCapChange30d": -4278000000.0
+ },
+ {
+  "d": "2022-10-18",
+  "unixTs": 1666051200,
+  "realizedCapChange30d": -3897000000.0
+ },
+ {
+  "d": "2022-10-19",
+  "unixTs": 1666137600,
+  "realizedCapChange30d": -3850000000.0
+ },
+ {
+  "d": "2022-10-20",
+  "unixTs": 1666224000,
+  "realizedCapChange30d": -3647000000.0
+ },
+ {
+  "d": "2022-10-21",
+  "unixTs": 1666310400,
+  "realizedCapChange30d": -3384000000.0
+ },
+ {
+  "d": "2022-10-22",
+  "unixTs": 1666396800,
+  "realizedCapChange30d": -3665000000.0
+ },
+ {
+  "d": "2022-10-23",
+  "unixTs": 1666483200,
+  "realizedCapChange30d": -3561000000.0
+ },
+ {
+  "d": "2022-10-24",
+  "unixTs": 1666569600,
+  "realizedCapChange30d": -3534000000.0
+ },
+ {
+  "d": "2022-10-25",
+  "unixTs": 1666656000,
+  "realizedCapChange30d": -3308000000.0
+ },
+ {
+  "d": "2022-10-26",
+  "unixTs": 1666742400,
+  "realizedCapChange30d": -3043000000.0
+ },
+ {
+  "d": "2022-10-27",
+  "unixTs": 1666828800,
+  "realizedCapChange30d": -2798000000.0
+ },
+ {
+  "d": "2022-10-28",
+  "unixTs": 1666915200,
+  "realizedCapChange30d": -2545000000.0
+ },
+ {
+  "d": "2022-10-29",
+  "unixTs": 1667001600,
+  "realizedCapChange30d": -2392000000.0
+ },
+ {
+  "d": "2022-10-30",
+  "unixTs": 1667088000,
+  "realizedCapChange30d": -2210000000.0
+ },
+ {
+  "d": "2022-10-31",
+  "unixTs": 1667174400,
+  "realizedCapChange30d": -2237000000.0
+ },
+ {
+  "d": "2022-11-01",
+  "unixTs": 1667260800,
+  "realizedCapChange30d": -2255000000.0
+ },
+ {
+  "d": "2022-11-02",
+  "unixTs": 1667347200,
+  "realizedCapChange30d": -2381000000.0
+ },
+ {
+  "d": "2022-11-03",
+  "unixTs": 1667433600,
+  "realizedCapChange30d": -2423000000.0
+ },
+ {
+  "d": "2022-11-04",
+  "unixTs": 1667520000,
+  "realizedCapChange30d": -1719000000.0
+ },
+ {
+  "d": "2022-11-05",
+  "unixTs": 1667606400,
+  "realizedCapChange30d": -1643000000.0
+ },
+ {
+  "d": "2022-11-06",
+  "unixTs": 1667692800,
+  "realizedCapChange30d": -1529000000.0
+ },
+ {
+  "d": "2022-11-07",
+  "unixTs": 1667779200,
+  "realizedCapChange30d": -2427000000.0
+ },
+ {
+  "d": "2022-11-08",
+  "unixTs": 1667865600,
+  "realizedCapChange30d": -3224000000.0
+ },
+ {
+  "d": "2022-11-09",
+  "unixTs": 1667952000,
+  "realizedCapChange30d": -5497000000.0
+ },
+ {
+  "d": "2022-11-10",
+  "unixTs": 1668038400,
+  "realizedCapChange30d": -5638000000.0
+ },
+ {
+  "d": "2022-11-11",
+  "unixTs": 1668124800,
+  "realizedCapChange30d": -5877000000.0
+ },
+ {
+  "d": "2022-11-12",
+  "unixTs": 1668211200,
+  "realizedCapChange30d": -6787000000.0
+ },
+ {
+  "d": "2022-11-13",
+  "unixTs": 1668297600,
+  "realizedCapChange30d": -6937000000.0
+ },
+ {
+  "d": "2022-11-14",
+  "unixTs": 1668384000,
+  "realizedCapChange30d": -7495000000.0
+ },
+ {
+  "d": "2022-11-15",
+  "unixTs": 1668470400,
+  "realizedCapChange30d": -8140000000.0
+ },
+ {
+  "d": "2022-11-16",
+  "unixTs": 1668556800,
+  "realizedCapChange30d": -8701000000.0
+ },
+ {
+  "d": "2022-11-17",
+  "unixTs": 1668643200,
+  "realizedCapChange30d": -10588000000.0
+ },
+ {
+  "d": "2022-11-18",
+  "unixTs": 1668729600,
+  "realizedCapChange30d": -14674000000.0
+ },
+ {
+  "d": "2022-11-19",
+  "unixTs": 1668816000,
+  "realizedCapChange30d": -14732000000.0
+ },
+ {
+  "d": "2022-11-20",
+  "unixTs": 1668902400,
+  "realizedCapChange30d": -14959000000.0
+ },
+ {
+  "d": "2022-11-21",
+  "unixTs": 1668988800,
+  "realizedCapChange30d": -15420000000.0
+ },
+ {
+  "d": "2022-11-22",
+  "unixTs": 1669075200,
+  "realizedCapChange30d": -15910000000.0
+ },
+ {
+  "d": "2022-11-23",
+  "unixTs": 1669161600,
+  "realizedCapChange30d": -15665000000.0
+ },
+ {
+  "d": "2022-11-24",
+  "unixTs": 1669248000,
+  "realizedCapChange30d": -15995000000.0
+ },
+ {
+  "d": "2022-11-25",
+  "unixTs": 1669334400,
+  "realizedCapChange30d": -16515000000.0
+ },
+ {
+  "d": "2022-11-26",
+  "unixTs": 1669420800,
+  "realizedCapChange30d": -16638000000.0
+ },
+ {
+  "d": "2022-11-27",
+  "unixTs": 1669507200,
+  "realizedCapChange30d": -16939000000.0
+ },
+ {
+  "d": "2022-11-28",
+  "unixTs": 1669593600,
+  "realizedCapChange30d": -17248000000.0
+ },
+ {
+  "d": "2022-11-29",
+  "unixTs": 1669680000,
+  "realizedCapChange30d": -17331000000.0
+ },
+ {
+  "d": "2022-11-30",
+  "unixTs": 1669766400,
+  "realizedCapChange30d": -17389000000.0
+ },
+ {
+  "d": "2022-12-01",
+  "unixTs": 1669852800,
+  "realizedCapChange30d": -17460000000.0
+ },
+ {
+  "d": "2022-12-02",
+  "unixTs": 1669939200,
+  "realizedCapChange30d": -17560000000.0
+ },
+ {
+  "d": "2022-12-03",
+  "unixTs": 1670025600,
+  "realizedCapChange30d": -17619000000.0
+ },
+ {
+  "d": "2022-12-04",
+  "unixTs": 1670112000,
+  "realizedCapChange30d": -18400000000.0
+ },
+ {
+  "d": "2022-12-05",
+  "unixTs": 1670198400,
+  "realizedCapChange30d": -19696000000.0
+ },
+ {
+  "d": "2022-12-06",
+  "unixTs": 1670284800,
+  "realizedCapChange30d": -19723000000.0
+ },
+ {
+  "d": "2022-12-07",
+  "unixTs": 1670371200,
+  "realizedCapChange30d": -18735000000.0
+ },
+ {
+  "d": "2022-12-08",
+  "unixTs": 1670457600,
+  "realizedCapChange30d": -18054000000.0
+ },
+ {
+  "d": "2022-12-09",
+  "unixTs": 1670544000,
+  "realizedCapChange30d": -15949000000.0
+ },
+ {
+  "d": "2022-12-10",
+  "unixTs": 1670630400,
+  "realizedCapChange30d": -15665000000.0
+ },
+ {
+  "d": "2022-12-11",
+  "unixTs": 1670716800,
+  "realizedCapChange30d": -15127000000.0
+ },
+ {
+  "d": "2022-12-12",
+  "unixTs": 1670803200,
+  "realizedCapChange30d": -14252000000.0
+ },
+ {
+  "d": "2022-12-13",
+  "unixTs": 1670889600,
+  "realizedCapChange30d": -14073000000.0
+ },
+ {
+  "d": "2022-12-14",
+  "unixTs": 1670976000,
+  "realizedCapChange30d": -13802000000.0
+ },
+ {
+  "d": "2022-12-15",
+  "unixTs": 1671062400,
+  "realizedCapChange30d": -13241000000.0
+ },
+ {
+  "d": "2022-12-16",
+  "unixTs": 1671148800,
+  "realizedCapChange30d": -12607000000.0
+ },
+ {
+  "d": "2022-12-17",
+  "unixTs": 1671235200,
+  "realizedCapChange30d": -11054000000.0
+ },
+ {
+  "d": "2022-12-18",
+  "unixTs": 1671321600,
+  "realizedCapChange30d": -6799000000.0
+ },
+ {
+  "d": "2022-12-19",
+  "unixTs": 1671408000,
+  "realizedCapChange30d": -7206000000.0
+ },
+ {
+  "d": "2022-12-20",
+  "unixTs": 1671494400,
+  "realizedCapChange30d": -6955000000.0
+ },
+ {
+  "d": "2022-12-21",
+  "unixTs": 1671580800,
+  "realizedCapChange30d": -6507000000.0
+ },
+ {
+  "d": "2022-12-22",
+  "unixTs": 1671667200,
+  "realizedCapChange30d": -6160000000.0
+ },
+ {
+  "d": "2022-12-23",
+  "unixTs": 1671753600,
+  "realizedCapChange30d": -6525000000.0
+ },
+ {
+  "d": "2022-12-24",
+  "unixTs": 1671840000,
+  "realizedCapChange30d": -6380000000.0
+ },
+ {
+  "d": "2022-12-25",
+  "unixTs": 1671926400,
+  "realizedCapChange30d": -6267000000.0
+ },
+ {
+  "d": "2022-12-26",
+  "unixTs": 1672012800,
+  "realizedCapChange30d": -6139000000.0
+ },
+ {
+  "d": "2022-12-27",
+  "unixTs": 1672099200,
+  "realizedCapChange30d": -6037000000.0
+ },
+ {
+  "d": "2022-12-28",
+  "unixTs": 1672185600,
+  "realizedCapChange30d": -6293000000.0
+ },
+ {
+  "d": "2022-12-29",
+  "unixTs": 1672272000,
+  "realizedCapChange30d": -6462000000.0
+ },
+ {
+  "d": "2022-12-30",
+  "unixTs": 1672358400,
+  "realizedCapChange30d": -6451000000.0
+ },
+ {
+  "d": "2022-12-31",
+  "unixTs": 1672444800,
+  "realizedCapChange30d": -7079000000.0
+ },
+ {
+  "d": "2023-01-01",
+  "unixTs": 1672531200,
+  "realizedCapChange30d": -6881000000.0
+ },
+ {
+  "d": "2023-01-02",
+  "unixTs": 1672617600,
+  "realizedCapChange30d": -6817000000.0
+ },
+ {
+  "d": "2023-01-03",
+  "unixTs": 1672704000,
+  "realizedCapChange30d": -6789000000.0
+ },
+ {
+  "d": "2023-01-04",
+  "unixTs": 1672790400,
+  "realizedCapChange30d": -5639000000.0
+ },
+ {
+  "d": "2023-01-05",
+  "unixTs": 1672876800,
+  "realizedCapChange30d": -5659000000.0
+ },
+ {
+  "d": "2023-01-06",
+  "unixTs": 1672963200,
+  "realizedCapChange30d": -5767000000.0
+ },
+ {
+  "d": "2023-01-07",
+  "unixTs": 1673049600,
+  "realizedCapChange30d": -5680000000.0
+ },
+ {
+  "d": "2023-01-08",
+  "unixTs": 1673136000,
+  "realizedCapChange30d": -5395000000.0
+ },
+ {
+  "d": "2023-01-09",
+  "unixTs": 1673222400,
+  "realizedCapChange30d": -5424000000.0
+ },
+ {
+  "d": "2023-01-10",
+  "unixTs": 1673308800,
+  "realizedCapChange30d": -5474000000.0
+ },
+ {
+  "d": "2023-01-11",
+  "unixTs": 1673395200,
+  "realizedCapChange30d": -5627000000.0
+ },
+ {
+  "d": "2023-01-12",
+  "unixTs": 1673481600,
+  "realizedCapChange30d": -5303000000.0
+ },
+ {
+  "d": "2023-01-13",
+  "unixTs": 1673568000,
+  "realizedCapChange30d": -4644000000.0
+ },
+ {
+  "d": "2023-01-14",
+  "unixTs": 1673654400,
+  "realizedCapChange30d": -4259000000.0
+ },
+ {
+  "d": "2023-01-15",
+  "unixTs": 1673740800,
+  "realizedCapChange30d": -3919000000.0
+ },
+ {
+  "d": "2023-01-16",
+  "unixTs": 1673827200,
+  "realizedCapChange30d": -3640000000.0
+ },
+ {
+  "d": "2023-01-17",
+  "unixTs": 1673913600,
+  "realizedCapChange30d": -3399000000.0
+ },
+ {
+  "d": "2023-01-18",
+  "unixTs": 1674000000,
+  "realizedCapChange30d": -2862000000.0
+ },
+ {
+  "d": "2023-01-19",
+  "unixTs": 1674086400,
+  "realizedCapChange30d": -2879000000.0
+ },
+ {
+  "d": "2023-01-20",
+  "unixTs": 1674172800,
+  "realizedCapChange30d": -2173000000.0
+ },
+ {
+  "d": "2023-01-21",
+  "unixTs": 1674259200,
+  "realizedCapChange30d": -1891000000.0
+ },
+ {
+  "d": "2023-01-22",
+  "unixTs": 1674345600,
+  "realizedCapChange30d": -1576000000.0
+ },
+ {
+  "d": "2023-01-23",
+  "unixTs": 1674432000,
+  "realizedCapChange30d": -1433000000.0
+ },
+ {
+  "d": "2023-01-24",
+  "unixTs": 1674518400,
+  "realizedCapChange30d": -1160000000.0
+ },
+ {
+  "d": "2023-01-25",
+  "unixTs": 1674604800,
+  "realizedCapChange30d": -909000000.0
+ },
+ {
+  "d": "2023-01-26",
+  "unixTs": 1674691200,
+  "realizedCapChange30d": -914000000.0
+ },
+ {
+  "d": "2023-01-27",
+  "unixTs": 1674777600,
+  "realizedCapChange30d": -576000000.0
+ },
+ {
+  "d": "2023-01-28",
+  "unixTs": 1674864000,
+  "realizedCapChange30d": -168000000.0
+ },
+ {
+  "d": "2023-01-29",
+  "unixTs": 1674950400,
+  "realizedCapChange30d": 117000000.0
+ },
+ {
+  "d": "2023-01-30",
+  "unixTs": 1675036800,
+  "realizedCapChange30d": 922000000.0
+ },
+ {
+  "d": "2023-01-31",
+  "unixTs": 1675123200,
+  "realizedCapChange30d": 1118000000.0
+ },
+ {
+  "d": "2023-02-01",
+  "unixTs": 1675209600,
+  "realizedCapChange30d": 1647000000.0
+ },
+ {
+  "d": "2023-02-02",
+  "unixTs": 1675296000,
+  "realizedCapChange30d": 1904000000.0
+ },
+ {
+  "d": "2023-02-03",
+  "unixTs": 1675382400,
+  "realizedCapChange30d": 2229000000.0
+ },
+ {
+  "d": "2023-02-04",
+  "unixTs": 1675468800,
+  "realizedCapChange30d": 2507000000.0
+ },
+ {
+  "d": "2023-02-05",
+  "unixTs": 1675555200,
+  "realizedCapChange30d": 2689000000.0
+ },
+ {
+  "d": "2023-02-06",
+  "unixTs": 1675641600,
+  "realizedCapChange30d": 2772000000.0
+ },
+ {
+  "d": "2023-02-07",
+  "unixTs": 1675728000,
+  "realizedCapChange30d": 2928000000.0
+ },
+ {
+  "d": "2023-02-08",
+  "unixTs": 1675814400,
+  "realizedCapChange30d": 3007000000.0
+ },
+ {
+  "d": "2023-02-09",
+  "unixTs": 1675900800,
+  "realizedCapChange30d": 3042000000.0
+ },
+ {
+  "d": "2023-02-10",
+  "unixTs": 1675987200,
+  "realizedCapChange30d": 3194000000.0
+ },
+ {
+  "d": "2023-02-11",
+  "unixTs": 1676073600,
+  "realizedCapChange30d": 2976000000.0
+ },
+ {
+  "d": "2023-02-12",
+  "unixTs": 1676160000,
+  "realizedCapChange30d": 2620000000.0
+ },
+ {
+  "d": "2023-02-13",
+  "unixTs": 1676246400,
+  "realizedCapChange30d": 2332000000.0
+ },
+ {
+  "d": "2023-02-14",
+  "unixTs": 1676332800,
+  "realizedCapChange30d": 2311000000.0
+ },
+ {
+  "d": "2023-02-15",
+  "unixTs": 1676419200,
+  "realizedCapChange30d": 2527000000.0
+ },
+ {
+  "d": "2023-02-16",
+  "unixTs": 1676505600,
+  "realizedCapChange30d": 2455000000.0
+ },
+ {
+  "d": "2023-02-17",
+  "unixTs": 1676592000,
+  "realizedCapChange30d": 2761000000.0
+ },
+ {
+  "d": "2023-02-18",
+  "unixTs": 1676678400,
+  "realizedCapChange30d": 2902000000.0
+ },
+ {
+  "d": "2023-02-19",
+  "unixTs": 1676764800,
+  "realizedCapChange30d": 2538000000.0
+ },
+ {
+  "d": "2023-02-20",
+  "unixTs": 1676851200,
+  "realizedCapChange30d": 2509000000.0
+ },
+ {
+  "d": "2023-02-21",
+  "unixTs": 1676937600,
+  "realizedCapChange30d": 2414000000.0
+ },
+ {
+  "d": "2023-02-22",
+  "unixTs": 1677024000,
+  "realizedCapChange30d": 2265000000.0
+ },
+ {
+  "d": "2023-02-23",
+  "unixTs": 1677110400,
+  "realizedCapChange30d": 2254000000.0
+ },
+ {
+  "d": "2023-02-24",
+  "unixTs": 1677196800,
+  "realizedCapChange30d": 1928000000.0
+ },
+ {
+  "d": "2023-02-25",
+  "unixTs": 1677283200,
+  "realizedCapChange30d": 2139000000.0
+ },
+ {
+  "d": "2023-02-26",
+  "unixTs": 1677369600,
+  "realizedCapChange30d": 2365000000.0
+ },
+ {
+  "d": "2023-02-27",
+  "unixTs": 1677456000,
+  "realizedCapChange30d": 2126000000.0
+ },
+ {
+  "d": "2023-02-28",
+  "unixTs": 1677542400,
+  "realizedCapChange30d": 1787000000.0
+ },
+ {
+  "d": "2023-03-01",
+  "unixTs": 1677628800,
+  "realizedCapChange30d": 1666000000.0
+ },
+ {
+  "d": "2023-03-02",
+  "unixTs": 1677715200,
+  "realizedCapChange30d": 1479000000.0
+ },
+ {
+  "d": "2023-03-03",
+  "unixTs": 1677801600,
+  "realizedCapChange30d": 836000000.0
+ },
+ {
+  "d": "2023-03-04",
+  "unixTs": 1677888000,
+  "realizedCapChange30d": 744000000.0
+ },
+ {
+  "d": "2023-03-05",
+  "unixTs": 1677974400,
+  "realizedCapChange30d": 397000000.0
+ },
+ {
+  "d": "2023-03-06",
+  "unixTs": 1678060800,
+  "realizedCapChange30d": 170000000.0
+ },
+ {
+  "d": "2023-03-07",
+  "unixTs": 1678147200,
+  "realizedCapChange30d": -1155000000.0
+ },
+ {
+  "d": "2023-03-08",
+  "unixTs": 1678233600,
+  "realizedCapChange30d": -1302000000.0
+ },
+ {
+  "d": "2023-03-09",
+  "unixTs": 1678320000,
+  "realizedCapChange30d": -1778000000.0
+ },
+ {
+  "d": "2023-03-10",
+  "unixTs": 1678406400,
+  "realizedCapChange30d": -1499000000.0
+ },
+ {
+  "d": "2023-03-11",
+  "unixTs": 1678492800,
+  "realizedCapChange30d": -1038000000.0
+ },
+ {
+  "d": "2023-03-12",
+  "unixTs": 1678579200,
+  "realizedCapChange30d": -595000000.0
+ },
+ {
+  "d": "2023-03-13",
+  "unixTs": 1678665600,
+  "realizedCapChange30d": -274000000.0
+ },
+ {
+  "d": "2023-03-14",
+  "unixTs": 1678752000,
+  "realizedCapChange30d": 80000000.0
+ },
+ {
+  "d": "2023-03-15",
+  "unixTs": 1678838400,
+  "realizedCapChange30d": 436000000.0
+ },
+ {
+  "d": "2023-03-16",
+  "unixTs": 1678924800,
+  "realizedCapChange30d": 718000000.0
+ },
+ {
+  "d": "2023-03-17",
+  "unixTs": 1679011200,
+  "realizedCapChange30d": 652000000.0
+ },
+ {
+  "d": "2023-03-18",
+  "unixTs": 1679097600,
+  "realizedCapChange30d": 653000000.0
+ },
+ {
+  "d": "2023-03-19",
+  "unixTs": 1679184000,
+  "realizedCapChange30d": 709000000.0
+ },
+ {
+  "d": "2023-03-20",
+  "unixTs": 1679270400,
+  "realizedCapChange30d": 980000000.0
+ },
+ {
+  "d": "2023-03-21",
+  "unixTs": 1679356800,
+  "realizedCapChange30d": 1328000000.0
+ },
+ {
+  "d": "2023-03-22",
+  "unixTs": 1679443200,
+  "realizedCapChange30d": 1352000000.0
+ },
+ {
+  "d": "2023-03-23",
+  "unixTs": 1679529600,
+  "realizedCapChange30d": 1938000000.0
+ },
+ {
+  "d": "2023-03-24",
+  "unixTs": 1679616000,
+  "realizedCapChange30d": 2128000000.0
+ },
+ {
+  "d": "2023-03-25",
+  "unixTs": 1679702400,
+  "realizedCapChange30d": 2321000000.0
+ },
+ {
+  "d": "2023-03-26",
+  "unixTs": 1679788800,
+  "realizedCapChange30d": 2701000000.0
+ },
+ {
+  "d": "2023-03-27",
+  "unixTs": 1679875200,
+  "realizedCapChange30d": 2954000000.0
+ },
+ {
+  "d": "2023-03-28",
+  "unixTs": 1679961600,
+  "realizedCapChange30d": 3089000000.0
+ },
+ {
+  "d": "2023-03-29",
+  "unixTs": 1680048000,
+  "realizedCapChange30d": 3611000000.0
+ },
+ {
+  "d": "2023-03-30",
+  "unixTs": 1680134400,
+  "realizedCapChange30d": -2123000000.0
+ },
+ {
+  "d": "2023-03-31",
+  "unixTs": 1680220800,
+  "realizedCapChange30d": -1566000000.0
+ },
+ {
+  "d": "2023-04-01",
+  "unixTs": 1680307200,
+  "realizedCapChange30d": -1371000000.0
+ },
+ {
+  "d": "2023-04-02",
+  "unixTs": 1680393600,
+  "realizedCapChange30d": -1163000000.0
+ },
+ {
+  "d": "2023-04-03",
+  "unixTs": 1680480000,
+  "realizedCapChange30d": -1062000000.0
+ },
+ {
+  "d": "2023-04-04",
+  "unixTs": 1680566400,
+  "realizedCapChange30d": -706000000.0
+ },
+ {
+  "d": "2023-04-05",
+  "unixTs": 1680652800,
+  "realizedCapChange30d": -518000000.0
+ },
+ {
+  "d": "2023-04-06",
+  "unixTs": 1680739200,
+  "realizedCapChange30d": 916000000.0
+ },
+ {
+  "d": "2023-04-07",
+  "unixTs": 1680825600,
+  "realizedCapChange30d": 1145000000.0
+ },
+ {
+  "d": "2023-04-08",
+  "unixTs": 1680912000,
+  "realizedCapChange30d": 1575000000.0
+ },
+ {
+  "d": "2023-04-09",
+  "unixTs": 1680998400,
+  "realizedCapChange30d": 1633000000.0
+ },
+ {
+  "d": "2023-04-10",
+  "unixTs": 1681084800,
+  "realizedCapChange30d": 1690000000.0
+ },
+ {
+  "d": "2023-04-11",
+  "unixTs": 1681171200,
+  "realizedCapChange30d": 1747000000.0
+ },
+ {
+  "d": "2023-04-12",
+  "unixTs": 1681257600,
+  "realizedCapChange30d": 1701000000.0
+ },
+ {
+  "d": "2023-04-13",
+  "unixTs": 1681344000,
+  "realizedCapChange30d": 1655000000.0
+ },
+ {
+  "d": "2023-04-14",
+  "unixTs": 1681430400,
+  "realizedCapChange30d": 1608000000.0
+ },
+ {
+  "d": "2023-04-15",
+  "unixTs": 1681516800,
+  "realizedCapChange30d": 1416000000.0
+ },
+ {
+  "d": "2023-04-16",
+  "unixTs": 1681603200,
+  "realizedCapChange30d": 1223000000.0
+ },
+ {
+  "d": "2023-04-17",
+  "unixTs": 1681689600,
+  "realizedCapChange30d": 1237000000.0
+ },
+ {
+  "d": "2023-04-18",
+  "unixTs": 1681776000,
+  "realizedCapChange30d": 1062000000.0
+ },
+ {
+  "d": "2023-04-19",
+  "unixTs": 1681862400,
+  "realizedCapChange30d": 856000000.0
+ },
+ {
+  "d": "2023-04-20",
+  "unixTs": 1681948800,
+  "realizedCapChange30d": 441000000.0
+ },
+ {
+  "d": "2023-04-21",
+  "unixTs": 1682035200,
+  "realizedCapChange30d": 290000000.0
+ },
+ {
+  "d": "2023-04-22",
+  "unixTs": 1682121600,
+  "realizedCapChange30d": -281000000.0
+ },
+ {
+  "d": "2023-04-23",
+  "unixTs": 1682208000,
+  "realizedCapChange30d": -322000000.0
+ },
+ {
+  "d": "2023-04-24",
+  "unixTs": 1682294400,
+  "realizedCapChange30d": -524000000.0
+ },
+ {
+  "d": "2023-04-25",
+  "unixTs": 1682380800,
+  "realizedCapChange30d": -725000000.0
+ },
+ {
+  "d": "2023-04-26",
+  "unixTs": 1682467200,
+  "realizedCapChange30d": -824000000.0
+ },
+ {
+  "d": "2023-04-27",
+  "unixTs": 1682553600,
+  "realizedCapChange30d": -763000000.0
+ },
+ {
+  "d": "2023-04-28",
+  "unixTs": 1682640000,
+  "realizedCapChange30d": -817000000.0
+ },
+ {
+  "d": "2023-04-29",
+  "unixTs": 1682726400,
+  "realizedCapChange30d": 5158000000.0
+ },
+ {
+  "d": "2023-04-30",
+  "unixTs": 1682812800,
+  "realizedCapChange30d": 4777000000.0
+ },
+ {
+  "d": "2023-05-01",
+  "unixTs": 1682899200,
+  "realizedCapChange30d": 4537000000.0
+ },
+ {
+  "d": "2023-05-02",
+  "unixTs": 1682985600,
+  "realizedCapChange30d": 4627000000.0
+ },
+ {
+  "d": "2023-05-03",
+  "unixTs": 1683072000,
+  "realizedCapChange30d": 5201000000.0
+ },
+ {
+  "d": "2023-05-04",
+  "unixTs": 1683158400,
+  "realizedCapChange30d": 5171000000.0
+ },
+ {
+  "d": "2023-05-05",
+  "unixTs": 1683244800,
+  "realizedCapChange30d": 5167000000.0
+ },
+ {
+  "d": "2023-05-06",
+  "unixTs": 1683331200,
+  "realizedCapChange30d": 5742000000.0
+ },
+ {
+  "d": "2023-05-07",
+  "unixTs": 1683417600,
+  "realizedCapChange30d": 6317000000.0
+ },
+ {
+  "d": "2023-05-08",
+  "unixTs": 1683504000,
+  "realizedCapChange30d": 6948000000.0
+ },
+ {
+  "d": "2023-05-09",
+  "unixTs": 1683590400,
+  "realizedCapChange30d": 6507000000.0
+ },
+ {
+  "d": "2023-05-10",
+  "unixTs": 1683676800,
+  "realizedCapChange30d": 6089000000.0
+ },
+ {
+  "d": "2023-05-11",
+  "unixTs": 1683763200,
+  "realizedCapChange30d": 5636000000.0
+ },
+ {
+  "d": "2023-05-12",
+  "unixTs": 1683849600,
+  "realizedCapChange30d": 5383000000.0
+ },
+ {
+  "d": "2023-05-13",
+  "unixTs": 1683936000,
+  "realizedCapChange30d": 5106000000.0
+ },
+ {
+  "d": "2023-05-14",
+  "unixTs": 1684022400,
+  "realizedCapChange30d": 4884000000.0
+ },
+ {
+  "d": "2023-05-15",
+  "unixTs": 1684108800,
+  "realizedCapChange30d": 5179000000.0
+ },
+ {
+  "d": "2023-05-16",
+  "unixTs": 1684195200,
+  "realizedCapChange30d": 5184000000.0
+ },
+ {
+  "d": "2023-05-17",
+  "unixTs": 1684281600,
+  "realizedCapChange30d": 5052000000.0
+ },
+ {
+  "d": "2023-05-18",
+  "unixTs": 1684368000,
+  "realizedCapChange30d": 4921000000.0
+ },
+ {
+  "d": "2023-05-19",
+  "unixTs": 1684454400,
+  "realizedCapChange30d": 4744000000.0
+ },
+ {
+  "d": "2023-05-20",
+  "unixTs": 1684540800,
+  "realizedCapChange30d": 4792000000.0
+ },
+ {
+  "d": "2023-05-21",
+  "unixTs": 1684627200,
+  "realizedCapChange30d": 4812000000.0
+ },
+ {
+  "d": "2023-05-22",
+  "unixTs": 1684713600,
+  "realizedCapChange30d": 5293000000.0
+ },
+ {
+  "d": "2023-05-23",
+  "unixTs": 1684800000,
+  "realizedCapChange30d": 5309000000.0
+ },
+ {
+  "d": "2023-05-24",
+  "unixTs": 1684886400,
+  "realizedCapChange30d": 5173000000.0
+ },
+ {
+  "d": "2023-05-25",
+  "unixTs": 1684972800,
+  "realizedCapChange30d": 5410000000.0
+ },
+ {
+  "d": "2023-05-26",
+  "unixTs": 1685059200,
+  "realizedCapChange30d": 5264000000.0
+ },
+ {
+  "d": "2023-05-27",
+  "unixTs": 1685145600,
+  "realizedCapChange30d": 5081000000.0
+ },
+ {
+  "d": "2023-05-28",
+  "unixTs": 1685232000,
+  "realizedCapChange30d": 4969000000.0
+ },
+ {
+  "d": "2023-05-29",
+  "unixTs": 1685318400,
+  "realizedCapChange30d": 5003000000.0
+ },
+ {
+  "d": "2023-05-30",
+  "unixTs": 1685404800,
+  "realizedCapChange30d": 5111000000.0
+ },
+ {
+  "d": "2023-05-31",
+  "unixTs": 1685491200,
+  "realizedCapChange30d": 5209000000.0
+ },
+ {
+  "d": "2023-06-01",
+  "unixTs": 1685577600,
+  "realizedCapChange30d": 5115000000.0
+ },
+ {
+  "d": "2023-06-02",
+  "unixTs": 1685664000,
+  "realizedCapChange30d": 4542000000.0
+ },
+ {
+  "d": "2023-06-03",
+  "unixTs": 1685750400,
+  "realizedCapChange30d": 4444000000.0
+ },
+ {
+  "d": "2023-06-04",
+  "unixTs": 1685836800,
+  "realizedCapChange30d": 4346000000.0
+ },
+ {
+  "d": "2023-06-05",
+  "unixTs": 1685923200,
+  "realizedCapChange30d": 3486000000.0
+ },
+ {
+  "d": "2023-06-06",
+  "unixTs": 1686009600,
+  "realizedCapChange30d": 3066000000.0
+ },
+ {
+  "d": "2023-06-07",
+  "unixTs": 1686096000,
+  "realizedCapChange30d": 2320000000.0
+ },
+ {
+  "d": "2023-06-08",
+  "unixTs": 1686182400,
+  "realizedCapChange30d": 2408000000.0
+ },
+ {
+  "d": "2023-06-09",
+  "unixTs": 1686268800,
+  "realizedCapChange30d": 2461000000.0
+ },
+ {
+  "d": "2023-06-10",
+  "unixTs": 1686355200,
+  "realizedCapChange30d": 2440000000.0
+ },
+ {
+  "d": "2023-06-11",
+  "unixTs": 1686441600,
+  "realizedCapChange30d": 2383000000.0
+ },
+ {
+  "d": "2023-06-12",
+  "unixTs": 1686528000,
+  "realizedCapChange30d": 2325000000.0
+ },
+ {
+  "d": "2023-06-13",
+  "unixTs": 1686614400,
+  "realizedCapChange30d": 2230000000.0
+ },
+ {
+  "d": "2023-06-14",
+  "unixTs": 1686700800,
+  "realizedCapChange30d": 1731000000.0
+ },
+ {
+  "d": "2023-06-15",
+  "unixTs": 1686787200,
+  "realizedCapChange30d": 1546000000.0
+ },
+ {
+  "d": "2023-06-16",
+  "unixTs": 1686873600,
+  "realizedCapChange30d": 1651000000.0
+ },
+ {
+  "d": "2023-06-17",
+  "unixTs": 1686960000,
+  "realizedCapChange30d": 1647000000.0
+ },
+ {
+  "d": "2023-06-18",
+  "unixTs": 1687046400,
+  "realizedCapChange30d": 1819000000.0
+ },
+ {
+  "d": "2023-06-19",
+  "unixTs": 1687132800,
+  "realizedCapChange30d": 1633000000.0
+ },
+ {
+  "d": "2023-06-20",
+  "unixTs": 1687219200,
+  "realizedCapChange30d": 1790000000.0
+ },
+ {
+  "d": "2023-06-21",
+  "unixTs": 1687305600,
+  "realizedCapChange30d": 1694000000.0
+ },
+ {
+  "d": "2023-06-22",
+  "unixTs": 1687392000,
+  "realizedCapChange30d": 2052000000.0
+ },
+ {
+  "d": "2023-06-23",
+  "unixTs": 1687478400,
+  "realizedCapChange30d": 2560000000.0
+ },
+ {
+  "d": "2023-06-24",
+  "unixTs": 1687564800,
+  "realizedCapChange30d": 2480000000.0
+ },
+ {
+  "d": "2023-06-25",
+  "unixTs": 1687651200,
+  "realizedCapChange30d": 2610000000.0
+ },
+ {
+  "d": "2023-06-26",
+  "unixTs": 1687737600,
+  "realizedCapChange30d": 2815000000.0
+ },
+ {
+  "d": "2023-06-27",
+  "unixTs": 1687824000,
+  "realizedCapChange30d": 3039000000.0
+ },
+ {
+  "d": "2023-06-28",
+  "unixTs": 1687910400,
+  "realizedCapChange30d": 3343000000.0
+ },
+ {
+  "d": "2023-06-29",
+  "unixTs": 1687996800,
+  "realizedCapChange30d": 3230000000.0
+ },
+ {
+  "d": "2023-06-30",
+  "unixTs": 1688083200,
+  "realizedCapChange30d": 3534000000.0
+ },
+ {
+  "d": "2023-07-01",
+  "unixTs": 1688169600,
+  "realizedCapChange30d": 4046000000.0
+ },
+ {
+  "d": "2023-07-02",
+  "unixTs": 1688256000,
+  "realizedCapChange30d": 4053000000.0
+ },
+ {
+  "d": "2023-07-03",
+  "unixTs": 1688342400,
+  "realizedCapChange30d": 4291000000.0
+ },
+ {
+  "d": "2023-07-04",
+  "unixTs": 1688428800,
+  "realizedCapChange30d": 4382000000.0
+ },
+ {
+  "d": "2023-07-05",
+  "unixTs": 1688515200,
+  "realizedCapChange30d": 4652000000.0
+ },
+ {
+  "d": "2023-07-06",
+  "unixTs": 1688601600,
+  "realizedCapChange30d": 3904000000.0
+ },
+ {
+  "d": "2023-07-07",
+  "unixTs": 1688688000,
+  "realizedCapChange30d": 4102000000.0
+ },
+ {
+  "d": "2023-07-08",
+  "unixTs": 1688774400,
+  "realizedCapChange30d": 4131000000.0
+ },
+ {
+  "d": "2023-07-09",
+  "unixTs": 1688860800,
+  "realizedCapChange30d": 4181000000.0
+ },
+ {
+  "d": "2023-07-10",
+  "unixTs": 1688947200,
+  "realizedCapChange30d": 4410000000.0
+ },
+ {
+  "d": "2023-07-11",
+  "unixTs": 1689033600,
+  "realizedCapChange30d": 4674000000.0
+ },
+ {
+  "d": "2023-07-12",
+  "unixTs": 1689120000,
+  "realizedCapChange30d": 4867000000.0
+ },
+ {
+  "d": "2023-07-13",
+  "unixTs": 1689206400,
+  "realizedCapChange30d": 5072000000.0
+ },
+ {
+  "d": "2023-07-14",
+  "unixTs": 1689292800,
+  "realizedCapChange30d": 5160000000.0
+ },
+ {
+  "d": "2023-07-15",
+  "unixTs": 1689379200,
+  "realizedCapChange30d": 5238000000.0
+ },
+ {
+  "d": "2023-07-16",
+  "unixTs": 1689465600,
+  "realizedCapChange30d": 5180000000.0
+ },
+ {
+  "d": "2023-07-17",
+  "unixTs": 1689552000,
+  "realizedCapChange30d": 5100000000.0
+ },
+ {
+  "d": "2023-07-18",
+  "unixTs": 1689638400,
+  "realizedCapChange30d": 5112000000.0
+ },
+ {
+  "d": "2023-07-19",
+  "unixTs": 1689724800,
+  "realizedCapChange30d": 5382000000.0
+ },
+ {
+  "d": "2023-07-20",
+  "unixTs": 1689811200,
+  "realizedCapChange30d": 5337000000.0
+ },
+ {
+  "d": "2023-07-21",
+  "unixTs": 1689897600,
+  "realizedCapChange30d": 4800000000.0
+ },
+ {
+  "d": "2023-07-22",
+  "unixTs": 1689984000,
+  "realizedCapChange30d": 4360000000.0
+ },
+ {
+  "d": "2023-07-23",
+  "unixTs": 1690070400,
+  "realizedCapChange30d": 3942000000.0
+ },
+ {
+  "d": "2023-07-24",
+  "unixTs": 1690156800,
+  "realizedCapChange30d": 3738000000.0
+ },
+ {
+  "d": "2023-07-25",
+  "unixTs": 1690243200,
+  "realizedCapChange30d": 3605000000.0
+ },
+ {
+  "d": "2023-07-26",
+  "unixTs": 1690329600,
+  "realizedCapChange30d": 3392000000.0
+ },
+ {
+  "d": "2023-07-27",
+  "unixTs": 1690416000,
+  "realizedCapChange30d": 2619000000.0
+ },
+ {
+  "d": "2023-07-28",
+  "unixTs": 1690502400,
+  "realizedCapChange30d": 872000000.0
+ },
+ {
+  "d": "2023-07-29",
+  "unixTs": 1690588800,
+  "realizedCapChange30d": 862000000.0
+ },
+ {
+  "d": "2023-07-30",
+  "unixTs": 1690675200,
+  "realizedCapChange30d": 522000000.0
+ },
+ {
+  "d": "2023-07-31",
+  "unixTs": 1690761600,
+  "realizedCapChange30d": -55000000.0
+ },
+ {
+  "d": "2023-08-01",
+  "unixTs": 1690848000,
+  "realizedCapChange30d": -106000000.0
+ },
+ {
+  "d": "2023-08-02",
+  "unixTs": 1690934400,
+  "realizedCapChange30d": -488000000.0
+ },
+ {
+  "d": "2023-08-03",
+  "unixTs": 1691020800,
+  "realizedCapChange30d": -547000000.0
+ },
+ {
+  "d": "2023-08-04",
+  "unixTs": 1691107200,
+  "realizedCapChange30d": -613000000.0
+ },
+ {
+  "d": "2023-08-05",
+  "unixTs": 1691193600,
+  "realizedCapChange30d": -105000000.0
+ },
+ {
+  "d": "2023-08-06",
+  "unixTs": 1691280000,
+  "realizedCapChange30d": -196000000.0
+ },
+ {
+  "d": "2023-08-07",
+  "unixTs": 1691366400,
+  "realizedCapChange30d": -232000000.0
+ },
+ {
+  "d": "2023-08-08",
+  "unixTs": 1691452800,
+  "realizedCapChange30d": -223000000.0
+ },
+ {
+  "d": "2023-08-09",
+  "unixTs": 1691539200,
+  "realizedCapChange30d": -277000000.0
+ },
+ {
+  "d": "2023-08-10",
+  "unixTs": 1691625600,
+  "realizedCapChange30d": -496000000.0
+ },
+ {
+  "d": "2023-08-11",
+  "unixTs": 1691712000,
+  "realizedCapChange30d": -549000000.0
+ },
+ {
+  "d": "2023-08-12",
+  "unixTs": 1691798400,
+  "realizedCapChange30d": -638000000.0
+ },
+ {
+  "d": "2023-08-13",
+  "unixTs": 1691884800,
+  "realizedCapChange30d": -603000000.0
+ },
+ {
+  "d": "2023-08-14",
+  "unixTs": 1691971200,
+  "realizedCapChange30d": -566000000.0
+ },
+ {
+  "d": "2023-08-15",
+  "unixTs": 1692057600,
+  "realizedCapChange30d": -584000000.0
+ },
+ {
+  "d": "2023-08-16",
+  "unixTs": 1692144000,
+  "realizedCapChange30d": -527000000.0
+ },
+ {
+  "d": "2023-08-17",
+  "unixTs": 1692230400,
+  "realizedCapChange30d": -990000000.0
+ },
+ {
+  "d": "2023-08-18",
+  "unixTs": 1692316800,
+  "realizedCapChange30d": -1406000000.0
+ },
+ {
+  "d": "2023-08-19",
+  "unixTs": 1692403200,
+  "realizedCapChange30d": -1563000000.0
+ },
+ {
+  "d": "2023-08-20",
+  "unixTs": 1692489600,
+  "realizedCapChange30d": -1579000000.0
+ },
+ {
+  "d": "2023-08-21",
+  "unixTs": 1692576000,
+  "realizedCapChange30d": -1691000000.0
+ },
+ {
+  "d": "2023-08-22",
+  "unixTs": 1692662400,
+  "realizedCapChange30d": -1803000000.0
+ },
+ {
+  "d": "2023-08-23",
+  "unixTs": 1692748800,
+  "realizedCapChange30d": -1914000000.0
+ },
+ {
+  "d": "2023-08-24",
+  "unixTs": 1692835200,
+  "realizedCapChange30d": -2026000000.0
+ },
+ {
+  "d": "2023-08-25",
+  "unixTs": 1692921600,
+  "realizedCapChange30d": -2184000000.0
+ },
+ {
+  "d": "2023-08-26",
+  "unixTs": 1693008000,
+  "realizedCapChange30d": -1830000000.0
+ },
+ {
+  "d": "2023-08-27",
+  "unixTs": 1693094400,
+  "realizedCapChange30d": -433000000.0
+ },
+ {
+  "d": "2023-08-28",
+  "unixTs": 1693180800,
+  "realizedCapChange30d": -539000000.0
+ },
+ {
+  "d": "2023-08-29",
+  "unixTs": 1693267200,
+  "realizedCapChange30d": -551000000.0
+ },
+ {
+  "d": "2023-08-30",
+  "unixTs": 1693353600,
+  "realizedCapChange30d": -548000000.0
+ },
+ {
+  "d": "2023-08-31",
+  "unixTs": 1693440000,
+  "realizedCapChange30d": -802000000.0
+ },
+ {
+  "d": "2023-09-01",
+  "unixTs": 1693526400,
+  "realizedCapChange30d": -762000000.0
+ },
+ {
+  "d": "2023-09-02",
+  "unixTs": 1693612800,
+  "realizedCapChange30d": -807000000.0
+ },
+ {
+  "d": "2023-09-03",
+  "unixTs": 1693699200,
+  "realizedCapChange30d": -855000000.0
+ },
+ {
+  "d": "2023-09-04",
+  "unixTs": 1693785600,
+  "realizedCapChange30d": -915000000.0
+ },
+ {
+  "d": "2023-09-05",
+  "unixTs": 1693872000,
+  "realizedCapChange30d": -1060000000.0
+ },
+ {
+  "d": "2023-09-06",
+  "unixTs": 1693958400,
+  "realizedCapChange30d": -1146000000.0
+ },
+ {
+  "d": "2023-09-07",
+  "unixTs": 1694044800,
+  "realizedCapChange30d": -1213000000.0
+ },
+ {
+  "d": "2023-09-08",
+  "unixTs": 1694131200,
+  "realizedCapChange30d": -1342000000.0
+ },
+ {
+  "d": "2023-09-09",
+  "unixTs": 1694217600,
+  "realizedCapChange30d": -1389000000.0
+ },
+ {
+  "d": "2023-09-10",
+  "unixTs": 1694304000,
+  "realizedCapChange30d": -1480000000.0
+ },
+ {
+  "d": "2023-09-11",
+  "unixTs": 1694390400,
+  "realizedCapChange30d": -1725000000.0
+ },
+ {
+  "d": "2023-09-12",
+  "unixTs": 1694476800,
+  "realizedCapChange30d": -1791000000.0
+ },
+ {
+  "d": "2023-09-13",
+  "unixTs": 1694563200,
+  "realizedCapChange30d": -1834000000.0
+ },
+ {
+  "d": "2023-09-14",
+  "unixTs": 1694649600,
+  "realizedCapChange30d": -1715000000.0
+ },
+ {
+  "d": "2023-09-15",
+  "unixTs": 1694736000,
+  "realizedCapChange30d": -1606000000.0
+ },
+ {
+  "d": "2023-09-16",
+  "unixTs": 1694822400,
+  "realizedCapChange30d": -1264000000.0
+ },
+ {
+  "d": "2023-09-17",
+  "unixTs": 1694908800,
+  "realizedCapChange30d": -949000000.0
+ },
+ {
+  "d": "2023-09-18",
+  "unixTs": 1694995200,
+  "realizedCapChange30d": -786000000.0
+ },
+ {
+  "d": "2023-09-19",
+  "unixTs": 1695081600,
+  "realizedCapChange30d": -368000000.0
+ },
+ {
+  "d": "2023-09-20",
+  "unixTs": 1695168000,
+  "realizedCapChange30d": -279000000.0
+ },
+ {
+  "d": "2023-09-21",
+  "unixTs": 1695254400,
+  "realizedCapChange30d": -234000000.0
+ },
+ {
+  "d": "2023-09-22",
+  "unixTs": 1695340800,
+  "realizedCapChange30d": -132000000.0
+ },
+ {
+  "d": "2023-09-23",
+  "unixTs": 1695427200,
+  "realizedCapChange30d": -18000000.0
+ },
+ {
+  "d": "2023-09-24",
+  "unixTs": 1695513600,
+  "realizedCapChange30d": 118000000.0
+ },
+ {
+  "d": "2023-09-25",
+  "unixTs": 1695600000,
+  "realizedCapChange30d": 139000000.0
+ },
+ {
+  "d": "2023-09-26",
+  "unixTs": 1695686400,
+  "realizedCapChange30d": 66000000.0
+ },
+ {
+  "d": "2023-09-27",
+  "unixTs": 1695772800,
+  "realizedCapChange30d": 117000000.0
+ },
+ {
+  "d": "2023-09-28",
+  "unixTs": 1695859200,
+  "realizedCapChange30d": 232000000.0
+ },
+ {
+  "d": "2023-09-29",
+  "unixTs": 1695945600,
+  "realizedCapChange30d": 297000000.0
+ },
+ {
+  "d": "2023-09-30",
+  "unixTs": 1696032000,
+  "realizedCapChange30d": 551000000.0
+ },
+ {
+  "d": "2023-10-01",
+  "unixTs": 1696118400,
+  "realizedCapChange30d": 756000000.0
+ },
+ {
+  "d": "2023-10-02",
+  "unixTs": 1696204800,
+  "realizedCapChange30d": 762000000.0
+ },
+ {
+  "d": "2023-10-03",
+  "unixTs": 1696291200,
+  "realizedCapChange30d": 863000000.0
+ },
+ {
+  "d": "2023-10-04",
+  "unixTs": 1696377600,
+  "realizedCapChange30d": 1072000000.0
+ },
+ {
+  "d": "2023-10-05",
+  "unixTs": 1696464000,
+  "realizedCapChange30d": 1120000000.0
+ },
+ {
+  "d": "2023-10-06",
+  "unixTs": 1696550400,
+  "realizedCapChange30d": 1358000000.0
+ },
+ {
+  "d": "2023-10-07",
+  "unixTs": 1696636800,
+  "realizedCapChange30d": 1477000000.0
+ },
+ {
+  "d": "2023-10-08",
+  "unixTs": 1696723200,
+  "realizedCapChange30d": 1559000000.0
+ },
+ {
+  "d": "2023-10-09",
+  "unixTs": 1696809600,
+  "realizedCapChange30d": 1723000000.0
+ },
+ {
+  "d": "2023-10-10",
+  "unixTs": 1696896000,
+  "realizedCapChange30d": 1734000000.0
+ },
+ {
+  "d": "2023-10-11",
+  "unixTs": 1696982400,
+  "realizedCapChange30d": 1866000000.0
+ },
+ {
+  "d": "2023-10-12",
+  "unixTs": 1697068800,
+  "realizedCapChange30d": 1844000000.0
+ },
+ {
+  "d": "2023-10-13",
+  "unixTs": 1697155200,
+  "realizedCapChange30d": 1800000000.0
+ },
+ {
+  "d": "2023-10-14",
+  "unixTs": 1697241600,
+  "realizedCapChange30d": 1847000000.0
+ },
+ {
+  "d": "2023-10-15",
+  "unixTs": 1697328000,
+  "realizedCapChange30d": 1810000000.0
+ },
+ {
+  "d": "2023-10-16",
+  "unixTs": 1697414400,
+  "realizedCapChange30d": 2049000000.0
+ },
+ {
+  "d": "2023-10-17",
+  "unixTs": 1697500800,
+  "realizedCapChange30d": 2122000000.0
+ },
+ {
+  "d": "2023-10-18",
+  "unixTs": 1697587200,
+  "realizedCapChange30d": 2074000000.0
+ },
+ {
+  "d": "2023-10-19",
+  "unixTs": 1697673600,
+  "realizedCapChange30d": 1705000000.0
+ },
+ {
+  "d": "2023-10-20",
+  "unixTs": 1697760000,
+  "realizedCapChange30d": 2046000000.0
+ },
+ {
+  "d": "2023-10-21",
+  "unixTs": 1697846400,
+  "realizedCapChange30d": 2211000000.0
+ },
+ {
+  "d": "2023-10-22",
+  "unixTs": 1697932800,
+  "realizedCapChange30d": 2306000000.0
+ },
+ {
+  "d": "2023-10-23",
+  "unixTs": 1698019200,
+  "realizedCapChange30d": 3325000000.0
+ },
+ {
+  "d": "2023-10-24",
+  "unixTs": 1698105600,
+  "realizedCapChange30d": 4421000000.0
+ },
+ {
+  "d": "2023-10-25",
+  "unixTs": 1698192000,
+  "realizedCapChange30d": 5015000000.0
+ },
+ {
+  "d": "2023-10-26",
+  "unixTs": 1698278400,
+  "realizedCapChange30d": 5763000000.0
+ },
+ {
+  "d": "2023-10-27",
+  "unixTs": 1698364800,
+  "realizedCapChange30d": 6037000000.0
+ },
+ {
+  "d": "2023-10-28",
+  "unixTs": 1698451200,
+  "realizedCapChange30d": 6169000000.0
+ },
+ {
+  "d": "2023-10-29",
+  "unixTs": 1698537600,
+  "realizedCapChange30d": 6332000000.0
+ },
+ {
+  "d": "2023-10-30",
+  "unixTs": 1698624000,
+  "realizedCapChange30d": 6624000000.0
+ },
+ {
+  "d": "2023-10-31",
+  "unixTs": 1698710400,
+  "realizedCapChange30d": 6904000000.0
+ },
+ {
+  "d": "2023-11-01",
+  "unixTs": 1698796800,
+  "realizedCapChange30d": 7677000000.0
+ },
+ {
+  "d": "2023-11-02",
+  "unixTs": 1698883200,
+  "realizedCapChange30d": 7921000000.0
+ },
+ {
+  "d": "2023-11-03",
+  "unixTs": 1698969600,
+  "realizedCapChange30d": 8122000000.0
+ },
+ {
+  "d": "2023-11-04",
+  "unixTs": 1699056000,
+  "realizedCapChange30d": 8373000000.0
+ },
+ {
+  "d": "2023-11-05",
+  "unixTs": 1699142400,
+  "realizedCapChange30d": 8344000000.0
+ },
+ {
+  "d": "2023-11-06",
+  "unixTs": 1699228800,
+  "realizedCapChange30d": 8469000000.0
+ },
+ {
+  "d": "2023-11-07",
+  "unixTs": 1699315200,
+  "realizedCapChange30d": 8846000000.0
+ },
+ {
+  "d": "2023-11-08",
+  "unixTs": 1699401600,
+  "realizedCapChange30d": 9080000000.0
+ },
+ {
+  "d": "2023-11-09",
+  "unixTs": 1699488000,
+  "realizedCapChange30d": 10131000000.0
+ },
+ {
+  "d": "2023-11-10",
+  "unixTs": 1699574400,
+  "realizedCapChange30d": 10768000000.0
+ },
+ {
+  "d": "2023-11-11",
+  "unixTs": 1699660800,
+  "realizedCapChange30d": 10971000000.0
+ },
+ {
+  "d": "2023-11-12",
+  "unixTs": 1699747200,
+  "realizedCapChange30d": 11141000000.0
+ },
+ {
+  "d": "2023-11-13",
+  "unixTs": 1699833600,
+  "realizedCapChange30d": 11143000000.0
+ },
+ {
+  "d": "2023-11-14",
+  "unixTs": 1699920000,
+  "realizedCapChange30d": 11145000000.0
+ },
+ {
+  "d": "2023-11-15",
+  "unixTs": 1700006400,
+  "realizedCapChange30d": 11587000000.0
+ },
+ {
+  "d": "2023-11-16",
+  "unixTs": 1700092800,
+  "realizedCapChange30d": 11630000000.0
+ },
+ {
+  "d": "2023-11-17",
+  "unixTs": 1700179200,
+  "realizedCapChange30d": 11793000000.0
+ },
+ {
+  "d": "2023-11-18",
+  "unixTs": 1700265600,
+  "realizedCapChange30d": 11967000000.0
+ },
+ {
+  "d": "2023-11-19",
+  "unixTs": 1700352000,
+  "realizedCapChange30d": 11854000000.0
+ },
+ {
+  "d": "2023-11-20",
+  "unixTs": 1700438400,
+  "realizedCapChange30d": 12194000000.0
+ },
+ {
+  "d": "2023-11-21",
+  "unixTs": 1700524800,
+  "realizedCapChange30d": 12431000000.0
+ },
+ {
+  "d": "2023-11-22",
+  "unixTs": 1700611200,
+  "realizedCapChange30d": 11931000000.0
+ },
+ {
+  "d": "2023-11-23",
+  "unixTs": 1700697600,
+  "realizedCapChange30d": 11024000000.0
+ },
+ {
+  "d": "2023-11-24",
+  "unixTs": 1700784000,
+  "realizedCapChange30d": 10734000000.0
+ },
+ {
+  "d": "2023-11-25",
+  "unixTs": 1700870400,
+  "realizedCapChange30d": 10158000000.0
+ },
+ {
+  "d": "2023-11-26",
+  "unixTs": 1700956800,
+  "realizedCapChange30d": 10048000000.0
+ },
+ {
+  "d": "2023-11-27",
+  "unixTs": 1701043200,
+  "realizedCapChange30d": 9951000000.0
+ },
+ {
+  "d": "2023-11-28",
+  "unixTs": 1701129600,
+  "realizedCapChange30d": 10082000000.0
+ },
+ {
+  "d": "2023-11-29",
+  "unixTs": 1701216000,
+  "realizedCapChange30d": 10223000000.0
+ },
+ {
+  "d": "2023-11-30",
+  "unixTs": 1701302400,
+  "realizedCapChange30d": 9911000000.0
+ },
+ {
+  "d": "2023-12-01",
+  "unixTs": 1701388800,
+  "realizedCapChange30d": 9783000000.0
+ },
+ {
+  "d": "2023-12-02",
+  "unixTs": 1701475200,
+  "realizedCapChange30d": 9757000000.0
+ },
+ {
+  "d": "2023-12-03",
+  "unixTs": 1701561600,
+  "realizedCapChange30d": 9703000000.0
+ },
+ {
+  "d": "2023-12-04",
+  "unixTs": 1701648000,
+  "realizedCapChange30d": 10928000000.0
+ },
+ {
+  "d": "2023-12-05",
+  "unixTs": 1701734400,
+  "realizedCapChange30d": 11902000000.0
+ },
+ {
+  "d": "2023-12-06",
+  "unixTs": 1701820800,
+  "realizedCapChange30d": 12901000000.0
+ },
+ {
+  "d": "2023-12-07",
+  "unixTs": 1701907200,
+  "realizedCapChange30d": 13136000000.0
+ },
+ {
+  "d": "2023-12-08",
+  "unixTs": 1701993600,
+  "realizedCapChange30d": 13546000000.0
+ },
+ {
+  "d": "2023-12-09",
+  "unixTs": 1702080000,
+  "realizedCapChange30d": 12757000000.0
+ },
+ {
+  "d": "2023-12-10",
+  "unixTs": 1702166400,
+  "realizedCapChange30d": 12398000000.0
+ },
+ {
+  "d": "2023-12-11",
+  "unixTs": 1702252800,
+  "realizedCapChange30d": 12478000000.0
+ },
+ {
+  "d": "2023-12-12",
+  "unixTs": 1702339200,
+  "realizedCapChange30d": 13211000000.0
+ },
+ {
+  "d": "2023-12-13",
+  "unixTs": 1702425600,
+  "realizedCapChange30d": 13518000000.0
+ },
+ {
+  "d": "2023-12-14",
+  "unixTs": 1702512000,
+  "realizedCapChange30d": 13860000000.0
+ },
+ {
+  "d": "2023-12-15",
+  "unixTs": 1702598400,
+  "realizedCapChange30d": 13722000000.0
+ },
+ {
+  "d": "2023-12-16",
+  "unixTs": 1702684800,
+  "realizedCapChange30d": 13903000000.0
+ },
+ {
+  "d": "2023-12-17",
+  "unixTs": 1702771200,
+  "realizedCapChange30d": 13732000000.0
+ },
+ {
+  "d": "2023-12-18",
+  "unixTs": 1702857600,
+  "realizedCapChange30d": 14337000000.0
+ },
+ {
+  "d": "2023-12-19",
+  "unixTs": 1702944000,
+  "realizedCapChange30d": 14546000000.0
+ },
+ {
+  "d": "2023-12-20",
+  "unixTs": 1703030400,
+  "realizedCapChange30d": 14841000000.0
+ },
+ {
+  "d": "2023-12-21",
+  "unixTs": 1703116800,
+  "realizedCapChange30d": 14942000000.0
+ },
+ {
+  "d": "2023-12-22",
+  "unixTs": 1703203200,
+  "realizedCapChange30d": 14971000000.0
+ },
+ {
+  "d": "2023-12-23",
+  "unixTs": 1703289600,
+  "realizedCapChange30d": 15065000000.0
+ },
+ {
+  "d": "2023-12-24",
+  "unixTs": 1703376000,
+  "realizedCapChange30d": 15248000000.0
+ },
+ {
+  "d": "2023-12-25",
+  "unixTs": 1703462400,
+  "realizedCapChange30d": 15318000000.0
+ },
+ {
+  "d": "2023-12-26",
+  "unixTs": 1703548800,
+  "realizedCapChange30d": 15730000000.0
+ },
+ {
+  "d": "2023-12-27",
+  "unixTs": 1703635200,
+  "realizedCapChange30d": 17008000000.0
+ },
+ {
+  "d": "2023-12-28",
+  "unixTs": 1703721600,
+  "realizedCapChange30d": 16963000000.0
+ },
+ {
+  "d": "2023-12-29",
+  "unixTs": 1703808000,
+  "realizedCapChange30d": 16974000000.0
+ },
+ {
+  "d": "2023-12-30",
+  "unixTs": 1703894400,
+  "realizedCapChange30d": 17167000000.0
+ },
+ {
+  "d": "2023-12-31",
+  "unixTs": 1703980800,
+  "realizedCapChange30d": 16749000000.0
+ },
+ {
+  "d": "2024-01-01",
+  "unixTs": 1704067200,
+  "realizedCapChange30d": 16807000000.0
+ },
+ {
+  "d": "2024-01-02",
+  "unixTs": 1704153600,
+  "realizedCapChange30d": 17289000000.0
+ },
+ {
+  "d": "2024-01-03",
+  "unixTs": 1704240000,
+  "realizedCapChange30d": 16269000000.0
+ },
+ {
+  "d": "2024-01-04",
+  "unixTs": 1704326400,
+  "realizedCapChange30d": 18930000000.0
+ },
+ {
+  "d": "2024-01-05",
+  "unixTs": 1704412800,
+  "realizedCapChange30d": 18307000000.0
+ },
+ {
+  "d": "2024-01-06",
+  "unixTs": 1704499200,
+  "realizedCapChange30d": 17860000000.0
+ },
+ {
+  "d": "2024-01-07",
+  "unixTs": 1704585600,
+  "realizedCapChange30d": 17253000000.0
+ },
+ {
+  "d": "2024-01-08",
+  "unixTs": 1704672000,
+  "realizedCapChange30d": 17874000000.0
+ },
+ {
+  "d": "2024-01-09",
+  "unixTs": 1704758400,
+  "realizedCapChange30d": 18467000000.0
+ },
+ {
+  "d": "2024-01-10",
+  "unixTs": 1704844800,
+  "realizedCapChange30d": 18965000000.0
+ },
+ {
+  "d": "2024-01-11",
+  "unixTs": 1704931200,
+  "realizedCapChange30d": 18809000000.0
+ },
+ {
+  "d": "2024-01-12",
+  "unixTs": 1705017600,
+  "realizedCapChange30d": 17984000000.0
+ },
+ {
+  "d": "2024-01-13",
+  "unixTs": 1705104000,
+  "realizedCapChange30d": 17711000000.0
+ },
+ {
+  "d": "2024-01-14",
+  "unixTs": 1705190400,
+  "realizedCapChange30d": 17202000000.0
+ },
+ {
+  "d": "2024-01-15",
+  "unixTs": 1705276800,
+  "realizedCapChange30d": 17082000000.0
+ },
+ {
+  "d": "2024-01-16",
+  "unixTs": 1705363200,
+  "realizedCapChange30d": 19158000000.0
+ },
+ {
+  "d": "2024-01-17",
+  "unixTs": 1705449600,
+  "realizedCapChange30d": 18630000000.0
+ },
+ {
+  "d": "2024-01-18",
+  "unixTs": 1705536000,
+  "realizedCapChange30d": 18993000000.0
+ },
+ {
+  "d": "2024-01-19",
+  "unixTs": 1705622400,
+  "realizedCapChange30d": 18581000000.0
+ },
+ {
+  "d": "2024-01-20",
+  "unixTs": 1705708800,
+  "realizedCapChange30d": 18213000000.0
+ },
+ {
+  "d": "2024-01-21",
+  "unixTs": 1705795200,
+  "realizedCapChange30d": 17714000000.0
+ },
+ {
+  "d": "2024-01-22",
+  "unixTs": 1705881600,
+  "realizedCapChange30d": 17305000000.0
+ },
+ {
+  "d": "2024-01-23",
+  "unixTs": 1705968000,
+  "realizedCapChange30d": 17065000000.0
+ },
+ {
+  "d": "2024-01-24",
+  "unixTs": 1706054400,
+  "realizedCapChange30d": 17754000000.0
+ },
+ {
+  "d": "2024-01-25",
+  "unixTs": 1706140800,
+  "realizedCapChange30d": 17553000000.0
+ },
+ {
+  "d": "2024-01-26",
+  "unixTs": 1706227200,
+  "realizedCapChange30d": 16626000000.0
+ },
+ {
+  "d": "2024-01-27",
+  "unixTs": 1706313600,
+  "realizedCapChange30d": 16524000000.0
+ },
+ {
+  "d": "2024-01-28",
+  "unixTs": 1706400000,
+  "realizedCapChange30d": 16138000000.0
+ },
+ {
+  "d": "2024-01-29",
+  "unixTs": 1706486400,
+  "realizedCapChange30d": 16331000000.0
+ },
+ {
+  "d": "2024-01-30",
+  "unixTs": 1706572800,
+  "realizedCapChange30d": 17070000000.0
+ },
+ {
+  "d": "2024-01-31",
+  "unixTs": 1706659200,
+  "realizedCapChange30d": 17409000000.0
+ },
+ {
+  "d": "2024-02-01",
+  "unixTs": 1706745600,
+  "realizedCapChange30d": 16850000000.0
+ },
+ {
+  "d": "2024-02-02",
+  "unixTs": 1706832000,
+  "realizedCapChange30d": 16732000000.0
+ },
+ {
+  "d": "2024-02-03",
+  "unixTs": 1706918400,
+  "realizedCapChange30d": 13026000000.0
+ },
+ {
+  "d": "2024-02-04",
+  "unixTs": 1707004800,
+  "realizedCapChange30d": 12518000000.0
+ },
+ {
+  "d": "2024-02-05",
+  "unixTs": 1707091200,
+  "realizedCapChange30d": 12565000000.0
+ },
+ {
+  "d": "2024-02-06",
+  "unixTs": 1707177600,
+  "realizedCapChange30d": 13053000000.0
+ },
+ {
+  "d": "2024-02-07",
+  "unixTs": 1707264000,
+  "realizedCapChange30d": 12666000000.0
+ },
+ {
+  "d": "2024-02-08",
+  "unixTs": 1707350400,
+  "realizedCapChange30d": 12460000000.0
+ },
+ {
+  "d": "2024-02-09",
+  "unixTs": 1707436800,
+  "realizedCapChange30d": 12542000000.0
+ },
+ {
+  "d": "2024-02-10",
+  "unixTs": 1707523200,
+  "realizedCapChange30d": 12246000000.0
+ },
+ {
+  "d": "2024-02-11",
+  "unixTs": 1707609600,
+  "realizedCapChange30d": 12961000000.0
+ },
+ {
+  "d": "2024-02-12",
+  "unixTs": 1707696000,
+  "realizedCapChange30d": 14086000000.0
+ },
+ {
+  "d": "2024-02-13",
+  "unixTs": 1707782400,
+  "realizedCapChange30d": 14726000000.0
+ },
+ {
+  "d": "2024-02-14",
+  "unixTs": 1707868800,
+  "realizedCapChange30d": 17159000000.0
+ },
+ {
+  "d": "2024-02-15",
+  "unixTs": 1707955200,
+  "realizedCapChange30d": 15820000000.0
+ },
+ {
+  "d": "2024-02-16",
+  "unixTs": 1708041600,
+  "realizedCapChange30d": 16382000000.0
+ },
+ {
+  "d": "2024-02-17",
+  "unixTs": 1708128000,
+  "realizedCapChange30d": 15935000000.0
+ },
+ {
+  "d": "2024-02-18",
+  "unixTs": 1708214400,
+  "realizedCapChange30d": 16052000000.0
+ },
+ {
+  "d": "2024-02-19",
+  "unixTs": 1708300800,
+  "realizedCapChange30d": 17413000000.0
+ },
+ {
+  "d": "2024-02-20",
+  "unixTs": 1708387200,
+  "realizedCapChange30d": 17931000000.0
+ },
+ {
+  "d": "2024-02-21",
+  "unixTs": 1708473600,
+  "realizedCapChange30d": 18747000000.0
+ },
+ {
+  "d": "2024-02-22",
+  "unixTs": 1708560000,
+  "realizedCapChange30d": 19306000000.0
+ },
+ {
+  "d": "2024-02-23",
+  "unixTs": 1708646400,
+  "realizedCapChange30d": 19245000000.0
+ },
+ {
+  "d": "2024-02-24",
+  "unixTs": 1708732800,
+  "realizedCapChange30d": 19233000000.0
+ },
+ {
+  "d": "2024-02-25",
+  "unixTs": 1708819200,
+  "realizedCapChange30d": 19042000000.0
+ },
+ {
+  "d": "2024-02-26",
+  "unixTs": 1708905600,
+  "realizedCapChange30d": 20270000000.0
+ },
+ {
+  "d": "2024-02-27",
+  "unixTs": 1708992000,
+  "realizedCapChange30d": 22635000000.0
+ },
+ {
+  "d": "2024-02-28",
+  "unixTs": 1709078400,
+  "realizedCapChange30d": 29653000000.0
+ },
+ {
+  "d": "2024-02-29",
+  "unixTs": 1709164800,
+  "realizedCapChange30d": 30804000000.0
+ },
+ {
+  "d": "2024-03-01",
+  "unixTs": 1709251200,
+  "realizedCapChange30d": 33469000000.0
+ },
+ {
+  "d": "2024-03-02",
+  "unixTs": 1709337600,
+  "realizedCapChange30d": 33675000000.0
+ },
+ {
+  "d": "2024-03-03",
+  "unixTs": 1709424000,
+  "realizedCapChange30d": 34158000000.0
+ },
+ {
+  "d": "2024-03-04",
+  "unixTs": 1709510400,
+  "realizedCapChange30d": 37846000000.0
+ },
+ {
+  "d": "2024-03-05",
+  "unixTs": 1709596800,
+  "realizedCapChange30d": 41169000000.0
+ },
+ {
+  "d": "2024-03-06",
+  "unixTs": 1709683200,
+  "realizedCapChange30d": 48420000000.0
+ },
+ {
+  "d": "2024-03-07",
+  "unixTs": 1709769600,
+  "realizedCapChange30d": 51513000000.0
+ },
+ {
+  "d": "2024-03-08",
+  "unixTs": 1709856000,
+  "realizedCapChange30d": 54199000000.0
+ },
+ {
+  "d": "2024-03-09",
+  "unixTs": 1709942400,
+  "realizedCapChange30d": 54630000000.0
+ },
+ {
+  "d": "2024-03-10",
+  "unixTs": 1710028800,
+  "realizedCapChange30d": 54931000000.0
+ },
+ {
+  "d": "2024-03-11",
+  "unixTs": 1710115200,
+  "realizedCapChange30d": 59254000000.0
+ },
+ {
+  "d": "2024-03-12",
+  "unixTs": 1710201600,
+  "realizedCapChange30d": 61451000000.0
+ },
+ {
+  "d": "2024-03-13",
+  "unixTs": 1710288000,
+  "realizedCapChange30d": 69403000000.0
+ },
+ {
+  "d": "2024-03-14",
+  "unixTs": 1710374400,
+  "realizedCapChange30d": 70865000000.0
+ },
+ {
+  "d": "2024-03-15",
+  "unixTs": 1710460800,
+  "realizedCapChange30d": 69375000000.0
+ },
+ {
+  "d": "2024-03-16",
+  "unixTs": 1710547200,
+  "realizedCapChange30d": 68737000000.0
+ },
+ {
+  "d": "2024-03-17",
+  "unixTs": 1710633600,
+  "realizedCapChange30d": 69620000000.0
+ },
+ {
+  "d": "2024-03-18",
+  "unixTs": 1710720000,
+  "realizedCapChange30d": 70147000000.0
+ },
+ {
+  "d": "2024-03-19",
+  "unixTs": 1710806400,
+  "realizedCapChange30d": 68941000000.0
+ },
+ {
+  "d": "2024-03-20",
+  "unixTs": 1710892800,
+  "realizedCapChange30d": 69181000000.0
+ },
+ {
+  "d": "2024-03-21",
+  "unixTs": 1710979200,
+  "realizedCapChange30d": 69391000000.0
+ },
+ {
+  "d": "2024-03-22",
+  "unixTs": 1711065600,
+  "realizedCapChange30d": 69829000000.0
+ },
+ {
+  "d": "2024-03-23",
+  "unixTs": 1711152000,
+  "realizedCapChange30d": 74560000000.0
+ },
+ {
+  "d": "2024-03-24",
+  "unixTs": 1711238400,
+  "realizedCapChange30d": 74433000000.0
+ },
+ {
+  "d": "2024-03-25",
+  "unixTs": 1711324800,
+  "realizedCapChange30d": 79986000000.0
+ },
+ {
+  "d": "2024-03-26",
+  "unixTs": 1711411200,
+  "realizedCapChange30d": 80396000000.0
+ },
+ {
+  "d": "2024-03-27",
+  "unixTs": 1711497600,
+  "realizedCapChange30d": 79757000000.0
+ },
+ {
+  "d": "2024-03-28",
+  "unixTs": 1711584000,
+  "realizedCapChange30d": 79688000000.0
+ },
+ {
+  "d": "2024-03-29",
+  "unixTs": 1711670400,
+  "realizedCapChange30d": 72847000000.0
+ },
+ {
+  "d": "2024-03-30",
+  "unixTs": 1711756800,
+  "realizedCapChange30d": 71128000000.0
+ },
+ {
+  "d": "2024-03-31",
+  "unixTs": 1711843200,
+  "realizedCapChange30d": 68334000000.0
+ },
+ {
+  "d": "2024-04-01",
+  "unixTs": 1711929600,
+  "realizedCapChange30d": 71049000000.0
+ },
+ {
+  "d": "2024-04-02",
+  "unixTs": 1712016000,
+  "realizedCapChange30d": 71844000000.0
+ },
+ {
+  "d": "2024-04-03",
+  "unixTs": 1712102400,
+  "realizedCapChange30d": 68906000000.0
+ },
+ {
+  "d": "2024-04-04",
+  "unixTs": 1712188800,
+  "realizedCapChange30d": 66169000000.0
+ },
+ {
+  "d": "2024-04-05",
+  "unixTs": 1712275200,
+  "realizedCapChange30d": 59063000000.0
+ },
+ {
+  "d": "2024-04-06",
+  "unixTs": 1712361600,
+  "realizedCapChange30d": 56029000000.0
+ },
+ {
+  "d": "2024-04-07",
+  "unixTs": 1712448000,
+  "realizedCapChange30d": 53231000000.0
+ },
+ {
+  "d": "2024-04-08",
+  "unixTs": 1712534400,
+  "realizedCapChange30d": 53455000000.0
+ },
+ {
+  "d": "2024-04-09",
+  "unixTs": 1712620800,
+  "realizedCapChange30d": 52772000000.0
+ },
+ {
+  "d": "2024-04-10",
+  "unixTs": 1712707200,
+  "realizedCapChange30d": 48763000000.0
+ },
+ {
+  "d": "2024-04-11",
+  "unixTs": 1712793600,
+  "realizedCapChange30d": 46692000000.0
+ },
+ {
+  "d": "2024-04-12",
+  "unixTs": 1712880000,
+  "realizedCapChange30d": 37676000000.0
+ },
+ {
+  "d": "2024-04-13",
+  "unixTs": 1712966400,
+  "realizedCapChange30d": 35436000000.0
+ },
+ {
+  "d": "2024-04-14",
+  "unixTs": 1713052800,
+  "realizedCapChange30d": 34666000000.0
+ },
+ {
+  "d": "2024-04-15",
+  "unixTs": 1713139200,
+  "realizedCapChange30d": 34507000000.0
+ },
+ {
+  "d": "2024-04-16",
+  "unixTs": 1713225600,
+  "realizedCapChange30d": 33588000000.0
+ },
+ {
+  "d": "2024-04-17",
+  "unixTs": 1713312000,
+  "realizedCapChange30d": 32531000000.0
+ },
+ {
+  "d": "2024-04-18",
+  "unixTs": 1713398400,
+  "realizedCapChange30d": 34086000000.0
+ },
+ {
+  "d": "2024-04-19",
+  "unixTs": 1713484800,
+  "realizedCapChange30d": 33185000000.0
+ },
+ {
+  "d": "2024-04-20",
+  "unixTs": 1713571200,
+  "realizedCapChange30d": 32568000000.0
+ },
+ {
+  "d": "2024-04-21",
+  "unixTs": 1713657600,
+  "realizedCapChange30d": 31651000000.0
+ },
+ {
+  "d": "2024-04-22",
+  "unixTs": 1713744000,
+  "realizedCapChange30d": 26808000000.0
+ },
+ {
+  "d": "2024-04-23",
+  "unixTs": 1713830400,
+  "realizedCapChange30d": 26442000000.0
+ },
+ {
+  "d": "2024-04-24",
+  "unixTs": 1713916800,
+  "realizedCapChange30d": 22995000000.0
+ },
+ {
+  "d": "2024-04-25",
+  "unixTs": 1714003200,
+  "realizedCapChange30d": 22576000000.0
+ },
+ {
+  "d": "2024-04-26",
+  "unixTs": 1714089600,
+  "realizedCapChange30d": 21893000000.0
+ },
+ {
+  "d": "2024-04-27",
+  "unixTs": 1714176000,
+  "realizedCapChange30d": 19741000000.0
+ },
+ {
+  "d": "2024-04-28",
+  "unixTs": 1714262400,
+  "realizedCapChange30d": 19605000000.0
+ },
+ {
+  "d": "2024-04-29",
+  "unixTs": 1714348800,
+  "realizedCapChange30d": 19702000000.0
+ },
+ {
+  "d": "2024-04-30",
+  "unixTs": 1714435200,
+  "realizedCapChange30d": 19208000000.0
+ },
+ {
+  "d": "2024-05-01",
+  "unixTs": 1714521600,
+  "realizedCapChange30d": 15472000000.0
+ },
+ {
+  "d": "2024-05-02",
+  "unixTs": 1714608000,
+  "realizedCapChange30d": 13887000000.0
+ },
+ {
+  "d": "2024-05-03",
+  "unixTs": 1714694400,
+  "realizedCapChange30d": 13691000000.0
+ },
+ {
+  "d": "2024-05-04",
+  "unixTs": 1714780800,
+  "realizedCapChange30d": 13250000000.0
+ },
+ {
+  "d": "2024-05-05",
+  "unixTs": 1714867200,
+  "realizedCapChange30d": 12994000000.0
+ },
+ {
+  "d": "2024-05-06",
+  "unixTs": 1714953600,
+  "realizedCapChange30d": 12648000000.0
+ },
+ {
+  "d": "2024-05-07",
+  "unixTs": 1715040000,
+  "realizedCapChange30d": 12330000000.0
+ },
+ {
+  "d": "2024-05-08",
+  "unixTs": 1715126400,
+  "realizedCapChange30d": 11346000000.0
+ },
+ {
+  "d": "2024-05-09",
+  "unixTs": 1715212800,
+  "realizedCapChange30d": 11334000000.0
+ },
+ {
+  "d": "2024-05-10",
+  "unixTs": 1715299200,
+  "realizedCapChange30d": 10500000000.0
+ },
+ {
+  "d": "2024-05-11",
+  "unixTs": 1715385600,
+  "realizedCapChange30d": 10176000000.0
+ },
+ {
+  "d": "2024-05-12",
+  "unixTs": 1715472000,
+  "realizedCapChange30d": 10267000000.0
+ },
+ {
+  "d": "2024-05-13",
+  "unixTs": 1715558400,
+  "realizedCapChange30d": 10816000000.0
+ },
+ {
+  "d": "2024-05-14",
+  "unixTs": 1715644800,
+  "realizedCapChange30d": 10695000000.0
+ },
+ {
+  "d": "2024-05-15",
+  "unixTs": 1715731200,
+  "realizedCapChange30d": 12838000000.0
+ },
+ {
+  "d": "2024-05-16",
+  "unixTs": 1715817600,
+  "realizedCapChange30d": 12664000000.0
+ },
+ {
+  "d": "2024-05-17",
+  "unixTs": 1715904000,
+  "realizedCapChange30d": 13645000000.0
+ },
+ {
+  "d": "2024-05-18",
+  "unixTs": 1715990400,
+  "realizedCapChange30d": 13075000000.0
+ },
+ {
+  "d": "2024-05-19",
+  "unixTs": 1716076800,
+  "realizedCapChange30d": 12571000000.0
+ },
+ {
+  "d": "2024-05-20",
+  "unixTs": 1716163200,
+  "realizedCapChange30d": 13864000000.0
+ },
+ {
+  "d": "2024-05-21",
+  "unixTs": 1716249600,
+  "realizedCapChange30d": 14855000000.0
+ },
+ {
+  "d": "2024-05-22",
+  "unixTs": 1716336000,
+  "realizedCapChange30d": 14841000000.0
+ },
+ {
+  "d": "2024-05-23",
+  "unixTs": 1716422400,
+  "realizedCapChange30d": 15071000000.0
+ },
+ {
+  "d": "2024-05-24",
+  "unixTs": 1716508800,
+  "realizedCapChange30d": 13217000000.0
+ },
+ {
+  "d": "2024-05-25",
+  "unixTs": 1716595200,
+  "realizedCapChange30d": 13210000000.0
+ },
+ {
+  "d": "2024-05-26",
+  "unixTs": 1716681600,
+  "realizedCapChange30d": 13475000000.0
+ },
+ {
+  "d": "2024-05-27",
+  "unixTs": 1716768000,
+  "realizedCapChange30d": 14001000000.0
+ },
+ {
+  "d": "2024-05-28",
+  "unixTs": 1716854400,
+  "realizedCapChange30d": 23524000000.0
+ },
+ {
+  "d": "2024-05-29",
+  "unixTs": 1716940800,
+  "realizedCapChange30d": 23322000000.0
+ },
+ {
+  "d": "2024-05-30",
+  "unixTs": 1717027200,
+  "realizedCapChange30d": 23619000000.0
+ },
+ {
+  "d": "2024-05-31",
+  "unixTs": 1717113600,
+  "realizedCapChange30d": 24455000000.0
+ },
+ {
+  "d": "2024-06-01",
+  "unixTs": 1717200000,
+  "realizedCapChange30d": 24695000000.0
+ },
+ {
+  "d": "2024-06-02",
+  "unixTs": 1717286400,
+  "realizedCapChange30d": 24321000000.0
+ },
+ {
+  "d": "2024-06-03",
+  "unixTs": 1717372800,
+  "realizedCapChange30d": 25150000000.0
+ },
+ {
+  "d": "2024-06-04",
+  "unixTs": 1717459200,
+  "realizedCapChange30d": 26002000000.0
+ },
+ {
+  "d": "2024-06-05",
+  "unixTs": 1717545600,
+  "realizedCapChange30d": 26558000000.0
+ },
+ {
+  "d": "2024-06-06",
+  "unixTs": 1717632000,
+  "realizedCapChange30d": 28116000000.0
+ },
+ {
+  "d": "2024-06-07",
+  "unixTs": 1717718400,
+  "realizedCapChange30d": 28402000000.0
+ },
+ {
+  "d": "2024-06-08",
+  "unixTs": 1717804800,
+  "realizedCapChange30d": 28262000000.0
+ },
+ {
+  "d": "2024-06-09",
+  "unixTs": 1717891200,
+  "realizedCapChange30d": 28607000000.0
+ },
+ {
+  "d": "2024-06-10",
+  "unixTs": 1717977600,
+  "realizedCapChange30d": 28805000000.0
+ },
+ {
+  "d": "2024-06-11",
+  "unixTs": 1718064000,
+  "realizedCapChange30d": 29799000000.0
+ },
+ {
+  "d": "2024-06-12",
+  "unixTs": 1718150400,
+  "realizedCapChange30d": 29882000000.0
+ },
+ {
+  "d": "2024-06-13",
+  "unixTs": 1718236800,
+  "realizedCapChange30d": 29756000000.0
+ },
+ {
+  "d": "2024-06-14",
+  "unixTs": 1718323200,
+  "realizedCapChange30d": 27779000000.0
+ },
+ {
+  "d": "2024-06-15",
+  "unixTs": 1718409600,
+  "realizedCapChange30d": 27512000000.0
+ },
+ {
+  "d": "2024-06-16",
+  "unixTs": 1718496000,
+  "realizedCapChange30d": 26878000000.0
+ },
+ {
+  "d": "2024-06-17",
+  "unixTs": 1718582400,
+  "realizedCapChange30d": 26970000000.0
+ },
+ {
+  "d": "2024-06-18",
+  "unixTs": 1718668800,
+  "realizedCapChange30d": 26695000000.0
+ },
+ {
+  "d": "2024-06-19",
+  "unixTs": 1718755200,
+  "realizedCapChange30d": 25516000000.0
+ },
+ {
+  "d": "2024-06-20",
+  "unixTs": 1718841600,
+  "realizedCapChange30d": 24418000000.0
+ },
+ {
+  "d": "2024-06-21",
+  "unixTs": 1718928000,
+  "realizedCapChange30d": 24153000000.0
+ },
+ {
+  "d": "2024-06-22",
+  "unixTs": 1719014400,
+  "realizedCapChange30d": 25325000000.0
+ },
+ {
+  "d": "2024-06-23",
+  "unixTs": 1719100800,
+  "realizedCapChange30d": 24727000000.0
+ },
+ {
+  "d": "2024-06-24",
+  "unixTs": 1719187200,
+  "realizedCapChange30d": 23907000000.0
+ },
+ {
+  "d": "2024-06-25",
+  "unixTs": 1719273600,
+  "realizedCapChange30d": 23638000000.0
+ },
+ {
+  "d": "2024-06-26",
+  "unixTs": 1719360000,
+  "realizedCapChange30d": 22804000000.0
+ },
+ {
+  "d": "2024-06-27",
+  "unixTs": 1719446400,
+  "realizedCapChange30d": 13970000000.0
+ },
+ {
+  "d": "2024-06-28",
+  "unixTs": 1719532800,
+  "realizedCapChange30d": 13662000000.0
+ },
+ {
+  "d": "2024-06-29",
+  "unixTs": 1719619200,
+  "realizedCapChange30d": 13395000000.0
+ },
+ {
+  "d": "2024-06-30",
+  "unixTs": 1719705600,
+  "realizedCapChange30d": 13386000000.0
+ },
+ {
+  "d": "2024-07-01",
+  "unixTs": 1719792000,
+  "realizedCapChange30d": 13602000000.0
+ },
+ {
+  "d": "2024-07-02",
+  "unixTs": 1719878400,
+  "realizedCapChange30d": 13302000000.0
+ },
+ {
+  "d": "2024-07-03",
+  "unixTs": 1719964800,
+  "realizedCapChange30d": 12723000000.0
+ },
+ {
+  "d": "2024-07-04",
+  "unixTs": 1720051200,
+  "realizedCapChange30d": 11234000000.0
+ },
+ {
+  "d": "2024-07-05",
+  "unixTs": 1720137600,
+  "realizedCapChange30d": 11065000000.0
+ },
+ {
+  "d": "2024-07-06",
+  "unixTs": 1720224000,
+  "realizedCapChange30d": 9575000000.0
+ },
+ {
+  "d": "2024-07-07",
+  "unixTs": 1720310400,
+  "realizedCapChange30d": 8954000000.0
+ },
+ {
+  "d": "2024-07-08",
+  "unixTs": 1720396800,
+  "realizedCapChange30d": 8214000000.0
+ },
+ {
+  "d": "2024-07-09",
+  "unixTs": 1720483200,
+  "realizedCapChange30d": 8413000000.0
+ },
+ {
+  "d": "2024-07-10",
+  "unixTs": 1720569600,
+  "realizedCapChange30d": 8258000000.0
+ },
+ {
+  "d": "2024-07-11",
+  "unixTs": 1720656000,
+  "realizedCapChange30d": 6944000000.0
+ },
+ {
+  "d": "2024-07-12",
+  "unixTs": 1720742400,
+  "realizedCapChange30d": 6596000000.0
+ },
+ {
+  "d": "2024-07-13",
+  "unixTs": 1720828800,
+  "realizedCapChange30d": 6772000000.0
+ },
+ {
+  "d": "2024-07-14",
+  "unixTs": 1720915200,
+  "realizedCapChange30d": 6875000000.0
+ },
+ {
+  "d": "2024-07-15",
+  "unixTs": 1721001600,
+  "realizedCapChange30d": 7908000000.0
+ },
+ {
+  "d": "2024-07-16",
+  "unixTs": 1721088000,
+  "realizedCapChange30d": 8991000000.0
+ },
+ {
+  "d": "2024-07-17",
+  "unixTs": 1721174400,
+  "realizedCapChange30d": 8870000000.0
+ },
+ {
+  "d": "2024-07-18",
+  "unixTs": 1721260800,
+  "realizedCapChange30d": 9454000000.0
+ },
+ {
+  "d": "2024-07-19",
+  "unixTs": 1721347200,
+  "realizedCapChange30d": 10841000000.0
+ },
+ {
+  "d": "2024-07-20",
+  "unixTs": 1721433600,
+  "realizedCapChange30d": 11056000000.0
+ },
+ {
+  "d": "2024-07-21",
+  "unixTs": 1721520000,
+  "realizedCapChange30d": 11029000000.0
+ },
+ {
+  "d": "2024-07-22",
+  "unixTs": 1721606400,
+  "realizedCapChange30d": 9835000000.0
+ },
+ {
+  "d": "2024-07-23",
+  "unixTs": 1721692800,
+  "realizedCapChange30d": 11570000000.0
+ },
+ {
+  "d": "2024-07-24",
+  "unixTs": 1721779200,
+  "realizedCapChange30d": 12273000000.0
+ },
+ {
+  "d": "2024-07-25",
+  "unixTs": 1721865600,
+  "realizedCapChange30d": 12711000000.0
+ },
+ {
+  "d": "2024-07-26",
+  "unixTs": 1721952000,
+  "realizedCapChange30d": 13637000000.0
+ },
+ {
+  "d": "2024-07-27",
+  "unixTs": 1722038400,
+  "realizedCapChange30d": 12953000000.0
+ },
+ {
+  "d": "2024-07-28",
+  "unixTs": 1722124800,
+  "realizedCapChange30d": 13197000000.0
+ },
+ {
+  "d": "2024-07-29",
+  "unixTs": 1722211200,
+  "realizedCapChange30d": 13619000000.0
+ },
+ {
+  "d": "2024-07-30",
+  "unixTs": 1722297600,
+  "realizedCapChange30d": 13708000000.0
+ },
+ {
+  "d": "2024-07-31",
+  "unixTs": 1722384000,
+  "realizedCapChange30d": 13215000000.0
+ },
+ {
+  "d": "2024-08-01",
+  "unixTs": 1722470400,
+  "realizedCapChange30d": 13916000000.0
+ },
+ {
+  "d": "2024-08-02",
+  "unixTs": 1722556800,
+  "realizedCapChange30d": 12935000000.0
+ },
+ {
+  "d": "2024-08-03",
+  "unixTs": 1722643200,
+  "realizedCapChange30d": 13490000000.0
+ },
+ {
+  "d": "2024-08-04",
+  "unixTs": 1722729600,
+  "realizedCapChange30d": 12573000000.0
+ },
+ {
+  "d": "2024-08-05",
+  "unixTs": 1722816000,
+  "realizedCapChange30d": 10935000000.0
+ },
+ {
+  "d": "2024-08-06",
+  "unixTs": 1722902400,
+  "realizedCapChange30d": 10592000000.0
+ },
+ {
+  "d": "2024-08-07",
+  "unixTs": 1722988800,
+  "realizedCapChange30d": 10961000000.0
+ },
+ {
+  "d": "2024-08-08",
+  "unixTs": 1723075200,
+  "realizedCapChange30d": 11618000000.0
+ },
+ {
+  "d": "2024-08-09",
+  "unixTs": 1723161600,
+  "realizedCapChange30d": 11799000000.0
+ },
+ {
+  "d": "2024-08-10",
+  "unixTs": 1723248000,
+  "realizedCapChange30d": 12669000000.0
+ },
+ {
+  "d": "2024-08-11",
+  "unixTs": 1723334400,
+  "realizedCapChange30d": 12338000000.0
+ },
+ {
+  "d": "2024-08-12",
+  "unixTs": 1723420800,
+  "realizedCapChange30d": 12159000000.0
+ },
+ {
+  "d": "2024-08-13",
+  "unixTs": 1723507200,
+  "realizedCapChange30d": 11905000000.0
+ },
+ {
+  "d": "2024-08-14",
+  "unixTs": 1723593600,
+  "realizedCapChange30d": 10246000000.0
+ },
+ {
+  "d": "2024-08-15",
+  "unixTs": 1723680000,
+  "realizedCapChange30d": 8878000000.0
+ },
+ {
+  "d": "2024-08-16",
+  "unixTs": 1723766400,
+  "realizedCapChange30d": 8731000000.0
+ },
+ {
+  "d": "2024-08-17",
+  "unixTs": 1723852800,
+  "realizedCapChange30d": 8205000000.0
+ },
+ {
+  "d": "2024-08-18",
+  "unixTs": 1723939200,
+  "realizedCapChange30d": 6573000000.0
+ },
+ {
+  "d": "2024-08-19",
+  "unixTs": 1724025600,
+  "realizedCapChange30d": 6401000000.0
+ },
+ {
+  "d": "2024-08-20",
+  "unixTs": 1724112000,
+  "realizedCapChange30d": 5910000000.0
+ },
+ {
+  "d": "2024-08-21",
+  "unixTs": 1724198400,
+  "realizedCapChange30d": 5731000000.0
+ },
+ {
+  "d": "2024-08-22",
+  "unixTs": 1724284800,
+  "realizedCapChange30d": 4182000000.0
+ },
+ {
+  "d": "2024-08-23",
+  "unixTs": 1724371200,
+  "realizedCapChange30d": 5061000000.0
+ },
+ {
+  "d": "2024-08-24",
+  "unixTs": 1724457600,
+  "realizedCapChange30d": 4894000000.0
+ },
+ {
+  "d": "2024-08-25",
+  "unixTs": 1724544000,
+  "realizedCapChange30d": 4176000000.0
+ },
+ {
+  "d": "2024-08-26",
+  "unixTs": 1724630400,
+  "realizedCapChange30d": 3835000000.0
+ },
+ {
+  "d": "2024-08-27",
+  "unixTs": 1724716800,
+  "realizedCapChange30d": 2641000000.0
+ },
+ {
+  "d": "2024-08-28",
+  "unixTs": 1724803200,
+  "realizedCapChange30d": 2765000000.0
+ },
+ {
+  "d": "2024-08-29",
+  "unixTs": 1724889600,
+  "realizedCapChange30d": 2448000000.0
+ },
+ {
+  "d": "2024-08-30",
+  "unixTs": 1724976000,
+  "realizedCapChange30d": 2552000000.0
+ },
+ {
+  "d": "2024-08-31",
+  "unixTs": 1725062400,
+  "realizedCapChange30d": 2047000000.0
+ },
+ {
+  "d": "2024-09-01",
+  "unixTs": 1725148800,
+  "realizedCapChange30d": 2381000000.0
+ },
+ {
+  "d": "2024-09-02",
+  "unixTs": 1725235200,
+  "realizedCapChange30d": 2438000000.0
+ },
+ {
+  "d": "2024-09-03",
+  "unixTs": 1725321600,
+  "realizedCapChange30d": 2313000000.0
+ },
+ {
+  "d": "2024-09-04",
+  "unixTs": 1725408000,
+  "realizedCapChange30d": 3962000000.0
+ },
+ {
+  "d": "2024-09-05",
+  "unixTs": 1725494400,
+  "realizedCapChange30d": 3989000000.0
+ },
+ {
+  "d": "2024-09-06",
+  "unixTs": 1725580800,
+  "realizedCapChange30d": 3675000000.0
+ },
+ {
+  "d": "2024-09-07",
+  "unixTs": 1725667200,
+  "realizedCapChange30d": 2508000000.0
+ },
+ {
+  "d": "2024-09-08",
+  "unixTs": 1725753600,
+  "realizedCapChange30d": 2070000000.0
+ },
+ {
+  "d": "2024-09-09",
+  "unixTs": 1725840000,
+  "realizedCapChange30d": 1854000000.0
+ },
+ {
+  "d": "2024-09-10",
+  "unixTs": 1725926400,
+  "realizedCapChange30d": 1995000000.0
+ },
+ {
+  "d": "2024-09-11",
+  "unixTs": 1726012800,
+  "realizedCapChange30d": 1853000000.0
+ },
+ {
+  "d": "2024-09-12",
+  "unixTs": 1726099200,
+  "realizedCapChange30d": 2031000000.0
+ },
+ {
+  "d": "2024-09-13",
+  "unixTs": 1726185600,
+  "realizedCapChange30d": 3453000000.0
+ },
+ {
+  "d": "2024-09-14",
+  "unixTs": 1726272000,
+  "realizedCapChange30d": 3688000000.0
+ },
+ {
+  "d": "2024-09-15",
+  "unixTs": 1726358400,
+  "realizedCapChange30d": 3667000000.0
+ },
+ {
+  "d": "2024-09-16",
+  "unixTs": 1726444800,
+  "realizedCapChange30d": 3756000000.0
+ },
+ {
+  "d": "2024-09-17",
+  "unixTs": 1726531200,
+  "realizedCapChange30d": 4155000000.0
+ },
+ {
+  "d": "2024-09-18",
+  "unixTs": 1726617600,
+  "realizedCapChange30d": 4625000000.0
+ },
+ {
+  "d": "2024-09-19",
+  "unixTs": 1726704000,
+  "realizedCapChange30d": 5503000000.0
+ },
+ {
+  "d": "2024-09-20",
+  "unixTs": 1726790400,
+  "realizedCapChange30d": 6128000000.0
+ },
+ {
+  "d": "2024-09-21",
+  "unixTs": 1726876800,
+  "realizedCapChange30d": 6185000000.0
+ },
+ {
+  "d": "2024-09-22",
+  "unixTs": 1726963200,
+  "realizedCapChange30d": 5336000000.0
+ },
+ {
+  "d": "2024-09-23",
+  "unixTs": 1727049600,
+  "realizedCapChange30d": 5738000000.0
+ },
+ {
+  "d": "2024-09-24",
+  "unixTs": 1727136000,
+  "realizedCapChange30d": 6095000000.0
+ },
+ {
+  "d": "2024-09-25",
+  "unixTs": 1727222400,
+  "realizedCapChange30d": 6584000000.0
+ },
+ {
+  "d": "2024-09-26",
+  "unixTs": 1727308800,
+  "realizedCapChange30d": 8381000000.0
+ },
+ {
+  "d": "2024-09-27",
+  "unixTs": 1727395200,
+  "realizedCapChange30d": 8363000000.0
+ },
+ {
+  "d": "2024-09-28",
+  "unixTs": 1727481600,
+  "realizedCapChange30d": 8797000000.0
+ },
+ {
+  "d": "2024-09-29",
+  "unixTs": 1727568000,
+  "realizedCapChange30d": 8935000000.0
+ },
+ {
+  "d": "2024-09-30",
+  "unixTs": 1727654400,
+  "realizedCapChange30d": 8758000000.0
+ },
+ {
+  "d": "2024-10-01",
+  "unixTs": 1727740800,
+  "realizedCapChange30d": 8614000000.0
+ },
+ {
+  "d": "2024-10-02",
+  "unixTs": 1727827200,
+  "realizedCapChange30d": 8434000000.0
+ },
+ {
+  "d": "2024-10-03",
+  "unixTs": 1727913600,
+  "realizedCapChange30d": 8709000000.0
+ },
+ {
+  "d": "2024-10-04",
+  "unixTs": 1728000000,
+  "realizedCapChange30d": 9003000000.0
+ },
+ {
+  "d": "2024-10-05",
+  "unixTs": 1728086400,
+  "realizedCapChange30d": 9477000000.0
+ },
+ {
+  "d": "2024-10-06",
+  "unixTs": 1728172800,
+  "realizedCapChange30d": 10079000000.0
+ },
+ {
+  "d": "2024-10-07",
+  "unixTs": 1728259200,
+  "realizedCapChange30d": 10332000000.0
+ },
+ {
+  "d": "2024-10-08",
+  "unixTs": 1728345600,
+  "realizedCapChange30d": 15800000000.0
+ },
+ {
+  "d": "2024-10-09",
+  "unixTs": 1728432000,
+  "realizedCapChange30d": 15118000000.0
+ },
+ {
+  "d": "2024-10-10",
+  "unixTs": 1728518400,
+  "realizedCapChange30d": 14872000000.0
+ },
+ {
+  "d": "2024-10-11",
+  "unixTs": 1728604800,
+  "realizedCapChange30d": 16970000000.0
+ },
+ {
+  "d": "2024-10-12",
+  "unixTs": 1728691200,
+  "realizedCapChange30d": 17043000000.0
+ },
+ {
+  "d": "2024-10-13",
+  "unixTs": 1728777600,
+  "realizedCapChange30d": 16202000000.0
+ },
+ {
+  "d": "2024-10-14",
+  "unixTs": 1728864000,
+  "realizedCapChange30d": 17021000000.0
+ },
+ {
+  "d": "2024-10-15",
+  "unixTs": 1728950400,
+  "realizedCapChange30d": 18672000000.0
+ },
+ {
+  "d": "2024-10-16",
+  "unixTs": 1729036800,
+  "realizedCapChange30d": 19395000000.0
+ },
+ {
+  "d": "2024-10-17",
+  "unixTs": 1729123200,
+  "realizedCapChange30d": 19593000000.0
+ },
+ {
+  "d": "2024-10-18",
+  "unixTs": 1729209600,
+  "realizedCapChange30d": 19725000000.0
+ },
+ {
+  "d": "2024-10-19",
+  "unixTs": 1729296000,
+  "realizedCapChange30d": 19405000000.0
+ },
+ {
+  "d": "2024-10-20",
+  "unixTs": 1729382400,
+  "realizedCapChange30d": 19949000000.0
+ },
+ {
+  "d": "2024-10-21",
+  "unixTs": 1729468800,
+  "realizedCapChange30d": 21383000000.0
+ },
+ {
+  "d": "2024-10-22",
+  "unixTs": 1729555200,
+  "realizedCapChange30d": 21718000000.0
+ },
+ {
+  "d": "2024-10-23",
+  "unixTs": 1729641600,
+  "realizedCapChange30d": 21262000000.0
+ },
+ {
+  "d": "2024-10-24",
+  "unixTs": 1729728000,
+  "realizedCapChange30d": 21306000000.0
+ },
+ {
+  "d": "2024-10-25",
+  "unixTs": 1729814400,
+  "realizedCapChange30d": 20907000000.0
+ },
+ {
+  "d": "2024-10-26",
+  "unixTs": 1729900800,
+  "realizedCapChange30d": 20296000000.0
+ },
+ {
+  "d": "2024-10-27",
+  "unixTs": 1729987200,
+  "realizedCapChange30d": 19941000000.0
+ },
+ {
+  "d": "2024-10-28",
+  "unixTs": 1730073600,
+  "realizedCapChange30d": 20430000000.0
+ },
+ {
+  "d": "2024-10-29",
+  "unixTs": 1730160000,
+  "realizedCapChange30d": 22298000000.0
+ },
+ {
+  "d": "2024-10-30",
+  "unixTs": 1730246400,
+  "realizedCapChange30d": 23219000000.0
+ },
+ {
+  "d": "2024-10-31",
+  "unixTs": 1730332800,
+  "realizedCapChange30d": 23879000000.0
+ },
+ {
+  "d": "2024-11-01",
+  "unixTs": 1730419200,
+  "realizedCapChange30d": 24551000000.0
+ },
+ {
+  "d": "2024-11-02",
+  "unixTs": 1730505600,
+  "realizedCapChange30d": 24865000000.0
+ },
+ {
+  "d": "2024-11-03",
+  "unixTs": 1730592000,
+  "realizedCapChange30d": 24560000000.0
+ },
+ {
+  "d": "2024-11-04",
+  "unixTs": 1730678400,
+  "realizedCapChange30d": 25010000000.0
+ },
+ {
+  "d": "2024-11-05",
+  "unixTs": 1730764800,
+  "realizedCapChange30d": 25358000000.0
+ },
+ {
+  "d": "2024-11-06",
+  "unixTs": 1730851200,
+  "realizedCapChange30d": 29053000000.0
+ },
+ {
+  "d": "2024-11-07",
+  "unixTs": 1730937600,
+  "realizedCapChange30d": 25233000000.0
+ },
+ {
+  "d": "2024-11-08",
+  "unixTs": 1731024000,
+  "realizedCapChange30d": 26945000000.0
+ },
+ {
+  "d": "2024-11-09",
+  "unixTs": 1731110400,
+  "realizedCapChange30d": 27670000000.0
+ },
+ {
+  "d": "2024-11-10",
+  "unixTs": 1731196800,
+  "realizedCapChange30d": 27443000000.0
+ },
+ {
+  "d": "2024-11-11",
+  "unixTs": 1731283200,
+  "realizedCapChange30d": 32866000000.0
+ },
+ {
+  "d": "2024-11-12",
+  "unixTs": 1731369600,
+  "realizedCapChange30d": 36932000000.0
+ },
+ {
+  "d": "2024-11-13",
+  "unixTs": 1731456000,
+  "realizedCapChange30d": 40777000000.0
+ },
+ {
+  "d": "2024-11-14",
+  "unixTs": 1731542400,
+  "realizedCapChange30d": 43144000000.0
+ },
+ {
+  "d": "2024-11-15",
+  "unixTs": 1731628800,
+  "realizedCapChange30d": 45922000000.0
+ },
+ {
+  "d": "2024-11-16",
+  "unixTs": 1731715200,
+  "realizedCapChange30d": 46324000000.0
+ },
+ {
+  "d": "2024-11-17",
+  "unixTs": 1731801600,
+  "realizedCapChange30d": 46222000000.0
+ },
+ {
+  "d": "2024-11-18",
+  "unixTs": 1731888000,
+  "realizedCapChange30d": 47845000000.0
+ },
+ {
+  "d": "2024-11-19",
+  "unixTs": 1731974400,
+  "realizedCapChange30d": 51140000000.0
+ },
+ {
+  "d": "2024-11-20",
+  "unixTs": 1732060800,
+  "realizedCapChange30d": 53557000000.0
+ },
+ {
+  "d": "2024-11-21",
+  "unixTs": 1732147200,
+  "realizedCapChange30d": 63955000000.0
+ },
+ {
+  "d": "2024-11-22",
+  "unixTs": 1732233600,
+  "realizedCapChange30d": 68803000000.0
+ },
+ {
+  "d": "2024-11-23",
+  "unixTs": 1732320000,
+  "realizedCapChange30d": 71039000000.0
+ },
+ {
+  "d": "2024-11-24",
+  "unixTs": 1732406400,
+  "realizedCapChange30d": 72342000000.0
+ },
+ {
+  "d": "2024-11-25",
+  "unixTs": 1732492800,
+  "realizedCapChange30d": 73892000000.0
+ },
+ {
+  "d": "2024-11-26",
+  "unixTs": 1732579200,
+  "realizedCapChange30d": 75550000000.0
+ },
+ {
+  "d": "2024-11-27",
+  "unixTs": 1732665600,
+  "realizedCapChange30d": 77209000000.0
+ },
+ {
+  "d": "2024-11-28",
+  "unixTs": 1732752000,
+  "realizedCapChange30d": 76961000000.0
+ },
+ {
+  "d": "2024-11-29",
+  "unixTs": 1732838400,
+  "realizedCapChange30d": 78221000000.0
+ },
+ {
+  "d": "2024-11-30",
+  "unixTs": 1732924800,
+  "realizedCapChange30d": 78469000000.0
+ },
+ {
+  "d": "2024-12-01",
+  "unixTs": 1733011200,
+  "realizedCapChange30d": 78731000000.0
+ },
+ {
+  "d": "2024-12-02",
+  "unixTs": 1733097600,
+  "realizedCapChange30d": 80713000000.0
+ },
+ {
+  "d": "2024-12-03",
+  "unixTs": 1733184000,
+  "realizedCapChange30d": 83102000000.0
+ },
+ {
+  "d": "2024-12-04",
+  "unixTs": 1733270400,
+  "realizedCapChange30d": 85854000000.0
+ },
+ {
+  "d": "2024-12-05",
+  "unixTs": 1733356800,
+  "realizedCapChange30d": 91839000000.0
+ },
+ {
+  "d": "2024-12-06",
+  "unixTs": 1733443200,
+  "realizedCapChange30d": 94275000000.0
+ },
+ {
+  "d": "2024-12-07",
+  "unixTs": 1733529600,
+  "realizedCapChange30d": 93548000000.0
+ },
+ {
+  "d": "2024-12-08",
+  "unixTs": 1733616000,
+  "realizedCapChange30d": 92757000000.0
+ },
+ {
+  "d": "2024-12-09",
+  "unixTs": 1733702400,
+  "realizedCapChange30d": 97782000000.0
+ },
+ {
+  "d": "2024-12-10",
+  "unixTs": 1733788800,
+  "realizedCapChange30d": 98882000000.0
+ },
+ {
+  "d": "2024-12-11",
+  "unixTs": 1733875200,
+  "realizedCapChange30d": 96753000000.0
+ },
+ {
+  "d": "2024-12-12",
+  "unixTs": 1733961600,
+  "realizedCapChange30d": 93631000000.0
+ },
+ {
+  "d": "2024-12-13",
+  "unixTs": 1734048000,
+  "realizedCapChange30d": 90918000000.0
+ },
+ {
+  "d": "2024-12-14",
+  "unixTs": 1734134400,
+  "realizedCapChange30d": 87707000000.0
+ },
+ {
+  "d": "2024-12-15",
+  "unixTs": 1734220800,
+  "realizedCapChange30d": 85688000000.0
+ },
+ {
+  "d": "2024-12-16",
+  "unixTs": 1734307200,
+  "realizedCapChange30d": 88807000000.0
+ },
+ {
+  "d": "2024-12-17",
+  "unixTs": 1734393600,
+  "realizedCapChange30d": 92415000000.0
+ },
+ {
+  "d": "2024-12-18",
+  "unixTs": 1734480000,
+  "realizedCapChange30d": 92201000000.0
+ },
+ {
+  "d": "2024-12-19",
+  "unixTs": 1734566400,
+  "realizedCapChange30d": 92041000000.0
+ },
+ {
+  "d": "2024-12-20",
+  "unixTs": 1734652800,
+  "realizedCapChange30d": 90652000000.0
+ },
+ {
+  "d": "2024-12-21",
+  "unixTs": 1734739200,
+  "realizedCapChange30d": 80082000000.0
+ },
+ {
+  "d": "2024-12-22",
+  "unixTs": 1734825600,
+  "realizedCapChange30d": 77577000000.0
+ },
+ {
+  "d": "2024-12-23",
+  "unixTs": 1734912000,
+  "realizedCapChange30d": 79206000000.0
+ },
+ {
+  "d": "2024-12-24",
+  "unixTs": 1734998400,
+  "realizedCapChange30d": 80624000000.0
+ },
+ {
+  "d": "2024-12-25",
+  "unixTs": 1735084800,
+  "realizedCapChange30d": 79366000000.0
+ },
+ {
+  "d": "2024-12-26",
+  "unixTs": 1735171200,
+  "realizedCapChange30d": 78110000000.0
+ },
+ {
+  "d": "2024-12-27",
+  "unixTs": 1735257600,
+  "realizedCapChange30d": 76791000000.0
+ },
+ {
+  "d": "2024-12-28",
+  "unixTs": 1735344000,
+  "realizedCapChange30d": 75466000000.0
+ },
+ {
+  "d": "2024-12-29",
+  "unixTs": 1735430400,
+  "realizedCapChange30d": 74191000000.0
+ },
+ {
+  "d": "2024-12-30",
+  "unixTs": 1735516800,
+  "realizedCapChange30d": 75919000000.0
+ },
+ {
+  "d": "2024-12-31",
+  "unixTs": 1735603200,
+  "realizedCapChange30d": 76778000000.0
+ },
+ {
+  "d": "2025-01-01",
+  "unixTs": 1735689600,
+  "realizedCapChange30d": 75843000000.0
+ },
+ {
+  "d": "2025-01-02",
+  "unixTs": 1735776000,
+  "realizedCapChange30d": 74556000000.0
+ },
+ {
+  "d": "2025-01-03",
+  "unixTs": 1735862400,
+  "realizedCapChange30d": 72089000000.0
+ },
+ {
+  "d": "2025-01-04",
+  "unixTs": 1735948800,
+  "realizedCapChange30d": 66046000000.0
+ },
+ {
+  "d": "2025-01-05",
+  "unixTs": 1736035200,
+  "realizedCapChange30d": 60082000000.0
+ },
+ {
+  "d": "2025-01-06",
+  "unixTs": 1736121600,
+  "realizedCapChange30d": 60952000000.0
+ },
+ {
+  "d": "2025-01-07",
+  "unixTs": 1736208000,
+  "realizedCapChange30d": 61576000000.0
+ },
+ {
+  "d": "2025-01-08",
+  "unixTs": 1736294400,
+  "realizedCapChange30d": 56496000000.0
+ },
+ {
+  "d": "2025-01-09",
+  "unixTs": 1736380800,
+  "realizedCapChange30d": 53448000000.0
+ },
+ {
+  "d": "2025-01-10",
+  "unixTs": 1736467200,
+  "realizedCapChange30d": 50637000000.0
+ },
+ {
+  "d": "2025-01-11",
+  "unixTs": 1736553600,
+  "realizedCapChange30d": 49782000000.0
+ },
+ {
+  "d": "2025-01-12",
+  "unixTs": 1736640000,
+  "realizedCapChange30d": 48000000000.0
+ },
+ {
+  "d": "2025-01-13",
+  "unixTs": 1736726400,
+  "realizedCapChange30d": 47600000000.0
+ },
+ {
+  "d": "2025-01-14",
+  "unixTs": 1736812800,
+  "realizedCapChange30d": 47008000000.0
+ },
+ {
+  "d": "2025-01-15",
+  "unixTs": 1736899200,
+  "realizedCapChange30d": 44688000000.0
+ },
+ {
+  "d": "2025-01-16",
+  "unixTs": 1736985600,
+  "realizedCapChange30d": 42492000000.0
+ },
+ {
+  "d": "2025-01-17",
+  "unixTs": 1737072000,
+  "realizedCapChange30d": 42828000000.0
+ },
+ {
+  "d": "2025-01-18",
+  "unixTs": 1737158400,
+  "realizedCapChange30d": 39366000000.0
+ },
+ {
+  "d": "2025-01-19",
+  "unixTs": 1737244800,
+  "realizedCapChange30d": 37261000000.0
+ },
+ {
+  "d": "2025-01-20",
+  "unixTs": 1737331200,
+  "realizedCapChange30d": 38503000000.0
+ },
+ {
+  "d": "2025-01-21",
+  "unixTs": 1737417600,
+  "realizedCapChange30d": 38226000000.0
+ },
+ {
+  "d": "2025-01-22",
+  "unixTs": 1737504000,
+  "realizedCapChange30d": 36393000000.0
+ },
+ {
+  "d": "2025-01-23",
+  "unixTs": 1737590400,
+  "realizedCapChange30d": 37816000000.0
+ },
+ {
+  "d": "2025-01-24",
+  "unixTs": 1737676800,
+  "realizedCapChange30d": 38265000000.0
+ },
+ {
+  "d": "2025-01-25",
+  "unixTs": 1737763200,
+  "realizedCapChange30d": 38174000000.0
+ },
+ {
+  "d": "2025-01-26",
+  "unixTs": 1737849600,
+  "realizedCapChange30d": 37187000000.0
+ },
+ {
+  "d": "2025-01-27",
+  "unixTs": 1737936000,
+  "realizedCapChange30d": 37838000000.0
+ },
+ {
+  "d": "2025-01-28",
+  "unixTs": 1738022400,
+  "realizedCapChange30d": 37700000000.0
+ },
+ {
+  "d": "2025-01-29",
+  "unixTs": 1738108800,
+  "realizedCapChange30d": 36119000000.0
+ },
+ {
+  "d": "2025-01-30",
+  "unixTs": 1738195200,
+  "realizedCapChange30d": 35647000000.0
+ },
+ {
+  "d": "2025-01-31",
+  "unixTs": 1738281600,
+  "realizedCapChange30d": 34782000000.0
+ },
+ {
+  "d": "2025-02-01",
+  "unixTs": 1738368000,
+  "realizedCapChange30d": 33795000000.0
+ },
+ {
+  "d": "2025-02-02",
+  "unixTs": 1738454400,
+  "realizedCapChange30d": 33024000000.0
+ },
+ {
+  "d": "2025-02-03",
+  "unixTs": 1738540800,
+  "realizedCapChange30d": 34000000000.0
+ },
+ {
+  "d": "2025-02-04",
+  "unixTs": 1738627200,
+  "realizedCapChange30d": 35054000000.0
+ },
+ {
+  "d": "2025-02-05",
+  "unixTs": 1738713600,
+  "realizedCapChange30d": 34870000000.0
+ },
+ {
+  "d": "2025-02-06",
+  "unixTs": 1738800000,
+  "realizedCapChange30d": 34477000000.0
+ },
+ {
+  "d": "2025-02-07",
+  "unixTs": 1738886400,
+  "realizedCapChange30d": 34403000000.0
+ },
+ {
+  "d": "2025-02-08",
+  "unixTs": 1738972800,
+  "realizedCapChange30d": 34840000000.0
+ },
+ {
+  "d": "2025-02-09",
+  "unixTs": 1739059200,
+  "realizedCapChange30d": 35479000000.0
+ },
+ {
+  "d": "2025-02-10",
+  "unixTs": 1739145600,
+  "realizedCapChange30d": 35622000000.0
+ },
+ {
+  "d": "2025-02-11",
+  "unixTs": 1739232000,
+  "realizedCapChange30d": 36053000000.0
+ },
+ {
+  "d": "2025-02-12",
+  "unixTs": 1739318400,
+  "realizedCapChange30d": 36198000000.0
+ },
+ {
+  "d": "2025-02-13",
+  "unixTs": 1739404800,
+  "realizedCapChange30d": 35396000000.0
+ },
+ {
+  "d": "2025-02-14",
+  "unixTs": 1739491200,
+  "realizedCapChange30d": 34073000000.0
+ },
+ {
+  "d": "2025-02-15",
+  "unixTs": 1739577600,
+  "realizedCapChange30d": 32447000000.0
+ },
+ {
+  "d": "2025-02-16",
+  "unixTs": 1739664000,
+  "realizedCapChange30d": 30316000000.0
+ },
+ {
+  "d": "2025-02-17",
+  "unixTs": 1739750400,
+  "realizedCapChange30d": 29242000000.0
+ },
+ {
+  "d": "2025-02-18",
+  "unixTs": 1739836800,
+  "realizedCapChange30d": 28971000000.0
+ },
+ {
+  "d": "2025-02-19",
+  "unixTs": 1739923200,
+  "realizedCapChange30d": 27795000000.0
+ },
+ {
+  "d": "2025-02-20",
+  "unixTs": 1740009600,
+  "realizedCapChange30d": 26010000000.0
+ },
+ {
+  "d": "2025-02-21",
+  "unixTs": 1740096000,
+  "realizedCapChange30d": 23648000000.0
+ },
+ {
+  "d": "2025-02-22",
+  "unixTs": 1740182400,
+  "realizedCapChange30d": 19797000000.0
+ },
+ {
+  "d": "2025-02-23",
+  "unixTs": 1740268800,
+  "realizedCapChange30d": 19043000000.0
+ },
+ {
+  "d": "2025-02-24",
+  "unixTs": 1740355200,
+  "realizedCapChange30d": 18440000000.0
+ },
+ {
+  "d": "2025-02-25",
+  "unixTs": 1740441600,
+  "realizedCapChange30d": 18128000000.0
+ },
+ {
+  "d": "2025-02-26",
+  "unixTs": 1740528000,
+  "realizedCapChange30d": 16006000000.0
+ },
+ {
+  "d": "2025-02-27",
+  "unixTs": 1740614400,
+  "realizedCapChange30d": 15544000000.0
+ },
+ {
+  "d": "2025-02-28",
+  "unixTs": 1740700800,
+  "realizedCapChange30d": 14585000000.0
+ },
+ {
+  "d": "2025-03-01",
+  "unixTs": 1740787200,
+  "realizedCapChange30d": 13352000000.0
+ },
+ {
+  "d": "2025-03-02",
+  "unixTs": 1740873600,
+  "realizedCapChange30d": 14098000000.0
+ },
+ {
+  "d": "2025-03-03",
+  "unixTs": 1740960000,
+  "realizedCapChange30d": 13323000000.0
+ },
+ {
+  "d": "2025-03-04",
+  "unixTs": 1741046400,
+  "realizedCapChange30d": 13394000000.0
+ },
+ {
+  "d": "2025-03-05",
+  "unixTs": 1741132800,
+  "realizedCapChange30d": 12901000000.0
+ },
+ {
+  "d": "2025-03-06",
+  "unixTs": 1741219200,
+  "realizedCapChange30d": 12229000000.0
+ },
+ {
+  "d": "2025-03-07",
+  "unixTs": 1741305600,
+  "realizedCapChange30d": 10489000000.0
+ },
+ {
+  "d": "2025-03-08",
+  "unixTs": 1741392000,
+  "realizedCapChange30d": 9472000000.0
+ },
+ {
+  "d": "2025-03-09",
+  "unixTs": 1741478400,
+  "realizedCapChange30d": 8829000000.0
+ },
+ {
+  "d": "2025-03-10",
+  "unixTs": 1741564800,
+  "realizedCapChange30d": 8140000000.0
+ },
+ {
+  "d": "2025-03-11",
+  "unixTs": 1741651200,
+  "realizedCapChange30d": 7406000000.0
+ },
+ {
+  "d": "2025-03-12",
+  "unixTs": 1741737600,
+  "realizedCapChange30d": 7565000000.0
+ },
+ {
+  "d": "2025-03-13",
+  "unixTs": 1741824000,
+  "realizedCapChange30d": 6701000000.0
+ },
+ {
+  "d": "2025-03-14",
+  "unixTs": 1741910400,
+  "realizedCapChange30d": 6641000000.0
+ },
+ {
+  "d": "2025-03-15",
+  "unixTs": 1741996800,
+  "realizedCapChange30d": 6525000000.0
+ },
+ {
+  "d": "2025-03-16",
+  "unixTs": 1742083200,
+  "realizedCapChange30d": 6018000000.0
+ },
+ {
+  "d": "2025-03-17",
+  "unixTs": 1742169600,
+  "realizedCapChange30d": 5648000000.0
+ },
+ {
+  "d": "2025-03-18",
+  "unixTs": 1742256000,
+  "realizedCapChange30d": 5622000000.0
+ },
+ {
+  "d": "2025-03-19",
+  "unixTs": 1742342400,
+  "realizedCapChange30d": 6232000000.0
+ },
+ {
+  "d": "2025-03-20",
+  "unixTs": 1742428800,
+  "realizedCapChange30d": 6169000000.0
+ },
+ {
+  "d": "2025-03-21",
+  "unixTs": 1742515200,
+  "realizedCapChange30d": 5942000000.0
+ },
+ {
+  "d": "2025-03-22",
+  "unixTs": 1742601600,
+  "realizedCapChange30d": 5404000000.0
+ },
+ {
+  "d": "2025-03-23",
+  "unixTs": 1742688000,
+  "realizedCapChange30d": 5383000000.0
+ },
+ {
+  "d": "2025-03-24",
+  "unixTs": 1742774400,
+  "realizedCapChange30d": 5411000000.0
+ },
+ {
+  "d": "2025-03-25",
+  "unixTs": 1742860800,
+  "realizedCapChange30d": 5433000000.0
+ },
+ {
+  "d": "2025-03-26",
+  "unixTs": 1742947200,
+  "realizedCapChange30d": 5781000000.0
+ },
+ {
+  "d": "2025-03-27",
+  "unixTs": 1743033600,
+  "realizedCapChange30d": 5969000000.0
+ },
+ {
+  "d": "2025-03-28",
+  "unixTs": 1743120000,
+  "realizedCapChange30d": 7864000000.0
+ },
+ {
+  "d": "2025-03-29",
+  "unixTs": 1743206400,
+  "realizedCapChange30d": 7409000000.0
+ },
+ {
+  "d": "2025-03-30",
+  "unixTs": 1743292800,
+  "realizedCapChange30d": 7415000000.0
+ },
+ {
+  "d": "2025-03-31",
+  "unixTs": 1743379200,
+  "realizedCapChange30d": 7283000000.0
+ },
+ {
+  "d": "2025-04-01",
+  "unixTs": 1743465600,
+  "realizedCapChange30d": 6192000000.0
+ },
+ {
+  "d": "2025-04-02",
+  "unixTs": 1743552000,
+  "realizedCapChange30d": 7041000000.0
+ },
+ {
+  "d": "2025-04-03",
+  "unixTs": 1743638400,
+  "realizedCapChange30d": 8142000000.0
+ },
+ {
+  "d": "2025-04-04",
+  "unixTs": 1743724800,
+  "realizedCapChange30d": 7505000000.0
+ },
+ {
+  "d": "2025-04-05",
+  "unixTs": 1743811200,
+  "realizedCapChange30d": 6866000000.0
+ },
+ {
+  "d": "2025-04-06",
+  "unixTs": 1743897600,
+  "realizedCapChange30d": 6712000000.0
+ },
+ {
+  "d": "2025-04-07",
+  "unixTs": 1743984000,
+  "realizedCapChange30d": 7116000000.0
+ },
+ {
+  "d": "2025-04-08",
+  "unixTs": 1744070400,
+  "realizedCapChange30d": 6799000000.0
+ },
+ {
+  "d": "2025-04-09",
+  "unixTs": 1744156800,
+  "realizedCapChange30d": 8176000000.0
+ },
+ {
+  "d": "2025-04-10",
+  "unixTs": 1744243200,
+  "realizedCapChange30d": 7697000000.0
+ },
+ {
+  "d": "2025-04-11",
+  "unixTs": 1744329600,
+  "realizedCapChange30d": 7489000000.0
+ },
+ {
+  "d": "2025-04-12",
+  "unixTs": 1744416000,
+  "realizedCapChange30d": 8001000000.0
+ },
+ {
+  "d": "2025-04-13",
+  "unixTs": 1744502400,
+  "realizedCapChange30d": 7771000000.0
+ },
+ {
+  "d": "2025-04-14",
+  "unixTs": 1744588800,
+  "realizedCapChange30d": 8108000000.0
+ },
+ {
+  "d": "2025-04-15",
+  "unixTs": 1744675200,
+  "realizedCapChange30d": 7270000000.0
+ },
+ {
+  "d": "2025-04-16",
+  "unixTs": 1744761600,
+  "realizedCapChange30d": 7596000000.0
+ },
+ {
+  "d": "2025-04-17",
+  "unixTs": 1744848000,
+  "realizedCapChange30d": 5582000000.0
+ },
+ {
+  "d": "2025-04-18",
+  "unixTs": 1744934400,
+  "realizedCapChange30d": 4970000000.0
+ },
+ {
+  "d": "2025-04-19",
+  "unixTs": 1745020800,
+  "realizedCapChange30d": 4755000000.0
+ },
+ {
+  "d": "2025-04-20",
+  "unixTs": 1745107200,
+  "realizedCapChange30d": 4710000000.0
+ },
+ {
+  "d": "2025-04-21",
+  "unixTs": 1745193600,
+  "realizedCapChange30d": 5269000000.0
+ },
+ {
+  "d": "2025-04-22",
+  "unixTs": 1745280000,
+  "realizedCapChange30d": 6897000000.0
+ },
+ {
+  "d": "2025-04-23",
+  "unixTs": 1745366400,
+  "realizedCapChange30d": 9078000000.0
+ },
+ {
+  "d": "2025-04-24",
+  "unixTs": 1745452800,
+  "realizedCapChange30d": 10264000000.0
+ },
+ {
+  "d": "2025-04-25",
+  "unixTs": 1745539200,
+  "realizedCapChange30d": 12968000000.0
+ },
+ {
+  "d": "2025-04-26",
+  "unixTs": 1745625600,
+  "realizedCapChange30d": 13256000000.0
+ },
+ {
+  "d": "2025-04-27",
+  "unixTs": 1745712000,
+  "realizedCapChange30d": 12633000000.0
+ },
+ {
+  "d": "2025-04-28",
+  "unixTs": 1745798400,
+  "realizedCapChange30d": 14098000000.0
+ },
+ {
+  "d": "2025-04-29",
+  "unixTs": 1745884800,
+  "realizedCapChange30d": 15644000000.0
+ },
+ {
+  "d": "2025-04-30",
+  "unixTs": 1745971200,
+  "realizedCapChange30d": 16531000000.0
+ },
+ {
+  "d": "2025-05-01",
+  "unixTs": 1746057600,
+  "realizedCapChange30d": 17641000000.0
+ },
+ {
+  "d": "2025-05-02",
+  "unixTs": 1746144000,
+  "realizedCapChange30d": 18605000000.0
+ },
+ {
+  "d": "2025-05-03",
+  "unixTs": 1746230400,
+  "realizedCapChange30d": 17798000000.0
+ },
+ {
+  "d": "2025-05-04",
+  "unixTs": 1746316800,
+  "realizedCapChange30d": 17522000000.0
+ },
+ {
+  "d": "2025-05-05",
+  "unixTs": 1746403200,
+  "realizedCapChange30d": 19288000000.0
+ },
+ {
+  "d": "2025-05-06",
+  "unixTs": 1746489600,
+  "realizedCapChange30d": 21249000000.0
+ },
+ {
+  "d": "2025-05-07",
+  "unixTs": 1746576000,
+  "realizedCapChange30d": 21900000000.0
+ },
+ {
+  "d": "2025-05-08",
+  "unixTs": 1746662400,
+  "realizedCapChange30d": 24659000000.0
+ },
+ {
+  "d": "2025-05-09",
+  "unixTs": 1746748800,
+  "realizedCapChange30d": 25546000000.0
+ },
+ {
+  "d": "2025-05-10",
+  "unixTs": 1746835200,
+  "realizedCapChange30d": 25961000000.0
+ },
+ {
+  "d": "2025-05-11",
+  "unixTs": 1746921600,
+  "realizedCapChange30d": 26094000000.0
+ },
+ {
+  "d": "2025-05-12",
+  "unixTs": 1747008000,
+  "realizedCapChange30d": 27011000000.0
+ },
+ {
+  "d": "2025-05-13",
+  "unixTs": 1747094400,
+  "realizedCapChange30d": 29320000000.0
+ },
+ {
+  "d": "2025-05-14",
+  "unixTs": 1747180800,
+  "realizedCapChange30d": 29932000000.0
+ },
+ {
+  "d": "2025-05-15",
+  "unixTs": 1747267200,
+  "realizedCapChange30d": 32972000000.0
+ },
+ {
+  "d": "2025-05-16",
+  "unixTs": 1747353600,
+  "realizedCapChange30d": 33838000000.0
+ },
+ {
+  "d": "2025-05-17",
+  "unixTs": 1747440000,
+  "realizedCapChange30d": 36098000000.0
+ },
+ {
+  "d": "2025-05-18",
+  "unixTs": 1747526400,
+  "realizedCapChange30d": 36702000000.0
+ },
+ {
+  "d": "2025-05-19",
+  "unixTs": 1747612800,
+  "realizedCapChange30d": 38953000000.0
+ },
+ {
+  "d": "2025-05-20",
+  "unixTs": 1747699200,
+  "realizedCapChange30d": 40609000000.0
+ },
+ {
+  "d": "2025-05-21",
+  "unixTs": 1747785600,
+  "realizedCapChange30d": 42685000000.0
+ },
+ {
+  "d": "2025-05-22",
+  "unixTs": 1747872000,
+  "realizedCapChange30d": 43337000000.0
+ },
+ {
+  "d": "2025-05-23",
+  "unixTs": 1747958400,
+  "realizedCapChange30d": 41793000000.0
+ },
+ {
+  "d": "2025-05-24",
+  "unixTs": 1748044800,
+  "realizedCapChange30d": 40889000000.0
+ },
+ {
+  "d": "2025-05-25",
+  "unixTs": 1748131200,
+  "realizedCapChange30d": 38467000000.0
+ },
+ {
+  "d": "2025-05-26",
+  "unixTs": 1748217600,
+  "realizedCapChange30d": 40325000000.0
+ },
+ {
+  "d": "2025-05-27",
+  "unixTs": 1748304000,
+  "realizedCapChange30d": 42651000000.0
+ },
+ {
+  "d": "2025-05-28",
+  "unixTs": 1748390400,
+  "realizedCapChange30d": 42787000000.0
+ },
+ {
+  "d": "2025-05-29",
+  "unixTs": 1748476800,
+  "realizedCapChange30d": 42877000000.0
+ },
+ {
+  "d": "2025-05-30",
+  "unixTs": 1748563200,
+  "realizedCapChange30d": 42840000000.0
+ },
+ {
+  "d": "2025-05-31",
+  "unixTs": 1748649600,
+  "realizedCapChange30d": 41793000000.0
+ },
+ {
+  "d": "2025-06-01",
+  "unixTs": 1748736000,
+  "realizedCapChange30d": 40848000000.0
+ },
+ {
+  "d": "2025-06-02",
+  "unixTs": 1748822400,
+  "realizedCapChange30d": 43214000000.0
+ },
+ {
+  "d": "2025-06-03",
+  "unixTs": 1748908800,
+  "realizedCapChange30d": 45322000000.0
+ },
+ {
+  "d": "2025-06-04",
+  "unixTs": 1748995200,
+  "realizedCapChange30d": 44907000000.0
+ },
+ {
+  "d": "2025-06-05",
+  "unixTs": 1749081600,
+  "realizedCapChange30d": 43228000000.0
+ },
+ {
+  "d": "2025-06-06",
+  "unixTs": 1749168000,
+  "realizedCapChange30d": 42811000000.0
+ },
+ {
+  "d": "2025-06-07",
+  "unixTs": 1749254400,
+  "realizedCapChange30d": 41254000000.0
+ },
+ {
+  "d": "2025-06-08",
+  "unixTs": 1749340800,
+  "realizedCapChange30d": 39838000000.0
+ },
+ {
+  "d": "2025-06-09",
+  "unixTs": 1749427200,
+  "realizedCapChange30d": 40547000000.0
+ },
+ {
+  "d": "2025-06-10",
+  "unixTs": 1749513600,
+  "realizedCapChange30d": 41494000000.0
+ },
+ {
+  "d": "2025-06-11",
+  "unixTs": 1749600000,
+  "realizedCapChange30d": 41157000000.0
+ },
+ {
+  "d": "2025-06-12",
+  "unixTs": 1749686400,
+  "realizedCapChange30d": 39188000000.0
+ },
+ {
+  "d": "2025-06-13",
+  "unixTs": 1749772800,
+  "realizedCapChange30d": 39436000000.0
+ },
+ {
+  "d": "2025-06-14",
+  "unixTs": 1749859200,
+  "realizedCapChange30d": 37448000000.0
+ },
+ {
+  "d": "2025-06-15",
+  "unixTs": 1749945600,
+  "realizedCapChange30d": 36589000000.0
+ },
+ {
+  "d": "2025-06-16",
+  "unixTs": 1750032000,
+  "realizedCapChange30d": 38391000000.0
+ },
+ {
+  "d": "2025-06-17",
+  "unixTs": 1750118400,
+  "realizedCapChange30d": 37852000000.0
+ },
+ {
+  "d": "2025-06-18",
+  "unixTs": 1750204800,
+  "realizedCapChange30d": 36109000000.0
+ },
+ {
+  "d": "2025-06-19",
+  "unixTs": 1750291200,
+  "realizedCapChange30d": 34894000000.0
+ },
+ {
+  "d": "2025-06-20",
+  "unixTs": 1750377600,
+  "realizedCapChange30d": 32600000000.0
+ },
+ {
+  "d": "2025-06-21",
+  "unixTs": 1750464000,
+  "realizedCapChange30d": 30480000000.0
+ },
+ {
+  "d": "2025-06-22",
+  "unixTs": 1750550400,
+  "realizedCapChange30d": 29520000000.0
+ },
+ {
+  "d": "2025-06-23",
+  "unixTs": 1750636800,
+  "realizedCapChange30d": 30310000000.0
+ },
+ {
+  "d": "2025-06-24",
+  "unixTs": 1750723200,
+  "realizedCapChange30d": 30960000000.0
+ },
+ {
+  "d": "2025-06-25",
+  "unixTs": 1750809600,
+  "realizedCapChange30d": 30078000000.0
+ },
+ {
+  "d": "2025-06-26",
+  "unixTs": 1750896000,
+  "realizedCapChange30d": 29533000000.0
+ },
+ {
+  "d": "2025-06-27",
+  "unixTs": 1750982400,
+  "realizedCapChange30d": 30271000000.0
+ },
+ {
+  "d": "2025-06-28",
+  "unixTs": 1751068800,
+  "realizedCapChange30d": 29112000000.0
+ },
+ {
+  "d": "2025-06-29",
+  "unixTs": 1751155200,
+  "realizedCapChange30d": 28957000000.0
+ },
+ {
+  "d": "2025-06-30",
+  "unixTs": 1751241600,
+  "realizedCapChange30d": 31156000000.0
+ },
+ {
+  "d": "2025-07-01",
+  "unixTs": 1751328000,
+  "realizedCapChange30d": 31318000000.0
+ },
+ {
+  "d": "2025-07-02",
+  "unixTs": 1751414400,
+  "realizedCapChange30d": 29706000000.0
+ },
+ {
+  "d": "2025-07-03",
+  "unixTs": 1751500800,
+  "realizedCapChange30d": 29100000000.0
+ },
+ {
+  "d": "2025-07-04",
+  "unixTs": 1751587200,
+  "realizedCapChange30d": 36677000000.0
+ },
+ {
+  "d": "2025-07-05",
+  "unixTs": 1751673600,
+  "realizedCapChange30d": 36985000000.0
+ },
+ {
+  "d": "2025-07-06",
+  "unixTs": 1751760000,
+  "realizedCapChange30d": 36697000000.0
+ },
+ {
+  "d": "2025-07-07",
+  "unixTs": 1751846400,
+  "realizedCapChange30d": 37678000000.0
+ },
+ {
+  "d": "2025-07-08",
+  "unixTs": 1751932800,
+  "realizedCapChange30d": 38947000000.0
+ },
+ {
+  "d": "2025-07-09",
+  "unixTs": 1752019200,
+  "realizedCapChange30d": 40286000000.0
+ },
+ {
+  "d": "2025-07-10",
+  "unixTs": 1752105600,
+  "realizedCapChange30d": 40612000000.0
+ },
+ {
+  "d": "2025-07-11",
+  "unixTs": 1752192000,
+  "realizedCapChange30d": 42948000000.0
+ },
+ {
+  "d": "2025-07-12",
+  "unixTs": 1752278400,
+  "realizedCapChange30d": 43952000000.0
+ },
+ {
+  "d": "2025-07-13",
+  "unixTs": 1752364800,
+  "realizedCapChange30d": 43635000000.0
+ },
+ {
+  "d": "2025-07-14",
+  "unixTs": 1752451200,
+  "realizedCapChange30d": 47024000000.0
+ },
+ {
+  "d": "2025-07-15",
+  "unixTs": 1752537600,
+  "realizedCapChange30d": 48675000000.0
+ },
+ {
+  "d": "2025-07-16",
+  "unixTs": 1752624000,
+  "realizedCapChange30d": 53197000000.0
+ },
+ {
+  "d": "2025-07-17",
+  "unixTs": 1752710400,
+  "realizedCapChange30d": 56892000000.0
+ },
+ {
+  "d": "2025-07-18",
+  "unixTs": 1752796800,
+  "realizedCapChange30d": 58032000000.0
+ },
+ {
+  "d": "2025-07-19",
+  "unixTs": 1752883200,
+  "realizedCapChange30d": 58743000000.0
+ },
+ {
+  "d": "2025-07-20",
+  "unixTs": 1752969600,
+  "realizedCapChange30d": 58820000000.0
+ },
+ {
+  "d": "2025-07-21",
+  "unixTs": 1753056000,
+  "realizedCapChange30d": 60205000000.0
+ },
+ {
+  "d": "2025-07-22",
+  "unixTs": 1753142400,
+  "realizedCapChange30d": 62881000000.0
+ },
+ {
+  "d": "2025-07-23",
+  "unixTs": 1753228800,
+  "realizedCapChange30d": 63651000000.0
+ },
+ {
+  "d": "2025-07-24",
+  "unixTs": 1753315200,
+  "realizedCapChange30d": 63809000000.0
+ },
+ {
+  "d": "2025-07-25",
+  "unixTs": 1753401600,
+  "realizedCapChange30d": 64549000000.0
+ },
+ {
+  "d": "2025-07-26",
+  "unixTs": 1753488000,
+  "realizedCapChange30d": 63060000000.0
+ },
+ {
+  "d": "2025-07-27",
+  "unixTs": 1753574400,
+  "realizedCapChange30d": 61557000000.0
+ },
+ {
+  "d": "2025-07-28",
+  "unixTs": 1753660800,
+  "realizedCapChange30d": 62433000000.0
+ },
+ {
+  "d": "2025-07-29",
+  "unixTs": 1753747200,
+  "realizedCapChange30d": 63670000000.0
+ },
+ {
+  "d": "2025-07-30",
+  "unixTs": 1753833600,
+  "realizedCapChange30d": 62679000000.0
+ },
+ {
+  "d": "2025-07-31",
+  "unixTs": 1753920000,
+  "realizedCapChange30d": 62711000000.0
+ },
+ {
+  "d": "2025-08-01",
+  "unixTs": 1754006400,
+  "realizedCapChange30d": 61785000000.0
+ },
+ {
+  "d": "2025-08-02",
+  "unixTs": 1754092800,
+  "realizedCapChange30d": 60424000000.0
+ },
+ {
+  "d": "2025-08-03",
+  "unixTs": 1754179200,
+  "realizedCapChange30d": 52178000000.0
+ },
+ {
+  "d": "2025-08-04",
+  "unixTs": 1754265600,
+  "realizedCapChange30d": 52673000000.0
+ },
+ {
+  "d": "2025-08-05",
+  "unixTs": 1754352000,
+  "realizedCapChange30d": 52997000000.0
+ },
+ {
+  "d": "2025-08-06",
+  "unixTs": 1754438400,
+  "realizedCapChange30d": 51837000000.0
+ },
+ {
+  "d": "2025-08-07",
+  "unixTs": 1754524800,
+  "realizedCapChange30d": 51729000000.0
+ },
+ {
+  "d": "2025-08-08",
+  "unixTs": 1754611200,
+  "realizedCapChange30d": 50148000000.0
+ },
+ {
+  "d": "2025-08-09",
+  "unixTs": 1754697600,
+  "realizedCapChange30d": 48660000000.0
+ },
+ {
+  "d": "2025-08-10",
+  "unixTs": 1754784000,
+  "realizedCapChange30d": 46037000000.0
+ },
+ {
+  "d": "2025-08-11",
+  "unixTs": 1754870400,
+  "realizedCapChange30d": 45479000000.0
+ },
+ {
+  "d": "2025-08-12",
+  "unixTs": 1754956800,
+  "realizedCapChange30d": 45852000000.0
+ },
+ {
+  "d": "2025-08-13",
+  "unixTs": 1755043200,
+  "realizedCapChange30d": 44168000000.0
+ },
+ {
+  "d": "2025-08-14",
+  "unixTs": 1755129600,
+  "realizedCapChange30d": 43161000000.0
+ },
+ {
+  "d": "2025-08-15",
+  "unixTs": 1755216000,
+  "realizedCapChange30d": 37307000000.0
+ },
+ {
+  "d": "2025-08-16",
+  "unixTs": 1755302400,
+  "realizedCapChange30d": 36780000000.0
+ },
+ {
+  "d": "2025-08-17",
+  "unixTs": 1755388800,
+  "realizedCapChange30d": 35390000000.0
+ },
+ {
+  "d": "2025-08-18",
+  "unixTs": 1755475200,
+  "realizedCapChange30d": 34540000000.0
+ },
+ {
+  "d": "2025-08-19",
+  "unixTs": 1755561600,
+  "realizedCapChange30d": 34830000000.0
+ },
+ {
+  "d": "2025-08-20",
+  "unixTs": 1755648000,
+  "realizedCapChange30d": 33770000000.0
+ },
+ {
+  "d": "2025-08-21",
+  "unixTs": 1755734400,
+  "realizedCapChange30d": 31120000000.0
+ },
+ {
+  "d": "2025-08-22",
+  "unixTs": 1755820800,
+  "realizedCapChange30d": 31110000000.0
+ },
+ {
+  "d": "2025-08-23",
+  "unixTs": 1755907200,
+  "realizedCapChange30d": 30010000000.0
+ },
+ {
+  "d": "2025-08-24",
+  "unixTs": 1755993600,
+  "realizedCapChange30d": 27970000000.0
+ },
+ {
+  "d": "2025-08-25",
+  "unixTs": 1756080000,
+  "realizedCapChange30d": 27560000000.0
+ },
+ {
+  "d": "2025-08-26",
+  "unixTs": 1756166400,
+  "realizedCapChange30d": 27490000000.0
+ },
+ {
+  "d": "2025-08-27",
+  "unixTs": 1756252800,
+  "realizedCapChange30d": 26720000000.0
+ },
+ {
+  "d": "2025-08-28",
+  "unixTs": 1756339200,
+  "realizedCapChange30d": 26120000000.0
+ },
+ {
+  "d": "2025-08-29",
+  "unixTs": 1756425600,
+  "realizedCapChange30d": 28750000000.0
+ },
+ {
+  "d": "2025-08-30",
+  "unixTs": 1756512000,
+  "realizedCapChange30d": 28570000000.0
+ },
+ {
+  "d": "2025-08-31",
+  "unixTs": 1756598400,
+  "realizedCapChange30d": 28410000000.0
+ },
+ {
+  "d": "2025-09-01",
+  "unixTs": 1756684800,
+  "realizedCapChange30d": 28730000000.0
+ },
+ {
+  "d": "2025-09-02",
+  "unixTs": 1756771200,
+  "realizedCapChange30d": 28490000000.0
+ },
+ {
+  "d": "2025-09-03",
+  "unixTs": 1756857600,
+  "realizedCapChange30d": 28170000000.0
+ },
+ {
+  "d": "2025-09-04",
+  "unixTs": 1756944000,
+  "realizedCapChange30d": 28380000000.0
+ },
+ {
+  "d": "2025-09-05",
+  "unixTs": 1757030400,
+  "realizedCapChange30d": 30120000000.0
+ },
+ {
+  "d": "2025-09-06",
+  "unixTs": 1757116800,
+  "realizedCapChange30d": 28780000000.0
+ },
+ {
+  "d": "2025-09-07",
+  "unixTs": 1757203200,
+  "realizedCapChange30d": 28150000000.0
+ },
+ {
+  "d": "2025-09-08",
+  "unixTs": 1757289600,
+  "realizedCapChange30d": 28570000000.0
+ },
+ {
+  "d": "2025-09-09",
+  "unixTs": 1757376000,
+  "realizedCapChange30d": 28330000000.0
+ },
+ {
+  "d": "2025-09-10",
+  "unixTs": 1757462400,
+  "realizedCapChange30d": 28280000000.0
+ },
+ {
+  "d": "2025-09-11",
+  "unixTs": 1757548800,
+  "realizedCapChange30d": 28220000000.0
+ },
+ {
+  "d": "2025-09-12",
+  "unixTs": 1757635200,
+  "realizedCapChange30d": 27080000000.0
+ },
+ {
+  "d": "2025-09-13",
+  "unixTs": 1757721600,
+  "realizedCapChange30d": 26710000000.0
+ },
+ {
+  "d": "2025-09-14",
+  "unixTs": 1757808000,
+  "realizedCapChange30d": 26260000000.0
+ },
+ {
+  "d": "2025-09-15",
+  "unixTs": 1757894400,
+  "realizedCapChange30d": 23960000000.0
+ },
+ {
+  "d": "2025-09-16",
+  "unixTs": 1757980800,
+  "realizedCapChange30d": 24950000000.0
+ },
+ {
+  "d": "2025-09-17",
+  "unixTs": 1758067200,
+  "realizedCapChange30d": 25930000000.0
+ },
+ {
+  "d": "2025-09-18",
+  "unixTs": 1758153600,
+  "realizedCapChange30d": 25950000000.0
+ },
+ {
+  "d": "2025-09-19",
+  "unixTs": 1758240000,
+  "realizedCapChange30d": 27120000000.0
+ },
+ {
+  "d": "2025-09-20",
+  "unixTs": 1758326400,
+  "realizedCapChange30d": 27350000000.0
+ },
+ {
+  "d": "2025-09-21",
+  "unixTs": 1758412800,
+  "realizedCapChange30d": 25710000000.0
+ },
+ {
+  "d": "2025-09-22",
+  "unixTs": 1758499200,
+  "realizedCapChange30d": 25270000000.0
+ },
+ {
+  "d": "2025-09-23",
+  "unixTs": 1758585600,
+  "realizedCapChange30d": 26200000000.0
+ },
+ {
+  "d": "2025-09-24",
+  "unixTs": 1758672000,
+  "realizedCapChange30d": 27220000000.0
+ },
+ {
+  "d": "2025-09-25",
+  "unixTs": 1758758400,
+  "realizedCapChange30d": 27270000000.0
+ },
+ {
+  "d": "2025-09-26",
+  "unixTs": 1758844800,
+  "realizedCapChange30d": 27550000000.0
+ },
+ {
+  "d": "2025-09-27",
+  "unixTs": 1758931200,
+  "realizedCapChange30d": 26580000000.0
+ },
+ {
+  "d": "2025-09-28",
+  "unixTs": 1759017600,
+  "realizedCapChange30d": 23050000000.0
+ },
+ {
+  "d": "2025-09-29",
+  "unixTs": 1759104000,
+  "realizedCapChange30d": 23720000000.0
+ },
+ {
+  "d": "2025-09-30",
+  "unixTs": 1759190400,
+  "realizedCapChange30d": 25170000000.0
+ },
+ {
+  "d": "2025-10-01",
+  "unixTs": 1759276800,
+  "realizedCapChange30d": 28900000000.0
+ },
+ {
+  "d": "2025-10-02",
+  "unixTs": 1759363200,
+  "realizedCapChange30d": 30480000000.0
+ },
+ {
+  "d": "2025-10-03",
+  "unixTs": 1759449600,
+  "realizedCapChange30d": 32700000000.0
+ },
+ {
+  "d": "2025-10-04",
+  "unixTs": 1759536000,
+  "realizedCapChange30d": 32800000000.0
+ },
+ {
+  "d": "2025-10-05",
+  "unixTs": 1759622400,
+  "realizedCapChange30d": 31560000000.0
+ },
+ {
+  "d": "2025-10-06",
+  "unixTs": 1759708800,
+  "realizedCapChange30d": 32910000000.0
+ },
+ {
+  "d": "2025-10-07",
+  "unixTs": 1759795200,
+  "realizedCapChange30d": 36650000000.0
+ },
+ {
+  "d": "2025-10-08",
+  "unixTs": 1759881600,
+  "realizedCapChange30d": 37670000000.0
+ },
+ {
+  "d": "2025-10-09",
+  "unixTs": 1759968000,
+  "realizedCapChange30d": 39000000000.0
+ },
+ {
+  "d": "2025-10-10",
+  "unixTs": 1760054400,
+  "realizedCapChange30d": 37550000000.0
+ },
+ {
+  "d": "2025-10-11",
+  "unixTs": 1760140800,
+  "realizedCapChange30d": 36180000000.0
+ },
+ {
+  "d": "2025-10-12",
+  "unixTs": 1760227200,
+  "realizedCapChange30d": 35950000000.0
+ },
+ {
+  "d": "2025-10-13",
+  "unixTs": 1760313600,
+  "realizedCapChange30d": 35790000000.0
+ },
+ {
+  "d": "2025-10-14",
+  "unixTs": 1760400000,
+  "realizedCapChange30d": 37720000000.0
+ },
+ {
+  "d": "2025-10-15",
+  "unixTs": 1760486400,
+  "realizedCapChange30d": 40060000000.0
+ },
+ {
+  "d": "2025-10-16",
+  "unixTs": 1760572800,
+  "realizedCapChange30d": 38030000000.0
+ },
+ {
+  "d": "2025-10-17",
+  "unixTs": 1760659200,
+  "realizedCapChange30d": 37340000000.0
+ },
+ {
+  "d": "2025-10-18",
+  "unixTs": 1760745600,
+  "realizedCapChange30d": 36860000000.0
+ },
+ {
+  "d": "2025-10-19",
+  "unixTs": 1760832000,
+  "realizedCapChange30d": -54968540334.54
+ },
+ {
+  "d": "2025-10-20",
+  "unixTs": 1760918400,
+  "realizedCapChange30d": -17504921800.93
+ },
+ {
+  "d": "2025-10-21",
+  "unixTs": 1761004800,
+  "realizedCapChange30d": -23438175196.32
+ },
+ {
+  "d": "2025-10-22",
+  "unixTs": 1761091200,
+  "realizedCapChange30d": -26583343342.0
+ },
+ {
+  "d": "2025-10-23",
+  "unixTs": 1761177600,
+  "realizedCapChange30d": -13722949117.14
+ },
+ {
+  "d": "2025-10-24",
+  "unixTs": 1761264000,
+  "realizedCapChange30d": -25139825464.2
+ },
+ {
+  "d": "2025-10-25",
+  "unixTs": 1761350400,
+  "realizedCapChange30d": -22748346897.92
+ },
+ {
+  "d": "2025-10-26",
+  "unixTs": 1761436800,
+  "realizedCapChange30d": -19979735487.78
+ },
+ {
+  "d": "2025-10-27",
+  "unixTs": 1761523200,
+  "realizedCapChange30d": -2479524957.88
+ },
+ {
+  "d": "2025-10-28",
+  "unixTs": 1761609600,
+  "realizedCapChange30d": -6949392844.41
+ },
+ {
+  "d": "2025-10-29",
+  "unixTs": 1761696000,
+  "realizedCapChange30d": 1925054052.85
+ },
+ {
+  "d": "2025-10-30",
+  "unixTs": 1761782400,
+  "realizedCapChange30d": 4203160410.96
+ },
+ {
+  "d": "2025-10-31",
+  "unixTs": 1761868800,
+  "realizedCapChange30d": 13754443137.34
+ },
+ {
+  "d": "2025-11-01",
+  "unixTs": 1761955200,
+  "realizedCapChange30d": 13217016452.16
+ },
+ {
+  "d": "2025-11-02",
+  "unixTs": 1762041600,
+  "realizedCapChange30d": 11193477778.63
+ },
+ {
+  "d": "2025-11-03",
+  "unixTs": 1762128000,
+  "realizedCapChange30d": 10765780738.89
+ },
+ {
+  "d": "2025-11-04",
+  "unixTs": 1762214400,
+  "realizedCapChange30d": 8406974563.59
+ },
+ {
+  "d": "2025-11-05",
+  "unixTs": 1762300800,
+  "realizedCapChange30d": 10443058076.88
+ },
+ {
+  "d": "2025-11-06",
+  "unixTs": 1762387200,
+  "realizedCapChange30d": 7012162795.3
+ },
+ {
+  "d": "2025-11-07",
+  "unixTs": 1762473600,
+  "realizedCapChange30d": 8983910134.63
+ },
+ {
+  "d": "2025-11-08",
+  "unixTs": 1762560000,
+  "realizedCapChange30d": 7372079830.92
+ },
+ {
+  "d": "2025-11-09",
+  "unixTs": 1762646400,
+  "realizedCapChange30d": 8480682569.36
+ },
+ {
+  "d": "2025-11-10",
+  "unixTs": 1762732800,
+  "realizedCapChange30d": 7876724676.59
+ },
+ {
+  "d": "2025-11-11",
+  "unixTs": 1762819200,
+  "realizedCapChange30d": 10024707744.74
+ },
+ {
+  "d": "2025-11-12",
+  "unixTs": 1762905600,
+  "realizedCapChange30d": 10639169493.63
+ },
+ {
+  "d": "2025-11-13",
+  "unixTs": 1762992000,
+  "realizedCapChange30d": 6968765683.57
+ },
+ {
+  "d": "2025-11-14",
+  "unixTs": 1763078400,
+  "realizedCapChange30d": 267345062.53
+ },
+ {
+  "d": "2025-11-15",
+  "unixTs": 1763164800,
+  "realizedCapChange30d": 4739852986.26
+ },
+ {
+  "d": "2025-11-16",
+  "unixTs": 1763251200,
+  "realizedCapChange30d": 1501648883.12
+ },
+ {
+  "d": "2025-11-17",
+  "unixTs": 1763337600,
+  "realizedCapChange30d": 2910583226.95
+ },
+ {
+  "d": "2025-11-18",
+  "unixTs": 1763424000,
+  "realizedCapChange30d": 94670644614.02
+ },
+ {
+  "d": "2025-11-19",
+  "unixTs": 1763510400,
+  "realizedCapChange30d": 56379794334.37
+ },
+ {
+  "d": "2025-11-20",
+  "unixTs": 1763596800,
+  "realizedCapChange30d": 61175130077.15
+ },
+ {
+  "d": "2025-11-21",
+  "unixTs": 1763683200,
+  "realizedCapChange30d": 61918636694.11
+ },
+ {
+  "d": "2025-11-22",
+  "unixTs": 1763769600,
+  "realizedCapChange30d": 52006049097.93
+ },
+ {
+  "d": "2025-11-23",
+  "unixTs": 1763856000,
+  "realizedCapChange30d": 67487956783.16
+ },
+ {
+  "d": "2025-11-24",
+  "unixTs": 1763942400,
+  "realizedCapChange30d": 66834202782.02
+ },
+ {
+  "d": "2025-11-25",
+  "unixTs": 1764028800,
+  "realizedCapChange30d": 61072626588.99
+ },
+ {
+  "d": "2025-11-26",
+  "unixTs": 1764115200,
+  "realizedCapChange30d": 47363344726.59
+ },
+ {
+  "d": "2025-11-27",
+  "unixTs": 1764201600,
+  "realizedCapChange30d": 49064241889.53
+ },
+ {
+  "d": "2025-11-28",
+  "unixTs": 1764288000,
+  "realizedCapChange30d": 40801850311.39
+ },
+ {
+  "d": "2025-11-29",
+  "unixTs": 1764374400,
+  "realizedCapChange30d": 35256384852.11
+ },
+ {
+  "d": "2025-11-30",
+  "unixTs": 1764460800,
+  "realizedCapChange30d": 23535547593.51
+ },
+ {
+  "d": "2025-12-01",
+  "unixTs": 1764547200,
+  "realizedCapChange30d": 20796049522.93
+ },
+ {
+  "d": "2025-12-02",
+  "unixTs": 1764633600,
+  "realizedCapChange30d": 19740270782.44
+ },
+ {
+  "d": "2025-12-03",
+  "unixTs": 1764720000,
+  "realizedCapChange30d": 17985664877.8
+ },
+ {
+  "d": "2025-12-04",
+  "unixTs": 1764806400,
+  "realizedCapChange30d": 20983663817.69
+ },
+ {
+  "d": "2025-12-05",
+  "unixTs": 1764892800,
+  "realizedCapChange30d": 17785474867.32
+ },
+ {
+  "d": "2025-12-06",
+  "unixTs": 1764979200,
+  "realizedCapChange30d": 16483658051.74
+ },
+ {
+  "d": "2025-12-07",
+  "unixTs": 1765065600,
+  "realizedCapChange30d": -5740843222.53
+ },
+ {
+  "d": "2025-12-08",
+  "unixTs": 1765152000,
+  "realizedCapChange30d": -12503868281.06
+ },
+ {
+  "d": "2025-12-09",
+  "unixTs": 1765238400,
+  "realizedCapChange30d": -12023314675.43
+ },
+ {
+  "d": "2025-12-10",
+  "unixTs": 1765324800,
+  "realizedCapChange30d": -13770022.01
+ },
+ {
+  "d": "2025-12-11",
+  "unixTs": 1765411200,
+  "realizedCapChange30d": 11637770199.68
+ },
+ {
+  "d": "2025-12-12",
+  "unixTs": 1765497600,
+  "realizedCapChange30d": 10044090116.14
+ },
+ {
+  "d": "2025-12-13",
+  "unixTs": 1765584000,
+  "realizedCapChange30d": 12113533534.97
+ },
+ {
+  "d": "2025-12-14",
+  "unixTs": 1765670400,
+  "realizedCapChange30d": 13162460137.13
+ },
+ {
+  "d": "2025-12-15",
+  "unixTs": 1765756800,
+  "realizedCapChange30d": 10246797825.62
+ },
+ {
+  "d": "2025-12-16",
+  "unixTs": 1765843200,
+  "realizedCapChange30d": 12000033496.39
+ },
+ {
+  "d": "2025-12-17",
+  "unixTs": 1765929600,
+  "realizedCapChange30d": 9810313147.26
+ },
+ {
+  "d": "2025-12-18",
+  "unixTs": 1766016000,
+  "realizedCapChange30d": 8548691899.22
+ },
+ {
+  "d": "2025-12-19",
+  "unixTs": 1766102400,
+  "realizedCapChange30d": 9149078586.35
+ },
+ {
+  "d": "2025-12-20",
+  "unixTs": 1766188800,
+  "realizedCapChange30d": 2144152948.39
+ },
+ {
+  "d": "2025-12-21",
+  "unixTs": 1766275200,
+  "realizedCapChange30d": 9672228302.54
+ },
+ {
+  "d": "2025-12-22",
+  "unixTs": 1766361600,
+  "realizedCapChange30d": -46632154.81
+ },
+ {
+  "d": "2025-12-23",
+  "unixTs": 1766448000,
+  "realizedCapChange30d": 2449941089.04
+ },
+ {
+  "d": "2025-12-24",
+  "unixTs": 1766534400,
+  "realizedCapChange30d": 198954599.84
+ },
+ {
+  "d": "2025-12-25",
+  "unixTs": 1766620800,
+  "realizedCapChange30d": 2804882696.84
+ },
+ {
+  "d": "2025-12-26",
+  "unixTs": 1766707200,
+  "realizedCapChange30d": -1761636379.45
+ },
+ {
+  "d": "2025-12-27",
+  "unixTs": 1766793600,
+  "realizedCapChange30d": 101971709.41
+ },
+ {
+  "d": "2025-12-28",
+  "unixTs": 1766880000,
+  "realizedCapChange30d": -1372831503.0
+ },
+ {
+  "d": "2025-12-29",
+  "unixTs": 1766966400,
+  "realizedCapChange30d": 768600516.01
+ },
+ {
+  "d": "2025-12-30",
+  "unixTs": 1767052800,
+  "realizedCapChange30d": -1639676011.33
+ },
+ {
+  "d": "2025-12-31",
+  "unixTs": 1767139200,
+  "realizedCapChange30d": -1003139191.88
+ },
+ {
+  "d": "2026-01-01",
+  "unixTs": 1767225600,
+  "realizedCapChange30d": -9249279419.9
+ },
+ {
+  "d": "2026-01-02",
+  "unixTs": 1767312000,
+  "realizedCapChange30d": -5780430294.49
+ },
+ {
+  "d": "2026-01-03",
+  "unixTs": 1767398400,
+  "realizedCapChange30d": -3178627260.41
+ },
+ {
+  "d": "2026-01-04",
+  "unixTs": 1767484800,
+  "realizedCapChange30d": -1281549180.79
+ },
+ {
+  "d": "2026-01-05",
+  "unixTs": 1767571200,
+  "realizedCapChange30d": -337567838.89
+ },
+ {
+  "d": "2026-01-06",
+  "unixTs": 1767657600,
+  "realizedCapChange30d": 18548954729.97
+ },
+ {
+  "d": "2026-01-07",
+  "unixTs": 1767744000,
+  "realizedCapChange30d": 26003795302.66
+ },
+ {
+  "d": "2026-01-08",
+  "unixTs": 1767830400,
+  "realizedCapChange30d": 8856413130.17
+ },
+ {
+  "d": "2026-01-09",
+  "unixTs": 1767916800,
+  "realizedCapChange30d": 12856787324.93
+ },
+ {
+  "d": "2026-01-10",
+  "unixTs": 1768003200,
+  "realizedCapChange30d": -1242860408.32
+ },
+ {
+  "d": "2026-01-11",
+  "unixTs": 1768089600,
+  "realizedCapChange30d": -855184168.85
+ },
+ {
+  "d": "2026-01-12",
+  "unixTs": 1768176000,
+  "realizedCapChange30d": -2963953725.66
+ },
+ {
+  "d": "2026-01-13",
+  "unixTs": 1768262400,
+  "realizedCapChange30d": -6812828030.84
+ },
+ {
+  "d": "2026-01-14",
+  "unixTs": 1768348800,
+  "realizedCapChange30d": 2776779802.4
+ },
+ {
+  "d": "2026-01-15",
+  "unixTs": 1768435200,
+  "realizedCapChange30d": 485379293.41
+ },
+ {
+  "d": "2026-01-16",
+  "unixTs": 1768521600,
+  "realizedCapChange30d": 5041407408.15
+ },
+ {
+  "d": "2026-01-17",
+  "unixTs": 1768608000,
+  "realizedCapChange30d": 4159308560.96
+ },
+ {
+  "d": "2026-01-18",
+  "unixTs": 1768694400,
+  "realizedCapChange30d": -2669060401.78
+ },
+ {
+  "d": "2026-01-19",
+  "unixTs": 1768780800,
+  "realizedCapChange30d": 12306521435.42
+ },
+ {
+  "d": "2026-01-20",
+  "unixTs": 1768867200,
+  "realizedCapChange30d": 5740322110.8
+ },
+ {
+  "d": "2026-01-21",
+  "unixTs": 1768953600,
+  "realizedCapChange30d": 11491433631.26
+ },
+ {
+  "d": "2026-01-22",
+  "unixTs": 1769040000,
+  "realizedCapChange30d": 2218590783.92
+ },
+ {
+  "d": "2026-01-23",
+  "unixTs": 1769126400,
+  "realizedCapChange30d": -194510614.1
+ },
+ {
+  "d": "2026-01-24",
+  "unixTs": 1769212800,
+  "realizedCapChange30d": -1243564130.31
+ },
+ {
+  "d": "2026-01-25",
+  "unixTs": 1769299200,
+  "realizedCapChange30d": -2662663184.87
+ },
+ {
+  "d": "2026-01-26",
+  "unixTs": 1769385600,
+  "realizedCapChange30d": -479686531.96
+ },
+ {
+  "d": "2026-01-27",
+  "unixTs": 1769472000,
+  "realizedCapChange30d": -2260833735.67
+ },
+ {
+  "d": "2026-01-28",
+  "unixTs": 1769558400,
+  "realizedCapChange30d": -332924552.87
+ },
+ {
+  "d": "2026-01-29",
+  "unixTs": 1769644800,
+  "realizedCapChange30d": -1615564264.03
+ },
+ {
+  "d": "2026-01-30",
+  "unixTs": 1769731200,
+  "realizedCapChange30d": -1425152072.6
+ },
+ {
+  "d": "2026-01-31",
+  "unixTs": 1769817600,
+  "realizedCapChange30d": 6097538344.01
+ },
+ {
+  "d": "2026-02-01",
+  "unixTs": 1769904000,
+  "realizedCapChange30d": 992959611.94
+ },
+ {
+  "d": "2026-02-02",
+  "unixTs": 1769990400,
+  "realizedCapChange30d": -1104863050.94
+ },
+ {
+  "d": "2026-02-03",
+  "unixTs": 1770076800,
+  "realizedCapChange30d": -5482656342.58
+ },
+ {
+  "d": "2026-02-04",
+  "unixTs": 1770163200,
+  "realizedCapChange30d": -10347533984.57
+ },
+ {
+  "d": "2026-02-05",
+  "unixTs": 1770249600,
+  "realizedCapChange30d": -14742414225.69
+ },
+ {
+  "d": "2026-02-06",
+  "unixTs": 1770336000,
+  "realizedCapChange30d": -17186759595.33
+ },
+ {
+  "d": "2026-02-07",
+  "unixTs": 1770422400,
+  "realizedCapChange30d": -1253310054.15
+ },
+ {
+  "d": "2026-02-08",
+  "unixTs": 1770508800,
+  "realizedCapChange30d": -16256622477.81
+ },
+ {
+  "d": "2026-02-09",
+  "unixTs": 1770595200,
+  "realizedCapChange30d": -18280269457.88
+ },
+ {
+  "d": "2026-02-10",
+  "unixTs": 1770681600,
+  "realizedCapChange30d": -20011274277.01
+ },
+ {
+  "d": "2026-02-11",
+  "unixTs": 1770768000,
+  "realizedCapChange30d": -18840959483.07
+ },
+ {
+  "d": "2026-02-12",
+  "unixTs": 1770854400,
+  "realizedCapChange30d": -13406482620.13
+ },
+ {
+  "d": "2026-02-13",
+  "unixTs": 1770940800,
+  "realizedCapChange30d": -30827901349.98
+ },
+ {
+  "d": "2026-02-14",
+  "unixTs": 1771027200,
+  "realizedCapChange30d": -21445353157.11
+ },
+ {
+  "d": "2026-02-15",
+  "unixTs": 1771113600,
+  "realizedCapChange30d": -27220255349.4
+ },
+ {
+  "d": "2026-02-16",
+  "unixTs": 1771200000,
+  "realizedCapChange30d": -38555072577.88
+ },
+ {
+  "d": "2026-02-17",
+  "unixTs": 1771286400,
+  "realizedCapChange30d": -21869783589.19
+ },
+ {
+  "d": "2026-02-18",
+  "unixTs": 1771372800,
+  "realizedCapChange30d": -38530997968.83
+ },
+ {
+  "d": "2026-02-19",
+  "unixTs": 1771459200,
+  "realizedCapChange30d": -26363174970.88
+ },
+ {
+  "d": "2026-02-20",
+  "unixTs": 1771545600,
+  "realizedCapChange30d": -27308145658.15
+ },
+ {
+  "d": "2026-02-21",
+  "unixTs": 1771632000,
+  "realizedCapChange30d": -27434693505.57
+ },
+ {
+  "d": "2026-02-22",
+  "unixTs": 1771718400,
+  "realizedCapChange30d": -23808292767.74
+ },
+ {
+  "d": "2026-02-23",
+  "unixTs": 1771804800,
+  "realizedCapChange30d": -24299462458.12
+ },
+ {
+  "d": "2026-02-24",
+  "unixTs": 1771891200,
+  "realizedCapChange30d": -23161585756.88
+ },
+ {
+  "d": "2026-02-25",
+  "unixTs": 1771977600,
+  "realizedCapChange30d": -27359783836.48
+ },
+ {
+  "d": "2026-02-26",
+  "unixTs": 1772064000,
+  "realizedCapChange30d": -23684293494.13
+ },
+ {
+  "d": "2026-02-27",
+  "unixTs": 1772150400,
+  "realizedCapChange30d": -27194790409.24
+ },
+ {
+  "d": "2026-02-28",
+  "unixTs": 1772236800,
+  "realizedCapChange30d": -25757135030.98
+ },
+ {
+  "d": "2026-03-01",
+  "unixTs": 1772323200,
+  "realizedCapChange30d": -26576195809.92
+ },
+ {
+  "d": "2026-03-02",
+  "unixTs": 1772409600,
+  "realizedCapChange30d": -25691270010.23
+ },
+ {
+  "d": "2026-03-03",
+  "unixTs": 1772496000,
+  "realizedCapChange30d": -21783122847.36
+ },
+ {
+  "d": "2026-03-04",
+  "unixTs": 1772582400,
+  "realizedCapChange30d": -24095349079.28
+ },
+ {
+  "d": "2026-03-05",
+  "unixTs": 1772668800,
+  "realizedCapChange30d": -23292923808.26
+ },
+ {
+  "d": "2026-03-06",
+  "unixTs": 1772755200,
+  "realizedCapChange30d": -18221008761.44
+ },
+ {
+  "d": "2026-03-07",
+  "unixTs": 1772841600,
+  "realizedCapChange30d": -14103732356.7
+ },
+ {
+  "d": "2026-03-08",
+  "unixTs": 1772928000,
+  "realizedCapChange30d": -14100165128.53
+ },
+ {
+  "d": "2026-03-09",
+  "unixTs": 1773014400,
+  "realizedCapChange30d": -12920459932.08
+ },
+ {
+  "d": "2026-03-10",
+  "unixTs": 1773100800,
+  "realizedCapChange30d": -13918790547.63
+ },
+ {
+  "d": "2026-03-11",
+  "unixTs": 1773187200,
+  "realizedCapChange30d": -14398543702.24
+ },
+ {
+  "d": "2026-03-12",
+  "unixTs": 1773273600,
+  "realizedCapChange30d": -11158618765.47
+ },
+ {
+  "d": "2026-03-13",
+  "unixTs": 1773360000,
+  "realizedCapChange30d": -10947153749.8
+ },
+ {
+  "d": "2026-03-14",
+  "unixTs": 1773446400,
+  "realizedCapChange30d": -10268440968.75
+ },
+ {
+  "d": "2026-03-15",
+  "unixTs": 1773532800,
+  "realizedCapChange30d": -5065801411.02
+ },
+ {
+  "d": "2026-03-16",
+  "unixTs": 1773619200,
+  "realizedCapChange30d": -11867638031.57
+ },
+ {
+  "d": "2026-03-17",
+  "unixTs": 1773705600,
+  "realizedCapChange30d": -7033826760.45
+ },
+ {
+  "d": "2026-03-18",
+  "unixTs": 1773792000,
+  "realizedCapChange30d": 4136403751.13
+ },
+ {
+  "d": "2026-03-19",
+  "unixTs": 1773878400,
+  "realizedCapChange30d": -8052992209.54
+ },
+ {
+  "d": "2026-03-20",
+  "unixTs": 1773964800,
+  "realizedCapChange30d": 2592725524.11
+ },
+ {
+  "d": "2026-03-21",
+  "unixTs": 1774051200,
+  "realizedCapChange30d": -9917946440.59
+ },
+ {
+  "d": "2026-03-22",
+  "unixTs": 1774137600,
+  "realizedCapChange30d": -6626995912.25
+ },
+ {
+  "d": "2026-03-23",
+  "unixTs": 1774224000,
+  "realizedCapChange30d": -4797721287.8
+ },
+ {
+  "d": "2026-03-24",
+  "unixTs": 1774310400,
+  "realizedCapChange30d": -9317115581.93
+ },
+ {
+  "d": "2026-03-25",
+  "unixTs": 1774396800,
+  "realizedCapChange30d": -5822655550.71
+ },
+ {
+  "d": "2026-03-26",
+  "unixTs": 1774483200,
+  "realizedCapChange30d": -5647443579.07
+ },
+ {
+  "d": "2026-03-27",
+  "unixTs": 1774569600,
+  "realizedCapChange30d": -6159268210.85
+ },
+ {
+  "d": "2026-03-28",
+  "unixTs": 1774656000,
+  "realizedCapChange30d": -7940908078.88
+ },
+ {
+  "d": "2026-03-29",
+  "unixTs": 1774742400,
+  "realizedCapChange30d": -7204339178.99
+ },
+ {
+  "d": "2026-03-30",
+  "unixTs": 1774828800,
+  "realizedCapChange30d": -5712330669.32
+ },
+ {
+  "d": "2026-03-31",
+  "unixTs": 1774915200,
+  "realizedCapChange30d": -4852083681.4
+ },
+ {
+  "d": "2026-04-01",
+  "unixTs": 1775001600,
+  "realizedCapChange30d": -4864588220.25
+ },
+ {
+  "d": "2026-04-02",
+  "unixTs": 1775088000,
+  "realizedCapChange30d": -6529373094.64
+ },
+ {
+  "d": "2026-04-03",
+  "unixTs": 1775174400,
+  "realizedCapChange30d": -8006471234.53
+ },
+ {
+  "d": "2026-04-04",
+  "unixTs": 1775260800,
+  "realizedCapChange30d": -6410950506.65
+ },
+ {
+  "d": "2026-04-05",
+  "unixTs": 1775347200,
+  "realizedCapChange30d": -7054506212.08
+ },
+ {
+  "d": "2026-04-06",
+  "unixTs": 1775433600,
+  "realizedCapChange30d": -5248390113.11
+ },
+ {
+  "d": "2026-04-07",
+  "unixTs": 1775520000,
+  "realizedCapChange30d": -3681693709.59
+ },
+ {
+  "d": "2026-04-08",
+  "unixTs": 1775606400,
+  "realizedCapChange30d": -4711623860.64
+ },
+ {
+  "d": "2026-04-09",
+  "unixTs": 1775692800,
+  "realizedCapChange30d": -3745915947.02
+ },
+ {
+  "d": "2026-04-10",
+  "unixTs": 1775779200,
+  "realizedCapChange30d": -11118791035.19
+ },
+ {
+  "d": "2026-04-11",
+  "unixTs": 1775865600,
+  "realizedCapChange30d": -6063406181.15
+ },
+ {
+  "d": "2026-04-12",
+  "unixTs": 1775952000,
+  "realizedCapChange30d": -2481688162.74
+ },
+ {
+  "d": "2026-04-13",
+  "unixTs": 1776038400,
+  "realizedCapChange30d": -4035235483.7
+ },
+ {
+  "d": "2026-04-14",
+  "unixTs": 1776124800,
+  "realizedCapChange30d": -502907222.26
+ },
+ {
+  "d": "2026-04-15",
+  "unixTs": 1776211200,
+  "realizedCapChange30d": -388756716.54
+ },
+ {
+  "d": "2026-04-16",
+  "unixTs": 1776297600,
+  "realizedCapChange30d": -3577260847.64
+ },
+ {
+  "d": "2026-04-17",
+  "unixTs": 1776384000,
+  "realizedCapChange30d": -1738228686.62
+ },
+ {
+  "d": "2026-04-18",
+  "unixTs": 1776470400,
+  "realizedCapChange30d": -270555561.68
+ },
+ {
+  "d": "2026-04-19",
+  "unixTs": 1776556800,
+  "realizedCapChange30d": -3716186555.31
+ },
+ {
+  "d": "2026-04-20",
+  "unixTs": 1776643200,
+  "realizedCapChange30d": 294878382.17
+ },
+ {
+  "d": "2026-04-21",
+  "unixTs": 1776729600,
+  "realizedCapChange30d": -1102328177.29
+ },
+ {
+  "d": "2026-04-22",
+  "unixTs": 1776816000,
+  "realizedCapChange30d": -1373909556.32
+ },
+ {
+  "d": "2026-04-23",
+  "unixTs": 1776902400,
+  "realizedCapChange30d": -15323297.39
+ },
+ {
+  "d": "2026-04-24",
+  "unixTs": 1776988800,
+  "realizedCapChange30d": -3601259856.41
+ },
+ {
+  "d": "2026-04-25",
+  "unixTs": 1777075200,
+  "realizedCapChange30d": -1483479861.95
+ },
+ {
+  "d": "2026-04-26",
+  "unixTs": 1777161600,
+  "realizedCapChange30d": 33215141.83
+ },
+ {
+  "d": "2026-04-27",
+  "unixTs": 1777248000,
+  "realizedCapChange30d": 1529065094.55
+ },
+ {
+  "d": "2026-04-28",
+  "unixTs": 1777334400,
+  "realizedCapChange30d": 226478901.13
+ },
+ {
+  "d": "2026-04-29",
+  "unixTs": 1777420800,
+  "realizedCapChange30d": 82584772.21
+ },
+ {
+  "d": "2026-04-30",
+  "unixTs": 1777507200,
+  "realizedCapChange30d": -802404018.64
+ },
+ {
+  "d": "2026-05-01",
+  "unixTs": 1777593600,
+  "realizedCapChange30d": 2259870766.36
+ },
+ {
+  "d": "2026-05-02",
+  "unixTs": 1777680000,
+  "realizedCapChange30d": 1030063733.88
+ },
+ {
+  "d": "2026-05-03",
+  "unixTs": 1777766400,
+  "realizedCapChange30d": 4466633997.84
+ },
+ {
+  "d": "2026-05-04",
+  "unixTs": 1777852800,
+  "realizedCapChange30d": 5211565734.52
+ },
+ {
+  "d": "2026-05-05",
+  "unixTs": 1777939200,
+  "realizedCapChange30d": 5305558393.23
+ },
+ {
+  "d": "2026-05-06",
+  "unixTs": 1778025600,
+  "realizedCapChange30d": 4086710637.88
+ },
+ {
+  "d": "2026-05-07",
+  "unixTs": 1778112000,
+  "realizedCapChange30d": 2809078595.82
+ },
+ {
+  "d": "2026-05-08",
+  "unixTs": 1778198400,
+  "realizedCapChange30d": 3957305323.48
+ },
+ {
+  "d": "2026-05-09",
+  "unixTs": 1778284800,
+  "realizedCapChange30d": 2235539541.08
+ },
+ {
+  "d": "2026-05-10",
+  "unixTs": 1778371200,
+  "realizedCapChange30d": 14189355690.84
+ },
+ {
+  "d": "2026-05-11",
+  "unixTs": 1778457600,
+  "realizedCapChange30d": 6810779869.68
+ },
+ {
+  "d": "2026-05-12",
+  "unixTs": 1778544000,
+  "realizedCapChange30d": 4072257910.65
+ },
+ {
+  "d": "2026-05-13",
+  "unixTs": 1778630400,
+  "realizedCapChange30d": 5572228951.77
+ },
+ {
+  "d": "2026-05-14",
+  "unixTs": 1778716800,
+  "realizedCapChange30d": 4673311950.92
+ },
+ {
+  "d": "2026-05-15",
+  "unixTs": 1778803200,
+  "realizedCapChange30d": 4955496884.82
+ },
+ {
+  "d": "2026-05-16",
+  "unixTs": 1778889600,
+  "realizedCapChange30d": 4658003241.88
+ },
+ {
+  "d": "2026-05-17",
+  "unixTs": 1778976000,
+  "realizedCapChange30d": 1062223848.94
+ },
+ {
+  "d": "2026-05-18",
+  "unixTs": 1779062400,
+  "realizedCapChange30d": 2027897714.19
+ },
+ {
+  "d": "2026-05-19",
+  "unixTs": 1779148800,
+  "realizedCapChange30d": 5419522697.4
+ },
+ {
+  "d": "2026-05-20",
+  "unixTs": 1779235200,
+  "realizedCapChange30d": 3522578371.52
+ },
+ {
+  "d": "2026-05-21",
+  "unixTs": 1779321600,
+  "realizedCapChange30d": 567468249.93
+ },
+ {
+  "d": "2026-05-22",
+  "unixTs": 1779408000,
+  "realizedCapChange30d": -50711576.15
+ },
+ {
+  "d": "2026-05-23",
+  "unixTs": 1779494400,
+  "realizedCapChange30d": 3704973418.87
+ },
+ {
+  "d": "2026-05-24",
+  "unixTs": 1779580800,
+  "realizedCapChange30d": 4647869579.35
+ },
+ {
+  "d": "2026-05-25",
+  "unixTs": 1779667200,
+  "realizedCapChange30d": 3090707798.79
+ },
+ {
+  "d": "2026-05-26",
+  "unixTs": 1779753600,
+  "realizedCapChange30d": 4344081978.81
+ },
+ {
+  "d": "2026-05-27",
+  "unixTs": 1779840000,
+  "realizedCapChange30d": 1093734817.81
+ },
+ {
+  "d": "2026-05-28",
+  "unixTs": 1779926400,
+  "realizedCapChange30d": 2976141991.95
+ },
+ {
+  "d": "2026-05-29",
+  "unixTs": 1780012800,
+  "realizedCapChange30d": 1115207795.65
+ },
+ {
+  "d": "2026-05-30",
+  "unixTs": 1780099200,
+  "realizedCapChange30d": 2167362342.39
+ },
+ {
+  "d": "2026-05-31",
+  "unixTs": 1780185600,
+  "realizedCapChange30d": -2784958035.78
+ },
+ {
+  "d": "2026-06-01",
+  "unixTs": 1780272000,
+  "realizedCapChange30d": 373061817.5
+ },
+ {
+  "d": "2026-06-02",
+  "unixTs": 1780358400,
+  "realizedCapChange30d": -4478548053.99
+ },
+ {
+  "d": "2026-06-03",
+  "unixTs": 1780444800,
+  "realizedCapChange30d": -6971324287.86
+ },
+ {
+  "d": "2026-06-04",
+  "unixTs": 1780531200,
+  "realizedCapChange30d": -8485538481.85
+ },
+ {
+  "d": "2026-06-05",
+  "unixTs": 1780617600,
+  "realizedCapChange30d": -12973508380.3
+ },
+ {
+  "d": "2026-06-06",
+  "unixTs": 1780704000,
+  "realizedCapChange30d": -9514084639.59
+ },
+ {
+  "d": "2026-06-07",
+  "unixTs": 1780790400,
+  "realizedCapChange30d": -10668723294.28
+ },
+ {
+  "d": "2026-06-08",
+  "unixTs": 1780876800,
+  "realizedCapChange30d": -9830573049.74
+ }
+]

@@ -1,0 +1,7307 @@
+[
+ {
+  "d": "2022-06-09",
+  "unixTs": "1654732800",
+  "sthRealizedPrice": "36386.50"
+ },
+ {
+  "d": "2022-06-10",
+  "unixTs": "1654819200",
+  "sthRealizedPrice": "36241.21"
+ },
+ {
+  "d": "2022-06-11",
+  "unixTs": "1654905600",
+  "sthRealizedPrice": "36157.44"
+ },
+ {
+  "d": "2022-06-12",
+  "unixTs": "1654992000",
+  "sthRealizedPrice": "35964.04"
+ },
+ {
+  "d": "2022-06-13",
+  "unixTs": "1655078400",
+  "sthRealizedPrice": "34879.00"
+ },
+ {
+  "d": "2022-06-14",
+  "unixTs": "1655164800",
+  "sthRealizedPrice": "34023.53"
+ },
+ {
+  "d": "2022-06-15",
+  "unixTs": "1655251200",
+  "sthRealizedPrice": "33740.34"
+ },
+ {
+  "d": "2022-06-16",
+  "unixTs": "1655337600",
+  "sthRealizedPrice": "33306.98"
+ },
+ {
+  "d": "2022-06-17",
+  "unixTs": "1655424000",
+  "sthRealizedPrice": "32925.92"
+ },
+ {
+  "d": "2022-06-18",
+  "unixTs": "1655510400",
+  "sthRealizedPrice": "32305.17"
+ },
+ {
+  "d": "2022-06-19",
+  "unixTs": "1655596800",
+  "sthRealizedPrice": "32252.29"
+ },
+ {
+  "d": "2022-06-20",
+  "unixTs": "1655683200",
+  "sthRealizedPrice": "32113.69"
+ },
+ {
+  "d": "2022-06-21",
+  "unixTs": "1655769600",
+  "sthRealizedPrice": "32087.94"
+ },
+ {
+  "d": "2022-06-22",
+  "unixTs": "1655856000",
+  "sthRealizedPrice": "31910.28"
+ },
+ {
+  "d": "2022-06-23",
+  "unixTs": "1655942400",
+  "sthRealizedPrice": "31873.12"
+ },
+ {
+  "d": "2022-06-24",
+  "unixTs": "1656028800",
+  "sthRealizedPrice": "31783.27"
+ },
+ {
+  "d": "2022-06-25",
+  "unixTs": "1656115200",
+  "sthRealizedPrice": "31743.58"
+ },
+ {
+  "d": "2022-06-26",
+  "unixTs": "1656201600",
+  "sthRealizedPrice": "31693.78"
+ },
+ {
+  "d": "2022-06-27",
+  "unixTs": "1656288000",
+  "sthRealizedPrice": "31466.58"
+ },
+ {
+  "d": "2022-06-28",
+  "unixTs": "1656374400",
+  "sthRealizedPrice": "31375.80"
+ },
+ {
+  "d": "2022-06-29",
+  "unixTs": "1656460800",
+  "sthRealizedPrice": "31188.39"
+ },
+ {
+  "d": "2022-06-30",
+  "unixTs": "1656547200",
+  "sthRealizedPrice": "30878.64"
+ },
+ {
+  "d": "2022-07-01",
+  "unixTs": "1656633600",
+  "sthRealizedPrice": "30640.70"
+ },
+ {
+  "d": "2022-07-02",
+  "unixTs": "1656720000",
+  "sthRealizedPrice": "30572.09"
+ },
+ {
+  "d": "2022-07-03",
+  "unixTs": "1656806400",
+  "sthRealizedPrice": "30507.52"
+ },
+ {
+  "d": "2022-07-04",
+  "unixTs": "1656892800",
+  "sthRealizedPrice": "30488.95"
+ },
+ {
+  "d": "2022-07-05",
+  "unixTs": "1656979200",
+  "sthRealizedPrice": "30448.33"
+ },
+ {
+  "d": "2022-07-06",
+  "unixTs": "1657065600",
+  "sthRealizedPrice": "30370.46"
+ },
+ {
+  "d": "2022-07-07",
+  "unixTs": "1657152000",
+  "sthRealizedPrice": "30357.36"
+ },
+ {
+  "d": "2022-07-08",
+  "unixTs": "1657238400",
+  "sthRealizedPrice": "30270.61"
+ },
+ {
+  "d": "2022-07-09",
+  "unixTs": "1657324800",
+  "sthRealizedPrice": "30060.95"
+ },
+ {
+  "d": "2022-07-10",
+  "unixTs": "1657411200",
+  "sthRealizedPrice": "29964.48"
+ },
+ {
+  "d": "2022-07-11",
+  "unixTs": "1657497600",
+  "sthRealizedPrice": "29538.19"
+ },
+ {
+  "d": "2022-07-12",
+  "unixTs": "1657584000",
+  "sthRealizedPrice": "29398.78"
+ },
+ {
+  "d": "2022-07-13",
+  "unixTs": "1657670400",
+  "sthRealizedPrice": "29334.90"
+ },
+ {
+  "d": "2022-07-14",
+  "unixTs": "1657756800",
+  "sthRealizedPrice": "29210.44"
+ },
+ {
+  "d": "2022-07-15",
+  "unixTs": "1657843200",
+  "sthRealizedPrice": "28689.06"
+ },
+ {
+  "d": "2022-07-16",
+  "unixTs": "1657929600",
+  "sthRealizedPrice": "28628.38"
+ },
+ {
+  "d": "2022-07-17",
+  "unixTs": "1658016000",
+  "sthRealizedPrice": "28505.66"
+ },
+ {
+  "d": "2022-07-18",
+  "unixTs": "1658102400",
+  "sthRealizedPrice": "28535.32"
+ },
+ {
+  "d": "2022-07-19",
+  "unixTs": "1658188800",
+  "sthRealizedPrice": "28519.50"
+ },
+ {
+  "d": "2022-07-20",
+  "unixTs": "1658275200",
+  "sthRealizedPrice": "28553.54"
+ },
+ {
+  "d": "2022-07-21",
+  "unixTs": "1658361600",
+  "sthRealizedPrice": "28527.62"
+ },
+ {
+  "d": "2022-07-22",
+  "unixTs": "1658448000",
+  "sthRealizedPrice": "28485.87"
+ },
+ {
+  "d": "2022-07-23",
+  "unixTs": "1658534400",
+  "sthRealizedPrice": "28372.97"
+ },
+ {
+  "d": "2022-07-24",
+  "unixTs": "1658620800",
+  "sthRealizedPrice": "28360.71"
+ },
+ {
+  "d": "2022-07-25",
+  "unixTs": "1658707200",
+  "sthRealizedPrice": "28253.21"
+ },
+ {
+  "d": "2022-07-26",
+  "unixTs": "1658793600",
+  "sthRealizedPrice": "28170.44"
+ },
+ {
+  "d": "2022-07-27",
+  "unixTs": "1658880000",
+  "sthRealizedPrice": "28216.58"
+ },
+ {
+  "d": "2022-07-28",
+  "unixTs": "1658966400",
+  "sthRealizedPrice": "28267.69"
+ },
+ {
+  "d": "2022-07-29",
+  "unixTs": "1659052800",
+  "sthRealizedPrice": "28275.81"
+ },
+ {
+  "d": "2022-07-30",
+  "unixTs": "1659139200",
+  "sthRealizedPrice": "28252.45"
+ },
+ {
+  "d": "2022-07-31",
+  "unixTs": "1659225600",
+  "sthRealizedPrice": "28209.40"
+ },
+ {
+  "d": "2022-08-01",
+  "unixTs": "1659312000",
+  "sthRealizedPrice": "28178.78"
+ },
+ {
+  "d": "2022-08-02",
+  "unixTs": "1659398400",
+  "sthRealizedPrice": "28116.07"
+ },
+ {
+  "d": "2022-08-03",
+  "unixTs": "1659484800",
+  "sthRealizedPrice": "28048.72"
+ },
+ {
+  "d": "2022-08-04",
+  "unixTs": "1659571200",
+  "sthRealizedPrice": "27971.50"
+ },
+ {
+  "d": "2022-08-05",
+  "unixTs": "1659657600",
+  "sthRealizedPrice": "27966.67"
+ },
+ {
+  "d": "2022-08-06",
+  "unixTs": "1659744000",
+  "sthRealizedPrice": "27922.46"
+ },
+ {
+  "d": "2022-08-07",
+  "unixTs": "1659830400",
+  "sthRealizedPrice": "27016.25"
+ },
+ {
+  "d": "2022-08-08",
+  "unixTs": "1659916800",
+  "sthRealizedPrice": "26987.46"
+ },
+ {
+  "d": "2022-08-09",
+  "unixTs": "1660003200",
+  "sthRealizedPrice": "26884.43"
+ },
+ {
+  "d": "2022-08-10",
+  "unixTs": "1660089600",
+  "sthRealizedPrice": "26825.30"
+ },
+ {
+  "d": "2022-08-11",
+  "unixTs": "1660176000",
+  "sthRealizedPrice": "26775.44"
+ },
+ {
+  "d": "2022-08-12",
+  "unixTs": "1660262400",
+  "sthRealizedPrice": "26788.93"
+ },
+ {
+  "d": "2022-08-13",
+  "unixTs": "1660348800",
+  "sthRealizedPrice": "26827.52"
+ },
+ {
+  "d": "2022-08-14",
+  "unixTs": "1660435200",
+  "sthRealizedPrice": "26787.25"
+ },
+ {
+  "d": "2022-08-15",
+  "unixTs": "1660521600",
+  "sthRealizedPrice": "26729.57"
+ },
+ {
+  "d": "2022-08-16",
+  "unixTs": "1660608000",
+  "sthRealizedPrice": "26705.01"
+ },
+ {
+  "d": "2022-08-17",
+  "unixTs": "1660694400",
+  "sthRealizedPrice": "26649.75"
+ },
+ {
+  "d": "2022-08-18",
+  "unixTs": "1660780800",
+  "sthRealizedPrice": "26621.96"
+ },
+ {
+  "d": "2022-08-19",
+  "unixTs": "1660867200",
+  "sthRealizedPrice": "26439.30"
+ },
+ {
+  "d": "2022-08-20",
+  "unixTs": "1660953600",
+  "sthRealizedPrice": "26412.40"
+ },
+ {
+  "d": "2022-08-21",
+  "unixTs": "1661040000",
+  "sthRealizedPrice": "26397.70"
+ },
+ {
+  "d": "2022-08-22",
+  "unixTs": "1661126400",
+  "sthRealizedPrice": "26336.56"
+ },
+ {
+  "d": "2022-08-23",
+  "unixTs": "1661212800",
+  "sthRealizedPrice": "26283.74"
+ },
+ {
+  "d": "2022-08-24",
+  "unixTs": "1661299200",
+  "sthRealizedPrice": "26157.88"
+ },
+ {
+  "d": "2022-08-25",
+  "unixTs": "1661385600",
+  "sthRealizedPrice": "26083.06"
+ },
+ {
+  "d": "2022-08-26",
+  "unixTs": "1661472000",
+  "sthRealizedPrice": "25971.63"
+ },
+ {
+  "d": "2022-08-27",
+  "unixTs": "1661558400",
+  "sthRealizedPrice": "25794.85"
+ },
+ {
+  "d": "2022-08-28",
+  "unixTs": "1661644800",
+  "sthRealizedPrice": "25744.23"
+ },
+ {
+  "d": "2022-08-29",
+  "unixTs": "1661731200",
+  "sthRealizedPrice": "25695.54"
+ },
+ {
+  "d": "2022-08-30",
+  "unixTs": "1661817600",
+  "sthRealizedPrice": "25570.15"
+ },
+ {
+  "d": "2022-08-31",
+  "unixTs": "1661904000",
+  "sthRealizedPrice": "25474.55"
+ },
+ {
+  "d": "2022-09-01",
+  "unixTs": "1661990400",
+  "sthRealizedPrice": "25100.76"
+ },
+ {
+  "d": "2022-09-02",
+  "unixTs": "1662076800",
+  "sthRealizedPrice": "25004.96"
+ },
+ {
+  "d": "2022-09-03",
+  "unixTs": "1662163200",
+  "sthRealizedPrice": "24938.39"
+ },
+ {
+  "d": "2022-09-04",
+  "unixTs": "1662249600",
+  "sthRealizedPrice": "24814.97"
+ },
+ {
+  "d": "2022-09-05",
+  "unixTs": "1662336000",
+  "sthRealizedPrice": "24749.68"
+ },
+ {
+  "d": "2022-09-06",
+  "unixTs": "1662422400",
+  "sthRealizedPrice": "24560.19"
+ },
+ {
+  "d": "2022-09-07",
+  "unixTs": "1662508800",
+  "sthRealizedPrice": "24456.84"
+ },
+ {
+  "d": "2022-09-08",
+  "unixTs": "1662595200",
+  "sthRealizedPrice": "24377.62"
+ },
+ {
+  "d": "2022-09-09",
+  "unixTs": "1662681600",
+  "sthRealizedPrice": "24423.97"
+ },
+ {
+  "d": "2022-09-10",
+  "unixTs": "1662768000",
+  "sthRealizedPrice": "24407.70"
+ },
+ {
+  "d": "2022-09-11",
+  "unixTs": "1662854400",
+  "sthRealizedPrice": "24350.97"
+ },
+ {
+  "d": "2022-09-12",
+  "unixTs": "1662940800",
+  "sthRealizedPrice": "24296.77"
+ },
+ {
+  "d": "2022-09-13",
+  "unixTs": "1663027200",
+  "sthRealizedPrice": "23992.94"
+ },
+ {
+  "d": "2022-09-14",
+  "unixTs": "1663113600",
+  "sthRealizedPrice": "23912.08"
+ },
+ {
+  "d": "2022-09-15",
+  "unixTs": "1663200000",
+  "sthRealizedPrice": "23800.30"
+ },
+ {
+  "d": "2022-09-16",
+  "unixTs": "1663286400",
+  "sthRealizedPrice": "23759.86"
+ },
+ {
+  "d": "2022-09-17",
+  "unixTs": "1663372800",
+  "sthRealizedPrice": "23739.57"
+ },
+ {
+  "d": "2022-09-18",
+  "unixTs": "1663459200",
+  "sthRealizedPrice": "23693.81"
+ },
+ {
+  "d": "2022-09-19",
+  "unixTs": "1663545600",
+  "sthRealizedPrice": "23617.31"
+ },
+ {
+  "d": "2022-09-20",
+  "unixTs": "1663632000",
+  "sthRealizedPrice": "23510.46"
+ },
+ {
+  "d": "2022-09-21",
+  "unixTs": "1663718400",
+  "sthRealizedPrice": "23437.17"
+ },
+ {
+  "d": "2022-09-22",
+  "unixTs": "1663804800",
+  "sthRealizedPrice": "23422.18"
+ },
+ {
+  "d": "2022-09-23",
+  "unixTs": "1663891200",
+  "sthRealizedPrice": "23393.73"
+ },
+ {
+  "d": "2022-09-24",
+  "unixTs": "1663977600",
+  "sthRealizedPrice": "23366.06"
+ },
+ {
+  "d": "2022-09-25",
+  "unixTs": "1664064000",
+  "sthRealizedPrice": "23270.07"
+ },
+ {
+  "d": "2022-09-26",
+  "unixTs": "1664150400",
+  "sthRealizedPrice": "23209.14"
+ },
+ {
+  "d": "2022-09-27",
+  "unixTs": "1664236800",
+  "sthRealizedPrice": "23130.42"
+ },
+ {
+  "d": "2022-09-28",
+  "unixTs": "1664323200",
+  "sthRealizedPrice": "22928.79"
+ },
+ {
+  "d": "2022-09-29",
+  "unixTs": "1664409600",
+  "sthRealizedPrice": "22644.77"
+ },
+ {
+  "d": "2022-09-30",
+  "unixTs": "1664496000",
+  "sthRealizedPrice": "22552.68"
+ },
+ {
+  "d": "2022-10-01",
+  "unixTs": "1664582400",
+  "sthRealizedPrice": "22518.45"
+ },
+ {
+  "d": "2022-10-02",
+  "unixTs": "1664668800",
+  "sthRealizedPrice": "22475.42"
+ },
+ {
+  "d": "2022-10-03",
+  "unixTs": "1664755200",
+  "sthRealizedPrice": "22436.69"
+ },
+ {
+  "d": "2022-10-04",
+  "unixTs": "1664841600",
+  "sthRealizedPrice": "22434.24"
+ },
+ {
+  "d": "2022-10-05",
+  "unixTs": "1664928000",
+  "sthRealizedPrice": "22396.62"
+ },
+ {
+  "d": "2022-10-06",
+  "unixTs": "1665014400",
+  "sthRealizedPrice": "22310.47"
+ },
+ {
+  "d": "2022-10-07",
+  "unixTs": "1665100800",
+  "sthRealizedPrice": "22224.03"
+ },
+ {
+  "d": "2022-10-08",
+  "unixTs": "1665187200",
+  "sthRealizedPrice": "22173.82"
+ },
+ {
+  "d": "2022-10-09",
+  "unixTs": "1665273600",
+  "sthRealizedPrice": "22130.37"
+ },
+ {
+  "d": "2022-10-10",
+  "unixTs": "1665360000",
+  "sthRealizedPrice": "22081.46"
+ },
+ {
+  "d": "2022-10-11",
+  "unixTs": "1665446400",
+  "sthRealizedPrice": "22024.63"
+ },
+ {
+  "d": "2022-10-12",
+  "unixTs": "1665532800",
+  "sthRealizedPrice": "21995.74"
+ },
+ {
+  "d": "2022-10-13",
+  "unixTs": "1665619200",
+  "sthRealizedPrice": "21954.80"
+ },
+ {
+  "d": "2022-10-14",
+  "unixTs": "1665705600",
+  "sthRealizedPrice": "21884.21"
+ },
+ {
+  "d": "2022-10-15",
+  "unixTs": "1665792000",
+  "sthRealizedPrice": "21854.84"
+ },
+ {
+  "d": "2022-10-16",
+  "unixTs": "1665878400",
+  "sthRealizedPrice": "21847.65"
+ },
+ {
+  "d": "2022-10-17",
+  "unixTs": "1665964800",
+  "sthRealizedPrice": "21800.84"
+ },
+ {
+  "d": "2022-10-18",
+  "unixTs": "1666051200",
+  "sthRealizedPrice": "21709.23"
+ },
+ {
+  "d": "2022-10-19",
+  "unixTs": "1666137600",
+  "sthRealizedPrice": "21599.28"
+ },
+ {
+  "d": "2022-10-20",
+  "unixTs": "1666224000",
+  "sthRealizedPrice": "21538.18"
+ },
+ {
+  "d": "2022-10-21",
+  "unixTs": "1666310400",
+  "sthRealizedPrice": "21487.44"
+ },
+ {
+  "d": "2022-10-22",
+  "unixTs": "1666396800",
+  "sthRealizedPrice": "21453.54"
+ },
+ {
+  "d": "2022-10-23",
+  "unixTs": "1666483200",
+  "sthRealizedPrice": "21433.81"
+ },
+ {
+  "d": "2022-10-24",
+  "unixTs": "1666569600",
+  "sthRealizedPrice": "21421.97"
+ },
+ {
+  "d": "2022-10-25",
+  "unixTs": "1666656000",
+  "sthRealizedPrice": "21417.80"
+ },
+ {
+  "d": "2022-10-26",
+  "unixTs": "1666742400",
+  "sthRealizedPrice": "21514.29"
+ },
+ {
+  "d": "2022-10-27",
+  "unixTs": "1666828800",
+  "sthRealizedPrice": "21483.39"
+ },
+ {
+  "d": "2022-10-28",
+  "unixTs": "1666915200",
+  "sthRealizedPrice": "21469.70"
+ },
+ {
+  "d": "2022-10-29",
+  "unixTs": "1667001600",
+  "sthRealizedPrice": "21486.11"
+ },
+ {
+  "d": "2022-10-30",
+  "unixTs": "1667088000",
+  "sthRealizedPrice": "21449.35"
+ },
+ {
+  "d": "2022-10-31",
+  "unixTs": "1667174400",
+  "sthRealizedPrice": "21439.94"
+ },
+ {
+  "d": "2022-11-01",
+  "unixTs": "1667260800",
+  "sthRealizedPrice": "21411.94"
+ },
+ {
+  "d": "2022-11-02",
+  "unixTs": "1667347200",
+  "sthRealizedPrice": "21364.82"
+ },
+ {
+  "d": "2022-11-03",
+  "unixTs": "1667433600",
+  "sthRealizedPrice": "21318.91"
+ },
+ {
+  "d": "2022-11-04",
+  "unixTs": "1667520000",
+  "sthRealizedPrice": "21380.32"
+ },
+ {
+  "d": "2022-11-05",
+  "unixTs": "1667606400",
+  "sthRealizedPrice": "21379.77"
+ },
+ {
+  "d": "2022-11-06",
+  "unixTs": "1667692800",
+  "sthRealizedPrice": "21363.67"
+ },
+ {
+  "d": "2022-11-07",
+  "unixTs": "1667779200",
+  "sthRealizedPrice": "21268.81"
+ },
+ {
+  "d": "2022-11-08",
+  "unixTs": "1667865600",
+  "sthRealizedPrice": "21106.11"
+ },
+ {
+  "d": "2022-11-09",
+  "unixTs": "1667952000",
+  "sthRealizedPrice": "20712.53"
+ },
+ {
+  "d": "2022-11-10",
+  "unixTs": "1668038400",
+  "sthRealizedPrice": "20661.30"
+ },
+ {
+  "d": "2022-11-11",
+  "unixTs": "1668124800",
+  "sthRealizedPrice": "20530.04"
+ },
+ {
+  "d": "2022-11-12",
+  "unixTs": "1668211200",
+  "sthRealizedPrice": "20422.86"
+ },
+ {
+  "d": "2022-11-13",
+  "unixTs": "1668297600",
+  "sthRealizedPrice": "20320.75"
+ },
+ {
+  "d": "2022-11-14",
+  "unixTs": "1668384000",
+  "sthRealizedPrice": "20184.22"
+ },
+ {
+  "d": "2022-11-15",
+  "unixTs": "1668470400",
+  "sthRealizedPrice": "20096.92"
+ },
+ {
+  "d": "2022-11-16",
+  "unixTs": "1668556800",
+  "sthRealizedPrice": "19931.80"
+ },
+ {
+  "d": "2022-11-17",
+  "unixTs": "1668643200",
+  "sthRealizedPrice": "19767.57"
+ },
+ {
+  "d": "2022-11-18",
+  "unixTs": "1668729600",
+  "sthRealizedPrice": "19588.43"
+ },
+ {
+  "d": "2022-11-19",
+  "unixTs": "1668816000",
+  "sthRealizedPrice": "19558.34"
+ },
+ {
+  "d": "2022-11-20",
+  "unixTs": "1668902400",
+  "sthRealizedPrice": "19497.92"
+ },
+ {
+  "d": "2022-11-21",
+  "unixTs": "1668988800",
+  "sthRealizedPrice": "19395.02"
+ },
+ {
+  "d": "2022-11-22",
+  "unixTs": "1669075200",
+  "sthRealizedPrice": "19318.18"
+ },
+ {
+  "d": "2022-11-23",
+  "unixTs": "1669161600",
+  "sthRealizedPrice": "19214.57"
+ },
+ {
+  "d": "2022-11-24",
+  "unixTs": "1669248000",
+  "sthRealizedPrice": "19167.91"
+ },
+ {
+  "d": "2022-11-25",
+  "unixTs": "1669334400",
+  "sthRealizedPrice": "19132.02"
+ },
+ {
+  "d": "2022-11-26",
+  "unixTs": "1669420800",
+  "sthRealizedPrice": "19111.81"
+ },
+ {
+  "d": "2022-11-27",
+  "unixTs": "1669507200",
+  "sthRealizedPrice": "19084.50"
+ },
+ {
+  "d": "2022-11-28",
+  "unixTs": "1669593600",
+  "sthRealizedPrice": "19028.92"
+ },
+ {
+  "d": "2022-11-29",
+  "unixTs": "1669680000",
+  "sthRealizedPrice": "18991.75"
+ },
+ {
+  "d": "2022-11-30",
+  "unixTs": "1669766400",
+  "sthRealizedPrice": "18945.87"
+ },
+ {
+  "d": "2022-12-01",
+  "unixTs": "1669852800",
+  "sthRealizedPrice": "18907.72"
+ },
+ {
+  "d": "2022-12-02",
+  "unixTs": "1669939200",
+  "sthRealizedPrice": "18867.69"
+ },
+ {
+  "d": "2022-12-03",
+  "unixTs": "1670025600",
+  "sthRealizedPrice": "18855.22"
+ },
+ {
+  "d": "2022-12-04",
+  "unixTs": "1670112000",
+  "sthRealizedPrice": "18838.97"
+ },
+ {
+  "d": "2022-12-05",
+  "unixTs": "1670198400",
+  "sthRealizedPrice": "18802.16"
+ },
+ {
+  "d": "2022-12-06",
+  "unixTs": "1670284800",
+  "sthRealizedPrice": "18791.70"
+ },
+ {
+  "d": "2022-12-07",
+  "unixTs": "1670371200",
+  "sthRealizedPrice": "18767.94"
+ },
+ {
+  "d": "2022-12-08",
+  "unixTs": "1670457600",
+  "sthRealizedPrice": "18757.76"
+ },
+ {
+  "d": "2022-12-09",
+  "unixTs": "1670544000",
+  "sthRealizedPrice": "18763.48"
+ },
+ {
+  "d": "2022-12-10",
+  "unixTs": "1670630400",
+  "sthRealizedPrice": "18742.88"
+ },
+ {
+  "d": "2022-12-11",
+  "unixTs": "1670716800",
+  "sthRealizedPrice": "18727.00"
+ },
+ {
+  "d": "2022-12-12",
+  "unixTs": "1670803200",
+  "sthRealizedPrice": "18716.54"
+ },
+ {
+  "d": "2022-12-13",
+  "unixTs": "1670889600",
+  "sthRealizedPrice": "18729.15"
+ },
+ {
+  "d": "2022-12-14",
+  "unixTs": "1670976000",
+  "sthRealizedPrice": "18720.45"
+ },
+ {
+  "d": "2022-12-15",
+  "unixTs": "1671062400",
+  "sthRealizedPrice": "18660.88"
+ },
+ {
+  "d": "2022-12-16",
+  "unixTs": "1671148800",
+  "sthRealizedPrice": "18600.77"
+ },
+ {
+  "d": "2022-12-17",
+  "unixTs": "1671235200",
+  "sthRealizedPrice": "18590.85"
+ },
+ {
+  "d": "2022-12-18",
+  "unixTs": "1671321600",
+  "sthRealizedPrice": "18586.23"
+ },
+ {
+  "d": "2022-12-19",
+  "unixTs": "1671408000",
+  "sthRealizedPrice": "18568.45"
+ },
+ {
+  "d": "2022-12-20",
+  "unixTs": "1671494400",
+  "sthRealizedPrice": "18574.18"
+ },
+ {
+  "d": "2022-12-21",
+  "unixTs": "1671580800",
+  "sthRealizedPrice": "18541.73"
+ },
+ {
+  "d": "2022-12-22",
+  "unixTs": "1671667200",
+  "sthRealizedPrice": "18502.61"
+ },
+ {
+  "d": "2022-12-23",
+  "unixTs": "1671753600",
+  "sthRealizedPrice": "18483.32"
+ },
+ {
+  "d": "2022-12-24",
+  "unixTs": "1671840000",
+  "sthRealizedPrice": "18477.99"
+ },
+ {
+  "d": "2022-12-25",
+  "unixTs": "1671926400",
+  "sthRealizedPrice": "18465.32"
+ },
+ {
+  "d": "2022-12-26",
+  "unixTs": "1672012800",
+  "sthRealizedPrice": "18424.35"
+ },
+ {
+  "d": "2022-12-27",
+  "unixTs": "1672099200",
+  "sthRealizedPrice": "18399.99"
+ },
+ {
+  "d": "2022-12-28",
+  "unixTs": "1672185600",
+  "sthRealizedPrice": "18357.12"
+ },
+ {
+  "d": "2022-12-29",
+  "unixTs": "1672272000",
+  "sthRealizedPrice": "18320.70"
+ },
+ {
+  "d": "2022-12-30",
+  "unixTs": "1672358400",
+  "sthRealizedPrice": "18298.33"
+ },
+ {
+  "d": "2022-12-31",
+  "unixTs": "1672444800",
+  "sthRealizedPrice": "18269.60"
+ },
+ {
+  "d": "2023-01-01",
+  "unixTs": "1672531200",
+  "sthRealizedPrice": "18101.43"
+ },
+ {
+  "d": "2023-01-02",
+  "unixTs": "1672617600",
+  "sthRealizedPrice": "18095.30"
+ },
+ {
+  "d": "2023-01-03",
+  "unixTs": "1672704000",
+  "sthRealizedPrice": "18072.59"
+ },
+ {
+  "d": "2023-01-04",
+  "unixTs": "1672790400",
+  "sthRealizedPrice": "18061.82"
+ },
+ {
+  "d": "2023-01-05",
+  "unixTs": "1672876800",
+  "sthRealizedPrice": "18038.51"
+ },
+ {
+  "d": "2023-01-06",
+  "unixTs": "1672963200",
+  "sthRealizedPrice": "18012.40"
+ },
+ {
+  "d": "2023-01-07",
+  "unixTs": "1673049600",
+  "sthRealizedPrice": "18005.19"
+ },
+ {
+  "d": "2023-01-08",
+  "unixTs": "1673136000",
+  "sthRealizedPrice": "17997.30"
+ },
+ {
+  "d": "2023-01-09",
+  "unixTs": "1673222400",
+  "sthRealizedPrice": "17991.80"
+ },
+ {
+  "d": "2023-01-10",
+  "unixTs": "1673308800",
+  "sthRealizedPrice": "17984.75"
+ },
+ {
+  "d": "2023-01-11",
+  "unixTs": "1673395200",
+  "sthRealizedPrice": "17987.31"
+ },
+ {
+  "d": "2023-01-12",
+  "unixTs": "1673481600",
+  "sthRealizedPrice": "18034.97"
+ },
+ {
+  "d": "2023-01-13",
+  "unixTs": "1673568000",
+  "sthRealizedPrice": "18164.86"
+ },
+ {
+  "d": "2023-01-14",
+  "unixTs": "1673654400",
+  "sthRealizedPrice": "18219.46"
+ },
+ {
+  "d": "2023-01-15",
+  "unixTs": "1673740800",
+  "sthRealizedPrice": "18249.19"
+ },
+ {
+  "d": "2023-01-16",
+  "unixTs": "1673827200",
+  "sthRealizedPrice": "18282.89"
+ },
+ {
+  "d": "2023-01-17",
+  "unixTs": "1673913600",
+  "sthRealizedPrice": "18334.80"
+ },
+ {
+  "d": "2023-01-18",
+  "unixTs": "1674000000",
+  "sthRealizedPrice": "18367.57"
+ },
+ {
+  "d": "2023-01-19",
+  "unixTs": "1674086400",
+  "sthRealizedPrice": "18400.33"
+ },
+ {
+  "d": "2023-01-20",
+  "unixTs": "1674172800",
+  "sthRealizedPrice": "18493.70"
+ },
+ {
+  "d": "2023-01-21",
+  "unixTs": "1674259200",
+  "sthRealizedPrice": "18542.73"
+ },
+ {
+  "d": "2023-01-22",
+  "unixTs": "1674345600",
+  "sthRealizedPrice": "18575.96"
+ },
+ {
+  "d": "2023-01-23",
+  "unixTs": "1674432000",
+  "sthRealizedPrice": "18629.06"
+ },
+ {
+  "d": "2023-01-24",
+  "unixTs": "1674518400",
+  "sthRealizedPrice": "18652.93"
+ },
+ {
+  "d": "2023-01-25",
+  "unixTs": "1674604800",
+  "sthRealizedPrice": "18720.92"
+ },
+ {
+  "d": "2023-01-26",
+  "unixTs": "1674691200",
+  "sthRealizedPrice": "18878.61"
+ },
+ {
+  "d": "2023-01-27",
+  "unixTs": "1674777600",
+  "sthRealizedPrice": "18951.57"
+ },
+ {
+  "d": "2023-01-28",
+  "unixTs": "1674864000",
+  "sthRealizedPrice": "18969.39"
+ },
+ {
+  "d": "2023-01-29",
+  "unixTs": "1674950400",
+  "sthRealizedPrice": "19008.84"
+ },
+ {
+  "d": "2023-01-30",
+  "unixTs": "1675036800",
+  "sthRealizedPrice": "19033.76"
+ },
+ {
+  "d": "2023-01-31",
+  "unixTs": "1675123200",
+  "sthRealizedPrice": "19083.26"
+ },
+ {
+  "d": "2023-02-01",
+  "unixTs": "1675209600",
+  "sthRealizedPrice": "19204.11"
+ },
+ {
+  "d": "2023-02-02",
+  "unixTs": "1675296000",
+  "sthRealizedPrice": "19244.14"
+ },
+ {
+  "d": "2023-02-03",
+  "unixTs": "1675382400",
+  "sthRealizedPrice": "19308.42"
+ },
+ {
+  "d": "2023-02-04",
+  "unixTs": "1675468800",
+  "sthRealizedPrice": "19350.26"
+ },
+ {
+  "d": "2023-02-05",
+  "unixTs": "1675555200",
+  "sthRealizedPrice": "19357.73"
+ },
+ {
+  "d": "2023-02-06",
+  "unixTs": "1675641600",
+  "sthRealizedPrice": "19366.06"
+ },
+ {
+  "d": "2023-02-07",
+  "unixTs": "1675728000",
+  "sthRealizedPrice": "19406.15"
+ },
+ {
+  "d": "2023-02-08",
+  "unixTs": "1675814400",
+  "sthRealizedPrice": "19433.57"
+ },
+ {
+  "d": "2023-02-09",
+  "unixTs": "1675900800",
+  "sthRealizedPrice": "19428.50"
+ },
+ {
+  "d": "2023-02-10",
+  "unixTs": "1675987200",
+  "sthRealizedPrice": "19413.49"
+ },
+ {
+  "d": "2023-02-11",
+  "unixTs": "1676073600",
+  "sthRealizedPrice": "19418.10"
+ },
+ {
+  "d": "2023-02-12",
+  "unixTs": "1676160000",
+  "sthRealizedPrice": "19425.41"
+ },
+ {
+  "d": "2023-02-13",
+  "unixTs": "1676246400",
+  "sthRealizedPrice": "19431.48"
+ },
+ {
+  "d": "2023-02-14",
+  "unixTs": "1676332800",
+  "sthRealizedPrice": "19444.25"
+ },
+ {
+  "d": "2023-02-15",
+  "unixTs": "1676419200",
+  "sthRealizedPrice": "19555.08"
+ },
+ {
+  "d": "2023-02-16",
+  "unixTs": "1676505600",
+  "sthRealizedPrice": "19598.06"
+ },
+ {
+  "d": "2023-02-17",
+  "unixTs": "1676592000",
+  "sthRealizedPrice": "19662.06"
+ },
+ {
+  "d": "2023-02-18",
+  "unixTs": "1676678400",
+  "sthRealizedPrice": "19685.33"
+ },
+ {
+  "d": "2023-02-19",
+  "unixTs": "1676764800",
+  "sthRealizedPrice": "19703.44"
+ },
+ {
+  "d": "2023-02-20",
+  "unixTs": "1676851200",
+  "sthRealizedPrice": "19740.35"
+ },
+ {
+  "d": "2023-02-21",
+  "unixTs": "1676937600",
+  "sthRealizedPrice": "19769.36"
+ },
+ {
+  "d": "2023-02-22",
+  "unixTs": "1677024000",
+  "sthRealizedPrice": "19804.33"
+ },
+ {
+  "d": "2023-02-23",
+  "unixTs": "1677110400",
+  "sthRealizedPrice": "19823.33"
+ },
+ {
+  "d": "2023-02-24",
+  "unixTs": "1677196800",
+  "sthRealizedPrice": "19838.08"
+ },
+ {
+  "d": "2023-02-25",
+  "unixTs": "1677283200",
+  "sthRealizedPrice": "19843.30"
+ },
+ {
+  "d": "2023-02-26",
+  "unixTs": "1677369600",
+  "sthRealizedPrice": "19860.01"
+ },
+ {
+  "d": "2023-02-27",
+  "unixTs": "1677456000",
+  "sthRealizedPrice": "19896.43"
+ },
+ {
+  "d": "2023-02-28",
+  "unixTs": "1677542400",
+  "sthRealizedPrice": "19900.52"
+ },
+ {
+  "d": "2023-03-01",
+  "unixTs": "1677628800",
+  "sthRealizedPrice": "19961.84"
+ },
+ {
+  "d": "2023-03-02",
+  "unixTs": "1677715200",
+  "sthRealizedPrice": "19975.10"
+ },
+ {
+  "d": "2023-03-03",
+  "unixTs": "1677801600",
+  "sthRealizedPrice": "19949.57"
+ },
+ {
+  "d": "2023-03-04",
+  "unixTs": "1677888000",
+  "sthRealizedPrice": "19945.81"
+ },
+ {
+  "d": "2023-03-05",
+  "unixTs": "1677974400",
+  "sthRealizedPrice": "19961.79"
+ },
+ {
+  "d": "2023-03-06",
+  "unixTs": "1678060800",
+  "sthRealizedPrice": "19965.16"
+ },
+ {
+  "d": "2023-03-07",
+  "unixTs": "1678147200",
+  "sthRealizedPrice": "19988.12"
+ },
+ {
+  "d": "2023-03-08",
+  "unixTs": "1678233600",
+  "sthRealizedPrice": "19965.12"
+ },
+ {
+  "d": "2023-03-09",
+  "unixTs": "1678320000",
+  "sthRealizedPrice": "19896.82"
+ },
+ {
+  "d": "2023-03-10",
+  "unixTs": "1678406400",
+  "sthRealizedPrice": "19851.96"
+ },
+ {
+  "d": "2023-03-11",
+  "unixTs": "1678492800",
+  "sthRealizedPrice": "19837.73"
+ },
+ {
+  "d": "2023-03-12",
+  "unixTs": "1678579200",
+  "sthRealizedPrice": "19875.95"
+ },
+ {
+  "d": "2023-03-13",
+  "unixTs": "1678665600",
+  "sthRealizedPrice": "20020.94"
+ },
+ {
+  "d": "2023-03-14",
+  "unixTs": "1678752000",
+  "sthRealizedPrice": "20158.46"
+ },
+ {
+  "d": "2023-03-15",
+  "unixTs": "1678838400",
+  "sthRealizedPrice": "20231.71"
+ },
+ {
+  "d": "2023-03-16",
+  "unixTs": "1678924800",
+  "sthRealizedPrice": "20307.07"
+ },
+ {
+  "d": "2023-03-17",
+  "unixTs": "1679011200",
+  "sthRealizedPrice": "20604.51"
+ },
+ {
+  "d": "2023-03-18",
+  "unixTs": "1679097600",
+  "sthRealizedPrice": "20643.99"
+ },
+ {
+  "d": "2023-03-19",
+  "unixTs": "1679184000",
+  "sthRealizedPrice": "20734.58"
+ },
+ {
+  "d": "2023-03-20",
+  "unixTs": "1679270400",
+  "sthRealizedPrice": "20793.61"
+ },
+ {
+  "d": "2023-03-21",
+  "unixTs": "1679356800",
+  "sthRealizedPrice": "20899.66"
+ },
+ {
+  "d": "2023-03-22",
+  "unixTs": "1679443200",
+  "sthRealizedPrice": "20963.27"
+ },
+ {
+  "d": "2023-03-23",
+  "unixTs": "1679529600",
+  "sthRealizedPrice": "21133.77"
+ },
+ {
+  "d": "2023-03-24",
+  "unixTs": "1679616000",
+  "sthRealizedPrice": "21185.07"
+ },
+ {
+  "d": "2023-03-25",
+  "unixTs": "1679702400",
+  "sthRealizedPrice": "21224.66"
+ },
+ {
+  "d": "2023-03-26",
+  "unixTs": "1679788800",
+  "sthRealizedPrice": "21292.17"
+ },
+ {
+  "d": "2023-03-27",
+  "unixTs": "1679875200",
+  "sthRealizedPrice": "21409.83"
+ },
+ {
+  "d": "2023-03-28",
+  "unixTs": "1679961600",
+  "sthRealizedPrice": "21474.44"
+ },
+ {
+  "d": "2023-03-29",
+  "unixTs": "1680048000",
+  "sthRealizedPrice": "21582.81"
+ },
+ {
+  "d": "2023-03-30",
+  "unixTs": "1680134400",
+  "sthRealizedPrice": "21982.33"
+ },
+ {
+  "d": "2023-03-31",
+  "unixTs": "1680220800",
+  "sthRealizedPrice": "22100.58"
+ },
+ {
+  "d": "2023-04-01",
+  "unixTs": "1680307200",
+  "sthRealizedPrice": "22158.67"
+ },
+ {
+  "d": "2023-04-02",
+  "unixTs": "1680393600",
+  "sthRealizedPrice": "22181.72"
+ },
+ {
+  "d": "2023-04-03",
+  "unixTs": "1680480000",
+  "sthRealizedPrice": "22218.83"
+ },
+ {
+  "d": "2023-04-04",
+  "unixTs": "1680566400",
+  "sthRealizedPrice": "22307.44"
+ },
+ {
+  "d": "2023-04-05",
+  "unixTs": "1680652800",
+  "sthRealizedPrice": "22446.28"
+ },
+ {
+  "d": "2023-04-06",
+  "unixTs": "1680739200",
+  "sthRealizedPrice": "22540.67"
+ },
+ {
+  "d": "2023-04-07",
+  "unixTs": "1680825600",
+  "sthRealizedPrice": "22566.76"
+ },
+ {
+  "d": "2023-04-08",
+  "unixTs": "1680912000",
+  "sthRealizedPrice": "22575.86"
+ },
+ {
+  "d": "2023-04-09",
+  "unixTs": "1680998400",
+  "sthRealizedPrice": "22586.17"
+ },
+ {
+  "d": "2023-04-10",
+  "unixTs": "1681084800",
+  "sthRealizedPrice": "22714.47"
+ },
+ {
+  "d": "2023-04-11",
+  "unixTs": "1681171200",
+  "sthRealizedPrice": "22933.47"
+ },
+ {
+  "d": "2023-04-12",
+  "unixTs": "1681257600",
+  "sthRealizedPrice": "23083.68"
+ },
+ {
+  "d": "2023-04-13",
+  "unixTs": "1681344000",
+  "sthRealizedPrice": "23184.36"
+ },
+ {
+  "d": "2023-04-14",
+  "unixTs": "1681430400",
+  "sthRealizedPrice": "23288.63"
+ },
+ {
+  "d": "2023-04-15",
+  "unixTs": "1681516800",
+  "sthRealizedPrice": "23317.01"
+ },
+ {
+  "d": "2023-04-16",
+  "unixTs": "1681603200",
+  "sthRealizedPrice": "23349.38"
+ },
+ {
+  "d": "2023-04-17",
+  "unixTs": "1681689600",
+  "sthRealizedPrice": "23391.83"
+ },
+ {
+  "d": "2023-04-18",
+  "unixTs": "1681776000",
+  "sthRealizedPrice": "23508.71"
+ },
+ {
+  "d": "2023-04-19",
+  "unixTs": "1681862400",
+  "sthRealizedPrice": "23527.81"
+ },
+ {
+  "d": "2023-04-20",
+  "unixTs": "1681948800",
+  "sthRealizedPrice": "23573.28"
+ },
+ {
+  "d": "2023-04-21",
+  "unixTs": "1682035200",
+  "sthRealizedPrice": "23579.31"
+ },
+ {
+  "d": "2023-04-22",
+  "unixTs": "1682121600",
+  "sthRealizedPrice": "23625.42"
+ },
+ {
+  "d": "2023-04-23",
+  "unixTs": "1682208000",
+  "sthRealizedPrice": "23660.70"
+ },
+ {
+  "d": "2023-04-24",
+  "unixTs": "1682294400",
+  "sthRealizedPrice": "23692.36"
+ },
+ {
+  "d": "2023-04-25",
+  "unixTs": "1682380800",
+  "sthRealizedPrice": "23781.30"
+ },
+ {
+  "d": "2023-04-26",
+  "unixTs": "1682467200",
+  "sthRealizedPrice": "23880.40"
+ },
+ {
+  "d": "2023-04-27",
+  "unixTs": "1682553600",
+  "sthRealizedPrice": "24089.70"
+ },
+ {
+  "d": "2023-04-28",
+  "unixTs": "1682640000",
+  "sthRealizedPrice": "24163.87"
+ },
+ {
+  "d": "2023-04-29",
+  "unixTs": "1682726400",
+  "sthRealizedPrice": "24221.35"
+ },
+ {
+  "d": "2023-04-30",
+  "unixTs": "1682812800",
+  "sthRealizedPrice": "24283.29"
+ },
+ {
+  "d": "2023-05-01",
+  "unixTs": "1682899200",
+  "sthRealizedPrice": "24345.27"
+ },
+ {
+  "d": "2023-05-02",
+  "unixTs": "1682985600",
+  "sthRealizedPrice": "24416.35"
+ },
+ {
+  "d": "2023-05-03",
+  "unixTs": "1683072000",
+  "sthRealizedPrice": "24624.06"
+ },
+ {
+  "d": "2023-05-04",
+  "unixTs": "1683158400",
+  "sthRealizedPrice": "24657.65"
+ },
+ {
+  "d": "2023-05-05",
+  "unixTs": "1683244800",
+  "sthRealizedPrice": "24721.77"
+ },
+ {
+  "d": "2023-05-06",
+  "unixTs": "1683331200",
+  "sthRealizedPrice": "24745.82"
+ },
+ {
+  "d": "2023-05-07",
+  "unixTs": "1683417600",
+  "sthRealizedPrice": "25305.22"
+ },
+ {
+  "d": "2023-05-08",
+  "unixTs": "1683504000",
+  "sthRealizedPrice": "25345.61"
+ },
+ {
+  "d": "2023-05-09",
+  "unixTs": "1683590400",
+  "sthRealizedPrice": "25372.07"
+ },
+ {
+  "d": "2023-05-10",
+  "unixTs": "1683676800",
+  "sthRealizedPrice": "25399.82"
+ },
+ {
+  "d": "2023-05-11",
+  "unixTs": "1683763200",
+  "sthRealizedPrice": "25413.72"
+ },
+ {
+  "d": "2023-05-12",
+  "unixTs": "1683849600",
+  "sthRealizedPrice": "25426.22"
+ },
+ {
+  "d": "2023-05-13",
+  "unixTs": "1683936000",
+  "sthRealizedPrice": "25453.74"
+ },
+ {
+  "d": "2023-05-14",
+  "unixTs": "1684022400",
+  "sthRealizedPrice": "25484.06"
+ },
+ {
+  "d": "2023-05-15",
+  "unixTs": "1684108800",
+  "sthRealizedPrice": "25527.12"
+ },
+ {
+  "d": "2023-05-16",
+  "unixTs": "1684195200",
+  "sthRealizedPrice": "25573.95"
+ },
+ {
+  "d": "2023-05-17",
+  "unixTs": "1684281600",
+  "sthRealizedPrice": "25627.22"
+ },
+ {
+  "d": "2023-05-18",
+  "unixTs": "1684368000",
+  "sthRealizedPrice": "25638.23"
+ },
+ {
+  "d": "2023-05-19",
+  "unixTs": "1684454400",
+  "sthRealizedPrice": "25628.86"
+ },
+ {
+  "d": "2023-05-20",
+  "unixTs": "1684540800",
+  "sthRealizedPrice": "25639.26"
+ },
+ {
+  "d": "2023-05-21",
+  "unixTs": "1684627200",
+  "sthRealizedPrice": "25654.06"
+ },
+ {
+  "d": "2023-05-22",
+  "unixTs": "1684713600",
+  "sthRealizedPrice": "25693.72"
+ },
+ {
+  "d": "2023-05-23",
+  "unixTs": "1684800000",
+  "sthRealizedPrice": "25751.86"
+ },
+ {
+  "d": "2023-05-24",
+  "unixTs": "1684886400",
+  "sthRealizedPrice": "25738.08"
+ },
+ {
+  "d": "2023-05-25",
+  "unixTs": "1684972800",
+  "sthRealizedPrice": "25763.95"
+ },
+ {
+  "d": "2023-05-26",
+  "unixTs": "1685059200",
+  "sthRealizedPrice": "25792.33"
+ },
+ {
+  "d": "2023-05-27",
+  "unixTs": "1685145600",
+  "sthRealizedPrice": "25818.38"
+ },
+ {
+  "d": "2023-05-28",
+  "unixTs": "1685232000",
+  "sthRealizedPrice": "25865.78"
+ },
+ {
+  "d": "2023-05-29",
+  "unixTs": "1685318400",
+  "sthRealizedPrice": "25898.89"
+ },
+ {
+  "d": "2023-05-30",
+  "unixTs": "1685404800",
+  "sthRealizedPrice": "25945.10"
+ },
+ {
+  "d": "2023-05-31",
+  "unixTs": "1685491200",
+  "sthRealizedPrice": "25955.93"
+ },
+ {
+  "d": "2023-06-01",
+  "unixTs": "1685577600",
+  "sthRealizedPrice": "25966.50"
+ },
+ {
+  "d": "2023-06-02",
+  "unixTs": "1685664000",
+  "sthRealizedPrice": "26005.41"
+ },
+ {
+  "d": "2023-06-03",
+  "unixTs": "1685750400",
+  "sthRealizedPrice": "26022.11"
+ },
+ {
+  "d": "2023-06-04",
+  "unixTs": "1685836800",
+  "sthRealizedPrice": "26035.83"
+ },
+ {
+  "d": "2023-06-05",
+  "unixTs": "1685923200",
+  "sthRealizedPrice": "25990.21"
+ },
+ {
+  "d": "2023-06-06",
+  "unixTs": "1686009600",
+  "sthRealizedPrice": "26099.10"
+ },
+ {
+  "d": "2023-06-07",
+  "unixTs": "1686096000",
+  "sthRealizedPrice": "26156.64"
+ },
+ {
+  "d": "2023-06-08",
+  "unixTs": "1686182400",
+  "sthRealizedPrice": "26170.31"
+ },
+ {
+  "d": "2023-06-09",
+  "unixTs": "1686268800",
+  "sthRealizedPrice": "26239.01"
+ },
+ {
+  "d": "2023-06-10",
+  "unixTs": "1686355200",
+  "sthRealizedPrice": "26226.14"
+ },
+ {
+  "d": "2023-06-11",
+  "unixTs": "1686441600",
+  "sthRealizedPrice": "26225.40"
+ },
+ {
+  "d": "2023-06-12",
+  "unixTs": "1686528000",
+  "sthRealizedPrice": "26235.01"
+ },
+ {
+  "d": "2023-06-13",
+  "unixTs": "1686614400",
+  "sthRealizedPrice": "26231.25"
+ },
+ {
+  "d": "2023-06-14",
+  "unixTs": "1686700800",
+  "sthRealizedPrice": "26204.90"
+ },
+ {
+  "d": "2023-06-15",
+  "unixTs": "1686787200",
+  "sthRealizedPrice": "26204.79"
+ },
+ {
+  "d": "2023-06-16",
+  "unixTs": "1686873600",
+  "sthRealizedPrice": "26261.89"
+ },
+ {
+  "d": "2023-06-17",
+  "unixTs": "1686960000",
+  "sthRealizedPrice": "26274.13"
+ },
+ {
+  "d": "2023-06-18",
+  "unixTs": "1687046400",
+  "sthRealizedPrice": "26288.09"
+ },
+ {
+  "d": "2023-06-19",
+  "unixTs": "1687132800",
+  "sthRealizedPrice": "26267.07"
+ },
+ {
+  "d": "2023-06-20",
+  "unixTs": "1687219200",
+  "sthRealizedPrice": "26390.19"
+ },
+ {
+  "d": "2023-06-21",
+  "unixTs": "1687305600",
+  "sthRealizedPrice": "26577.44"
+ },
+ {
+  "d": "2023-06-22",
+  "unixTs": "1687392000",
+  "sthRealizedPrice": "26662.26"
+ },
+ {
+  "d": "2023-06-23",
+  "unixTs": "1687478400",
+  "sthRealizedPrice": "26795.34"
+ },
+ {
+  "d": "2023-06-24",
+  "unixTs": "1687564800",
+  "sthRealizedPrice": "26846.13"
+ },
+ {
+  "d": "2023-06-25",
+  "unixTs": "1687651200",
+  "sthRealizedPrice": "26881.93"
+ },
+ {
+  "d": "2023-06-26",
+  "unixTs": "1687737600",
+  "sthRealizedPrice": "26968.96"
+ },
+ {
+  "d": "2023-06-27",
+  "unixTs": "1687824000",
+  "sthRealizedPrice": "27070.83"
+ },
+ {
+  "d": "2023-06-28",
+  "unixTs": "1687910400",
+  "sthRealizedPrice": "27115.76"
+ },
+ {
+  "d": "2023-06-29",
+  "unixTs": "1687996800",
+  "sthRealizedPrice": "27222.42"
+ },
+ {
+  "d": "2023-06-30",
+  "unixTs": "1688083200",
+  "sthRealizedPrice": "27278.22"
+ },
+ {
+  "d": "2023-07-01",
+  "unixTs": "1688169600",
+  "sthRealizedPrice": "27322.94"
+ },
+ {
+  "d": "2023-07-02",
+  "unixTs": "1688256000",
+  "sthRealizedPrice": "27347.44"
+ },
+ {
+  "d": "2023-07-03",
+  "unixTs": "1688342400",
+  "sthRealizedPrice": "27410.17"
+ },
+ {
+  "d": "2023-07-04",
+  "unixTs": "1688428800",
+  "sthRealizedPrice": "27444.61"
+ },
+ {
+  "d": "2023-07-05",
+  "unixTs": "1688515200",
+  "sthRealizedPrice": "27478.23"
+ },
+ {
+  "d": "2023-07-06",
+  "unixTs": "1688601600",
+  "sthRealizedPrice": "27537.61"
+ },
+ {
+  "d": "2023-07-07",
+  "unixTs": "1688688000",
+  "sthRealizedPrice": "27565.53"
+ },
+ {
+  "d": "2023-07-08",
+  "unixTs": "1688774400",
+  "sthRealizedPrice": "27585.03"
+ },
+ {
+  "d": "2023-07-09",
+  "unixTs": "1688860800",
+  "sthRealizedPrice": "27598.91"
+ },
+ {
+  "d": "2023-07-10",
+  "unixTs": "1688947200",
+  "sthRealizedPrice": "27652.50"
+ },
+ {
+  "d": "2023-07-11",
+  "unixTs": "1689033600",
+  "sthRealizedPrice": "27695.71"
+ },
+ {
+  "d": "2023-07-12",
+  "unixTs": "1689120000",
+  "sthRealizedPrice": "27737.21"
+ },
+ {
+  "d": "2023-07-13",
+  "unixTs": "1689206400",
+  "sthRealizedPrice": "27847.60"
+ },
+ {
+  "d": "2023-07-14",
+  "unixTs": "1689292800",
+  "sthRealizedPrice": "27848.53"
+ },
+ {
+  "d": "2023-07-15",
+  "unixTs": "1689379200",
+  "sthRealizedPrice": "27878.42"
+ },
+ {
+  "d": "2023-07-16",
+  "unixTs": "1689465600",
+  "sthRealizedPrice": "27891.85"
+ },
+ {
+  "d": "2023-07-17",
+  "unixTs": "1689552000",
+  "sthRealizedPrice": "27903.81"
+ },
+ {
+  "d": "2023-07-18",
+  "unixTs": "1689638400",
+  "sthRealizedPrice": "27938.93"
+ },
+ {
+  "d": "2023-07-19",
+  "unixTs": "1689724800",
+  "sthRealizedPrice": "27979.35"
+ },
+ {
+  "d": "2023-07-20",
+  "unixTs": "1689811200",
+  "sthRealizedPrice": "28000.24"
+ },
+ {
+  "d": "2023-07-21",
+  "unixTs": "1689897600",
+  "sthRealizedPrice": "28037.07"
+ },
+ {
+  "d": "2023-07-22",
+  "unixTs": "1689984000",
+  "sthRealizedPrice": "28048.12"
+ },
+ {
+  "d": "2023-07-23",
+  "unixTs": "1690070400",
+  "sthRealizedPrice": "28070.38"
+ },
+ {
+  "d": "2023-07-24",
+  "unixTs": "1690156800",
+  "sthRealizedPrice": "28063.04"
+ },
+ {
+  "d": "2023-07-25",
+  "unixTs": "1690243200",
+  "sthRealizedPrice": "28064.47"
+ },
+ {
+  "d": "2023-07-26",
+  "unixTs": "1690329600",
+  "sthRealizedPrice": "28080.01"
+ },
+ {
+  "d": "2023-07-27",
+  "unixTs": "1690416000",
+  "sthRealizedPrice": "28106.88"
+ },
+ {
+  "d": "2023-07-28",
+  "unixTs": "1690502400",
+  "sthRealizedPrice": "28238.49"
+ },
+ {
+  "d": "2023-07-29",
+  "unixTs": "1690588800",
+  "sthRealizedPrice": "28239.86"
+ },
+ {
+  "d": "2023-07-30",
+  "unixTs": "1690675200",
+  "sthRealizedPrice": "28231.77"
+ },
+ {
+  "d": "2023-07-31",
+  "unixTs": "1690761600",
+  "sthRealizedPrice": "28230.86"
+ },
+ {
+  "d": "2023-08-01",
+  "unixTs": "1690848000",
+  "sthRealizedPrice": "28240.38"
+ },
+ {
+  "d": "2023-08-02",
+  "unixTs": "1690934400",
+  "sthRealizedPrice": "28233.90"
+ },
+ {
+  "d": "2023-08-03",
+  "unixTs": "1691020800",
+  "sthRealizedPrice": "28237.16"
+ },
+ {
+  "d": "2023-08-04",
+  "unixTs": "1691107200",
+  "sthRealizedPrice": "28243.52"
+ },
+ {
+  "d": "2023-08-05",
+  "unixTs": "1691193600",
+  "sthRealizedPrice": "28242.86"
+ },
+ {
+  "d": "2023-08-06",
+  "unixTs": "1691280000",
+  "sthRealizedPrice": "28246.62"
+ },
+ {
+  "d": "2023-08-07",
+  "unixTs": "1691366400",
+  "sthRealizedPrice": "28257.99"
+ },
+ {
+  "d": "2023-08-08",
+  "unixTs": "1691452800",
+  "sthRealizedPrice": "28314.71"
+ },
+ {
+  "d": "2023-08-09",
+  "unixTs": "1691539200",
+  "sthRealizedPrice": "28326.45"
+ },
+ {
+  "d": "2023-08-10",
+  "unixTs": "1691625600",
+  "sthRealizedPrice": "28332.62"
+ },
+ {
+  "d": "2023-08-11",
+  "unixTs": "1691712000",
+  "sthRealizedPrice": "28339.60"
+ },
+ {
+  "d": "2023-08-12",
+  "unixTs": "1691798400",
+  "sthRealizedPrice": "28378.30"
+ },
+ {
+  "d": "2023-08-13",
+  "unixTs": "1691884800",
+  "sthRealizedPrice": "28394.01"
+ },
+ {
+  "d": "2023-08-14",
+  "unixTs": "1691971200",
+  "sthRealizedPrice": "28466.62"
+ },
+ {
+  "d": "2023-08-15",
+  "unixTs": "1692057600",
+  "sthRealizedPrice": "28470.73"
+ },
+ {
+  "d": "2023-08-16",
+  "unixTs": "1692144000",
+  "sthRealizedPrice": "28474.15"
+ },
+ {
+  "d": "2023-08-17",
+  "unixTs": "1692230400",
+  "sthRealizedPrice": "28382.30"
+ },
+ {
+  "d": "2023-08-18",
+  "unixTs": "1692316800",
+  "sthRealizedPrice": "28314.39"
+ },
+ {
+  "d": "2023-08-19",
+  "unixTs": "1692403200",
+  "sthRealizedPrice": "28345.25"
+ },
+ {
+  "d": "2023-08-20",
+  "unixTs": "1692489600",
+  "sthRealizedPrice": "28346.27"
+ },
+ {
+  "d": "2023-08-21",
+  "unixTs": "1692576000",
+  "sthRealizedPrice": "28250.78"
+ },
+ {
+  "d": "2023-08-22",
+  "unixTs": "1692662400",
+  "sthRealizedPrice": "28200.49"
+ },
+ {
+  "d": "2023-08-23",
+  "unixTs": "1692748800",
+  "sthRealizedPrice": "28195.92"
+ },
+ {
+  "d": "2023-08-24",
+  "unixTs": "1692835200",
+  "sthRealizedPrice": "28168.06"
+ },
+ {
+  "d": "2023-08-25",
+  "unixTs": "1692921600",
+  "sthRealizedPrice": "28120.51"
+ },
+ {
+  "d": "2023-08-26",
+  "unixTs": "1693008000",
+  "sthRealizedPrice": "28108.67"
+ },
+ {
+  "d": "2023-08-27",
+  "unixTs": "1693094400",
+  "sthRealizedPrice": "28100.90"
+ },
+ {
+  "d": "2023-08-28",
+  "unixTs": "1693180800",
+  "sthRealizedPrice": "28073.18"
+ },
+ {
+  "d": "2023-08-29",
+  "unixTs": "1693267200",
+  "sthRealizedPrice": "28096.06"
+ },
+ {
+  "d": "2023-08-30",
+  "unixTs": "1693353600",
+  "sthRealizedPrice": "28088.38"
+ },
+ {
+  "d": "2023-08-31",
+  "unixTs": "1693440000",
+  "sthRealizedPrice": "28040.55"
+ },
+ {
+  "d": "2023-09-01",
+  "unixTs": "1693526400",
+  "sthRealizedPrice": "27998.31"
+ },
+ {
+  "d": "2023-09-02",
+  "unixTs": "1693612800",
+  "sthRealizedPrice": "27997.64"
+ },
+ {
+  "d": "2023-09-03",
+  "unixTs": "1693699200",
+  "sthRealizedPrice": "28005.11"
+ },
+ {
+  "d": "2023-09-04",
+  "unixTs": "1693785600",
+  "sthRealizedPrice": "27990.76"
+ },
+ {
+  "d": "2023-09-05",
+  "unixTs": "1693872000",
+  "sthRealizedPrice": "27958.18"
+ },
+ {
+  "d": "2023-09-06",
+  "unixTs": "1693958400",
+  "sthRealizedPrice": "27921.21"
+ },
+ {
+  "d": "2023-09-07",
+  "unixTs": "1694044800",
+  "sthRealizedPrice": "27919.15"
+ },
+ {
+  "d": "2023-09-08",
+  "unixTs": "1694131200",
+  "sthRealizedPrice": "27893.34"
+ },
+ {
+  "d": "2023-09-09",
+  "unixTs": "1694217600",
+  "sthRealizedPrice": "27881.98"
+ },
+ {
+  "d": "2023-09-10",
+  "unixTs": "1694304000",
+  "sthRealizedPrice": "27869.99"
+ },
+ {
+  "d": "2023-09-11",
+  "unixTs": "1694390400",
+  "sthRealizedPrice": "27819.59"
+ },
+ {
+  "d": "2023-09-12",
+  "unixTs": "1694476800",
+  "sthRealizedPrice": "27824.76"
+ },
+ {
+  "d": "2023-09-13",
+  "unixTs": "1694563200",
+  "sthRealizedPrice": "27817.66"
+ },
+ {
+  "d": "2023-09-14",
+  "unixTs": "1694649600",
+  "sthRealizedPrice": "27812.97"
+ },
+ {
+  "d": "2023-09-15",
+  "unixTs": "1694736000",
+  "sthRealizedPrice": "27816.24"
+ },
+ {
+  "d": "2023-09-16",
+  "unixTs": "1694822400",
+  "sthRealizedPrice": "27810.82"
+ },
+ {
+  "d": "2023-09-17",
+  "unixTs": "1694908800",
+  "sthRealizedPrice": "27793.12"
+ },
+ {
+  "d": "2023-09-18",
+  "unixTs": "1694995200",
+  "sthRealizedPrice": "27783.30"
+ },
+ {
+  "d": "2023-09-19",
+  "unixTs": "1695081600",
+  "sthRealizedPrice": "27789.61"
+ },
+ {
+  "d": "2023-09-20",
+  "unixTs": "1695168000",
+  "sthRealizedPrice": "27780.82"
+ },
+ {
+  "d": "2023-09-21",
+  "unixTs": "1695254400",
+  "sthRealizedPrice": "27790.58"
+ },
+ {
+  "d": "2023-09-22",
+  "unixTs": "1695340800",
+  "sthRealizedPrice": "27781.14"
+ },
+ {
+  "d": "2023-09-23",
+  "unixTs": "1695427200",
+  "sthRealizedPrice": "27774.16"
+ },
+ {
+  "d": "2023-09-24",
+  "unixTs": "1695513600",
+  "sthRealizedPrice": "27755.81"
+ },
+ {
+  "d": "2023-09-25",
+  "unixTs": "1695600000",
+  "sthRealizedPrice": "27743.49"
+ },
+ {
+  "d": "2023-09-26",
+  "unixTs": "1695686400",
+  "sthRealizedPrice": "27730.05"
+ },
+ {
+  "d": "2023-09-27",
+  "unixTs": "1695772800",
+  "sthRealizedPrice": "27723.02"
+ },
+ {
+  "d": "2023-09-28",
+  "unixTs": "1695859200",
+  "sthRealizedPrice": "27736.70"
+ },
+ {
+  "d": "2023-09-29",
+  "unixTs": "1695945600",
+  "sthRealizedPrice": "27740.97"
+ },
+ {
+  "d": "2023-09-30",
+  "unixTs": "1696032000",
+  "sthRealizedPrice": "27744.91"
+ },
+ {
+  "d": "2023-10-01",
+  "unixTs": "1696118400",
+  "sthRealizedPrice": "27765.91"
+ },
+ {
+  "d": "2023-10-02",
+  "unixTs": "1696204800",
+  "sthRealizedPrice": "27780.53"
+ },
+ {
+  "d": "2023-10-03",
+  "unixTs": "1696291200",
+  "sthRealizedPrice": "27777.61"
+ },
+ {
+  "d": "2023-10-04",
+  "unixTs": "1696377600",
+  "sthRealizedPrice": "27810.62"
+ },
+ {
+  "d": "2023-10-05",
+  "unixTs": "1696464000",
+  "sthRealizedPrice": "27803.69"
+ },
+ {
+  "d": "2023-10-06",
+  "unixTs": "1696550400",
+  "sthRealizedPrice": "27826.74"
+ },
+ {
+  "d": "2023-10-07",
+  "unixTs": "1696636800",
+  "sthRealizedPrice": "27832.31"
+ },
+ {
+  "d": "2023-10-08",
+  "unixTs": "1696723200",
+  "sthRealizedPrice": "27836.28"
+ },
+ {
+  "d": "2023-10-09",
+  "unixTs": "1696809600",
+  "sthRealizedPrice": "27915.17"
+ },
+ {
+  "d": "2023-10-10",
+  "unixTs": "1696896000",
+  "sthRealizedPrice": "27906.38"
+ },
+ {
+  "d": "2023-10-11",
+  "unixTs": "1696982400",
+  "sthRealizedPrice": "27874.70"
+ },
+ {
+  "d": "2023-10-12",
+  "unixTs": "1697068800",
+  "sthRealizedPrice": "27859.64"
+ },
+ {
+  "d": "2023-10-13",
+  "unixTs": "1697155200",
+  "sthRealizedPrice": "27847.44"
+ },
+ {
+  "d": "2023-10-14",
+  "unixTs": "1697241600",
+  "sthRealizedPrice": "27819.05"
+ },
+ {
+  "d": "2023-10-15",
+  "unixTs": "1697328000",
+  "sthRealizedPrice": "27825.17"
+ },
+ {
+  "d": "2023-10-16",
+  "unixTs": "1697414400",
+  "sthRealizedPrice": "27893.03"
+ },
+ {
+  "d": "2023-10-17",
+  "unixTs": "1697500800",
+  "sthRealizedPrice": "27918.55"
+ },
+ {
+  "d": "2023-10-18",
+  "unixTs": "1697587200",
+  "sthRealizedPrice": "27944.08"
+ },
+ {
+  "d": "2023-10-19",
+  "unixTs": "1697673600",
+  "sthRealizedPrice": "27957.52"
+ },
+ {
+  "d": "2023-10-20",
+  "unixTs": "1697760000",
+  "sthRealizedPrice": "28034.99"
+ },
+ {
+  "d": "2023-10-21",
+  "unixTs": "1697846400",
+  "sthRealizedPrice": "28062.45"
+ },
+ {
+  "d": "2023-10-22",
+  "unixTs": "1697932800",
+  "sthRealizedPrice": "28085.90"
+ },
+ {
+  "d": "2023-10-23",
+  "unixTs": "1698019200",
+  "sthRealizedPrice": "28341.67"
+ },
+ {
+  "d": "2023-10-24",
+  "unixTs": "1698105600",
+  "sthRealizedPrice": "28640.13"
+ },
+ {
+  "d": "2023-10-25",
+  "unixTs": "1698192000",
+  "sthRealizedPrice": "28787.19"
+ },
+ {
+  "d": "2023-10-26",
+  "unixTs": "1698278400",
+  "sthRealizedPrice": "28899.84"
+ },
+ {
+  "d": "2023-10-27",
+  "unixTs": "1698364800",
+  "sthRealizedPrice": "28970.10"
+ },
+ {
+  "d": "2023-10-28",
+  "unixTs": "1698451200",
+  "sthRealizedPrice": "29025.20"
+ },
+ {
+  "d": "2023-10-29",
+  "unixTs": "1698537600",
+  "sthRealizedPrice": "29073.76"
+ },
+ {
+  "d": "2023-10-30",
+  "unixTs": "1698624000",
+  "sthRealizedPrice": "29179.25"
+ },
+ {
+  "d": "2023-10-31",
+  "unixTs": "1698710400",
+  "sthRealizedPrice": "29270.22"
+ },
+ {
+  "d": "2023-11-01",
+  "unixTs": "1698796800",
+  "sthRealizedPrice": "29424.30"
+ },
+ {
+  "d": "2023-11-02",
+  "unixTs": "1698883200",
+  "sthRealizedPrice": "29509.04"
+ },
+ {
+  "d": "2023-11-03",
+  "unixTs": "1698969600",
+  "sthRealizedPrice": "29583.82"
+ },
+ {
+  "d": "2023-11-04",
+  "unixTs": "1699056000",
+  "sthRealizedPrice": "29629.51"
+ },
+ {
+  "d": "2023-11-05",
+  "unixTs": "1699142400",
+  "sthRealizedPrice": "29664.83"
+ },
+ {
+  "d": "2023-11-06",
+  "unixTs": "1699228800",
+  "sthRealizedPrice": "29821.09"
+ },
+ {
+  "d": "2023-11-07",
+  "unixTs": "1699315200",
+  "sthRealizedPrice": "29890.61"
+ },
+ {
+  "d": "2023-11-08",
+  "unixTs": "1699401600",
+  "sthRealizedPrice": "29981.76"
+ },
+ {
+  "d": "2023-11-09",
+  "unixTs": "1699488000",
+  "sthRealizedPrice": "30253.30"
+ },
+ {
+  "d": "2023-11-10",
+  "unixTs": "1699574400",
+  "sthRealizedPrice": "30383.53"
+ },
+ {
+  "d": "2023-11-11",
+  "unixTs": "1699660800",
+  "sthRealizedPrice": "30422.65"
+ },
+ {
+  "d": "2023-11-12",
+  "unixTs": "1699747200",
+  "sthRealizedPrice": "30465.65"
+ },
+ {
+  "d": "2023-11-13",
+  "unixTs": "1699833600",
+  "sthRealizedPrice": "30515.64"
+ },
+ {
+  "d": "2023-11-14",
+  "unixTs": "1699920000",
+  "sthRealizedPrice": "30530.04"
+ },
+ {
+  "d": "2023-11-15",
+  "unixTs": "1700006400",
+  "sthRealizedPrice": "30696.34"
+ },
+ {
+  "d": "2023-11-16",
+  "unixTs": "1700092800",
+  "sthRealizedPrice": "30747.06"
+ },
+ {
+  "d": "2023-11-17",
+  "unixTs": "1700179200",
+  "sthRealizedPrice": "30822.12"
+ },
+ {
+  "d": "2023-11-18",
+  "unixTs": "1700265600",
+  "sthRealizedPrice": "30847.89"
+ },
+ {
+  "d": "2023-11-19",
+  "unixTs": "1700352000",
+  "sthRealizedPrice": "30909.35"
+ },
+ {
+  "d": "2023-11-20",
+  "unixTs": "1700438400",
+  "sthRealizedPrice": "31026.24"
+ },
+ {
+  "d": "2023-11-21",
+  "unixTs": "1700524800",
+  "sthRealizedPrice": "31065.48"
+ },
+ {
+  "d": "2023-11-22",
+  "unixTs": "1700611200",
+  "sthRealizedPrice": "31230.03"
+ },
+ {
+  "d": "2023-11-23",
+  "unixTs": "1700697600",
+  "sthRealizedPrice": "31289.84"
+ },
+ {
+  "d": "2023-11-24",
+  "unixTs": "1700784000",
+  "sthRealizedPrice": "31368.63"
+ },
+ {
+  "d": "2023-11-25",
+  "unixTs": "1700870400",
+  "sthRealizedPrice": "31425.28"
+ },
+ {
+  "d": "2023-11-26",
+  "unixTs": "1700956800",
+  "sthRealizedPrice": "31635.28"
+ },
+ {
+  "d": "2023-11-27",
+  "unixTs": "1701043200",
+  "sthRealizedPrice": "31683.86"
+ },
+ {
+  "d": "2023-11-28",
+  "unixTs": "1701129600",
+  "sthRealizedPrice": "31773.17"
+ },
+ {
+  "d": "2023-11-29",
+  "unixTs": "1701216000",
+  "sthRealizedPrice": "31861.52"
+ },
+ {
+  "d": "2023-11-30",
+  "unixTs": "1701302400",
+  "sthRealizedPrice": "31996.73"
+ },
+ {
+  "d": "2023-12-01",
+  "unixTs": "1701388800",
+  "sthRealizedPrice": "32132.32"
+ },
+ {
+  "d": "2023-12-02",
+  "unixTs": "1701475200",
+  "sthRealizedPrice": "32198.90"
+ },
+ {
+  "d": "2023-12-03",
+  "unixTs": "1701561600",
+  "sthRealizedPrice": "32296.14"
+ },
+ {
+  "d": "2023-12-04",
+  "unixTs": "1701648000",
+  "sthRealizedPrice": "32649.96"
+ },
+ {
+  "d": "2023-12-05",
+  "unixTs": "1701734400",
+  "sthRealizedPrice": "33017.62"
+ },
+ {
+  "d": "2023-12-06",
+  "unixTs": "1701820800",
+  "sthRealizedPrice": "33345.66"
+ },
+ {
+  "d": "2023-12-07",
+  "unixTs": "1701907200",
+  "sthRealizedPrice": "33539.48"
+ },
+ {
+  "d": "2023-12-08",
+  "unixTs": "1701993600",
+  "sthRealizedPrice": "33714.95"
+ },
+ {
+  "d": "2023-12-09",
+  "unixTs": "1702080000",
+  "sthRealizedPrice": "33842.23"
+ },
+ {
+  "d": "2023-12-10",
+  "unixTs": "1702166400",
+  "sthRealizedPrice": "33913.69"
+ },
+ {
+  "d": "2023-12-11",
+  "unixTs": "1702252800",
+  "sthRealizedPrice": "33961.00"
+ },
+ {
+  "d": "2023-12-12",
+  "unixTs": "1702339200",
+  "sthRealizedPrice": "34107.52"
+ },
+ {
+  "d": "2023-12-13",
+  "unixTs": "1702425600",
+  "sthRealizedPrice": "34309.97"
+ },
+ {
+  "d": "2023-12-14",
+  "unixTs": "1702512000",
+  "sthRealizedPrice": "34423.88"
+ },
+ {
+  "d": "2023-12-15",
+  "unixTs": "1702598400",
+  "sthRealizedPrice": "34493.18"
+ },
+ {
+  "d": "2023-12-16",
+  "unixTs": "1702684800",
+  "sthRealizedPrice": "34507.08"
+ },
+ {
+  "d": "2023-12-17",
+  "unixTs": "1702771200",
+  "sthRealizedPrice": "34499.83"
+ },
+ {
+  "d": "2023-12-18",
+  "unixTs": "1702857600",
+  "sthRealizedPrice": "34597.27"
+ },
+ {
+  "d": "2023-12-19",
+  "unixTs": "1702944000",
+  "sthRealizedPrice": "34681.35"
+ },
+ {
+  "d": "2023-12-20",
+  "unixTs": "1703030400",
+  "sthRealizedPrice": "34850.99"
+ },
+ {
+  "d": "2023-12-21",
+  "unixTs": "1703116800",
+  "sthRealizedPrice": "34977.18"
+ },
+ {
+  "d": "2023-12-22",
+  "unixTs": "1703203200",
+  "sthRealizedPrice": "35083.62"
+ },
+ {
+  "d": "2023-12-23",
+  "unixTs": "1703289600",
+  "sthRealizedPrice": "35150.83"
+ },
+ {
+  "d": "2023-12-24",
+  "unixTs": "1703376000",
+  "sthRealizedPrice": "35213.94"
+ },
+ {
+  "d": "2023-12-25",
+  "unixTs": "1703462400",
+  "sthRealizedPrice": "35382.61"
+ },
+ {
+  "d": "2023-12-26",
+  "unixTs": "1703548800",
+  "sthRealizedPrice": "35474.22"
+ },
+ {
+  "d": "2023-12-27",
+  "unixTs": "1703635200",
+  "sthRealizedPrice": "35653.27"
+ },
+ {
+  "d": "2023-12-28",
+  "unixTs": "1703721600",
+  "sthRealizedPrice": "35741.65"
+ },
+ {
+  "d": "2023-12-29",
+  "unixTs": "1703808000",
+  "sthRealizedPrice": "35950.25"
+ },
+ {
+  "d": "2023-12-30",
+  "unixTs": "1703894400",
+  "sthRealizedPrice": "35992.02"
+ },
+ {
+  "d": "2023-12-31",
+  "unixTs": "1703980800",
+  "sthRealizedPrice": "36035.95"
+ },
+ {
+  "d": "2024-01-01",
+  "unixTs": "1704067200",
+  "sthRealizedPrice": "36128.29"
+ },
+ {
+  "d": "2024-01-02",
+  "unixTs": "1704153600",
+  "sthRealizedPrice": "36343.08"
+ },
+ {
+  "d": "2024-01-03",
+  "unixTs": "1704240000",
+  "sthRealizedPrice": "36478.22"
+ },
+ {
+  "d": "2024-01-04",
+  "unixTs": "1704326400",
+  "sthRealizedPrice": "37413.90"
+ },
+ {
+  "d": "2024-01-05",
+  "unixTs": "1704412800",
+  "sthRealizedPrice": "37528.57"
+ },
+ {
+  "d": "2024-01-06",
+  "unixTs": "1704499200",
+  "sthRealizedPrice": "37574.54"
+ },
+ {
+  "d": "2024-01-07",
+  "unixTs": "1704585600",
+  "sthRealizedPrice": "37646.07"
+ },
+ {
+  "d": "2024-01-08",
+  "unixTs": "1704672000",
+  "sthRealizedPrice": "37861.68"
+ },
+ {
+  "d": "2024-01-09",
+  "unixTs": "1704758400",
+  "sthRealizedPrice": "38007.93"
+ },
+ {
+  "d": "2024-01-10",
+  "unixTs": "1704844800",
+  "sthRealizedPrice": "38208.36"
+ },
+ {
+  "d": "2024-01-11",
+  "unixTs": "1704931200",
+  "sthRealizedPrice": "38359.16"
+ },
+ {
+  "d": "2024-01-12",
+  "unixTs": "1705017600",
+  "sthRealizedPrice": "38248.24"
+ },
+ {
+  "d": "2024-01-13",
+  "unixTs": "1705104000",
+  "sthRealizedPrice": "38263.07"
+ },
+ {
+  "d": "2024-01-14",
+  "unixTs": "1705190400",
+  "sthRealizedPrice": "38256.58"
+ },
+ {
+  "d": "2024-01-15",
+  "unixTs": "1705276800",
+  "sthRealizedPrice": "38308.22"
+ },
+ {
+  "d": "2024-01-16",
+  "unixTs": "1705363200",
+  "sthRealizedPrice": "38448.39"
+ },
+ {
+  "d": "2024-01-17",
+  "unixTs": "1705449600",
+  "sthRealizedPrice": "38483.27"
+ },
+ {
+  "d": "2024-01-18",
+  "unixTs": "1705536000",
+  "sthRealizedPrice": "38453.23"
+ },
+ {
+  "d": "2024-01-19",
+  "unixTs": "1705622400",
+  "sthRealizedPrice": "38507.54"
+ },
+ {
+  "d": "2024-01-20",
+  "unixTs": "1705708800",
+  "sthRealizedPrice": "38524.42"
+ },
+ {
+  "d": "2024-01-21",
+  "unixTs": "1705795200",
+  "sthRealizedPrice": "38537.42"
+ },
+ {
+  "d": "2024-01-22",
+  "unixTs": "1705881600",
+  "sthRealizedPrice": "38470.08"
+ },
+ {
+  "d": "2024-01-23",
+  "unixTs": "1705968000",
+  "sthRealizedPrice": "38501.35"
+ },
+ {
+  "d": "2024-01-24",
+  "unixTs": "1706054400",
+  "sthRealizedPrice": "38543.81"
+ },
+ {
+  "d": "2024-01-25",
+  "unixTs": "1706140800",
+  "sthRealizedPrice": "38633.75"
+ },
+ {
+  "d": "2024-01-26",
+  "unixTs": "1706227200",
+  "sthRealizedPrice": "38764.24"
+ },
+ {
+  "d": "2024-01-27",
+  "unixTs": "1706313600",
+  "sthRealizedPrice": "38806.44"
+ },
+ {
+  "d": "2024-01-28",
+  "unixTs": "1706400000",
+  "sthRealizedPrice": "38833.40"
+ },
+ {
+  "d": "2024-01-29",
+  "unixTs": "1706486400",
+  "sthRealizedPrice": "38969.46"
+ },
+ {
+  "d": "2024-01-30",
+  "unixTs": "1706572800",
+  "sthRealizedPrice": "39119.43"
+ },
+ {
+  "d": "2024-01-31",
+  "unixTs": "1706659200",
+  "sthRealizedPrice": "39278.80"
+ },
+ {
+  "d": "2024-02-01",
+  "unixTs": "1706745600",
+  "sthRealizedPrice": "39349.01"
+ },
+ {
+  "d": "2024-02-02",
+  "unixTs": "1706832000",
+  "sthRealizedPrice": "39395.44"
+ },
+ {
+  "d": "2024-02-03",
+  "unixTs": "1706918400",
+  "sthRealizedPrice": "39424.49"
+ },
+ {
+  "d": "2024-02-04",
+  "unixTs": "1707004800",
+  "sthRealizedPrice": "39478.56"
+ },
+ {
+  "d": "2024-02-05",
+  "unixTs": "1707091200",
+  "sthRealizedPrice": "39519.00"
+ },
+ {
+  "d": "2024-02-06",
+  "unixTs": "1707177600",
+  "sthRealizedPrice": "39600.12"
+ },
+ {
+  "d": "2024-02-07",
+  "unixTs": "1707264000",
+  "sthRealizedPrice": "39740.77"
+ },
+ {
+  "d": "2024-02-08",
+  "unixTs": "1707350400",
+  "sthRealizedPrice": "39881.71"
+ },
+ {
+  "d": "2024-02-09",
+  "unixTs": "1707436800",
+  "sthRealizedPrice": "40095.94"
+ },
+ {
+  "d": "2024-02-10",
+  "unixTs": "1707523200",
+  "sthRealizedPrice": "40197.75"
+ },
+ {
+  "d": "2024-02-11",
+  "unixTs": "1707609600",
+  "sthRealizedPrice": "40301.48"
+ },
+ {
+  "d": "2024-02-12",
+  "unixTs": "1707696000",
+  "sthRealizedPrice": "40621.46"
+ },
+ {
+  "d": "2024-02-13",
+  "unixTs": "1707782400",
+  "sthRealizedPrice": "40777.52"
+ },
+ {
+  "d": "2024-02-14",
+  "unixTs": "1707868800",
+  "sthRealizedPrice": "41225.28"
+ },
+ {
+  "d": "2024-02-15",
+  "unixTs": "1707955200",
+  "sthRealizedPrice": "41439.88"
+ },
+ {
+  "d": "2024-02-16",
+  "unixTs": "1708041600",
+  "sthRealizedPrice": "41603.03"
+ },
+ {
+  "d": "2024-02-17",
+  "unixTs": "1708128000",
+  "sthRealizedPrice": "41801.03"
+ },
+ {
+  "d": "2024-02-18",
+  "unixTs": "1708214400",
+  "sthRealizedPrice": "41895.24"
+ },
+ {
+  "d": "2024-02-19",
+  "unixTs": "1708300800",
+  "sthRealizedPrice": "42049.10"
+ },
+ {
+  "d": "2024-02-20",
+  "unixTs": "1708387200",
+  "sthRealizedPrice": "42193.56"
+ },
+ {
+  "d": "2024-02-21",
+  "unixTs": "1708473600",
+  "sthRealizedPrice": "42379.46"
+ },
+ {
+  "d": "2024-02-22",
+  "unixTs": "1708560000",
+  "sthRealizedPrice": "42566.07"
+ },
+ {
+  "d": "2024-02-23",
+  "unixTs": "1708646400",
+  "sthRealizedPrice": "42688.13"
+ },
+ {
+  "d": "2024-02-24",
+  "unixTs": "1708732800",
+  "sthRealizedPrice": "42760.26"
+ },
+ {
+  "d": "2024-02-25",
+  "unixTs": "1708819200",
+  "sthRealizedPrice": "42829.73"
+ },
+ {
+  "d": "2024-02-26",
+  "unixTs": "1708905600",
+  "sthRealizedPrice": "43234.96"
+ },
+ {
+  "d": "2024-02-27",
+  "unixTs": "1708992000",
+  "sthRealizedPrice": "43807.60"
+ },
+ {
+  "d": "2024-02-28",
+  "unixTs": "1709078400",
+  "sthRealizedPrice": "45374.48"
+ },
+ {
+  "d": "2024-02-29",
+  "unixTs": "1709164800",
+  "sthRealizedPrice": "45798.09"
+ },
+ {
+  "d": "2024-03-01",
+  "unixTs": "1709251200",
+  "sthRealizedPrice": "46359.95"
+ },
+ {
+  "d": "2024-03-02",
+  "unixTs": "1709337600",
+  "sthRealizedPrice": "46483.09"
+ },
+ {
+  "d": "2024-03-03",
+  "unixTs": "1709424000",
+  "sthRealizedPrice": "46686.12"
+ },
+ {
+  "d": "2024-03-04",
+  "unixTs": "1709510400",
+  "sthRealizedPrice": "47485.37"
+ },
+ {
+  "d": "2024-03-05",
+  "unixTs": "1709596800",
+  "sthRealizedPrice": "47852.63"
+ },
+ {
+  "d": "2024-03-06",
+  "unixTs": "1709683200",
+  "sthRealizedPrice": "48919.05"
+ },
+ {
+  "d": "2024-03-07",
+  "unixTs": "1709769600",
+  "sthRealizedPrice": "49590.77"
+ },
+ {
+  "d": "2024-03-08",
+  "unixTs": "1709856000",
+  "sthRealizedPrice": "50162.60"
+ },
+ {
+  "d": "2024-03-09",
+  "unixTs": "1709942400",
+  "sthRealizedPrice": "50374.13"
+ },
+ {
+  "d": "2024-03-10",
+  "unixTs": "1710028800",
+  "sthRealizedPrice": "50566.89"
+ },
+ {
+  "d": "2024-03-11",
+  "unixTs": "1710115200",
+  "sthRealizedPrice": "51525.31"
+ },
+ {
+  "d": "2024-03-12",
+  "unixTs": "1710201600",
+  "sthRealizedPrice": "52059.26"
+ },
+ {
+  "d": "2024-03-13",
+  "unixTs": "1710288000",
+  "sthRealizedPrice": "52834.33"
+ },
+ {
+  "d": "2024-03-14",
+  "unixTs": "1710374400",
+  "sthRealizedPrice": "53105.12"
+ },
+ {
+  "d": "2024-03-15",
+  "unixTs": "1710460800",
+  "sthRealizedPrice": "53350.90"
+ },
+ {
+  "d": "2024-03-16",
+  "unixTs": "1710547200",
+  "sthRealizedPrice": "53381.33"
+ },
+ {
+  "d": "2024-03-17",
+  "unixTs": "1710633600",
+  "sthRealizedPrice": "53544.60"
+ },
+ {
+  "d": "2024-03-18",
+  "unixTs": "1710720000",
+  "sthRealizedPrice": "53902.50"
+ },
+ {
+  "d": "2024-03-19",
+  "unixTs": "1710806400",
+  "sthRealizedPrice": "53748.62"
+ },
+ {
+  "d": "2024-03-20",
+  "unixTs": "1710892800",
+  "sthRealizedPrice": "54070.03"
+ },
+ {
+  "d": "2024-03-21",
+  "unixTs": "1710979200",
+  "sthRealizedPrice": "54125.80"
+ },
+ {
+  "d": "2024-03-22",
+  "unixTs": "1711065600",
+  "sthRealizedPrice": "54155.35"
+ },
+ {
+  "d": "2024-03-23",
+  "unixTs": "1711152000",
+  "sthRealizedPrice": "54433.10"
+ },
+ {
+  "d": "2024-03-24",
+  "unixTs": "1711238400",
+  "sthRealizedPrice": "54544.88"
+ },
+ {
+  "d": "2024-03-25",
+  "unixTs": "1711324800",
+  "sthRealizedPrice": "54863.18"
+ },
+ {
+  "d": "2024-03-26",
+  "unixTs": "1711411200",
+  "sthRealizedPrice": "55159.92"
+ },
+ {
+  "d": "2024-03-27",
+  "unixTs": "1711497600",
+  "sthRealizedPrice": "55292.27"
+ },
+ {
+  "d": "2024-03-28",
+  "unixTs": "1711584000",
+  "sthRealizedPrice": "55603.19"
+ },
+ {
+  "d": "2024-03-29",
+  "unixTs": "1711670400",
+  "sthRealizedPrice": "55709.55"
+ },
+ {
+  "d": "2024-03-30",
+  "unixTs": "1711756800",
+  "sthRealizedPrice": "55845.70"
+ },
+ {
+  "d": "2024-03-31",
+  "unixTs": "1711843200",
+  "sthRealizedPrice": "56081.99"
+ },
+ {
+  "d": "2024-04-01",
+  "unixTs": "1711929600",
+  "sthRealizedPrice": "56315.25"
+ },
+ {
+  "d": "2024-04-02",
+  "unixTs": "1712016000",
+  "sthRealizedPrice": "56398.15"
+ },
+ {
+  "d": "2024-04-03",
+  "unixTs": "1712102400",
+  "sthRealizedPrice": "56506.25"
+ },
+ {
+  "d": "2024-04-04",
+  "unixTs": "1712188800",
+  "sthRealizedPrice": "56642.01"
+ },
+ {
+  "d": "2024-04-05",
+  "unixTs": "1712275200",
+  "sthRealizedPrice": "56676.66"
+ },
+ {
+  "d": "2024-04-06",
+  "unixTs": "1712361600",
+  "sthRealizedPrice": "56814.38"
+ },
+ {
+  "d": "2024-04-07",
+  "unixTs": "1712448000",
+  "sthRealizedPrice": "56894.06"
+ },
+ {
+  "d": "2024-04-08",
+  "unixTs": "1712534400",
+  "sthRealizedPrice": "57135.99"
+ },
+ {
+  "d": "2024-04-09",
+  "unixTs": "1712620800",
+  "sthRealizedPrice": "57239.21"
+ },
+ {
+  "d": "2024-04-10",
+  "unixTs": "1712707200",
+  "sthRealizedPrice": "57354.25"
+ },
+ {
+  "d": "2024-04-11",
+  "unixTs": "1712793600",
+  "sthRealizedPrice": "57427.37"
+ },
+ {
+  "d": "2024-04-12",
+  "unixTs": "1712880000",
+  "sthRealizedPrice": "57461.13"
+ },
+ {
+  "d": "2024-04-13",
+  "unixTs": "1712966400",
+  "sthRealizedPrice": "57428.46"
+ },
+ {
+  "d": "2024-04-14",
+  "unixTs": "1713052800",
+  "sthRealizedPrice": "57466.56"
+ },
+ {
+  "d": "2024-04-15",
+  "unixTs": "1713139200",
+  "sthRealizedPrice": "57478.14"
+ },
+ {
+  "d": "2024-04-16",
+  "unixTs": "1713225600",
+  "sthRealizedPrice": "57515.22"
+ },
+ {
+  "d": "2024-04-17",
+  "unixTs": "1713312000",
+  "sthRealizedPrice": "57468.85"
+ },
+ {
+  "d": "2024-04-18",
+  "unixTs": "1713398400",
+  "sthRealizedPrice": "57501.32"
+ },
+ {
+  "d": "2024-04-19",
+  "unixTs": "1713484800",
+  "sthRealizedPrice": "57573.22"
+ },
+ {
+  "d": "2024-04-20",
+  "unixTs": "1713571200",
+  "sthRealizedPrice": "57623.62"
+ },
+ {
+  "d": "2024-04-21",
+  "unixTs": "1713657600",
+  "sthRealizedPrice": "57670.12"
+ },
+ {
+  "d": "2024-04-22",
+  "unixTs": "1713744000",
+  "sthRealizedPrice": "57764.42"
+ },
+ {
+  "d": "2024-04-23",
+  "unixTs": "1713830400",
+  "sthRealizedPrice": "58217.31"
+ },
+ {
+  "d": "2024-04-24",
+  "unixTs": "1713916800",
+  "sthRealizedPrice": "58398.76"
+ },
+ {
+  "d": "2024-04-25",
+  "unixTs": "1714003200",
+  "sthRealizedPrice": "58444.25"
+ },
+ {
+  "d": "2024-04-26",
+  "unixTs": "1714089600",
+  "sthRealizedPrice": "58422.88"
+ },
+ {
+  "d": "2024-04-27",
+  "unixTs": "1714176000",
+  "sthRealizedPrice": "58450.61"
+ },
+ {
+  "d": "2024-04-28",
+  "unixTs": "1714262400",
+  "sthRealizedPrice": "58528.91"
+ },
+ {
+  "d": "2024-04-29",
+  "unixTs": "1714348800",
+  "sthRealizedPrice": "58607.13"
+ },
+ {
+  "d": "2024-04-30",
+  "unixTs": "1714435200",
+  "sthRealizedPrice": "58626.34"
+ },
+ {
+  "d": "2024-05-01",
+  "unixTs": "1714521600",
+  "sthRealizedPrice": "58533.71"
+ },
+ {
+  "d": "2024-05-02",
+  "unixTs": "1714608000",
+  "sthRealizedPrice": "58536.36"
+ },
+ {
+  "d": "2024-05-03",
+  "unixTs": "1714694400",
+  "sthRealizedPrice": "58639.19"
+ },
+ {
+  "d": "2024-05-04",
+  "unixTs": "1714780800",
+  "sthRealizedPrice": "58712.79"
+ },
+ {
+  "d": "2024-05-05",
+  "unixTs": "1714867200",
+  "sthRealizedPrice": "58761.72"
+ },
+ {
+  "d": "2024-05-06",
+  "unixTs": "1714953600",
+  "sthRealizedPrice": "58813.46"
+ },
+ {
+  "d": "2024-05-07",
+  "unixTs": "1715040000",
+  "sthRealizedPrice": "58826.33"
+ },
+ {
+  "d": "2024-05-08",
+  "unixTs": "1715126400",
+  "sthRealizedPrice": "58909.75"
+ },
+ {
+  "d": "2024-05-09",
+  "unixTs": "1715212800",
+  "sthRealizedPrice": "58988.16"
+ },
+ {
+  "d": "2024-05-10",
+  "unixTs": "1715299200",
+  "sthRealizedPrice": "58994.07"
+ },
+ {
+  "d": "2024-05-11",
+  "unixTs": "1715385600",
+  "sthRealizedPrice": "59037.21"
+ },
+ {
+  "d": "2024-05-12",
+  "unixTs": "1715472000",
+  "sthRealizedPrice": "59104.40"
+ },
+ {
+  "d": "2024-05-13",
+  "unixTs": "1715558400",
+  "sthRealizedPrice": "59195.78"
+ },
+ {
+  "d": "2024-05-14",
+  "unixTs": "1715644800",
+  "sthRealizedPrice": "59320.43"
+ },
+ {
+  "d": "2024-05-15",
+  "unixTs": "1715731200",
+  "sthRealizedPrice": "59638.84"
+ },
+ {
+  "d": "2024-05-16",
+  "unixTs": "1715817600",
+  "sthRealizedPrice": "59744.34"
+ },
+ {
+  "d": "2024-05-17",
+  "unixTs": "1715904000",
+  "sthRealizedPrice": "59901.90"
+ },
+ {
+  "d": "2024-05-18",
+  "unixTs": "1715990400",
+  "sthRealizedPrice": "59974.79"
+ },
+ {
+  "d": "2024-05-19",
+  "unixTs": "1716076800",
+  "sthRealizedPrice": "60057.76"
+ },
+ {
+  "d": "2024-05-20",
+  "unixTs": "1716163200",
+  "sthRealizedPrice": "60373.63"
+ },
+ {
+  "d": "2024-05-21",
+  "unixTs": "1716249600",
+  "sthRealizedPrice": "60585.15"
+ },
+ {
+  "d": "2024-05-22",
+  "unixTs": "1716336000",
+  "sthRealizedPrice": "60757.97"
+ },
+ {
+  "d": "2024-05-23",
+  "unixTs": "1716422400",
+  "sthRealizedPrice": "60804.74"
+ },
+ {
+  "d": "2024-05-24",
+  "unixTs": "1716508800",
+  "sthRealizedPrice": "60848.21"
+ },
+ {
+  "d": "2024-05-25",
+  "unixTs": "1716595200",
+  "sthRealizedPrice": "60859.07"
+ },
+ {
+  "d": "2024-05-26",
+  "unixTs": "1716681600",
+  "sthRealizedPrice": "60891.61"
+ },
+ {
+  "d": "2024-05-27",
+  "unixTs": "1716768000",
+  "sthRealizedPrice": "60978.12"
+ },
+ {
+  "d": "2024-05-28",
+  "unixTs": "1716854400",
+  "sthRealizedPrice": "61282.48"
+ },
+ {
+  "d": "2024-05-29",
+  "unixTs": "1716940800",
+  "sthRealizedPrice": "61315.31"
+ },
+ {
+  "d": "2024-05-30",
+  "unixTs": "1717027200",
+  "sthRealizedPrice": "61483.25"
+ },
+ {
+  "d": "2024-05-31",
+  "unixTs": "1717113600",
+  "sthRealizedPrice": "61529.84"
+ },
+ {
+  "d": "2024-06-01",
+  "unixTs": "1717200000",
+  "sthRealizedPrice": "61575.53"
+ },
+ {
+  "d": "2024-06-02",
+  "unixTs": "1717286400",
+  "sthRealizedPrice": "61632.49"
+ },
+ {
+  "d": "2024-06-03",
+  "unixTs": "1717372800",
+  "sthRealizedPrice": "61771.45"
+ },
+ {
+  "d": "2024-06-04",
+  "unixTs": "1717459200",
+  "sthRealizedPrice": "61904.97"
+ },
+ {
+  "d": "2024-06-05",
+  "unixTs": "1717545600",
+  "sthRealizedPrice": "62036.58"
+ },
+ {
+  "d": "2024-06-06",
+  "unixTs": "1717632000",
+  "sthRealizedPrice": "62204.29"
+ },
+ {
+  "d": "2024-06-07",
+  "unixTs": "1717718400",
+  "sthRealizedPrice": "62254.31"
+ },
+ {
+  "d": "2024-06-08",
+  "unixTs": "1717804800",
+  "sthRealizedPrice": "62301.47"
+ },
+ {
+  "d": "2024-06-09",
+  "unixTs": "1717891200",
+  "sthRealizedPrice": "62369.37"
+ },
+ {
+  "d": "2024-06-10",
+  "unixTs": "1717977600",
+  "sthRealizedPrice": "62477.36"
+ },
+ {
+  "d": "2024-06-11",
+  "unixTs": "1718064000",
+  "sthRealizedPrice": "62513.18"
+ },
+ {
+  "d": "2024-06-12",
+  "unixTs": "1718150400",
+  "sthRealizedPrice": "63368.63"
+ },
+ {
+  "d": "2024-06-13",
+  "unixTs": "1718236800",
+  "sthRealizedPrice": "63389.46"
+ },
+ {
+  "d": "2024-06-14",
+  "unixTs": "1718323200",
+  "sthRealizedPrice": "63417.20"
+ },
+ {
+  "d": "2024-06-15",
+  "unixTs": "1718409600",
+  "sthRealizedPrice": "63512.97"
+ },
+ {
+  "d": "2024-06-16",
+  "unixTs": "1718496000",
+  "sthRealizedPrice": "63554.03"
+ },
+ {
+  "d": "2024-06-17",
+  "unixTs": "1718582400",
+  "sthRealizedPrice": "63612.62"
+ },
+ {
+  "d": "2024-06-18",
+  "unixTs": "1718668800",
+  "sthRealizedPrice": "63541.79"
+ },
+ {
+  "d": "2024-06-19",
+  "unixTs": "1718755200",
+  "sthRealizedPrice": "63605.15"
+ },
+ {
+  "d": "2024-06-20",
+  "unixTs": "1718841600",
+  "sthRealizedPrice": "64026.99"
+ },
+ {
+  "d": "2024-06-21",
+  "unixTs": "1718928000",
+  "sthRealizedPrice": "63593.50"
+ },
+ {
+  "d": "2024-06-22",
+  "unixTs": "1719014400",
+  "sthRealizedPrice": "64332.22"
+ },
+ {
+  "d": "2024-06-23",
+  "unixTs": "1719100800",
+  "sthRealizedPrice": "63701.55"
+ },
+ {
+  "d": "2024-06-24",
+  "unixTs": "1719187200",
+  "sthRealizedPrice": "63667.32"
+ },
+ {
+  "d": "2024-06-25",
+  "unixTs": "1719273600",
+  "sthRealizedPrice": "64181.66"
+ },
+ {
+  "d": "2024-06-26",
+  "unixTs": "1719360000",
+  "sthRealizedPrice": "63653.13"
+ },
+ {
+  "d": "2024-06-27",
+  "unixTs": "1719446400",
+  "sthRealizedPrice": "64299.77"
+ },
+ {
+  "d": "2024-06-28",
+  "unixTs": "1719532800",
+  "sthRealizedPrice": "63536.04"
+ },
+ {
+  "d": "2024-06-29",
+  "unixTs": "1719619200",
+  "sthRealizedPrice": "64332.78"
+ },
+ {
+  "d": "2024-06-30",
+  "unixTs": "1719705600",
+  "sthRealizedPrice": "64353.55"
+ },
+ {
+  "d": "2024-07-01",
+  "unixTs": "1719792000",
+  "sthRealizedPrice": "64406.18"
+ },
+ {
+  "d": "2024-07-02",
+  "unixTs": "1719878400",
+  "sthRealizedPrice": "63846.26"
+ },
+ {
+  "d": "2024-07-03",
+  "unixTs": "1719964800",
+  "sthRealizedPrice": "63908.91"
+ },
+ {
+  "d": "2024-07-04",
+  "unixTs": "1720051200",
+  "sthRealizedPrice": "63679.24"
+ },
+ {
+  "d": "2024-07-05",
+  "unixTs": "1720137600",
+  "sthRealizedPrice": "63965.74"
+ },
+ {
+  "d": "2024-07-06",
+  "unixTs": "1720224000",
+  "sthRealizedPrice": "63411.03"
+ },
+ {
+  "d": "2024-07-07",
+  "unixTs": "1720310400",
+  "sthRealizedPrice": "63362.54"
+ },
+ {
+  "d": "2024-07-08",
+  "unixTs": "1720396800",
+  "sthRealizedPrice": "63301.44"
+ },
+ {
+  "d": "2024-07-09",
+  "unixTs": "1720483200",
+  "sthRealizedPrice": "63273.05"
+ },
+ {
+  "d": "2024-07-10",
+  "unixTs": "1720569600",
+  "sthRealizedPrice": "63260.33"
+ },
+ {
+  "d": "2024-07-11",
+  "unixTs": "1720656000",
+  "sthRealizedPrice": "63389.28"
+ },
+ {
+  "d": "2024-07-12",
+  "unixTs": "1720742400",
+  "sthRealizedPrice": "63409.00"
+ },
+ {
+  "d": "2024-07-13",
+  "unixTs": "1720828800",
+  "sthRealizedPrice": "63254.88"
+ },
+ {
+  "d": "2024-07-14",
+  "unixTs": "1720915200",
+  "sthRealizedPrice": "63496.32"
+ },
+ {
+  "d": "2024-07-15",
+  "unixTs": "1721001600",
+  "sthRealizedPrice": "63672.13"
+ },
+ {
+  "d": "2024-07-16",
+  "unixTs": "1721088000",
+  "sthRealizedPrice": "63770.77"
+ },
+ {
+  "d": "2024-07-17",
+  "unixTs": "1721174400",
+  "sthRealizedPrice": "63816.10"
+ },
+ {
+  "d": "2024-07-18",
+  "unixTs": "1721260800",
+  "sthRealizedPrice": "63923.80"
+ },
+ {
+  "d": "2024-07-19",
+  "unixTs": "1721347200",
+  "sthRealizedPrice": "64001.30"
+ },
+ {
+  "d": "2024-07-20",
+  "unixTs": "1721433600",
+  "sthRealizedPrice": "64120.51"
+ },
+ {
+  "d": "2024-07-21",
+  "unixTs": "1721520000",
+  "sthRealizedPrice": "64079.14"
+ },
+ {
+  "d": "2024-07-22",
+  "unixTs": "1721606400",
+  "sthRealizedPrice": "64264.49"
+ },
+ {
+  "d": "2024-07-23",
+  "unixTs": "1721692800",
+  "sthRealizedPrice": "64214.93"
+ },
+ {
+  "d": "2024-07-24",
+  "unixTs": "1721779200",
+  "sthRealizedPrice": "64254.29"
+ },
+ {
+  "d": "2024-07-25",
+  "unixTs": "1721865600",
+  "sthRealizedPrice": "64351.72"
+ },
+ {
+  "d": "2024-07-26",
+  "unixTs": "1721952000",
+  "sthRealizedPrice": "64514.81"
+ },
+ {
+  "d": "2024-07-27",
+  "unixTs": "1722038400",
+  "sthRealizedPrice": "64593.66"
+ },
+ {
+  "d": "2024-07-28",
+  "unixTs": "1722124800",
+  "sthRealizedPrice": "64489.35"
+ },
+ {
+  "d": "2024-07-29",
+  "unixTs": "1722211200",
+  "sthRealizedPrice": "64763.73"
+ },
+ {
+  "d": "2024-07-30",
+  "unixTs": "1722297600",
+  "sthRealizedPrice": "64592.11"
+ },
+ {
+  "d": "2024-07-31",
+  "unixTs": "1722384000",
+  "sthRealizedPrice": "64801.50"
+ },
+ {
+  "d": "2024-08-01",
+  "unixTs": "1722470400",
+  "sthRealizedPrice": "64674.33"
+ },
+ {
+  "d": "2024-08-02",
+  "unixTs": "1722556800",
+  "sthRealizedPrice": "64842.90"
+ },
+ {
+  "d": "2024-08-03",
+  "unixTs": "1722643200",
+  "sthRealizedPrice": "64821.06"
+ },
+ {
+  "d": "2024-08-04",
+  "unixTs": "1722729600",
+  "sthRealizedPrice": "64480.37"
+ },
+ {
+  "d": "2024-08-05",
+  "unixTs": "1722816000",
+  "sthRealizedPrice": "63959.74"
+ },
+ {
+  "d": "2024-08-06",
+  "unixTs": "1722902400",
+  "sthRealizedPrice": "64021.91"
+ },
+ {
+  "d": "2024-08-07",
+  "unixTs": "1722988800",
+  "sthRealizedPrice": "63845.12"
+ },
+ {
+  "d": "2024-08-08",
+  "unixTs": "1723075200",
+  "sthRealizedPrice": "63902.19"
+ },
+ {
+  "d": "2024-08-09",
+  "unixTs": "1723161600",
+  "sthRealizedPrice": "63923.76"
+ },
+ {
+  "d": "2024-08-10",
+  "unixTs": "1723248000",
+  "sthRealizedPrice": "64024.04"
+ },
+ {
+  "d": "2024-08-11",
+  "unixTs": "1723334400",
+  "sthRealizedPrice": "63961.85"
+ },
+ {
+  "d": "2024-08-12",
+  "unixTs": "1723420800",
+  "sthRealizedPrice": "63939.43"
+ },
+ {
+  "d": "2024-08-13",
+  "unixTs": "1723507200",
+  "sthRealizedPrice": "63603.16"
+ },
+ {
+  "d": "2024-08-14",
+  "unixTs": "1723593600",
+  "sthRealizedPrice": "63705.28"
+ },
+ {
+  "d": "2024-08-15",
+  "unixTs": "1723680000",
+  "sthRealizedPrice": "63289.97"
+ },
+ {
+  "d": "2024-08-16",
+  "unixTs": "1723766400",
+  "sthRealizedPrice": "63545.64"
+ },
+ {
+  "d": "2024-08-17",
+  "unixTs": "1723852800",
+  "sthRealizedPrice": "63542.58"
+ },
+ {
+  "d": "2024-08-18",
+  "unixTs": "1723939200",
+  "sthRealizedPrice": "63321.67"
+ },
+ {
+  "d": "2024-08-19",
+  "unixTs": "1724025600",
+  "sthRealizedPrice": "63295.32"
+ },
+ {
+  "d": "2024-08-20",
+  "unixTs": "1724112000",
+  "sthRealizedPrice": "62979.38"
+ },
+ {
+  "d": "2024-08-21",
+  "unixTs": "1724198400",
+  "sthRealizedPrice": "63052.69"
+ },
+ {
+  "d": "2024-08-22",
+  "unixTs": "1724284800",
+  "sthRealizedPrice": "62959.66"
+ },
+ {
+  "d": "2024-08-23",
+  "unixTs": "1724371200",
+  "sthRealizedPrice": "62987.80"
+ },
+ {
+  "d": "2024-08-24",
+  "unixTs": "1724457600",
+  "sthRealizedPrice": "63076.48"
+ },
+ {
+  "d": "2024-08-25",
+  "unixTs": "1724544000",
+  "sthRealizedPrice": "63249.62"
+ },
+ {
+  "d": "2024-08-26",
+  "unixTs": "1724630400",
+  "sthRealizedPrice": "63097.46"
+ },
+ {
+  "d": "2024-08-27",
+  "unixTs": "1724716800",
+  "sthRealizedPrice": "62873.92"
+ },
+ {
+  "d": "2024-08-28",
+  "unixTs": "1724803200",
+  "sthRealizedPrice": "62798.00"
+ },
+ {
+  "d": "2024-08-29",
+  "unixTs": "1724889600",
+  "sthRealizedPrice": "62745.65"
+ },
+ {
+  "d": "2024-08-30",
+  "unixTs": "1724976000",
+  "sthRealizedPrice": "62664.92"
+ },
+ {
+  "d": "2024-08-31",
+  "unixTs": "1725062400",
+  "sthRealizedPrice": "62612.90"
+ },
+ {
+  "d": "2024-09-01",
+  "unixTs": "1725148800",
+  "sthRealizedPrice": "62526.37"
+ },
+ {
+  "d": "2024-09-02",
+  "unixTs": "1725235200",
+  "sthRealizedPrice": "62497.50"
+ },
+ {
+  "d": "2024-09-03",
+  "unixTs": "1725321600",
+  "sthRealizedPrice": "62352.48"
+ },
+ {
+  "d": "2024-09-04",
+  "unixTs": "1725408000",
+  "sthRealizedPrice": "62292.89"
+ },
+ {
+  "d": "2024-09-05",
+  "unixTs": "1725494400",
+  "sthRealizedPrice": "62153.56"
+ },
+ {
+  "d": "2024-09-06",
+  "unixTs": "1725580800",
+  "sthRealizedPrice": "61981.32"
+ },
+ {
+  "d": "2024-09-07",
+  "unixTs": "1725667200",
+  "sthRealizedPrice": "61928.33"
+ },
+ {
+  "d": "2024-09-08",
+  "unixTs": "1725753600",
+  "sthRealizedPrice": "61883.01"
+ },
+ {
+  "d": "2024-09-09",
+  "unixTs": "1725840000",
+  "sthRealizedPrice": "61871.65"
+ },
+ {
+  "d": "2024-09-10",
+  "unixTs": "1725926400",
+  "sthRealizedPrice": "61810.69"
+ },
+ {
+  "d": "2024-09-11",
+  "unixTs": "1726012800",
+  "sthRealizedPrice": "61734.93"
+ },
+ {
+  "d": "2024-09-12",
+  "unixTs": "1726099200",
+  "sthRealizedPrice": "61718.14"
+ },
+ {
+  "d": "2024-09-13",
+  "unixTs": "1726185600",
+  "sthRealizedPrice": "61769.25"
+ },
+ {
+  "d": "2024-09-14",
+  "unixTs": "1726272000",
+  "sthRealizedPrice": "61763.73"
+ },
+ {
+  "d": "2024-09-15",
+  "unixTs": "1726358400",
+  "sthRealizedPrice": "61737.83"
+ },
+ {
+  "d": "2024-09-16",
+  "unixTs": "1726444800",
+  "sthRealizedPrice": "61654.48"
+ },
+ {
+  "d": "2024-09-17",
+  "unixTs": "1726531200",
+  "sthRealizedPrice": "61675.56"
+ },
+ {
+  "d": "2024-09-18",
+  "unixTs": "1726617600",
+  "sthRealizedPrice": "61728.19"
+ },
+ {
+  "d": "2024-09-19",
+  "unixTs": "1726704000",
+  "sthRealizedPrice": "62185.17"
+ },
+ {
+  "d": "2024-09-20",
+  "unixTs": "1726790400",
+  "sthRealizedPrice": "62285.70"
+ },
+ {
+  "d": "2024-09-21",
+  "unixTs": "1726876800",
+  "sthRealizedPrice": "62327.26"
+ },
+ {
+  "d": "2024-09-22",
+  "unixTs": "1726963200",
+  "sthRealizedPrice": "62330.78"
+ },
+ {
+  "d": "2024-09-23",
+  "unixTs": "1727049600",
+  "sthRealizedPrice": "62364.39"
+ },
+ {
+  "d": "2024-09-24",
+  "unixTs": "1727136000",
+  "sthRealizedPrice": "62470.57"
+ },
+ {
+  "d": "2024-09-25",
+  "unixTs": "1727222400",
+  "sthRealizedPrice": "62495.87"
+ },
+ {
+  "d": "2024-09-26",
+  "unixTs": "1727308800",
+  "sthRealizedPrice": "62600.56"
+ },
+ {
+  "d": "2024-09-27",
+  "unixTs": "1727395200",
+  "sthRealizedPrice": "62691.83"
+ },
+ {
+  "d": "2024-09-28",
+  "unixTs": "1727481600",
+  "sthRealizedPrice": "62704.37"
+ },
+ {
+  "d": "2024-09-29",
+  "unixTs": "1727568000",
+  "sthRealizedPrice": "62710.15"
+ },
+ {
+  "d": "2024-09-30",
+  "unixTs": "1727654400",
+  "sthRealizedPrice": "62678.75"
+ },
+ {
+  "d": "2024-10-01",
+  "unixTs": "1727740800",
+  "sthRealizedPrice": "62524.07"
+ },
+ {
+  "d": "2024-10-02",
+  "unixTs": "1727827200",
+  "sthRealizedPrice": "62463.03"
+ },
+ {
+  "d": "2024-10-03",
+  "unixTs": "1727913600",
+  "sthRealizedPrice": "62412.98"
+ },
+ {
+  "d": "2024-10-04",
+  "unixTs": "1728000000",
+  "sthRealizedPrice": "62435.26"
+ },
+ {
+  "d": "2024-10-05",
+  "unixTs": "1728086400",
+  "sthRealizedPrice": "62426.05"
+ },
+ {
+  "d": "2024-10-06",
+  "unixTs": "1728172800",
+  "sthRealizedPrice": "62434.06"
+ },
+ {
+  "d": "2024-10-07",
+  "unixTs": "1728259200",
+  "sthRealizedPrice": "62437.14"
+ },
+ {
+  "d": "2024-10-08",
+  "unixTs": "1728345600",
+  "sthRealizedPrice": "62440.29"
+ },
+ {
+  "d": "2024-10-09",
+  "unixTs": "1728432000",
+  "sthRealizedPrice": "62354.81"
+ },
+ {
+  "d": "2024-10-10",
+  "unixTs": "1728518400",
+  "sthRealizedPrice": "62288.76"
+ },
+ {
+  "d": "2024-10-11",
+  "unixTs": "1728604800",
+  "sthRealizedPrice": "62343.27"
+ },
+ {
+  "d": "2024-10-12",
+  "unixTs": "1728691200",
+  "sthRealizedPrice": "62364.31"
+ },
+ {
+  "d": "2024-10-13",
+  "unixTs": "1728777600",
+  "sthRealizedPrice": "62362.32"
+ },
+ {
+  "d": "2024-10-14",
+  "unixTs": "1728864000",
+  "sthRealizedPrice": "62530.05"
+ },
+ {
+  "d": "2024-10-15",
+  "unixTs": "1728950400",
+  "sthRealizedPrice": "62729.97"
+ },
+ {
+  "d": "2024-10-16",
+  "unixTs": "1729036800",
+  "sthRealizedPrice": "62852.39"
+ },
+ {
+  "d": "2024-10-17",
+  "unixTs": "1729123200",
+  "sthRealizedPrice": "62924.79"
+ },
+ {
+  "d": "2024-10-18",
+  "unixTs": "1729209600",
+  "sthRealizedPrice": "63042.82"
+ },
+ {
+  "d": "2024-10-19",
+  "unixTs": "1729296000",
+  "sthRealizedPrice": "63100.00"
+ },
+ {
+  "d": "2024-10-20",
+  "unixTs": "1729382400",
+  "sthRealizedPrice": "63187.28"
+ },
+ {
+  "d": "2024-10-21",
+  "unixTs": "1729468800",
+  "sthRealizedPrice": "63220.19"
+ },
+ {
+  "d": "2024-10-22",
+  "unixTs": "1729555200",
+  "sthRealizedPrice": "63296.29"
+ },
+ {
+  "d": "2024-10-23",
+  "unixTs": "1729641600",
+  "sthRealizedPrice": "63312.48"
+ },
+ {
+  "d": "2024-10-24",
+  "unixTs": "1729728000",
+  "sthRealizedPrice": "63392.85"
+ },
+ {
+  "d": "2024-10-25",
+  "unixTs": "1729814400",
+  "sthRealizedPrice": "63385.91"
+ },
+ {
+  "d": "2024-10-26",
+  "unixTs": "1729900800",
+  "sthRealizedPrice": "63524.22"
+ },
+ {
+  "d": "2024-10-27",
+  "unixTs": "1729987200",
+  "sthRealizedPrice": "63642.60"
+ },
+ {
+  "d": "2024-10-28",
+  "unixTs": "1730073600",
+  "sthRealizedPrice": "64004.70"
+ },
+ {
+  "d": "2024-10-29",
+  "unixTs": "1730160000",
+  "sthRealizedPrice": "64137.42"
+ },
+ {
+  "d": "2024-10-30",
+  "unixTs": "1730246400",
+  "sthRealizedPrice": "64210.40"
+ },
+ {
+  "d": "2024-10-31",
+  "unixTs": "1730332800",
+  "sthRealizedPrice": "64229.76"
+ },
+ {
+  "d": "2024-11-01",
+  "unixTs": "1730419200",
+  "sthRealizedPrice": "64222.81"
+ },
+ {
+  "d": "2024-11-02",
+  "unixTs": "1730505600",
+  "sthRealizedPrice": "64172.14"
+ },
+ {
+  "d": "2024-11-03",
+  "unixTs": "1730592000",
+  "sthRealizedPrice": "64179.43"
+ },
+ {
+  "d": "2024-11-04",
+  "unixTs": "1730678400",
+  "sthRealizedPrice": "64182.84"
+ },
+ {
+  "d": "2024-11-05",
+  "unixTs": "1730764800",
+  "sthRealizedPrice": "64286.77"
+ },
+ {
+  "d": "2024-11-06",
+  "unixTs": "1730851200",
+  "sthRealizedPrice": "64870.67"
+ },
+ {
+  "d": "2024-11-07",
+  "unixTs": "1730937600",
+  "sthRealizedPrice": "65108.39"
+ },
+ {
+  "d": "2024-11-08",
+  "unixTs": "1731024000",
+  "sthRealizedPrice": "65452.74"
+ },
+ {
+  "d": "2024-11-09",
+  "unixTs": "1731110400",
+  "sthRealizedPrice": "65539.07"
+ },
+ {
+  "d": "2024-11-10",
+  "unixTs": "1731196800",
+  "sthRealizedPrice": "65906.01"
+ },
+ {
+  "d": "2024-11-11",
+  "unixTs": "1731283200",
+  "sthRealizedPrice": "67104.39"
+ },
+ {
+  "d": "2024-11-12",
+  "unixTs": "1731369600",
+  "sthRealizedPrice": "67843.10"
+ },
+ {
+  "d": "2024-11-13",
+  "unixTs": "1731456000",
+  "sthRealizedPrice": "68733.78"
+ },
+ {
+  "d": "2024-11-14",
+  "unixTs": "1731542400",
+  "sthRealizedPrice": "69336.89"
+ },
+ {
+  "d": "2024-11-15",
+  "unixTs": "1731628800",
+  "sthRealizedPrice": "69953.83"
+ },
+ {
+  "d": "2024-11-16",
+  "unixTs": "1731715200",
+  "sthRealizedPrice": "70124.63"
+ },
+ {
+  "d": "2024-11-17",
+  "unixTs": "1731801600",
+  "sthRealizedPrice": "70201.74"
+ },
+ {
+  "d": "2024-11-18",
+  "unixTs": "1731888000",
+  "sthRealizedPrice": "70581.33"
+ },
+ {
+  "d": "2024-11-19",
+  "unixTs": "1731974400",
+  "sthRealizedPrice": "70923.36"
+ },
+ {
+  "d": "2024-11-20",
+  "unixTs": "1732060800",
+  "sthRealizedPrice": "71522.18"
+ },
+ {
+  "d": "2024-11-21",
+  "unixTs": "1732147200",
+  "sthRealizedPrice": "72669.65"
+ },
+ {
+  "d": "2024-11-22",
+  "unixTs": "1732233600",
+  "sthRealizedPrice": "73432.87"
+ },
+ {
+  "d": "2024-11-23",
+  "unixTs": "1732320000",
+  "sthRealizedPrice": "73972.64"
+ },
+ {
+  "d": "2024-11-24",
+  "unixTs": "1732406400",
+  "sthRealizedPrice": "74308.03"
+ },
+ {
+  "d": "2024-11-25",
+  "unixTs": "1732492800",
+  "sthRealizedPrice": "74547.03"
+ },
+ {
+  "d": "2024-11-26",
+  "unixTs": "1732579200",
+  "sthRealizedPrice": "74684.35"
+ },
+ {
+  "d": "2024-11-27",
+  "unixTs": "1732665600",
+  "sthRealizedPrice": "74998.43"
+ },
+ {
+  "d": "2024-11-28",
+  "unixTs": "1732752000",
+  "sthRealizedPrice": "75166.32"
+ },
+ {
+  "d": "2024-11-29",
+  "unixTs": "1732838400",
+  "sthRealizedPrice": "75602.27"
+ },
+ {
+  "d": "2024-11-30",
+  "unixTs": "1732924800",
+  "sthRealizedPrice": "75699.59"
+ },
+ {
+  "d": "2024-12-01",
+  "unixTs": "1733011200",
+  "sthRealizedPrice": "75856.35"
+ },
+ {
+  "d": "2024-12-02",
+  "unixTs": "1733097600",
+  "sthRealizedPrice": "76197.15"
+ },
+ {
+  "d": "2024-12-03",
+  "unixTs": "1733184000",
+  "sthRealizedPrice": "76495.21"
+ },
+ {
+  "d": "2024-12-04",
+  "unixTs": "1733270400",
+  "sthRealizedPrice": "77273.32"
+ },
+ {
+  "d": "2024-12-05",
+  "unixTs": "1733356800",
+  "sthRealizedPrice": "78192.61"
+ },
+ {
+  "d": "2024-12-06",
+  "unixTs": "1733443200",
+  "sthRealizedPrice": "79603.60"
+ },
+ {
+  "d": "2024-12-07",
+  "unixTs": "1733529600",
+  "sthRealizedPrice": "79740.32"
+ },
+ {
+  "d": "2024-12-08",
+  "unixTs": "1733616000",
+  "sthRealizedPrice": "79897.01"
+ },
+ {
+  "d": "2024-12-09",
+  "unixTs": "1733702400",
+  "sthRealizedPrice": "80845.38"
+ },
+ {
+  "d": "2024-12-10",
+  "unixTs": "1733788800",
+  "sthRealizedPrice": "81334.82"
+ },
+ {
+  "d": "2024-12-11",
+  "unixTs": "1733875200",
+  "sthRealizedPrice": "81772.65"
+ },
+ {
+  "d": "2024-12-12",
+  "unixTs": "1733961600",
+  "sthRealizedPrice": "82287.18"
+ },
+ {
+  "d": "2024-12-13",
+  "unixTs": "1734048000",
+  "sthRealizedPrice": "82573.63"
+ },
+ {
+  "d": "2024-12-14",
+  "unixTs": "1734134400",
+  "sthRealizedPrice": "82747.51"
+ },
+ {
+  "d": "2024-12-15",
+  "unixTs": "1734220800",
+  "sthRealizedPrice": "82998.59"
+ },
+ {
+  "d": "2024-12-16",
+  "unixTs": "1734307200",
+  "sthRealizedPrice": "83653.40"
+ },
+ {
+  "d": "2024-12-17",
+  "unixTs": "1734393600",
+  "sthRealizedPrice": "84220.78"
+ },
+ {
+  "d": "2024-12-18",
+  "unixTs": "1734480000",
+  "sthRealizedPrice": "84281.83"
+ },
+ {
+  "d": "2024-12-19",
+  "unixTs": "1734566400",
+  "sthRealizedPrice": "84690.09"
+ },
+ {
+  "d": "2024-12-20",
+  "unixTs": "1734652800",
+  "sthRealizedPrice": "84957.03"
+ },
+ {
+  "d": "2024-12-21",
+  "unixTs": "1734739200",
+  "sthRealizedPrice": "84984.42"
+ },
+ {
+  "d": "2024-12-22",
+  "unixTs": "1734825600",
+  "sthRealizedPrice": "85016.65"
+ },
+ {
+  "d": "2024-12-23",
+  "unixTs": "1734912000",
+  "sthRealizedPrice": "85182.29"
+ },
+ {
+  "d": "2024-12-24",
+  "unixTs": "1734998400",
+  "sthRealizedPrice": "85433.95"
+ },
+ {
+  "d": "2024-12-25",
+  "unixTs": "1735084800",
+  "sthRealizedPrice": "85488.66"
+ },
+ {
+  "d": "2024-12-26",
+  "unixTs": "1735171200",
+  "sthRealizedPrice": "85583.08"
+ },
+ {
+  "d": "2024-12-27",
+  "unixTs": "1735257600",
+  "sthRealizedPrice": "85590.43"
+ },
+ {
+  "d": "2024-12-28",
+  "unixTs": "1735344000",
+  "sthRealizedPrice": "85643.15"
+ },
+ {
+  "d": "2024-12-29",
+  "unixTs": "1735430400",
+  "sthRealizedPrice": "85663.80"
+ },
+ {
+  "d": "2024-12-30",
+  "unixTs": "1735516800",
+  "sthRealizedPrice": "85808.84"
+ },
+ {
+  "d": "2024-12-31",
+  "unixTs": "1735603200",
+  "sthRealizedPrice": "85933.06"
+ },
+ {
+  "d": "2025-01-01",
+  "unixTs": "1735689600",
+  "sthRealizedPrice": "86019.86"
+ },
+ {
+  "d": "2025-01-02",
+  "unixTs": "1735776000",
+  "sthRealizedPrice": "86143.40"
+ },
+ {
+  "d": "2025-01-03",
+  "unixTs": "1735862400",
+  "sthRealizedPrice": "86279.25"
+ },
+ {
+  "d": "2025-01-04",
+  "unixTs": "1735948800",
+  "sthRealizedPrice": "86484.97"
+ },
+ {
+  "d": "2025-01-05",
+  "unixTs": "1736035200",
+  "sthRealizedPrice": "86552.03"
+ },
+ {
+  "d": "2025-01-06",
+  "unixTs": "1736121600",
+  "sthRealizedPrice": "86816.55"
+ },
+ {
+  "d": "2025-01-07",
+  "unixTs": "1736208000",
+  "sthRealizedPrice": "86922.63"
+ },
+ {
+  "d": "2025-01-08",
+  "unixTs": "1736294400",
+  "sthRealizedPrice": "86983.58"
+ },
+ {
+  "d": "2025-01-09",
+  "unixTs": "1736380800",
+  "sthRealizedPrice": "86942.64"
+ },
+ {
+  "d": "2025-01-10",
+  "unixTs": "1736467200",
+  "sthRealizedPrice": "87020.20"
+ },
+ {
+  "d": "2025-01-11",
+  "unixTs": "1736553600",
+  "sthRealizedPrice": "87075.45"
+ },
+ {
+  "d": "2025-01-12",
+  "unixTs": "1736640000",
+  "sthRealizedPrice": "87284.00"
+ },
+ {
+  "d": "2025-01-13",
+  "unixTs": "1736726400",
+  "sthRealizedPrice": "87394.01"
+ },
+ {
+  "d": "2025-01-14",
+  "unixTs": "1736812800",
+  "sthRealizedPrice": "87546.01"
+ },
+ {
+  "d": "2025-01-15",
+  "unixTs": "1736899200",
+  "sthRealizedPrice": "87781.10"
+ },
+ {
+  "d": "2025-01-16",
+  "unixTs": "1736985600",
+  "sthRealizedPrice": "88002.26"
+ },
+ {
+  "d": "2025-01-17",
+  "unixTs": "1737072000",
+  "sthRealizedPrice": "88298.76"
+ },
+ {
+  "d": "2025-01-18",
+  "unixTs": "1737158400",
+  "sthRealizedPrice": "88477.55"
+ },
+ {
+  "d": "2025-01-19",
+  "unixTs": "1737244800",
+  "sthRealizedPrice": "88524.40"
+ },
+ {
+  "d": "2025-01-20",
+  "unixTs": "1737331200",
+  "sthRealizedPrice": "88701.08"
+ },
+ {
+  "d": "2025-01-21",
+  "unixTs": "1737417600",
+  "sthRealizedPrice": "89007.85"
+ },
+ {
+  "d": "2025-01-22",
+  "unixTs": "1737504000",
+  "sthRealizedPrice": "89227.08"
+ },
+ {
+  "d": "2025-01-23",
+  "unixTs": "1737590400",
+  "sthRealizedPrice": "89558.66"
+ },
+ {
+  "d": "2025-01-24",
+  "unixTs": "1737676800",
+  "sthRealizedPrice": "89675.29"
+ },
+ {
+  "d": "2025-01-25",
+  "unixTs": "1737763200",
+  "sthRealizedPrice": "89774.92"
+ },
+ {
+  "d": "2025-01-26",
+  "unixTs": "1737849600",
+  "sthRealizedPrice": "89824.37"
+ },
+ {
+  "d": "2025-01-27",
+  "unixTs": "1737936000",
+  "sthRealizedPrice": "89997.85"
+ },
+ {
+  "d": "2025-01-28",
+  "unixTs": "1738022400",
+  "sthRealizedPrice": "90070.19"
+ },
+ {
+  "d": "2025-01-29",
+  "unixTs": "1738108800",
+  "sthRealizedPrice": "90173.65"
+ },
+ {
+  "d": "2025-01-30",
+  "unixTs": "1738195200",
+  "sthRealizedPrice": "90299.30"
+ },
+ {
+  "d": "2025-01-31",
+  "unixTs": "1738281600",
+  "sthRealizedPrice": "90404.41"
+ },
+ {
+  "d": "2025-02-01",
+  "unixTs": "1738368000",
+  "sthRealizedPrice": "90431.20"
+ },
+ {
+  "d": "2025-02-02",
+  "unixTs": "1738454400",
+  "sthRealizedPrice": "90438.49"
+ },
+ {
+  "d": "2025-02-03",
+  "unixTs": "1738540800",
+  "sthRealizedPrice": "90893.47"
+ },
+ {
+  "d": "2025-02-04",
+  "unixTs": "1738627200",
+  "sthRealizedPrice": "90999.19"
+ },
+ {
+  "d": "2025-02-05",
+  "unixTs": "1738713600",
+  "sthRealizedPrice": "91033.91"
+ },
+ {
+  "d": "2025-02-06",
+  "unixTs": "1738800000",
+  "sthRealizedPrice": "91088.20"
+ },
+ {
+  "d": "2025-02-07",
+  "unixTs": "1738886400",
+  "sthRealizedPrice": "91082.01"
+ },
+ {
+  "d": "2025-02-08",
+  "unixTs": "1738972800",
+  "sthRealizedPrice": "91116.22"
+ },
+ {
+  "d": "2025-02-09",
+  "unixTs": "1739059200",
+  "sthRealizedPrice": "91242.32"
+ },
+ {
+  "d": "2025-02-10",
+  "unixTs": "1739145600",
+  "sthRealizedPrice": "91378.47"
+ },
+ {
+  "d": "2025-02-11",
+  "unixTs": "1739232000",
+  "sthRealizedPrice": "91415.73"
+ },
+ {
+  "d": "2025-02-12",
+  "unixTs": "1739318400",
+  "sthRealizedPrice": "91533.16"
+ },
+ {
+  "d": "2025-02-13",
+  "unixTs": "1739404800",
+  "sthRealizedPrice": "91616.82"
+ },
+ {
+  "d": "2025-02-14",
+  "unixTs": "1739491200",
+  "sthRealizedPrice": "91686.15"
+ },
+ {
+  "d": "2025-02-15",
+  "unixTs": "1739577600",
+  "sthRealizedPrice": "91755.62"
+ },
+ {
+  "d": "2025-02-16",
+  "unixTs": "1739664000",
+  "sthRealizedPrice": "91824.47"
+ },
+ {
+  "d": "2025-02-17",
+  "unixTs": "1739750400",
+  "sthRealizedPrice": "91915.16"
+ },
+ {
+  "d": "2025-02-18",
+  "unixTs": "1739836800",
+  "sthRealizedPrice": "92009.39"
+ },
+ {
+  "d": "2025-02-19",
+  "unixTs": "1739923200",
+  "sthRealizedPrice": "92156.30"
+ },
+ {
+  "d": "2025-02-20",
+  "unixTs": "1740009600",
+  "sthRealizedPrice": "92396.03"
+ },
+ {
+  "d": "2025-02-21",
+  "unixTs": "1740096000",
+  "sthRealizedPrice": "92436.51"
+ },
+ {
+  "d": "2025-02-22",
+  "unixTs": "1740182400",
+  "sthRealizedPrice": "92564.82"
+ },
+ {
+  "d": "2025-02-23",
+  "unixTs": "1740268800",
+  "sthRealizedPrice": "92796.66"
+ },
+ {
+  "d": "2025-02-24",
+  "unixTs": "1740355200",
+  "sthRealizedPrice": "92846.82"
+ },
+ {
+  "d": "2025-02-25",
+  "unixTs": "1740441600",
+  "sthRealizedPrice": "92681.83"
+ },
+ {
+  "d": "2025-02-26",
+  "unixTs": "1740528000",
+  "sthRealizedPrice": "92274.46"
+ },
+ {
+  "d": "2025-02-27",
+  "unixTs": "1740614400",
+  "sthRealizedPrice": "92151.07"
+ },
+ {
+  "d": "2025-02-28",
+  "unixTs": "1740700800",
+  "sthRealizedPrice": "91891.31"
+ },
+ {
+  "d": "2025-03-01",
+  "unixTs": "1740787200",
+  "sthRealizedPrice": "91838.21"
+ },
+ {
+  "d": "2025-03-02",
+  "unixTs": "1740873600",
+  "sthRealizedPrice": "91963.90"
+ },
+ {
+  "d": "2025-03-03",
+  "unixTs": "1740960000",
+  "sthRealizedPrice": "91753.76"
+ },
+ {
+  "d": "2025-03-04",
+  "unixTs": "1741046400",
+  "sthRealizedPrice": "91761.58"
+ },
+ {
+  "d": "2025-03-05",
+  "unixTs": "1741132800",
+  "sthRealizedPrice": "91771.06"
+ },
+ {
+  "d": "2025-03-06",
+  "unixTs": "1741219200",
+  "sthRealizedPrice": "91748.62"
+ },
+ {
+  "d": "2025-03-07",
+  "unixTs": "1741305600",
+  "sthRealizedPrice": "91638.96"
+ },
+ {
+  "d": "2025-03-08",
+  "unixTs": "1741392000",
+  "sthRealizedPrice": "91600.53"
+ },
+ {
+  "d": "2025-03-09",
+  "unixTs": "1741478400",
+  "sthRealizedPrice": "91498.78"
+ },
+ {
+  "d": "2025-03-10",
+  "unixTs": "1741564800",
+  "sthRealizedPrice": "91239.82"
+ },
+ {
+  "d": "2025-03-11",
+  "unixTs": "1741651200",
+  "sthRealizedPrice": "91165.21"
+ },
+ {
+  "d": "2025-03-12",
+  "unixTs": "1741737600",
+  "sthRealizedPrice": "91072.52"
+ },
+ {
+  "d": "2025-03-13",
+  "unixTs": "1741824000",
+  "sthRealizedPrice": "90964.51"
+ },
+ {
+  "d": "2025-03-14",
+  "unixTs": "1741910400",
+  "sthRealizedPrice": "90962.26"
+ },
+ {
+  "d": "2025-03-15",
+  "unixTs": "1741996800",
+  "sthRealizedPrice": "90986.58"
+ },
+ {
+  "d": "2025-03-16",
+  "unixTs": "1742083200",
+  "sthRealizedPrice": "91070.60"
+ },
+ {
+  "d": "2025-03-17",
+  "unixTs": "1742169600",
+  "sthRealizedPrice": "91868.62"
+ },
+ {
+  "d": "2025-03-18",
+  "unixTs": "1742256000",
+  "sthRealizedPrice": "92276.73"
+ },
+ {
+  "d": "2025-03-19",
+  "unixTs": "1742342400",
+  "sthRealizedPrice": "92532.76"
+ },
+ {
+  "d": "2025-03-20",
+  "unixTs": "1742428800",
+  "sthRealizedPrice": "92889.72"
+ },
+ {
+  "d": "2025-03-21",
+  "unixTs": "1742515200",
+  "sthRealizedPrice": "92930.46"
+ },
+ {
+  "d": "2025-03-22",
+  "unixTs": "1742601600",
+  "sthRealizedPrice": "92957.07"
+ },
+ {
+  "d": "2025-03-23",
+  "unixTs": "1742688000",
+  "sthRealizedPrice": "93062.26"
+ },
+ {
+  "d": "2025-03-24",
+  "unixTs": "1742774400",
+  "sthRealizedPrice": "93171.39"
+ },
+ {
+  "d": "2025-03-25",
+  "unixTs": "1742860800",
+  "sthRealizedPrice": "93208.92"
+ },
+ {
+  "d": "2025-03-26",
+  "unixTs": "1742947200",
+  "sthRealizedPrice": "93217.14"
+ },
+ {
+  "d": "2025-03-27",
+  "unixTs": "1743033600",
+  "sthRealizedPrice": "93239.69"
+ },
+ {
+  "d": "2025-03-28",
+  "unixTs": "1743120000",
+  "sthRealizedPrice": "93125.10"
+ },
+ {
+  "d": "2025-03-29",
+  "unixTs": "1743206400",
+  "sthRealizedPrice": "93076.39"
+ },
+ {
+  "d": "2025-03-30",
+  "unixTs": "1743292800",
+  "sthRealizedPrice": "93041.55"
+ },
+ {
+  "d": "2025-03-31",
+  "unixTs": "1743379200",
+  "sthRealizedPrice": "92987.46"
+ },
+ {
+  "d": "2025-04-01",
+  "unixTs": "1743465600",
+  "sthRealizedPrice": "93029.27"
+ },
+ {
+  "d": "2025-04-02",
+  "unixTs": "1743552000",
+  "sthRealizedPrice": "92912.18"
+ },
+ {
+  "d": "2025-04-03",
+  "unixTs": "1743638400",
+  "sthRealizedPrice": "92861.98"
+ },
+ {
+  "d": "2025-04-04",
+  "unixTs": "1743724800",
+  "sthRealizedPrice": "92831.98"
+ },
+ {
+  "d": "2025-04-05",
+  "unixTs": "1743811200",
+  "sthRealizedPrice": "92810.34"
+ },
+ {
+  "d": "2025-04-06",
+  "unixTs": "1743897600",
+  "sthRealizedPrice": "92683.10"
+ },
+ {
+  "d": "2025-04-07",
+  "unixTs": "1743984000",
+  "sthRealizedPrice": "92441.90"
+ },
+ {
+  "d": "2025-04-08",
+  "unixTs": "1744070400",
+  "sthRealizedPrice": "92262.74"
+ },
+ {
+  "d": "2025-04-09",
+  "unixTs": "1744156800",
+  "sthRealizedPrice": "92254.53"
+ },
+ {
+  "d": "2025-04-10",
+  "unixTs": "1744243200",
+  "sthRealizedPrice": "92069.41"
+ },
+ {
+  "d": "2025-04-11",
+  "unixTs": "1744329600",
+  "sthRealizedPrice": "92005.09"
+ },
+ {
+  "d": "2025-04-12",
+  "unixTs": "1744416000",
+  "sthRealizedPrice": "92043.84"
+ },
+ {
+  "d": "2025-04-13",
+  "unixTs": "1744502400",
+  "sthRealizedPrice": "92043.54"
+ },
+ {
+  "d": "2025-04-14",
+  "unixTs": "1744588800",
+  "sthRealizedPrice": "92111.47"
+ },
+ {
+  "d": "2025-04-15",
+  "unixTs": "1744675200",
+  "sthRealizedPrice": "91974.34"
+ },
+ {
+  "d": "2025-04-16",
+  "unixTs": "1744761600",
+  "sthRealizedPrice": "91963.64"
+ },
+ {
+  "d": "2025-04-17",
+  "unixTs": "1744848000",
+  "sthRealizedPrice": "91987.86"
+ },
+ {
+  "d": "2025-04-18",
+  "unixTs": "1744934400",
+  "sthRealizedPrice": "91965.45"
+ },
+ {
+  "d": "2025-04-19",
+  "unixTs": "1745020800",
+  "sthRealizedPrice": "91945.68"
+ },
+ {
+  "d": "2025-04-20",
+  "unixTs": "1745107200",
+  "sthRealizedPrice": "91910.02"
+ },
+ {
+  "d": "2025-04-21",
+  "unixTs": "1745193600",
+  "sthRealizedPrice": "91939.50"
+ },
+ {
+  "d": "2025-04-22",
+  "unixTs": "1745280000",
+  "sthRealizedPrice": "92131.40"
+ },
+ {
+  "d": "2025-04-23",
+  "unixTs": "1745366400",
+  "sthRealizedPrice": "92235.83"
+ },
+ {
+  "d": "2025-04-24",
+  "unixTs": "1745452800",
+  "sthRealizedPrice": "92290.62"
+ },
+ {
+  "d": "2025-04-25",
+  "unixTs": "1745539200",
+  "sthRealizedPrice": "92618.87"
+ },
+ {
+  "d": "2025-04-26",
+  "unixTs": "1745625600",
+  "sthRealizedPrice": "92635.88"
+ },
+ {
+  "d": "2025-04-27",
+  "unixTs": "1745712000",
+  "sthRealizedPrice": "92642.14"
+ },
+ {
+  "d": "2025-04-28",
+  "unixTs": "1745798400",
+  "sthRealizedPrice": "92722.84"
+ },
+ {
+  "d": "2025-04-29",
+  "unixTs": "1745884800",
+  "sthRealizedPrice": "92735.59"
+ },
+ {
+  "d": "2025-04-30",
+  "unixTs": "1745971200",
+  "sthRealizedPrice": "92747.57"
+ },
+ {
+  "d": "2025-05-01",
+  "unixTs": "1746057600",
+  "sthRealizedPrice": "92771.05"
+ },
+ {
+  "d": "2025-05-02",
+  "unixTs": "1746144000",
+  "sthRealizedPrice": "92841.92"
+ },
+ {
+  "d": "2025-05-03",
+  "unixTs": "1746230400",
+  "sthRealizedPrice": "92832.89"
+ },
+ {
+  "d": "2025-05-04",
+  "unixTs": "1746316800",
+  "sthRealizedPrice": "92826.23"
+ },
+ {
+  "d": "2025-05-05",
+  "unixTs": "1746403200",
+  "sthRealizedPrice": "92906.09"
+ },
+ {
+  "d": "2025-05-06",
+  "unixTs": "1746489600",
+  "sthRealizedPrice": "93008.03"
+ },
+ {
+  "d": "2025-05-07",
+  "unixTs": "1746576000",
+  "sthRealizedPrice": "93137.12"
+ },
+ {
+  "d": "2025-05-08",
+  "unixTs": "1746662400",
+  "sthRealizedPrice": "93390.54"
+ },
+ {
+  "d": "2025-05-09",
+  "unixTs": "1746748800",
+  "sthRealizedPrice": "93652.88"
+ },
+ {
+  "d": "2025-05-10",
+  "unixTs": "1746835200",
+  "sthRealizedPrice": "93752.88"
+ },
+ {
+  "d": "2025-05-11",
+  "unixTs": "1746921600",
+  "sthRealizedPrice": "93814.03"
+ },
+ {
+  "d": "2025-05-12",
+  "unixTs": "1747008000",
+  "sthRealizedPrice": "93934.61"
+ },
+ {
+  "d": "2025-05-13",
+  "unixTs": "1747094400",
+  "sthRealizedPrice": "94164.44"
+ },
+ {
+  "d": "2025-05-14",
+  "unixTs": "1747180800",
+  "sthRealizedPrice": "94197.47"
+ },
+ {
+  "d": "2025-05-15",
+  "unixTs": "1747267200",
+  "sthRealizedPrice": "94121.63"
+ },
+ {
+  "d": "2025-05-16",
+  "unixTs": "1747353600",
+  "sthRealizedPrice": "94229.72"
+ },
+ {
+  "d": "2025-05-17",
+  "unixTs": "1747440000",
+  "sthRealizedPrice": "94256.06"
+ },
+ {
+  "d": "2025-05-18",
+  "unixTs": "1747526400",
+  "sthRealizedPrice": "94226.50"
+ },
+ {
+  "d": "2025-05-19",
+  "unixTs": "1747612800",
+  "sthRealizedPrice": "94345.93"
+ },
+ {
+  "d": "2025-05-20",
+  "unixTs": "1747699200",
+  "sthRealizedPrice": "94501.37"
+ },
+ {
+  "d": "2025-05-21",
+  "unixTs": "1747785600",
+  "sthRealizedPrice": "94782.19"
+ },
+ {
+  "d": "2025-05-22",
+  "unixTs": "1747872000",
+  "sthRealizedPrice": "95201.07"
+ },
+ {
+  "d": "2025-05-23",
+  "unixTs": "1747958400",
+  "sthRealizedPrice": "95251.70"
+ },
+ {
+  "d": "2025-05-24",
+  "unixTs": "1748044800",
+  "sthRealizedPrice": "95254.49"
+ },
+ {
+  "d": "2025-05-25",
+  "unixTs": "1748131200",
+  "sthRealizedPrice": "95190.49"
+ },
+ {
+  "d": "2025-05-26",
+  "unixTs": "1748217600",
+  "sthRealizedPrice": "95221.00"
+ },
+ {
+  "d": "2025-05-27",
+  "unixTs": "1748304000",
+  "sthRealizedPrice": "95489.16"
+ },
+ {
+  "d": "2025-05-28",
+  "unixTs": "1748390400",
+  "sthRealizedPrice": "95681.50"
+ },
+ {
+  "d": "2025-05-29",
+  "unixTs": "1748476800",
+  "sthRealizedPrice": "95716.76"
+ },
+ {
+  "d": "2025-05-30",
+  "unixTs": "1748563200",
+  "sthRealizedPrice": "95747.44"
+ },
+ {
+  "d": "2025-05-31",
+  "unixTs": "1748649600",
+  "sthRealizedPrice": "95764.52"
+ },
+ {
+  "d": "2025-06-01",
+  "unixTs": "1748736000",
+  "sthRealizedPrice": "95795.51"
+ },
+ {
+  "d": "2025-06-02",
+  "unixTs": "1748822400",
+  "sthRealizedPrice": "95955.26"
+ },
+ {
+  "d": "2025-06-03",
+  "unixTs": "1748908800",
+  "sthRealizedPrice": "96003.94"
+ },
+ {
+  "d": "2025-06-04",
+  "unixTs": "1748995200",
+  "sthRealizedPrice": "96051.20"
+ },
+ {
+  "d": "2025-06-05",
+  "unixTs": "1749081600",
+  "sthRealizedPrice": "95955.52"
+ },
+ {
+  "d": "2025-06-06",
+  "unixTs": "1749168000",
+  "sthRealizedPrice": "96021.69"
+ },
+ {
+  "d": "2025-06-07",
+  "unixTs": "1749254400",
+  "sthRealizedPrice": "96096.38"
+ },
+ {
+  "d": "2025-06-08",
+  "unixTs": "1749340800",
+  "sthRealizedPrice": "96165.90"
+ },
+ {
+  "d": "2025-06-09",
+  "unixTs": "1749427200",
+  "sthRealizedPrice": "96411.58"
+ },
+ {
+  "d": "2025-06-10",
+  "unixTs": "1749513600",
+  "sthRealizedPrice": "96687.79"
+ },
+ {
+  "d": "2025-06-11",
+  "unixTs": "1749600000",
+  "sthRealizedPrice": "96766.72"
+ },
+ {
+  "d": "2025-06-12",
+  "unixTs": "1749686400",
+  "sthRealizedPrice": "96764.35"
+ },
+ {
+  "d": "2025-06-13",
+  "unixTs": "1749772800",
+  "sthRealizedPrice": "96862.09"
+ },
+ {
+  "d": "2025-06-14",
+  "unixTs": "1749859200",
+  "sthRealizedPrice": "96879.94"
+ },
+ {
+  "d": "2025-06-15",
+  "unixTs": "1749945600",
+  "sthRealizedPrice": "96896.43"
+ },
+ {
+  "d": "2025-06-16",
+  "unixTs": "1750032000",
+  "sthRealizedPrice": "97135.85"
+ },
+ {
+  "d": "2025-06-17",
+  "unixTs": "1750118400",
+  "sthRealizedPrice": "97167.81"
+ },
+ {
+  "d": "2025-06-18",
+  "unixTs": "1750204800",
+  "sthRealizedPrice": "97254.50"
+ },
+ {
+  "d": "2025-06-19",
+  "unixTs": "1750291200",
+  "sthRealizedPrice": "97339.04"
+ },
+ {
+  "d": "2025-06-20",
+  "unixTs": "1750377600",
+  "sthRealizedPrice": "97357.14"
+ },
+ {
+  "d": "2025-06-21",
+  "unixTs": "1750464000",
+  "sthRealizedPrice": "97456.67"
+ },
+ {
+  "d": "2025-06-22",
+  "unixTs": "1750550400",
+  "sthRealizedPrice": "97382.53"
+ },
+ {
+  "d": "2025-06-23",
+  "unixTs": "1750636800",
+  "sthRealizedPrice": "97543.62"
+ },
+ {
+  "d": "2025-06-24",
+  "unixTs": "1750723200",
+  "sthRealizedPrice": "97639.05"
+ },
+ {
+  "d": "2025-06-25",
+  "unixTs": "1750809600",
+  "sthRealizedPrice": "97841.87"
+ },
+ {
+  "d": "2025-06-26",
+  "unixTs": "1750896000",
+  "sthRealizedPrice": "97968.92"
+ },
+ {
+  "d": "2025-06-27",
+  "unixTs": "1750982400",
+  "sthRealizedPrice": "98066.18"
+ },
+ {
+  "d": "2025-06-28",
+  "unixTs": "1751068800",
+  "sthRealizedPrice": "98092.11"
+ },
+ {
+  "d": "2025-06-29",
+  "unixTs": "1751155200",
+  "sthRealizedPrice": "98172.66"
+ },
+ {
+  "d": "2025-06-30",
+  "unixTs": "1751241600",
+  "sthRealizedPrice": "98292.03"
+ },
+ {
+  "d": "2025-07-01",
+  "unixTs": "1751328000",
+  "sthRealizedPrice": "98289.81"
+ },
+ {
+  "d": "2025-07-02",
+  "unixTs": "1751414400",
+  "sthRealizedPrice": "98376.55"
+ },
+ {
+  "d": "2025-07-03",
+  "unixTs": "1751500800",
+  "sthRealizedPrice": "98533.04"
+ },
+ {
+  "d": "2025-07-04",
+  "unixTs": "1751587200",
+  "sthRealizedPrice": "98797.16"
+ },
+ {
+  "d": "2025-07-05",
+  "unixTs": "1751673600",
+  "sthRealizedPrice": "98819.56"
+ },
+ {
+  "d": "2025-07-06",
+  "unixTs": "1751760000",
+  "sthRealizedPrice": "98864.18"
+ },
+ {
+  "d": "2025-07-07",
+  "unixTs": "1751846400",
+  "sthRealizedPrice": "98950.33"
+ },
+ {
+  "d": "2025-07-08",
+  "unixTs": "1751932800",
+  "sthRealizedPrice": "99059.26"
+ },
+ {
+  "d": "2025-07-09",
+  "unixTs": "1752019200",
+  "sthRealizedPrice": "99249.87"
+ },
+ {
+  "d": "2025-07-10",
+  "unixTs": "1752105600",
+  "sthRealizedPrice": "99558.04"
+ },
+ {
+  "d": "2025-07-11",
+  "unixTs": "1752192000",
+  "sthRealizedPrice": "100082.25"
+ },
+ {
+  "d": "2025-07-12",
+  "unixTs": "1752278400",
+  "sthRealizedPrice": "100228.05"
+ },
+ {
+  "d": "2025-07-13",
+  "unixTs": "1752364800",
+  "sthRealizedPrice": "100369.91"
+ },
+ {
+  "d": "2025-07-14",
+  "unixTs": "1752451200",
+  "sthRealizedPrice": "101038.99"
+ },
+ {
+  "d": "2025-07-15",
+  "unixTs": "1752537600",
+  "sthRealizedPrice": "101270.44"
+ },
+ {
+  "d": "2025-07-16",
+  "unixTs": "1752624000",
+  "sthRealizedPrice": "102102.85"
+ },
+ {
+  "d": "2025-07-17",
+  "unixTs": "1752710400",
+  "sthRealizedPrice": "102757.07"
+ },
+ {
+  "d": "2025-07-18",
+  "unixTs": "1752796800",
+  "sthRealizedPrice": "102933.45"
+ },
+ {
+  "d": "2025-07-19",
+  "unixTs": "1752883200",
+  "sthRealizedPrice": "103040.93"
+ },
+ {
+  "d": "2025-07-20",
+  "unixTs": "1752969600",
+  "sthRealizedPrice": "103110.37"
+ },
+ {
+  "d": "2025-07-21",
+  "unixTs": "1753056000",
+  "sthRealizedPrice": "103401.86"
+ },
+ {
+  "d": "2025-07-22",
+  "unixTs": "1753142400",
+  "sthRealizedPrice": "103742.54"
+ },
+ {
+  "d": "2025-07-23",
+  "unixTs": "1753228800",
+  "sthRealizedPrice": "103962.32"
+ },
+ {
+  "d": "2025-07-24",
+  "unixTs": "1753315200",
+  "sthRealizedPrice": "104137.73"
+ },
+ {
+  "d": "2025-07-25",
+  "unixTs": "1753401600",
+  "sthRealizedPrice": "104265.98"
+ },
+ {
+  "d": "2025-07-26",
+  "unixTs": "1753488000",
+  "sthRealizedPrice": "104353.66"
+ },
+ {
+  "d": "2025-07-27",
+  "unixTs": "1753574400",
+  "sthRealizedPrice": "104455.39"
+ },
+ {
+  "d": "2025-07-28",
+  "unixTs": "1753660800",
+  "sthRealizedPrice": "104571.42"
+ },
+ {
+  "d": "2025-07-29",
+  "unixTs": "1753747200",
+  "sthRealizedPrice": "104770.83"
+ },
+ {
+  "d": "2025-07-30",
+  "unixTs": "1753833600",
+  "sthRealizedPrice": "104901.03"
+ },
+ {
+  "d": "2025-07-31",
+  "unixTs": "1753920000",
+  "sthRealizedPrice": "104865.10"
+ },
+ {
+  "d": "2025-08-01",
+  "unixTs": "1754006400",
+  "sthRealizedPrice": "104832.21"
+ },
+ {
+  "d": "2025-08-02",
+  "unixTs": "1754092800",
+  "sthRealizedPrice": "104808.18"
+ },
+ {
+  "d": "2025-08-03",
+  "unixTs": "1754179200",
+  "sthRealizedPrice": "104885.04"
+ },
+ {
+  "d": "2025-08-04",
+  "unixTs": "1754265600",
+  "sthRealizedPrice": "105019.94"
+ },
+ {
+  "d": "2025-08-05",
+  "unixTs": "1754352000",
+  "sthRealizedPrice": "105128.82"
+ },
+ {
+  "d": "2025-08-06",
+  "unixTs": "1754438400",
+  "sthRealizedPrice": "105198.79"
+ },
+ {
+  "d": "2025-08-07",
+  "unixTs": "1754524800",
+  "sthRealizedPrice": "105491.80"
+ },
+ {
+  "d": "2025-08-08",
+  "unixTs": "1754611200",
+  "sthRealizedPrice": "105685.81"
+ },
+ {
+  "d": "2025-08-09",
+  "unixTs": "1754697600",
+  "sthRealizedPrice": "105740.39"
+ },
+ {
+  "d": "2025-08-10",
+  "unixTs": "1754784000",
+  "sthRealizedPrice": "105890.12"
+ },
+ {
+  "d": "2025-08-11",
+  "unixTs": "1754870400",
+  "sthRealizedPrice": "106051.67"
+ },
+ {
+  "d": "2025-08-12",
+  "unixTs": "1754956800",
+  "sthRealizedPrice": "106387.12"
+ },
+ {
+  "d": "2025-08-13",
+  "unixTs": "1755043200",
+  "sthRealizedPrice": "106762.55"
+ },
+ {
+  "d": "2025-08-14",
+  "unixTs": "1755129600",
+  "sthRealizedPrice": "106869.75"
+ },
+ {
+  "d": "2025-08-15",
+  "unixTs": "1755216000",
+  "sthRealizedPrice": "107004.43"
+ },
+ {
+  "d": "2025-08-16",
+  "unixTs": "1755302400",
+  "sthRealizedPrice": "107125.28"
+ },
+ {
+  "d": "2025-08-17",
+  "unixTs": "1755388800",
+  "sthRealizedPrice": "107184.71"
+ },
+ {
+  "d": "2025-08-18",
+  "unixTs": "1755475200",
+  "sthRealizedPrice": "107484.01"
+ },
+ {
+  "d": "2025-08-19",
+  "unixTs": "1755561600",
+  "sthRealizedPrice": "107743.59"
+ },
+ {
+  "d": "2025-08-20",
+  "unixTs": "1755648000",
+  "sthRealizedPrice": "108591.27"
+ },
+ {
+  "d": "2025-08-21",
+  "unixTs": "1755734400",
+  "sthRealizedPrice": "108771.23"
+ },
+ {
+  "d": "2025-08-22",
+  "unixTs": "1755820800",
+  "sthRealizedPrice": "108859.42"
+ },
+ {
+  "d": "2025-08-23",
+  "unixTs": "1755907200",
+  "sthRealizedPrice": "108855.60"
+ },
+ {
+  "d": "2025-08-24",
+  "unixTs": "1755993600",
+  "sthRealizedPrice": "108778.23"
+ },
+ {
+  "d": "2025-08-25",
+  "unixTs": "1756080000",
+  "sthRealizedPrice": "108804.20"
+ },
+ {
+  "d": "2025-08-26",
+  "unixTs": "1756166400",
+  "sthRealizedPrice": "108961.14"
+ },
+ {
+  "d": "2025-08-27",
+  "unixTs": "1756252800",
+  "sthRealizedPrice": "109023.98"
+ },
+ {
+  "d": "2025-08-28",
+  "unixTs": "1756339200",
+  "sthRealizedPrice": "108847.95"
+ },
+ {
+  "d": "2025-08-29",
+  "unixTs": "1756425600",
+  "sthRealizedPrice": "108924.26"
+ },
+ {
+  "d": "2025-08-30",
+  "unixTs": "1756512000",
+  "sthRealizedPrice": "109000.89"
+ },
+ {
+  "d": "2025-08-31",
+  "unixTs": "1756598400",
+  "sthRealizedPrice": "109000.89"
+ },
+ {
+  "d": "2025-09-01",
+  "unixTs": "1756684800",
+  "sthRealizedPrice": "109061.57"
+ },
+ {
+  "d": "2025-09-02",
+  "unixTs": "1756771200",
+  "sthRealizedPrice": "109135.62"
+ },
+ {
+  "d": "2025-09-03",
+  "unixTs": "1756857600",
+  "sthRealizedPrice": "109360.00"
+ },
+ {
+  "d": "2025-09-04",
+  "unixTs": "1756944000",
+  "sthRealizedPrice": "109581.20"
+ },
+ {
+  "d": "2025-09-05",
+  "unixTs": "1757030400",
+  "sthRealizedPrice": "109681.57"
+ },
+ {
+  "d": "2025-09-06",
+  "unixTs": "1757116800",
+  "sthRealizedPrice": "109714.38"
+ },
+ {
+  "d": "2025-09-07",
+  "unixTs": "1757203200",
+  "sthRealizedPrice": "109802.80"
+ },
+ {
+  "d": "2025-09-08",
+  "unixTs": "1757289600",
+  "sthRealizedPrice": "109953.77"
+ },
+ {
+  "d": "2025-09-09",
+  "unixTs": "1757376000",
+  "sthRealizedPrice": "110117.64"
+ },
+ {
+  "d": "2025-09-10",
+  "unixTs": "1757462400",
+  "sthRealizedPrice": "110314.28"
+ },
+ {
+  "d": "2025-09-11",
+  "unixTs": "1757548800",
+  "sthRealizedPrice": "110539.96"
+ },
+ {
+  "d": "2025-09-12",
+  "unixTs": "1757635200",
+  "sthRealizedPrice": "110684.69"
+ },
+ {
+  "d": "2025-09-13",
+  "unixTs": "1757721600",
+  "sthRealizedPrice": "110730.54"
+ },
+ {
+  "d": "2025-09-14",
+  "unixTs": "1757808000",
+  "sthRealizedPrice": "110782.46"
+ },
+ {
+  "d": "2025-09-15",
+  "unixTs": "1757894400",
+  "sthRealizedPrice": "110923.03"
+ },
+ {
+  "d": "2025-09-16",
+  "unixTs": "1757980800",
+  "sthRealizedPrice": "111026.08"
+ },
+ {
+  "d": "2025-09-17",
+  "unixTs": "1758067200",
+  "sthRealizedPrice": "111186.62"
+ },
+ {
+  "d": "2025-09-18",
+  "unixTs": "1758153600",
+  "sthRealizedPrice": "111342.60"
+ },
+ {
+  "d": "2025-09-19",
+  "unixTs": "1758240000",
+  "sthRealizedPrice": "111392.38"
+ },
+ {
+  "d": "2025-09-20",
+  "unixTs": "1758326400",
+  "sthRealizedPrice": "111434.18"
+ },
+ {
+  "d": "2025-09-21",
+  "unixTs": "1758412800",
+  "sthRealizedPrice": "111348.90"
+ },
+ {
+  "d": "2025-09-22",
+  "unixTs": "1758499200",
+  "sthRealizedPrice": "111395.63"
+ },
+ {
+  "d": "2025-09-23",
+  "unixTs": "1758585600",
+  "sthRealizedPrice": "111514.50"
+ },
+ {
+  "d": "2025-09-24",
+  "unixTs": "1758672000",
+  "sthRealizedPrice": "111536.00"
+ },
+ {
+  "d": "2025-09-25",
+  "unixTs": "1758758400",
+  "sthRealizedPrice": "111517.76"
+ },
+ {
+  "d": "2025-09-26",
+  "unixTs": "1758844800",
+  "sthRealizedPrice": "111589.81"
+ },
+ {
+  "d": "2025-09-27",
+  "unixTs": "1758931200",
+  "sthRealizedPrice": "110955.78"
+ },
+ {
+  "d": "2025-09-28",
+  "unixTs": "1759017600",
+  "sthRealizedPrice": "111041.91"
+ },
+ {
+  "d": "2025-09-29",
+  "unixTs": "1759104000",
+  "sthRealizedPrice": "111217.75"
+ },
+ {
+  "d": "2025-09-30",
+  "unixTs": "1759190400",
+  "sthRealizedPrice": "110853.34"
+ },
+ {
+  "d": "2025-10-01",
+  "unixTs": "1759276800",
+  "sthRealizedPrice": "111187.24"
+ },
+ {
+  "d": "2025-10-02",
+  "unixTs": "1759363200",
+  "sthRealizedPrice": "111470.02"
+ },
+ {
+  "d": "2025-10-03",
+  "unixTs": "1759449600",
+  "sthRealizedPrice": "111775.12"
+ },
+ {
+  "d": "2025-10-04",
+  "unixTs": "1759536000",
+  "sthRealizedPrice": "111874.15"
+ },
+ {
+  "d": "2025-10-05",
+  "unixTs": "1759622400",
+  "sthRealizedPrice": "112024.83"
+ },
+ {
+  "d": "2025-10-06",
+  "unixTs": "1759708800",
+  "sthRealizedPrice": "112290.53"
+ },
+ {
+  "d": "2025-10-07",
+  "unixTs": "1759795200",
+  "sthRealizedPrice": "112390.39"
+ },
+ {
+  "d": "2025-10-08",
+  "unixTs": "1759881600",
+  "sthRealizedPrice": "112737.14"
+ },
+ {
+  "d": "2025-10-09",
+  "unixTs": "1759968000",
+  "sthRealizedPrice": "113515.69"
+ },
+ {
+  "d": "2025-10-10",
+  "unixTs": "1760054400",
+  "sthRealizedPrice": "113327.61"
+ },
+ {
+  "d": "2025-10-11",
+  "unixTs": "1760140800",
+  "sthRealizedPrice": "113272.25"
+ },
+ {
+  "d": "2025-10-12",
+  "unixTs": "1760227200",
+  "sthRealizedPrice": "113400.72"
+ },
+ {
+  "d": "2025-10-13",
+  "unixTs": "1760313600",
+  "sthRealizedPrice": "113463.34"
+ },
+ {
+  "d": "2025-10-14",
+  "unixTs": "1760400000",
+  "sthRealizedPrice": "113385.57"
+ },
+ {
+  "d": "2025-10-15",
+  "unixTs": "1760486400",
+  "sthRealizedPrice": "113215.08"
+ },
+ {
+  "d": "2025-10-16",
+  "unixTs": "1760572800",
+  "sthRealizedPrice": "113104.50"
+ },
+ {
+  "d": "2025-10-17",
+  "unixTs": "1760659200",
+  "sthRealizedPrice": "112952.93"
+ },
+ {
+  "d": "2025-10-18",
+  "unixTs": "1760745600",
+  "sthRealizedPrice": "112931.09"
+ },
+ {
+  "d": "2025-10-19",
+  "unixTs": "1760832000",
+  "sthRealizedPrice": "112950.38"
+ },
+ {
+  "d": "2025-10-20",
+  "unixTs": "1760918400",
+  "sthRealizedPrice": "112992.07"
+ },
+ {
+  "d": "2025-10-21",
+  "unixTs": "1761004800",
+  "sthRealizedPrice": "112938.85"
+ },
+ {
+  "d": "2025-10-22",
+  "unixTs": "1761091200",
+  "sthRealizedPrice": "112859.96"
+ },
+ {
+  "d": "2025-10-23",
+  "unixTs": "1761177600",
+  "sthRealizedPrice": "112933.32"
+ },
+ {
+  "d": "2025-10-24",
+  "unixTs": "1761264000",
+  "sthRealizedPrice": "112867.33"
+ },
+ {
+  "d": "2025-10-25",
+  "unixTs": "1761350400",
+  "sthRealizedPrice": "112874.33"
+ },
+ {
+  "d": "2025-10-26",
+  "unixTs": "1761436800",
+  "sthRealizedPrice": "112974.95"
+ },
+ {
+  "d": "2025-10-27",
+  "unixTs": "1761523200",
+  "sthRealizedPrice": "113042.41"
+ },
+ {
+  "d": "2025-10-28",
+  "unixTs": "1761609600",
+  "sthRealizedPrice": "113050.34"
+ },
+ {
+  "d": "2025-10-29",
+  "unixTs": "1761696000",
+  "sthRealizedPrice": "113010.79"
+ },
+ {
+  "d": "2025-10-30",
+  "unixTs": "1761782400",
+  "sthRealizedPrice": "112912.66"
+ },
+ {
+  "d": "2025-10-31",
+  "unixTs": "1761868800",
+  "sthRealizedPrice": "112850.44"
+ },
+ {
+  "d": "2025-11-01",
+  "unixTs": "1761955200",
+  "sthRealizedPrice": "112867.24"
+ },
+ {
+  "d": "2025-11-02",
+  "unixTs": "1762041600",
+  "sthRealizedPrice": "112882.82"
+ },
+ {
+  "d": "2025-11-03",
+  "unixTs": "1762128000",
+  "sthRealizedPrice": "112757.39"
+ },
+ {
+  "d": "2025-11-04",
+  "unixTs": "1762214400",
+  "sthRealizedPrice": "112373.80"
+ },
+ {
+  "d": "2025-11-05",
+  "unixTs": "1762300800",
+  "sthRealizedPrice": "112277.03"
+ },
+ {
+  "d": "2025-11-06",
+  "unixTs": "1762387200",
+  "sthRealizedPrice": "112078.77"
+ },
+ {
+  "d": "2025-11-07",
+  "unixTs": "1762473600",
+  "sthRealizedPrice": "111856.87"
+ },
+ {
+  "d": "2025-11-08",
+  "unixTs": "1762560000",
+  "sthRealizedPrice": "111797.97"
+ },
+ {
+  "d": "2025-11-09",
+  "unixTs": "1762646400",
+  "sthRealizedPrice": "111843.12"
+ },
+ {
+  "d": "2025-11-10",
+  "unixTs": "1762732800",
+  "sthRealizedPrice": "111889.20"
+ },
+ {
+  "d": "2025-11-11",
+  "unixTs": "1762819200",
+  "sthRealizedPrice": "111762.44"
+ },
+ {
+  "d": "2025-11-12",
+  "unixTs": "1762905600",
+  "sthRealizedPrice": "111638.95"
+ },
+ {
+  "d": "2025-11-13",
+  "unixTs": "1762992000",
+  "sthRealizedPrice": "111336.58"
+ },
+ {
+  "d": "2025-11-14",
+  "unixTs": "1763078400",
+  "sthRealizedPrice": "110754.78"
+ },
+ {
+  "d": "2025-11-15",
+  "unixTs": "1763164800",
+  "sthRealizedPrice": "110738.20"
+ },
+ {
+  "d": "2025-11-16",
+  "unixTs": "1763251200",
+  "sthRealizedPrice": "110638.97"
+ },
+ {
+  "d": "2025-11-17",
+  "unixTs": "1763337600",
+  "sthRealizedPrice": "110222.78"
+ },
+ {
+  "d": "2025-11-18",
+  "unixTs": "1763424000",
+  "sthRealizedPrice": "109720.34"
+ },
+ {
+  "d": "2025-11-19",
+  "unixTs": "1763510400",
+  "sthRealizedPrice": "109371.50"
+ },
+ {
+  "d": "2025-11-20",
+  "unixTs": "1763596800",
+  "sthRealizedPrice": "108866.03"
+ },
+ {
+  "d": "2025-11-21",
+  "unixTs": "1763683200",
+  "sthRealizedPrice": "108135.93"
+ },
+ {
+  "d": "2025-11-22",
+  "unixTs": "1763769600",
+  "sthRealizedPrice": "105053.41"
+ },
+ {
+  "d": "2025-11-23",
+  "unixTs": "1763856000",
+  "sthRealizedPrice": "104444.83"
+ },
+ {
+  "d": "2025-11-24",
+  "unixTs": "1763942400",
+  "sthRealizedPrice": "104331.88"
+ },
+ {
+  "d": "2025-11-25",
+  "unixTs": "1764028800",
+  "sthRealizedPrice": "104199.53"
+ },
+ {
+  "d": "2025-11-26",
+  "unixTs": "1764115200",
+  "sthRealizedPrice": "104046.48"
+ },
+ {
+  "d": "2025-11-27",
+  "unixTs": "1764201600",
+  "sthRealizedPrice": "103867.08"
+ },
+ {
+  "d": "2025-11-28",
+  "unixTs": "1764288000",
+  "sthRealizedPrice": "103773.31"
+ },
+ {
+  "d": "2025-11-29",
+  "unixTs": "1764374400",
+  "sthRealizedPrice": "103734.78"
+ },
+ {
+  "d": "2025-11-30",
+  "unixTs": "1764460800",
+  "sthRealizedPrice": "103669.89"
+ },
+ {
+  "d": "2025-12-01",
+  "unixTs": "1764547200",
+  "sthRealizedPrice": "103414.57"
+ },
+ {
+  "d": "2025-12-02",
+  "unixTs": "1764633600",
+  "sthRealizedPrice": "103365.01"
+ },
+ {
+  "d": "2025-12-03",
+  "unixTs": "1764720000",
+  "sthRealizedPrice": "103225.66"
+ },
+ {
+  "d": "2025-12-04",
+  "unixTs": "1764806400",
+  "sthRealizedPrice": "103145.73"
+ },
+ {
+  "d": "2025-12-05",
+  "unixTs": "1764892800",
+  "sthRealizedPrice": "102839.15"
+ },
+ {
+  "d": "2025-12-06",
+  "unixTs": "1764979200",
+  "sthRealizedPrice": "102795.29"
+ },
+ {
+  "d": "2025-12-07",
+  "unixTs": "1765065600",
+  "sthRealizedPrice": "102746.64"
+ },
+ {
+  "d": "2025-12-08",
+  "unixTs": "1765152000",
+  "sthRealizedPrice": "102519.71"
+ },
+ {
+  "d": "2025-12-09",
+  "unixTs": "1765238400",
+  "sthRealizedPrice": "102495.26"
+ },
+ {
+  "d": "2025-12-10",
+  "unixTs": "1765324800",
+  "sthRealizedPrice": "102255.44"
+ },
+ {
+  "d": "2025-12-11",
+  "unixTs": "1765411200",
+  "sthRealizedPrice": "102170.77"
+ },
+ {
+  "d": "2025-12-12",
+  "unixTs": "1765497600",
+  "sthRealizedPrice": "102009.14"
+ },
+ {
+  "d": "2025-12-13",
+  "unixTs": "1765584000",
+  "sthRealizedPrice": "101965.95"
+ },
+ {
+  "d": "2025-12-14",
+  "unixTs": "1765670400",
+  "sthRealizedPrice": "101897.07"
+ },
+ {
+  "d": "2025-12-15",
+  "unixTs": "1765756800",
+  "sthRealizedPrice": "101663.30"
+ },
+ {
+  "d": "2025-12-16",
+  "unixTs": "1765843200",
+  "sthRealizedPrice": "101496.34"
+ },
+ {
+  "d": "2025-12-17",
+  "unixTs": "1765929600",
+  "sthRealizedPrice": "101308.94"
+ },
+ {
+  "d": "2025-12-18",
+  "unixTs": "1766016000",
+  "sthRealizedPrice": "101147.10"
+ },
+ {
+  "d": "2025-12-19",
+  "unixTs": "1766102400",
+  "sthRealizedPrice": "101048.87"
+ },
+ {
+  "d": "2025-12-20",
+  "unixTs": "1766188800",
+  "sthRealizedPrice": "100915.48"
+ },
+ {
+  "d": "2025-12-21",
+  "unixTs": "1766275200",
+  "sthRealizedPrice": "100813.79"
+ },
+ {
+  "d": "2025-12-22",
+  "unixTs": "1766361600",
+  "sthRealizedPrice": "100690.47"
+ },
+ {
+  "d": "2025-12-23",
+  "unixTs": "1766448000",
+  "sthRealizedPrice": "100440.42"
+ },
+ {
+  "d": "2025-12-24",
+  "unixTs": "1766534400",
+  "sthRealizedPrice": "100239.62"
+ },
+ {
+  "d": "2025-12-25",
+  "unixTs": "1766620800",
+  "sthRealizedPrice": "100133.50"
+ },
+ {
+  "d": "2025-12-26",
+  "unixTs": "1766707200",
+  "sthRealizedPrice": "99915.85"
+ },
+ {
+  "d": "2025-12-27",
+  "unixTs": "1766793600",
+  "sthRealizedPrice": "99883.16"
+ },
+ {
+  "d": "2025-12-28",
+  "unixTs": "1766880000",
+  "sthRealizedPrice": "99787.40"
+ },
+ {
+  "d": "2025-12-29",
+  "unixTs": "1766966400",
+  "sthRealizedPrice": "99559.51"
+ },
+ {
+  "d": "2025-12-30",
+  "unixTs": "1767052800",
+  "sthRealizedPrice": "99500.88"
+ },
+ {
+  "d": "2025-12-31",
+  "unixTs": "1767139200",
+  "sthRealizedPrice": "99306.25"
+ },
+ {
+  "d": "2026-01-01",
+  "unixTs": "1767225600",
+  "sthRealizedPrice": "99211.50"
+ },
+ {
+  "d": "2026-01-02",
+  "unixTs": "1767312000",
+  "sthRealizedPrice": "99201.10"
+ },
+ {
+  "d": "2026-01-03",
+  "unixTs": "1767398400",
+  "sthRealizedPrice": "99189.77"
+ },
+ {
+  "d": "2026-01-04",
+  "unixTs": "1767484800",
+  "sthRealizedPrice": "99136.53"
+ },
+ {
+  "d": "2026-01-05",
+  "unixTs": "1767571200",
+  "sthRealizedPrice": "99016.99"
+ },
+ {
+  "d": "2026-01-06",
+  "unixTs": "1767657600",
+  "sthRealizedPrice": "98965.00"
+ },
+ {
+  "d": "2026-01-07",
+  "unixTs": "1767744000",
+  "sthRealizedPrice": "98827.86"
+ },
+ {
+  "d": "2026-01-08",
+  "unixTs": "1767830400",
+  "sthRealizedPrice": "98660.77"
+ },
+ {
+  "d": "2026-01-09",
+  "unixTs": "1767916800",
+  "sthRealizedPrice": "98545.73"
+ },
+ {
+  "d": "2026-01-10",
+  "unixTs": "1768003200",
+  "sthRealizedPrice": "98455.58"
+ },
+ {
+  "d": "2026-01-11",
+  "unixTs": "1768089600",
+  "sthRealizedPrice": "98388.22"
+ },
+ {
+  "d": "2026-01-12",
+  "unixTs": "1768176000",
+  "sthRealizedPrice": "98300.24"
+ },
+ {
+  "d": "2026-01-13",
+  "unixTs": "1768262400",
+  "sthRealizedPrice": "98279.25"
+ },
+ {
+  "d": "2026-01-14",
+  "unixTs": "1768348800",
+  "sthRealizedPrice": "98322.92"
+ },
+ {
+  "d": "2026-01-15",
+  "unixTs": "1768435200",
+  "sthRealizedPrice": "98054.25"
+ },
+ {
+  "d": "2026-01-16",
+  "unixTs": "1768521600",
+  "sthRealizedPrice": "97953.71"
+ },
+ {
+  "d": "2026-01-17",
+  "unixTs": "1768608000",
+  "sthRealizedPrice": "97893.74"
+ },
+ {
+  "d": "2026-01-18",
+  "unixTs": "1768694400",
+  "sthRealizedPrice": "97882.15"
+ },
+ {
+  "d": "2026-01-19",
+  "unixTs": "1768780800",
+  "sthRealizedPrice": "97813.48"
+ },
+ {
+  "d": "2026-01-20",
+  "unixTs": "1768867200",
+  "sthRealizedPrice": "97654.62"
+ },
+ {
+  "d": "2026-01-21",
+  "unixTs": "1768953600",
+  "sthRealizedPrice": "97488.35"
+ },
+ {
+  "d": "2026-01-22",
+  "unixTs": "1769040000",
+  "sthRealizedPrice": "96944.47"
+ },
+ {
+  "d": "2026-01-23",
+  "unixTs": "1769126400",
+  "sthRealizedPrice": "96283.39"
+ },
+ {
+  "d": "2026-01-24",
+  "unixTs": "1769212800",
+  "sthRealizedPrice": "96203.22"
+ },
+ {
+  "d": "2026-01-25",
+  "unixTs": "1769299200",
+  "sthRealizedPrice": "96124.85"
+ },
+ {
+  "d": "2026-01-26",
+  "unixTs": "1769385600",
+  "sthRealizedPrice": "96051.33"
+ },
+ {
+  "d": "2026-01-27",
+  "unixTs": "1769472000",
+  "sthRealizedPrice": "96005.69"
+ },
+ {
+  "d": "2026-01-28",
+  "unixTs": "1769558400",
+  "sthRealizedPrice": "95956.22"
+ },
+ {
+  "d": "2026-01-29",
+  "unixTs": "1769644800",
+  "sthRealizedPrice": "95806.60"
+ },
+ {
+  "d": "2026-01-30",
+  "unixTs": "1769731200",
+  "sthRealizedPrice": "95606.25"
+ },
+ {
+  "d": "2026-01-31",
+  "unixTs": "1769817600",
+  "sthRealizedPrice": "95361.75"
+ },
+ {
+  "d": "2026-02-01",
+  "unixTs": "1769904000",
+  "sthRealizedPrice": "95202.63"
+ },
+ {
+  "d": "2026-02-02",
+  "unixTs": "1769990400",
+  "sthRealizedPrice": "94999.83"
+ },
+ {
+  "d": "2026-02-03",
+  "unixTs": "1770076800",
+  "sthRealizedPrice": "94645.80"
+ },
+ {
+  "d": "2026-02-04",
+  "unixTs": "1770163200",
+  "sthRealizedPrice": "94288.99"
+ },
+ {
+  "d": "2026-02-05",
+  "unixTs": "1770249600",
+  "sthRealizedPrice": "93463.64"
+ },
+ {
+  "d": "2026-02-06",
+  "unixTs": "1770336000",
+  "sthRealizedPrice": "93101.71"
+ },
+ {
+  "d": "2026-02-07",
+  "unixTs": "1770422400",
+  "sthRealizedPrice": "92839.28"
+ },
+ {
+  "d": "2026-02-08",
+  "unixTs": "1770508800",
+  "sthRealizedPrice": "92802.91"
+ },
+ {
+  "d": "2026-02-09",
+  "unixTs": "1770595200",
+  "sthRealizedPrice": "92645.10"
+ },
+ {
+  "d": "2026-02-10",
+  "unixTs": "1770681600",
+  "sthRealizedPrice": "92439.57"
+ },
+ {
+  "d": "2026-02-11",
+  "unixTs": "1770768000",
+  "sthRealizedPrice": "92209.15"
+ },
+ {
+  "d": "2026-02-12",
+  "unixTs": "1770854400",
+  "sthRealizedPrice": "91972.91"
+ },
+ {
+  "d": "2026-02-13",
+  "unixTs": "1770940800",
+  "sthRealizedPrice": "91785.75"
+ },
+ {
+  "d": "2026-02-14",
+  "unixTs": "1771027200",
+  "sthRealizedPrice": "91717.94"
+ },
+ {
+  "d": "2026-02-15",
+  "unixTs": "1771113600",
+  "sthRealizedPrice": "91655.56"
+ },
+ {
+  "d": "2026-02-16",
+  "unixTs": "1771200000",
+  "sthRealizedPrice": "91560.94"
+ },
+ {
+  "d": "2026-02-17",
+  "unixTs": "1771286400",
+  "sthRealizedPrice": "91410.87"
+ },
+ {
+  "d": "2026-02-18",
+  "unixTs": "1771372800",
+  "sthRealizedPrice": "91166.53"
+ },
+ {
+  "d": "2026-02-19",
+  "unixTs": "1771459200",
+  "sthRealizedPrice": "90943.51"
+ },
+ {
+  "d": "2026-02-20",
+  "unixTs": "1771545600",
+  "sthRealizedPrice": "90674.65"
+ },
+ {
+  "d": "2026-02-21",
+  "unixTs": "1771632000",
+  "sthRealizedPrice": "90582.26"
+ },
+ {
+  "d": "2026-02-22",
+  "unixTs": "1771718400",
+  "sthRealizedPrice": "90483.80"
+ },
+ {
+  "d": "2026-02-23",
+  "unixTs": "1771804800",
+  "sthRealizedPrice": "90292.89"
+ },
+ {
+  "d": "2026-02-24",
+  "unixTs": "1771891200",
+  "sthRealizedPrice": "89918.58"
+ },
+ {
+  "d": "2026-02-25",
+  "unixTs": "1771977600",
+  "sthRealizedPrice": "89733.85"
+ },
+ {
+  "d": "2026-02-26",
+  "unixTs": "1772064000",
+  "sthRealizedPrice": "88627.51"
+ },
+ {
+  "d": "2026-02-27",
+  "unixTs": "1772150400",
+  "sthRealizedPrice": "88444.45"
+ },
+ {
+  "d": "2026-02-28",
+  "unixTs": "1772236800",
+  "sthRealizedPrice": "88323.79"
+ },
+ {
+  "d": "2026-03-01",
+  "unixTs": "1772323200",
+  "sthRealizedPrice": "88254.76"
+ },
+ {
+  "d": "2026-03-02",
+  "unixTs": "1772409600",
+  "sthRealizedPrice": "88215.75"
+ },
+ {
+  "d": "2026-03-03",
+  "unixTs": "1772496000",
+  "sthRealizedPrice": "88071.22"
+ },
+ {
+  "d": "2026-03-04",
+  "unixTs": "1772582400",
+  "sthRealizedPrice": "88017.69"
+ },
+ {
+  "d": "2026-03-05",
+  "unixTs": "1772668800",
+  "sthRealizedPrice": "87936.93"
+ },
+ {
+  "d": "2026-03-06",
+  "unixTs": "1772755200",
+  "sthRealizedPrice": "87694.93"
+ },
+ {
+  "d": "2026-03-07",
+  "unixTs": "1772841600",
+  "sthRealizedPrice": "87391.80"
+ },
+ {
+  "d": "2026-03-08",
+  "unixTs": "1772928000",
+  "sthRealizedPrice": "87276.71"
+ },
+ {
+  "d": "2026-03-09",
+  "unixTs": "1773014400",
+  "sthRealizedPrice": "87202.80"
+ },
+ {
+  "d": "2026-03-10",
+  "unixTs": "1773100800",
+  "sthRealizedPrice": "87130.61"
+ },
+ {
+  "d": "2026-03-11",
+  "unixTs": "1773187200",
+  "sthRealizedPrice": "86923.16"
+ },
+ {
+  "d": "2026-03-12",
+  "unixTs": "1773273600",
+  "sthRealizedPrice": "86744.29"
+ },
+ {
+  "d": "2026-03-13",
+  "unixTs": "1773360000",
+  "sthRealizedPrice": "86583.47"
+ },
+ {
+  "d": "2026-03-14",
+  "unixTs": "1773446400",
+  "sthRealizedPrice": "86429.79"
+ },
+ {
+  "d": "2026-03-15",
+  "unixTs": "1773532800",
+  "sthRealizedPrice": "86439.42"
+ },
+ {
+  "d": "2026-03-16",
+  "unixTs": "1773619200",
+  "sthRealizedPrice": "86447.60"
+ },
+ {
+  "d": "2026-03-17",
+  "unixTs": "1773705600",
+  "sthRealizedPrice": "86397.28"
+ },
+ {
+  "d": "2026-03-18",
+  "unixTs": "1773792000",
+  "sthRealizedPrice": "86208.66"
+ },
+ {
+  "d": "2026-03-19",
+  "unixTs": "1773878400",
+  "sthRealizedPrice": "85942.40"
+ },
+ {
+  "d": "2026-03-20",
+  "unixTs": "1773964800",
+  "sthRealizedPrice": "85797.01"
+ },
+ {
+  "d": "2026-03-21",
+  "unixTs": "1774051200",
+  "sthRealizedPrice": "85792.04"
+ },
+ {
+  "d": "2026-03-22",
+  "unixTs": "1774137600",
+  "sthRealizedPrice": "85671.75"
+ },
+ {
+  "d": "2026-03-23",
+  "unixTs": "1774224000",
+  "sthRealizedPrice": "85598.69"
+ },
+ {
+  "d": "2026-03-24",
+  "unixTs": "1774310400",
+  "sthRealizedPrice": "85433.99"
+ },
+ {
+  "d": "2026-03-25",
+  "unixTs": "1774396800",
+  "sthRealizedPrice": "85354.57"
+ },
+ {
+  "d": "2026-03-26",
+  "unixTs": "1774483200",
+  "sthRealizedPrice": "85196.27"
+ },
+ {
+  "d": "2026-03-27",
+  "unixTs": "1774569600",
+  "sthRealizedPrice": "84930.42"
+ },
+ {
+  "d": "2026-03-28",
+  "unixTs": "1774656000",
+  "sthRealizedPrice": "79807.70"
+ },
+ {
+  "d": "2026-03-29",
+  "unixTs": "1774742400",
+  "sthRealizedPrice": "79889.40"
+ },
+ {
+  "d": "2026-03-30",
+  "unixTs": "1774828800",
+  "sthRealizedPrice": "79855.12"
+ },
+ {
+  "d": "2026-03-31",
+  "unixTs": "1774915200",
+  "sthRealizedPrice": "79723.55"
+ },
+ {
+  "d": "2026-04-01",
+  "unixTs": "1775001600",
+  "sthRealizedPrice": "79738.80"
+ },
+ {
+  "d": "2026-04-02",
+  "unixTs": "1775088000",
+  "sthRealizedPrice": "79484.20"
+ },
+ {
+  "d": "2026-04-03",
+  "unixTs": "1775174400",
+  "sthRealizedPrice": "79299.87"
+ },
+ {
+  "d": "2026-04-04",
+  "unixTs": "1775260800",
+  "sthRealizedPrice": "79244.69"
+ },
+ {
+  "d": "2026-04-05",
+  "unixTs": "1775347200",
+  "sthRealizedPrice": "79157.19"
+ },
+ {
+  "d": "2026-04-06",
+  "unixTs": "1775433600",
+  "sthRealizedPrice": "79151.90"
+ },
+ {
+  "d": "2026-04-07",
+  "unixTs": "1775520000",
+  "sthRealizedPrice": "79061.13"
+ },
+ {
+  "d": "2026-04-08",
+  "unixTs": "1775606400",
+  "sthRealizedPrice": "78980.80"
+ },
+ {
+  "d": "2026-04-09",
+  "unixTs": "1775692800",
+  "sthRealizedPrice": "78846.03"
+ },
+ {
+  "d": "2026-04-10",
+  "unixTs": "1775779200",
+  "sthRealizedPrice": "78764.66"
+ },
+ {
+  "d": "2026-04-11",
+  "unixTs": "1775865600",
+  "sthRealizedPrice": "78689.42"
+ },
+ {
+  "d": "2026-04-12",
+  "unixTs": "1775952000",
+  "sthRealizedPrice": "78619.20"
+ },
+ {
+  "d": "2026-04-13",
+  "unixTs": "1776038400",
+  "sthRealizedPrice": "78615.80"
+ },
+ {
+  "d": "2026-04-14",
+  "unixTs": "1776124800",
+  "sthRealizedPrice": "78620.31"
+ },
+ {
+  "d": "2026-04-15",
+  "unixTs": "1776211200",
+  "sthRealizedPrice": "78538.30"
+ },
+ {
+  "d": "2026-04-16",
+  "unixTs": "1776297600",
+  "sthRealizedPrice": "78469.39"
+ },
+ {
+  "d": "2026-04-17",
+  "unixTs": "1776384000",
+  "sthRealizedPrice": "78460.28"
+ },
+ {
+  "d": "2026-04-18",
+  "unixTs": "1776470400",
+  "sthRealizedPrice": "78461.67"
+ },
+ {
+  "d": "2026-04-19",
+  "unixTs": "1776556800",
+  "sthRealizedPrice": "78434.09"
+ },
+ {
+  "d": "2026-04-20",
+  "unixTs": "1776643200",
+  "sthRealizedPrice": "78424.62"
+ },
+ {
+  "d": "2026-04-21",
+  "unixTs": "1776729600",
+  "sthRealizedPrice": "78325.94"
+ },
+ {
+  "d": "2026-04-22",
+  "unixTs": "1776816000",
+  "sthRealizedPrice": "78297.69"
+ },
+ {
+  "d": "2026-04-23",
+  "unixTs": "1776902400",
+  "sthRealizedPrice": "78228.43"
+ },
+ {
+  "d": "2026-04-24",
+  "unixTs": "1776988800",
+  "sthRealizedPrice": "77907.49"
+ },
+ {
+  "d": "2026-04-25",
+  "unixTs": "1777075200",
+  "sthRealizedPrice": "77830.91"
+ },
+ {
+  "d": "2026-04-26",
+  "unixTs": "1777161600",
+  "sthRealizedPrice": "77158.00"
+ },
+ {
+  "d": "2026-04-27",
+  "unixTs": "1777248000",
+  "sthRealizedPrice": "79016.78"
+ },
+ {
+  "d": "2026-04-28",
+  "unixTs": "1777334400",
+  "sthRealizedPrice": "78983.87"
+ },
+ {
+  "d": "2026-04-29",
+  "unixTs": "1777420800",
+  "sthRealizedPrice": "78936.63"
+ },
+ {
+  "d": "2026-04-30",
+  "unixTs": "1777507200",
+  "sthRealizedPrice": "78898.40"
+ },
+ {
+  "d": "2026-05-01",
+  "unixTs": "1777593600",
+  "sthRealizedPrice": "78928.95"
+ },
+ {
+  "d": "2026-05-02",
+  "unixTs": "1777680000",
+  "sthRealizedPrice": "78915.98"
+ },
+ {
+  "d": "2026-05-03",
+  "unixTs": "1777766400",
+  "sthRealizedPrice": "78912.07"
+ },
+ {
+  "d": "2026-05-04",
+  "unixTs": "1777852800",
+  "sthRealizedPrice": "79026.84"
+ },
+ {
+  "d": "2026-05-05",
+  "unixTs": "1777939200",
+  "sthRealizedPrice": "79136.03"
+ },
+ {
+  "d": "2026-05-06",
+  "unixTs": "1778025600",
+  "sthRealizedPrice": "79172.96"
+ },
+ {
+  "d": "2026-05-07",
+  "unixTs": "1778112000",
+  "sthRealizedPrice": "79122.79"
+ },
+ {
+  "d": "2026-05-08",
+  "unixTs": "1778198400",
+  "sthRealizedPrice": "79076.17"
+ },
+ {
+  "d": "2026-05-09",
+  "unixTs": "1778284800",
+  "sthRealizedPrice": "78937.33"
+ },
+ {
+  "d": "2026-05-10",
+  "unixTs": "1778371200",
+  "sthRealizedPrice": "78933.51"
+ },
+ {
+  "d": "2026-05-11",
+  "unixTs": "1778457600",
+  "sthRealizedPrice": "78976.63"
+ },
+ {
+  "d": "2026-05-12",
+  "unixTs": "1778544000",
+  "sthRealizedPrice": "78885.51"
+ },
+ {
+  "d": "2026-05-13",
+  "unixTs": "1778630400",
+  "sthRealizedPrice": "78803.99"
+ },
+ {
+  "d": "2026-05-14",
+  "unixTs": "1778716800",
+  "sthRealizedPrice": "78717.55"
+ },
+ {
+  "d": "2026-05-15",
+  "unixTs": "1778803200",
+  "sthRealizedPrice": "78694.81"
+ },
+ {
+  "d": "2026-05-16",
+  "unixTs": "1778889600",
+  "sthRealizedPrice": "78582.76"
+ },
+ {
+  "d": "2026-05-17",
+  "unixTs": "1778976000",
+  "sthRealizedPrice": "78550.78"
+ },
+ {
+  "d": "2026-05-18",
+  "unixTs": "1779062400",
+  "sthRealizedPrice": "78478.73"
+ },
+ {
+  "d": "2026-05-19",
+  "unixTs": "1779148800",
+  "sthRealizedPrice": "78332.74"
+ },
+ {
+  "d": "2026-05-20",
+  "unixTs": "1779235200",
+  "sthRealizedPrice": "78211.16"
+ },
+ {
+  "d": "2026-05-21",
+  "unixTs": "1779321600",
+  "sthRealizedPrice": "78279.47"
+ },
+ {
+  "d": "2026-05-22",
+  "unixTs": "1779408000",
+  "sthRealizedPrice": "78206.63"
+ },
+ {
+  "d": "2026-05-23",
+  "unixTs": "1779494400",
+  "sthRealizedPrice": "78136.28"
+ },
+ {
+  "d": "2026-05-24",
+  "unixTs": "1779580800",
+  "sthRealizedPrice": "78100.65"
+ },
+ {
+  "d": "2026-05-25",
+  "unixTs": "1779667200",
+  "sthRealizedPrice": "78102.89"
+ },
+ {
+  "d": "2026-05-26",
+  "unixTs": "1779753600",
+  "sthRealizedPrice": "78027.57"
+ },
+ {
+  "d": "2026-05-27",
+  "unixTs": "1779840000",
+  "sthRealizedPrice": "77911.99"
+ },
+ {
+  "d": "2026-05-28",
+  "unixTs": "1779926400",
+  "sthRealizedPrice": "77509.98"
+ },
+ {
+  "d": "2026-05-29",
+  "unixTs": "1780012800",
+  "sthRealizedPrice": "77366.83"
+ },
+ {
+  "d": "2026-05-30",
+  "unixTs": "1780099200",
+  "sthRealizedPrice": "77253.88"
+ },
+ {
+  "d": "2026-05-31",
+  "unixTs": "1780185600",
+  "sthRealizedPrice": "77238.34"
+ },
+ {
+  "d": "2026-06-01",
+  "unixTs": "1780272000",
+  "sthRealizedPrice": "76988.52"
+ },
+ {
+  "d": "2026-06-02",
+  "unixTs": "1780358400",
+  "sthRealizedPrice": "76557.23"
+ },
+ {
+  "d": "2026-06-03",
+  "unixTs": "1780444800",
+  "sthRealizedPrice": "76000.95"
+ },
+ {
+  "d": "2026-06-04",
+  "unixTs": "1780531200",
+  "sthRealizedPrice": "75519.85"
+ },
+ {
+  "d": "2026-06-05",
+  "unixTs": "1780617600",
+  "sthRealizedPrice": "75090.16"
+ },
+ {
+  "d": "2026-06-06",
+  "unixTs": "1780704000",
+  "sthRealizedPrice": "74585.28"
+ },
+ {
+  "d": "2026-06-07",
+  "unixTs": "1780790400",
+  "sthRealizedPrice": "74746.60"
+ },
+ {
+  "d": "2026-06-08",
+  "unixTs": "1780876800",
+  "sthRealizedPrice": "74715.66"
+ }
+]
