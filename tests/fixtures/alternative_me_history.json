@@ -1,0 +1,59 @@
+{
+ "name": "Fear and Greed Index",
+ "data": [
+  {
+   "value": "10",
+   "value_classification": "Extreme Fear",
+   "timestamp": "1780963200",
+   "time_until_update": "17451"
+  },
+  {
+   "value": "8",
+   "value_classification": "Extreme Fear",
+   "timestamp": "1780876800"
+  },
+  {
+   "value": "12",
+   "value_classification": "Extreme Fear",
+   "timestamp": "1780790400"
+  },
+  {
+   "value": "12",
+   "value_classification": "Extreme Fear",
+   "timestamp": "1780704000"
+  },
+  {
+   "value": "12",
+   "value_classification": "Extreme Fear",
+   "timestamp": "1780617600"
+  },
+  {
+   "value": "12",
+   "value_classification": "Extreme Fear",
+   "timestamp": "1780531200"
+  },
+  {
+   "value": "11",
+   "value_classification": "Extreme Fear",
+   "timestamp": "1780444800"
+  },
+  {
+   "value": "23",
+   "value_classification": "Extreme Fear",
+   "timestamp": "1780358400"
+  },
+  {
+   "value": "29",
+   "value_classification": "Fear",
+   "timestamp": "1780272000"
+  },
+  {
+   "value": "28",
+   "value_classification": "Fear",
+   "timestamp": "1780185600"
+  }
+ ],
+ "metadata": {
+  "error": null
+ }
+}
