@@ -44,6 +44,12 @@ from whenshouldubuybitcoin.persistence import (
 from whenshouldubuybitcoin.providers.binance_api import fetch_btc_funding_rate, fetch_open_interest_history
 from whenshouldubuybitcoin.providers.alternative_me import fetch_fear_and_greed_index
 from whenshouldubuybitcoin.providers.blockchain_data import fetch_hashrate_trend
+from whenshouldubuybitcoin.onchain_data import update_onchain_metrics
+from whenshouldubuybitcoin.bottom_signals import (
+    compute_bottom_signal_scores,
+    build_backtest,
+)
+from whenshouldubuybitcoin.bottom_signals_page import generate_bottom_signals_page
 from whenshouldubuybitcoin.visualization import (
     generate_all_charts,
     plot_usdjpy_risk_map,
@@ -139,6 +145,7 @@ def main(strict_update: bool = False):
             "usdjpy_risk_map": False,
             "macro_charts": False,
             "futures_oi_charts": False,
+            "bottom_signals": False,
             "daily_report": False,
         }
         print("=" * 80)
@@ -417,7 +424,30 @@ def main(strict_update: bool = False):
             print("  Continuing without macro charts.")
             if strict_update:
                 raise
-            
+
+        # Generate on-chain bottom signals dashboard
+        print("\n" + "=" * 80)
+        print("GENERATING ON-CHAIN BOTTOM SIGNALS")
+        print("=" * 80)
+        bottom_signals_snapshot = None
+        try:
+            onchain_df = update_onchain_metrics()
+            if onchain_df is None or onchain_df.empty:
+                raise RuntimeError("no on-chain data available (fetch failed and no cache)")
+            scores_df = compute_bottom_signal_scores(onchain_df, df)
+            backtest = build_backtest(scores_df)
+            bottom_signals_snapshot = generate_bottom_signals_page(scores_df, df, backtest)
+            print(
+                f"✓ Bottom signals: composite {bottom_signals_snapshot['composite']:.0f} "
+                f"({bottom_signals_snapshot['zone']})"
+            )
+            component_status["bottom_signals"] = True
+        except Exception as e:
+            print(f"⚠ Warning: Failed to generate on-chain bottom signals: {e}")
+            print("  Continuing without bottom signals page.")
+            if strict_update:
+                raise
+
         # --- Step 6: Futures Data Analysis ---
         print("\n" + "=" * 80)
         print("STEP 6: Futures Data Analysis")
@@ -590,6 +620,7 @@ def main(strict_update: bool = False):
                 yield_df=yield_df,
                 oi_df=oi_df,
                 free_signal_snapshot=free_signal_snapshot or None,
+                bottom_signals_snapshot=bottom_signals_snapshot,
             )
             report_status = daily_report.get("human_summary", {}).get("generated_by", "ok")
             component_status["daily_report"] = True

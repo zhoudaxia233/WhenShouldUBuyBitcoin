@@ -162,6 +162,7 @@ def build_report_payload(
     yield_df: pd.DataFrame | None = None,
     oi_df: pd.DataFrame | None = None,
     free_signal_snapshot: dict[str, Any] | None = None,
+    bottom_signals_snapshot: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Build structured metrics for daily report sections."""
 
@@ -404,6 +405,24 @@ def build_report_payload(
                 }
             )
 
+    if bottom_signals_snapshot:
+        metrics: dict[str, Any] = {
+            "composite_score": _safe_float(bottom_signals_snapshot.get("composite")),
+            "zone": bottom_signals_snapshot.get("zone"),
+            "advice": bottom_signals_snapshot.get("advice"),
+            "mvrv": _safe_float(bottom_signals_snapshot.get("mvrv")),
+            "supply_loss_pct": _safe_float(bottom_signals_snapshot.get("supply_loss_pct")),
+            "realized_cap_change_30d_usd": _safe_float(
+                bottom_signals_snapshot.get("realized_cap_change_30d_usd")
+            ),
+            "fear_greed": _safe_float(bottom_signals_snapshot.get("fear_greed")),
+        }
+        for sig in bottom_signals_snapshot.get("signals", []):
+            key = sig.get("key")
+            if key:
+                metrics[key] = _safe_float(sig.get("score"))
+        payload["sections"].append({"chart": "On-Chain Bottom Signals", "metrics": metrics})
+
     return payload
 
 
@@ -568,6 +587,31 @@ def _deterministic_en_summary(section: dict[str, Any]) -> str:
             f"Fear & Greed is {fng:.0f} ({m.get('fear_greed_classification') or 'N/A'}), with a panic score proxy of {panic_score:.0f}/100 (higher = more fear)."
             f" Hashrate 30d change is {_pct(hashrate_chg)} and miner stress proxy is {miner_proxy}."
             " These metrics are used to read crowd sentiment and miner pressure."
+        )
+
+    if chart == "On-Chain Bottom Signals":
+        comp = _safe_float(m.get("composite_score"))
+        if comp is None:
+            return "On-chain bottom-signal data is unavailable in the current daily snapshot."
+        zone = str(m.get("zone") or "Watch")
+
+        def _s(key: str) -> str:
+            v = _safe_float(m.get(key))
+            return f"{v:.0f}" if v is not None else "N/A"
+
+        mvrv = _safe_float(m.get("mvrv"))
+        loss = _safe_float(m.get("supply_loss_pct"))
+        tail = ""
+        if mvrv is not None and loss is not None:
+            tail = (
+                f" MVRV is {mvrv:.2f} and about {loss:.1f}% of circulating supply"
+                " sits in unrealized loss."
+            )
+        return (
+            f"The on-chain bottom composite scores {comp:.0f}/100, in the {zone} zone."
+            f" Per-signal scores out of 20: holder cost {_s('s1')}, MVRV {_s('s2')},"
+            f" supply-in-loss {_s('s3')}, capital flow {_s('s4')}, fear&greed {_s('s5')}."
+            + tail
         )
 
     return "No usable interpretation is available for this chart today."
@@ -736,6 +780,34 @@ def _deterministic_zh_summary(section: dict[str, Any]) -> str:
             f"恐慌贪婪指数为{fng_text}（{m.get('fear_greed_classification') or 'N/A'}），情绪恐慌代理分数约为{panic_text}（越高代表市场越恐慌）。"
             f"全网算力30天变化为{hashrate_text}，矿工压力代理状态为{miner_proxy}。"
             "这组指标主要用来观察市场情绪与矿工压力。"
+        )
+
+    if chart == "On-Chain Bottom Signals":
+        comp = _safe_float(m.get("composite_score"))
+        if comp is None:
+            return "今日链上底部信号数据不可用。"
+        zone_map = {
+            "Watch": "观望区",
+            "Mildly Undervalued": "偏低估区",
+            "Undervalued": "低估区",
+            "Extremely Undervalued": "极度低估区",
+        }
+        zone = zone_map.get(str(m.get("zone")), "观望区")
+
+        def _s(key: str) -> str:
+            v = _safe_float(m.get(key))
+            return f"{v:.0f}" if v is not None else "暂缺"
+
+        mvrv = _safe_float(m.get("mvrv"))
+        loss = _safe_float(m.get("supply_loss_pct"))
+        tail = ""
+        if mvrv is not None and loss is not None:
+            tail = f"当前 MVRV {mvrv:.2f}，约 {loss:.1f}% 的流通供应处于浮亏。"
+        return (
+            f"链上底部综合评分 {comp:.0f}/100，处于{zone}。"
+            f"五项信号得分（每项满分 20）：持有者成本 {_s('s1')}、MVRV {_s('s2')}、"
+            f"亏损供应 {_s('s3')}、资金流向 {_s('s4')}、恐慌贪婪 {_s('s5')}。"
+            + tail
         )
 
     return "今日该图表暂无可用解读。"
@@ -1030,6 +1102,7 @@ def generate_daily_report(
     yield_df: pd.DataFrame | None = None,
     oi_df: pd.DataFrame | None = None,
     free_signal_snapshot: dict[str, Any] | None = None,
+    bottom_signals_snapshot: dict[str, Any] | None = None,
     output_path: Path = DEFAULT_REPORT_PATH,
 ) -> dict[str, Any]:
     """Build, summarize, and persist daily report payload."""
@@ -1040,6 +1113,7 @@ def generate_daily_report(
         yield_df=yield_df,
         oi_df=oi_df,
         free_signal_snapshot=free_signal_snapshot,
+        bottom_signals_snapshot=bottom_signals_snapshot,
     )
     source_signature = _summary_source_signature(payload)
     payload["summary_source_signature"] = source_signature
