@@ -4,7 +4,7 @@
 
 **Goal:** Five on-chain signals scored 0-20 each (holder cost basis, MVRV deviation, supply in loss, 30d realized-cap flow, Fear & Greed) summing to a 0-100 composite with zone classification, a backtest (trigger segments + accuracy matrix), a prerendered `docs/charts/bottom_signals.html` dashboard, an `index.html` summary card, and a daily-report section — fed by free APIs within strict rate budgets.
 
-**Architecture:** A new provider (`bitcoin_data_com.py`) fetches six series from the free bitcoin-data.com API (10 req/h, 15/day, last-4-years window); `onchain_data.py` accumulates them plus alternative.me Fear & Greed history into `docs/data/onchain_metrics.csv` with a freshness guard; `bottom_signals.py` holds pure scoring/backtest functions; `bottom_signals_page.py` renders a self-contained Jinja2 page plus `bottom_signals_info.json`; `main.py` wires it into the daily pipeline. Spec: `docs/superpowers/specs/2026-06-09-onchain-bottom-signals-design.md`.
+**Architecture:** A new provider (`bitcoin_data_com.py`) fetches seven series from the free bitcoin-data.com API (10 req/h, 15/day, last-4-years window; supply-loss/profit arrive as absolute BTC and are combined into an exact in-loss percentage); `onchain_data.py` accumulates them plus alternative.me Fear & Greed history into `docs/data/onchain_metrics.csv` with a freshness guard; `bottom_signals.py` holds pure scoring/backtest functions; `bottom_signals_page.py` renders a self-contained Jinja2 page plus `bottom_signals_info.json`; `main.py` wires it into the daily pipeline. Spec: `docs/superpowers/specs/2026-06-09-onchain-bottom-signals-design.md`.
 
 **Tech Stack:** Python (pandas, numpy, requests, jinja2 — all existing deps), plotly.js via CDN on the new page only, pytest, vanilla JS in `docs/index.html`.
 
@@ -55,7 +55,8 @@ ENDPOINTS = {
     "realized_price": "/v1/realized-price",
     "sth_realized_price": "/v1/sth-realized-price",
     "mvrv": "/v1/mvrv",
-    "supply_loss_pct": "/v1/supply-loss",
+    "supply_loss_btc": "/v1/supply-loss",
+    "supply_profit_btc": "/v1/supply-profit",
     "realized_cap_change_30d_usd": "/v1/realized-cap-change-30d",
 }
 FIXTURE_DIR = Path("tests/fixtures/bitcoin_data_com")
@@ -262,7 +263,8 @@ ONCHAIN_ENDPOINTS = {
     "realized_price": "/v1/realized-price",
     "sth_realized_price": "/v1/sth-realized-price",
     "mvrv": "/v1/mvrv",
-    "supply_loss_pct": "/v1/supply-loss",
+    "supply_loss_btc": "/v1/supply-loss",
+    "supply_profit_btc": "/v1/supply-profit",
     "realized_cap_change_30d_usd": "/v1/realized-cap-change-30d",
 }
 
@@ -565,7 +567,11 @@ def test_update_fetches_merges_saves(monkeypatch, tmp_path):
 
     def fake_fetch_all(startday=None):
         captured["startday"] = startday
-        return {"mvrv": [("2026-06-09", 1.3)], "supply_loss_pct": [("2026-06-09", 0.21)]}
+        return {
+            "mvrv": [("2026-06-09", 1.3)],
+            "supply_loss_btc": [("2026-06-09", 9.0e6)],
+            "supply_profit_btc": [("2026-06-09", 11.0e6)],
+        }
 
     monkeypatch.setattr(od, "fetch_all_onchain_series", fake_fetch_all)
     monkeypatch.setattr(
@@ -576,8 +582,8 @@ def test_update_fetches_merges_saves(monkeypatch, tmp_path):
     # overlap: startday = last cached date minus 7 days
     assert captured["startday"] == "2025-12-25"
     assert out["date"].tolist() == ["2026-01-01", "2026-06-09"]
-    # supply-loss fraction (0.21) is normalized to percent
-    assert out.loc[1, "supply_loss_pct"] == pytest.approx(21.0)
+    # derived: 9.0 / (9.0 + 11.0) = 45%
+    assert out.loc[1, "supply_loss_pct"] == pytest.approx(45.0)
     assert out.loc[1, "fear_greed"] == 10
     # persisted
     assert (tmp_path / od.ONCHAIN_CSV).exists()
@@ -591,11 +597,20 @@ def test_update_returns_cache_when_all_fetches_fail(monkeypatch):
     assert od.update_onchain_metrics() is stale
 
 
-def test_normalize_supply_loss_fraction_vs_percent():
-    frac = pd.Series([0.02, 0.55])
-    pct = pd.Series([2.0, 55.0])
-    assert od._normalize_supply_loss(frac).tolist() == [2.0, 55.0]
-    assert od._normalize_supply_loss(pct).tolist() == [2.0, 55.0]
+def test_series_frame_derives_supply_loss_pct():
+    series = {
+        "supply_loss_btc": [("2026-06-08", 9_937_373.9)],
+        "supply_profit_btc": [("2026-06-08", 10_100_084.58)],
+    }
+    frame = od._series_dict_to_frame(series, None)
+    assert frame.loc[0, "supply_loss_pct"] == pytest.approx(49.594, abs=0.01)
+
+
+def test_series_frame_supply_loss_pct_nan_when_profit_missing():
+    frame = od._series_dict_to_frame(
+        {"supply_loss_btc": [("2026-06-08", 9.9e6)]}, None
+    )
+    assert pd.isna(frame.loc[0, "supply_loss_pct"])
 
 
 def test_normalize_realized_cap_change_billions_vs_usd():
@@ -648,18 +663,6 @@ ONCHAIN_COLUMNS = [
 
 # Refetch this many days before the last cached date to absorb upstream revisions.
 REFETCH_OVERLAP_DAYS = 7
-
-
-def _normalize_supply_loss(series: pd.Series) -> pd.Series:
-    """Store supply-in-loss as percent (0-100) whether the API sends 0.21 or 21.
-
-    Decided per-series: a fraction series never exceeds 1.0, a percent series
-    at any point in a 4-year window far exceeds it.
-    """
-    s = pd.to_numeric(series, errors="coerce")
-    if s.dropna().empty:
-        return s
-    return s * 100.0 if s.abs().max() <= 1.5 else s
 
 
 def _normalize_realized_cap_change(series: pd.Series) -> pd.Series:
@@ -765,10 +768,17 @@ def _series_dict_to_frame(series_by_metric: dict, fng_rows) -> pd.DataFrame:
 
     wide = pd.concat(frames, axis=1, join="outer").reset_index()
     wide = wide.rename(columns={"index": "date"})
-    for col in ONCHAIN_COLUMNS:
+    for col in ("supply_loss_btc", "supply_profit_btc", *ONCHAIN_COLUMNS):
         if col not in wide.columns:
             wide[col] = pd.NA
-    wide["supply_loss_pct"] = _normalize_supply_loss(wide["supply_loss_pct"])
+
+    # The API reports absolute BTC in loss/profit; their sum is the provider's
+    # circulating-supply universe, so the ratio is an exact in-loss share.
+    loss = pd.to_numeric(wide["supply_loss_btc"], errors="coerce")
+    profit = pd.to_numeric(wide["supply_profit_btc"], errors="coerce")
+    total = loss + profit
+    wide["supply_loss_pct"] = (100.0 * loss / total).where(total > 0)
+
     wide["realized_cap_change_30d_usd"] = _normalize_realized_cap_change(
         wide["realized_cap_change_30d_usd"]
     )
@@ -807,7 +817,7 @@ def update_onchain_metrics(force: bool = False) -> Optional[pd.DataFrame]:
 - [ ] **Step 4.4: Run tests to verify they pass**
 
 Run: `poetry run pytest tests/test_onchain_data.py -v`
-Expected: all PASS. If `test_update_fetches_merges_saves` fails on the normalization assert, recheck Step 1.3 notes — the normalizers assume the two representations described there.
+Expected: all PASS. (Captured reality from Task 1: `/v1/supply-loss` and `/v1/supply-profit` return absolute BTC — `supplyLossBtc` ≈ 9.94M, `supplyProfitBtc` ≈ 10.10M on 2026-06-08, summing to the ~20.04M circulating supply — and `realizedCapChange30d` is plain USD.)
 
 - [ ] **Step 4.5: Commit**
 
