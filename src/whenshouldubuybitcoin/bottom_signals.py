@@ -9,6 +9,7 @@ Sigma/percentile statistics are computed once over the full available sample
 (not expanding windows); the dashboard page states the look-ahead caveat.
 """
 
+import math
 from typing import Optional
 
 import numpy as np
@@ -21,7 +22,7 @@ ZONES = [
     (0.0, 60.0, "Watch", "#6e6e73"),
     (60.0, 70.0, "Mildly Undervalued", "#10b981"),
     (70.0, 80.0, "Undervalued", "#f59e0b"),
-    (80.0, 100.01, "Extremely Undervalued", "#ef4444"),
+    (80.0, math.inf, "Extremely Undervalued", "#ef4444"),
 ]
 
 ZONE_ADVICE = {
@@ -43,6 +44,11 @@ BOTTOM_HIT_MULTIPLE = 1.3
 
 THRESHOLDS = (60, 70, 80)
 DURATIONS = (1, 3, 7)
+# CYCLE_BOTTOMS / BOTTOM_HIT_MULTIPLE / THRESHOLDS / DURATIONS are consumed by the backtest functions (added in a subsequent commit).
+
+# Sigma-deviation anchor curves: (sigma anchors, score anchors).
+S2_SIGMA_ANCHORS = ([-1.5, 0.0, 2.0], [20.0, 8.0, 0.0])
+S3_SIGMA_ANCHORS = ([-1.0, 0.0, 0.5, 2.0], [0.0, 6.0, 10.0, 20.0])
 
 
 def zone_for(composite) -> Optional[tuple[str, str]]:
@@ -98,18 +104,12 @@ def _sigma_to_score(dev: pd.Series, anchors_sigma, anchors_score) -> pd.Series:
 
 def score_s2_mvrv(series: pd.Series) -> pd.Series:
     """MVRV deviation: +2 sigma -> 0, 0 -> 8, -1.5 sigma -> 20."""
-    return _sigma_to_score(
-        full_sample_deviation(series), [-1.5, 0.0, 2.0], [20.0, 8.0, 0.0]
-    )
+    return _sigma_to_score(full_sample_deviation(series), *S2_SIGMA_ANCHORS)
 
 
 def score_s3_supply_loss(series: pd.Series) -> pd.Series:
     """Supply-in-loss deviation: -1 sigma -> 0, 0 -> 6, +0.5 -> 10, +2 -> 20."""
-    return _sigma_to_score(
-        full_sample_deviation(series),
-        [-1.0, 0.0, 0.5, 2.0],
-        [0.0, 6.0, 10.0, 20.0],
-    )
+    return _sigma_to_score(full_sample_deviation(series), *S3_SIGMA_ANCHORS)
 
 
 def score_s4_capital_flow(series: pd.Series) -> pd.Series:
@@ -138,8 +138,10 @@ def compute_bottom_signal_scores(
     """
     prices = price_df[["date", "close_price"]].copy()
     prices["date"] = pd.to_datetime(prices["date"]).dt.strftime("%Y-%m-%d")
+    onchain = onchain_df.copy()
+    onchain["date"] = pd.to_datetime(onchain["date"]).dt.strftime("%Y-%m-%d")
     df = (
-        onchain_df.merge(prices, on="date", how="inner")
+        onchain.merge(prices, on="date", how="inner")
         .sort_values("date")
         .reset_index(drop=True)
     )
@@ -154,11 +156,9 @@ def compute_bottom_signal_scores(
         )
     ]
     df["s2_dev"] = full_sample_deviation(df["mvrv"])
-    df["s2"] = _sigma_to_score(df["s2_dev"], [-1.5, 0.0, 2.0], [20.0, 8.0, 0.0])
+    df["s2"] = _sigma_to_score(df["s2_dev"], *S2_SIGMA_ANCHORS)
     df["s3_dev"] = full_sample_deviation(df["supply_loss_pct"])
-    df["s3"] = _sigma_to_score(
-        df["s3_dev"], [-1.0, 0.0, 0.5, 2.0], [0.0, 6.0, 10.0, 20.0]
-    )
+    df["s3"] = _sigma_to_score(df["s3_dev"], *S3_SIGMA_ANCHORS)
     s4_raw = pd.to_numeric(df["realized_cap_change_30d_usd"], errors="coerce")
     df["s4_pctile"] = (
         s4_raw.rank(pct=True)

@@ -80,7 +80,7 @@ def test_s3_scores():
 
 def test_s4_percentile_scores():
     s = bs.score_s4_capital_flow(pd.Series(np.arange(1.0, 201.0)))
-    assert s.iloc[0] > 19.8  # deepest outflow -> highest score
+    assert s.iloc[0] == pytest.approx(19.9)  # deepest outflow -> highest score
     assert s.iloc[-1] == pytest.approx(0.0)  # biggest inflow -> 0
 
 
@@ -128,6 +128,7 @@ def test_compute_scores_has_all_columns_and_composite():
     expected = last["s1"] + last["s2"] + last["s3"] + last["s4"] + last["s5"]
     assert last["composite"] == pytest.approx(expected)
     assert last["zone"] in {z[2] for z in bs.ZONES}
+    assert last["zone_color"] in {z[3] for z in bs.ZONES}
 
 
 def test_compute_scores_composite_null_when_any_signal_missing():
@@ -156,4 +157,25 @@ def test_zone_for():
     assert bs.zone_for(70)[0] == "Undervalued"
     assert bs.zone_for(80)[0] == "Extremely Undervalued"
     assert bs.zone_for(100)[0] == "Extremely Undervalued"
+    assert bs.zone_for(100.01)[0] == "Extremely Undervalued"
     assert bs.zone_for(None) is None
+
+
+def test_compute_scores_accepts_datetime_dates():
+    n = 200
+    dates = pd.date_range("2024-01-01", periods=n)  # datetime64, not str
+    onchain = pd.DataFrame(
+        {
+            "date": dates,
+            "lth_realized_price": 48_000.0,
+            "realized_price": 53_000.0,
+            "sth_realized_price": 74_000.0,
+            "mvrv": 1.5,
+            "supply_loss_pct": 20.0,
+            "realized_cap_change_30d_usd": -1e10,
+            "fear_greed": 10.0,
+        }
+    )
+    prices = pd.DataFrame({"date": dates.strftime("%Y-%m-%d"), "close_price": 60_000.0})
+    df = bs.compute_bottom_signal_scores(onchain, prices)
+    assert len(df) == n
