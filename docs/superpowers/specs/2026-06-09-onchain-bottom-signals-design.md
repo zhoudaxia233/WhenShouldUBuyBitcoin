@@ -10,7 +10,7 @@ The reference site (a third-party dashboard, "BTC 底部信号看板") is a dail
 
 Verified free data path for this project:
 
-- `https://api.bitcoin-data.com` (BGeometrics) covers every on-chain metric needed: `/v1/lth-realized-price`, `/v1/sth-realized-price`, `/v1/realized-price`, `/v1/mvrv`, `/v1/supply-loss`, `/v1/realized-cap-change-30d`. Free tier: no token, 10 requests/hour, 15/day, history limited to the most recent 4 years (verified: pre-window queries return `[]`).
+- `https://api.bitcoin-data.com` (BGeometrics) covers every on-chain metric needed: `/v1/lth-realized-price`, `/v1/sth-realized-price`, `/v1/realized-price`, `/v1/mvrv`, `/v1/supply-loss`, `/v1/supply-profit`, `/v1/realized-cap-change-30d`. Free tier: no token, 10 requests/hour, 15/day, history limited to the most recent 4 years (verified: pre-window queries return `[]`). Supply loss/profit arrive as absolute BTC (`supplyLossBtc`/`supplyProfitBtc`); their sum equals the provider's circulating-supply universe, so `supply_loss_pct = loss / (loss + profit) * 100` is exact.
 - alternative.me provides full Fear & Greed history (2018+) for free; a provider already exists in this repo.
 - CoinMetrics Community no longer serves realized-cap metrics for free (verified: 403).
 
@@ -22,7 +22,7 @@ Accepted consequences (user decisions):
 
 ## Requirements
 
-- Fetch six bitcoin-data.com series and full Fear & Greed history during the daily pipeline run, at most once per day, staying within free-tier limits (sequential calls spaced >= 7 s, <= 7 requests per run).
+- Fetch seven bitcoin-data.com series and full Fear & Greed history during the daily pipeline run, at most once per day, staying within free-tier limits (sequential calls spaced >= 7 s, <= 8 requests per run).
 - Persist merged on-chain history to `docs/data/onchain_metrics.csv`; re-fetched dates overwrite, history is never truncated, writes are atomic (temp file + replace), matching existing persistence patterns.
 - Compute S1-S5 scores (0-20 each, formulas below), composite (0-100), and zone for every date where all five inputs exist.
 - Zones match the reference site: < 60 Watch, 60-70 Mildly Undervalued, 70-80 Undervalued, >= 80 Extremely Undervalued.
