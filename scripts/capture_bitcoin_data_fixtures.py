@@ -17,7 +17,8 @@ ENDPOINTS = {
     "realized_price": "/v1/realized-price",
     "sth_realized_price": "/v1/sth-realized-price",
     "mvrv": "/v1/mvrv",
-    "supply_loss_pct": "/v1/supply-loss",
+    "supply_loss_btc": "/v1/supply-loss",
+    "supply_profit_btc": "/v1/supply-profit",
     "realized_cap_change_30d_usd": "/v1/realized-cap-change-30d",
 }
 FIXTURE_DIR = Path("tests/fixtures/bitcoin_data_com")
