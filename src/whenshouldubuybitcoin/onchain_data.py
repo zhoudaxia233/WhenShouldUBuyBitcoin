@@ -31,6 +31,8 @@ ONCHAIN_COLUMNS = [
     "fear_greed",
 ]
 
+REQUIRED_SIGNAL_COLUMNS = [col for col in ONCHAIN_COLUMNS if col != "date"]
+
 # Refetch this many days before the last cached date to absorb upstream revisions.
 REFETCH_OVERLAP_DAYS = 7
 
@@ -71,7 +73,12 @@ def save_onchain_metrics(df: pd.DataFrame) -> bool:
     """Atomically persist the dataset sorted by date."""
     filepath = get_data_dir() / ONCHAIN_CSV
     try:
-        out = df[ONCHAIN_COLUMNS].sort_values("date").reset_index(drop=True)
+        out = (
+            df[ONCHAIN_COLUMNS]
+            .sort_values("date")
+            .drop_duplicates(subset=["date"], keep="last")
+            .reset_index(drop=True)
+        )
         tmp_path: Path | None = None
         try:
             with tempfile.NamedTemporaryFile(
@@ -111,12 +118,17 @@ def merge_onchain(
 
 
 def is_fresh(df: Optional[pd.DataFrame], today: Optional[date] = None) -> bool:
-    """True when the newest cached row is from today or yesterday (UTC daily lag)."""
+    """True when the newest complete signal row is from today or yesterday."""
     if df is None or df.empty:
+        return False
+    if any(col not in df.columns for col in REQUIRED_SIGNAL_COLUMNS):
+        return False
+    complete = df[df[REQUIRED_SIGNAL_COLUMNS].notna().all(axis=1)]
+    if complete.empty:
         return False
     today = today or date.today()
     try:
-        last = date.fromisoformat(str(df["date"].max())[:10])
+        last = date.fromisoformat(str(complete["date"].max())[:10])
     except ValueError:
         return False
     return last >= today - timedelta(days=1)
@@ -155,11 +167,17 @@ def _series_dict_to_frame(series_by_metric: dict, fng_rows) -> pd.DataFrame:
     return wide[ONCHAIN_COLUMNS]
 
 
-def update_onchain_metrics(force: bool = False) -> Optional[pd.DataFrame]:
+def update_onchain_metrics(
+    force: bool = False, strict: bool = False
+) -> Optional[pd.DataFrame]:
     """Load, freshen (within free-tier limits), persist, and return the dataset.
 
     Network is skipped entirely when the cache already holds today's or
     yesterday's row, so repeated local runs cannot burn the request budget.
+
+    When ``strict`` is set, a fetch failure that would silently fall back to
+    stale cache raises instead, so ``--strict-update`` callers fail loudly
+    rather than publishing a page built on degraded data.
     """
     existing = load_onchain_metrics()
     if not force and is_fresh(existing):
@@ -176,13 +194,28 @@ def update_onchain_metrics(force: bool = False) -> Optional[pd.DataFrame]:
 
     series_by_metric = fetch_all_onchain_series(startday=startday)
     fng_rows = fetch_fear_and_greed_history()
+    if not any(series_by_metric.values()):
+        msg = "No bitcoin-data.com on-chain data fetched; using cached dataset"
+        if strict:
+            raise RuntimeError(f"{msg} (refusing under --strict-update)")
+        print(f"⚠ {msg}")
+        return existing
+
     new = _series_dict_to_frame(series_by_metric, fng_rows)
 
     if new.empty:
-        print("⚠ No new on-chain data fetched; using cached dataset")
+        msg = "No new on-chain data fetched; using cached dataset"
+        if strict:
+            raise RuntimeError(f"{msg} (refusing under --strict-update)")
+        print(f"⚠ {msg}")
         return existing
 
     merged = merge_onchain(existing, new)
     if not save_onchain_metrics(merged):
         print("⚠ Failed to persist on-chain metrics; next run will re-fetch")
+    if strict and not is_fresh(merged):
+        raise RuntimeError(
+            "on-chain data still stale after fetch (no complete row for today/"
+            "yesterday); refusing under --strict-update"
+        )
     return merged

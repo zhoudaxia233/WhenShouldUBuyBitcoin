@@ -12,7 +12,6 @@ from pathlib import Path
 from typing import Any
 
 import httpx
-import numpy as np
 import pandas as pd
 
 from whenshouldubuybitcoin.visualization import (
@@ -416,6 +415,12 @@ def build_report_payload(
                 bottom_signals_snapshot.get("realized_cap_change_30d_usd")
             ),
             "fear_greed": _safe_float(bottom_signals_snapshot.get("fear_greed")),
+            "caveat": (
+                "Composite uses full-sample statistics (look-ahead) over a "
+                "~4-year, two-cycle backtest and a supply-weighted loss proxy "
+                "that reads warmer than value-weighted dashboards. Treat as one "
+                "sentiment input, not investment advice."
+            ),
         }
         for sig in bottom_signals_snapshot.get("signals", []):
             key = sig.get("key")
@@ -607,11 +612,15 @@ def _deterministic_en_summary(section: dict[str, Any]) -> str:
                 f" MVRV is {mvrv:.2f} and about {loss:.1f}% of circulating supply"
                 " sits in unrealized loss."
             )
+        advice = str(m.get("advice") or "").strip()
+        caveat = str(m.get("caveat") or "").strip()
         return (
             f"The on-chain bottom composite scores {comp:.0f}/100, in the {zone} zone."
             f" Per-signal scores out of 20: holder cost {_s('s1')}, MVRV {_s('s2')},"
             f" supply-in-loss {_s('s3')}, capital flow {_s('s4')}, fear&greed {_s('s5')}."
             + tail
+            + (f" {advice}" if advice else "")
+            + (f" Caveat: {caveat}" if caveat else "")
         )
 
     return "No usable interpretation is available for this chart today."
@@ -808,6 +817,8 @@ def _deterministic_zh_summary(section: dict[str, Any]) -> str:
             f"五项信号得分（每项满分 20）：持有者成本 {_s('s1')}、MVRV {_s('s2')}、"
             f"亏损供应 {_s('s3')}、资金流向 {_s('s4')}、恐慌贪婪 {_s('s5')}。"
             + tail
+            + "（该综合分基于全样本统计含前视、~4年两周期回测、供给加权代理偏暖，"
+            "仅作情绪参考之一，并非买入信号或投资建议。）"
         )
 
     return "今日该图表暂无可用解读。"
@@ -974,6 +985,24 @@ def enrich_with_human_summary(payload: dict[str, Any], *, source_signature: str 
     overall_en = "Overall, moving averages remain bearish, liquidity is rising, funding stress is limited, macro risk is neutral, and futures positioning is in a deleveraging regime."
     zh_items = deterministic_zh_items
     overall_zh = "整体看，均线结构仍偏空，流动性继续上行，融资与信用压力不高，宏观风险处于中性，期货仓位处在去杠杆阶段。"
+
+    _bs_section = next(
+        (s for s in payload.get("sections", []) if s.get("chart") == "On-Chain Bottom Signals"),
+        None,
+    )
+    if _bs_section:
+        _comp = _safe_float(_bs_section.get("metrics", {}).get("composite_score"))
+        _zone = _bs_section.get("metrics", {}).get("zone")
+        if _comp is not None:
+            overall_en += (
+                f" The on-chain bottom composite reads {_comp:.0f}/100 ({_zone}), but on a"
+                " warm, two-cycle, look-ahead proxy that missed the 2024 cycle low —"
+                " treat it as sentiment, not a buy trigger."
+            )
+            overall_zh += (
+                f"链上底部综合评分 {_comp:.0f}/100（{_zone}），但该指标基于偏暖的两周期、"
+                "含前视且漏判过 2024 周期底的代理，仅作情绪参考，并非买入信号。"
+            )
 
     if llm_en and isinstance(llm_en.get("items"), list):
         llm_items = llm_en["items"]

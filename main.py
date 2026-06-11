@@ -126,6 +126,22 @@ def load_oi_cache(cache_path: Path) -> tuple[list | None, str | None]:
         return None, None
 
 
+def generate_bottom_signals(price_df, strict_update: bool = False):
+    """Update on-chain data, score S1-S5, render the page + info JSON.
+
+    Returns the snapshot dict. Raises on missing data, or (when strict_update)
+    on a degraded/stale fetch, so --strict-update fails loudly instead of
+    publishing a page built on stale data. Extracted from main() so the
+    strict-update wiring is unit-testable.
+    """
+    onchain_df = update_onchain_metrics(strict=strict_update)
+    if onchain_df is None or onchain_df.empty:
+        raise RuntimeError("no on-chain data available (fetch failed and no cache)")
+    scores_df = compute_bottom_signal_scores(onchain_df, price_df)
+    backtest = build_backtest(scores_df)
+    return generate_bottom_signals_page(scores_df, price_df, backtest)
+
+
 def main(strict_update: bool = False):
     """Main entry point for Step 5 MVP."""
     print("=" * 80)
@@ -431,12 +447,7 @@ def main(strict_update: bool = False):
         print("=" * 80)
         bottom_signals_snapshot = None
         try:
-            onchain_df = update_onchain_metrics()
-            if onchain_df is None or onchain_df.empty:
-                raise RuntimeError("no on-chain data available (fetch failed and no cache)")
-            scores_df = compute_bottom_signal_scores(onchain_df, df)
-            backtest = build_backtest(scores_df)
-            bottom_signals_snapshot = generate_bottom_signals_page(scores_df, df, backtest)
+            bottom_signals_snapshot = generate_bottom_signals(df, strict_update=strict_update)
             print(
                 f"✓ Bottom signals: composite {bottom_signals_snapshot['composite']:.0f} "
                 f"({bottom_signals_snapshot['zone']})"

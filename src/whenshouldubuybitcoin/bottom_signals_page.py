@@ -23,6 +23,24 @@ OUTPUT_HTML = Path("docs/charts/bottom_signals.html")
 OUTPUT_INFO = Path("docs/charts/bottom_signals_info.json")
 
 
+def _json_for_script(obj) -> str:
+    """json.dumps escaped so the payload cannot break out of a <script> block.
+
+    Escaping ``<``/``>``/``&`` neutralises a ``</script>`` injection, and the
+    U+2028/U+2029 line separators are escaped because they are illegal raw in JS
+    string literals. For ordinary data (dates, numbers) the output is identical
+    to plain json.dumps, so the rendered page is unchanged.
+    """
+    return (
+        json.dumps(obj)
+        .replace("<", "\\u003c")
+        .replace(">", "\\u003e")
+        .replace("&", "\\u0026")
+        .replace(" ", "\\u2028")
+        .replace(" ", "\\u2029")
+    )
+
+
 def _status_for_score(score) -> tuple[str, str]:
     """Uniform per-signal status label/color from the 0-20 score."""
     if score is None or pd.isna(score):
@@ -328,20 +346,20 @@ def generate_bottom_signals_page(
         "durations": list(DURATIONS),
         "matrix": backtest["matrix"],
         "cycle_bottoms_label": " and ".join(b[0][:7] for b in CYCLE_BOTTOMS),
-        "dates_json": json.dumps(scores_df["date"].tolist()),
-        "prices_json": json.dumps(
+        "dates_json": _json_for_script(scores_df["date"].tolist()),
+        "prices_json": _json_for_script(
             [round(float(v), 2) for v in scores_df["close_price"]]
         ),
-        "totals_json": json.dumps(
+        "totals_json": _json_for_script(
             [
                 None if pd.isna(v) else round(float(v), 2)
                 for v in scores_df["composite"]
             ]
         ),
-        "cycle_bots_json": json.dumps(
+        "cycle_bots_json": _json_for_script(
             [{"date": d, "price": p} for d, p in CYCLE_BOTTOMS]
         ),
-        "trig_json": json.dumps(backtest["trig"]),
+        "trig_json": _json_for_script(backtest["trig"]),
     }
 
     env = Environment(loader=FileSystemLoader(TEMPLATE_DIR), autoescape=True)
