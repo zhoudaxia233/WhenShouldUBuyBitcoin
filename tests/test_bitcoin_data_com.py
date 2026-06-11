@@ -90,7 +90,9 @@ def test_fetch_all_spaces_requests_and_skips_failures(monkeypatch):
     sleeps = []
     monkeypatch.setattr(bdc.time, "sleep", lambda s: sleeps.append(s))
 
-    def fake_fetch(metric_key, startday=None):
+    def fake_fetch(metric_key, startday=None, budget=None):
+        if budget is not None:
+            budget.consume()  # emulate one spaced+counted request
         if metric_key == "mvrv":
             return None  # simulated failure -> omitted from result
         return [("2026-06-08", 1.0)]
@@ -98,5 +100,71 @@ def test_fetch_all_spaces_requests_and_skips_failures(monkeypatch):
     monkeypatch.setattr(bdc, "fetch_series", fake_fetch)
     out = bdc.fetch_all_onchain_series(startday="2026-06-01")
     assert set(out) == set(bdc.ONCHAIN_ENDPOINTS) - {"mvrv"}
-    # one spacing sleep between each consecutive pair of calls
+    # spacing is applied once before every request after the first, via the
+    # single budget shared across the run
     assert sleeps == [bdc.REQUEST_SPACING_SECONDS] * (len(bdc.ONCHAIN_ENDPOINTS) - 1)
+
+
+def test_request_budget_caps_and_spaces(monkeypatch):
+    sleeps = []
+    monkeypatch.setattr(bdc.time, "sleep", lambda s: sleeps.append(s))
+    budget = bdc.RequestBudget(max_requests=3, spacing=7.0)
+    issued = 0
+    while budget.can_request():
+        budget.consume()
+        issued += 1
+    assert issued == 3
+    assert not budget.can_request()
+    # no sleep before the very first request; spacing before each of the rest
+    assert sleeps == [7.0, 7.0]
+
+
+def test_fetch_series_does_not_retry_client_error(monkeypatch):
+    calls = []
+
+    def fake_get(url, **kwargs):
+        calls.append(url)
+        resp = MagicMock()
+        resp.status_code = 404
+        err = requests.exceptions.HTTPError("404 Not Found")
+        err.response = resp
+        resp.raise_for_status.side_effect = err
+        return resp
+
+    monkeypatch.setattr(bdc.requests, "get", fake_get)
+    monkeypatch.setattr(bdc.time, "sleep", lambda s: None)
+    assert bdc.fetch_series("mvrv", max_retries=3) is None
+    assert len(calls) == 1  # a 4xx (except 429) is not retried
+
+
+def test_fetch_series_retries_on_429(monkeypatch):
+    calls = []
+
+    def fake_get(url, **kwargs):
+        calls.append(url)
+        resp = MagicMock()
+        resp.status_code = 429
+        err = requests.exceptions.HTTPError("429 Too Many Requests")
+        err.response = resp
+        resp.raise_for_status.side_effect = err
+        return resp
+
+    monkeypatch.setattr(bdc.requests, "get", fake_get)
+    monkeypatch.setattr(bdc.time, "sleep", lambda s: None)
+    assert bdc.fetch_series("mvrv", max_retries=2) is None
+    assert len(calls) == 2  # rate-limit IS retried (within budget)
+
+
+def test_fetch_all_respects_per_run_budget(monkeypatch):
+    monkeypatch.setattr(bdc.time, "sleep", lambda s: None)
+    calls = []
+
+    def fake_get(url, **kwargs):
+        calls.append(url)
+        raise requests.exceptions.ConnectionError("down")
+
+    monkeypatch.setattr(bdc.requests, "get", fake_get)
+    # every endpoint fails and would retry, but the shared budget caps the
+    # total number of HTTP requests issued in the run
+    bdc.fetch_all_onchain_series()
+    assert len(calls) <= bdc.MAX_REQUESTS_PER_RUN

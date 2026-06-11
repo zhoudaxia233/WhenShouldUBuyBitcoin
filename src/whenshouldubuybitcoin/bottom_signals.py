@@ -28,8 +28,11 @@ ZONES = [
 ZONE_ADVICE = {
     "Watch": "Not cheap yet — keep watching.",
     "Mildly Undervalued": "Getting interesting — consider scaling in slowly.",
-    "Undervalued": "Undervalued — historically a productive DCA zone.",
-    "Extremely Undervalued": "Extremely undervalued — historically rare readings.",
+    "Undervalued": "Historically a productive DCA zone — accumulate gradually, not all at once.",
+    "Extremely Undervalued": (
+        "Rare reading on a two-cycle sample — if accumulating, scale in "
+        "gradually; not a signal to go all-in."
+    ),
 }
 
 # (date, daily-close price) of cycle bottoms inside the free-tier data window.
@@ -179,14 +182,51 @@ def compute_bottom_signal_scores(
     return df
 
 
+def _build_segment(
+    df: pd.DataFrame, dates: pd.Series, start: int, end: int, min_duration: int
+) -> Optional[dict]:
+    """Assemble the segment dict for rows [start, end]; None if too short.
+
+    Duration is measured in calendar days (end - start + 1) so a run broken by
+    a missing date can never be counted as longer than it really is.
+    """
+    days = int((dates.iloc[end] - dates.iloc[start]).days) + 1
+    if days < min_duration:
+        return None
+    seg = df.iloc[start : end + 1]
+    end_date = dates.iloc[end]
+    seg_dict = {
+        "startDate": str(df["date"].iloc[start]),
+        "endDate": str(df["date"].iloc[end]),
+        "days": days,
+        "priceStart": float(seg["close_price"].iloc[0]),
+        "priceEnd": float(seg["close_price"].iloc[-1]),
+        "minPrice": float(seg["close_price"].min()),
+        "maxPrice": float(seg["close_price"].max()),
+        "avgPrice": float(seg["close_price"].mean()),
+    }
+    for horizon in (90, 180):
+        mask = (dates > end_date) & (dates <= end_date + pd.Timedelta(days=horizon))
+        window = df.loc[mask, "close_price"]
+        seg_dict[f"after{horizon}"] = (
+            {"min": float(window.min()), "max": float(window.max())}
+            if not window.empty
+            else None
+        )
+    return seg_dict
+
+
 def extract_trigger_segments(
     scores_df: pd.DataFrame, threshold: float, min_duration: int
 ) -> list[dict]:
-    """Consecutive-row runs with composite >= threshold, kept when long enough.
+    """Calendar-consecutive runs with composite >= threshold, kept when long enough.
 
-    scores_df must be date-sorted with columns date, close_price, composite.
-    Null composites never qualify. Forward 90/180-day windows are relative to
-    the segment end date; None when no data exists beyond the segment.
+    scores_df must be date-sorted with columns date, close_price, composite. A
+    run is broken both by a sub-threshold row and by a gap in the daily series
+    (so "3 days straight" means three adjacent calendar days, not three rows
+    that happen to straddle a hole). Null composites never qualify. Forward
+    90/180-day windows are relative to the segment end date; None when no data
+    exists beyond the segment.
     """
     df = scores_df.reset_index(drop=True)
     composite = pd.to_numeric(df["composite"], errors="coerce")
@@ -195,37 +235,20 @@ def extract_trigger_segments(
 
     segments: list[dict] = []
     start = None
-    for i in range(len(df) + 1):
-        active = i < len(df) and bool(qualifying.iloc[i])
+    for i in range(len(df)):
+        active = bool(qualifying.iloc[i])
+        gap = start is not None and (dates.iloc[i] - dates.iloc[i - 1]).days != 1
+        if start is not None and (not active or gap):
+            seg = _build_segment(df, dates, start, i - 1, min_duration)
+            if seg:
+                segments.append(seg)
+            start = None
         if active and start is None:
             start = i
-        elif not active and start is not None:
-            end = i - 1
-            if end - start + 1 >= min_duration:
-                seg = df.iloc[start : end + 1]
-                end_date = dates.iloc[end]
-                seg_dict = {
-                    "startDate": str(df["date"].iloc[start]),
-                    "endDate": str(df["date"].iloc[end]),
-                    "days": int(end - start + 1),
-                    "priceStart": float(seg["close_price"].iloc[0]),
-                    "priceEnd": float(seg["close_price"].iloc[-1]),
-                    "minPrice": float(seg["close_price"].min()),
-                    "maxPrice": float(seg["close_price"].max()),
-                    "avgPrice": float(seg["close_price"].mean()),
-                }
-                for horizon in (90, 180):
-                    mask = (dates > end_date) & (
-                        dates <= end_date + pd.Timedelta(days=horizon)
-                    )
-                    window = df.loc[mask, "close_price"]
-                    seg_dict[f"after{horizon}"] = (
-                        {"min": float(window.min()), "max": float(window.max())}
-                        if not window.empty
-                        else None
-                    )
-                segments.append(seg_dict)
-            start = None
+    if start is not None:
+        seg = _build_segment(df, dates, start, len(df) - 1, min_duration)
+        if seg:
+            segments.append(seg)
     return segments
 
 

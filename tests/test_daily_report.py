@@ -266,6 +266,10 @@ def test_report_includes_bottom_signals_section():
     assert metrics["composite_score"] == 55.0
     assert metrics["zone"] == "Watch"
     assert metrics["s5"] == 20.0
+    # the section carries an honest caveat (look-ahead / warmer proxy / not advice)
+    assert "caveat" in metrics
+    caveat = metrics["caveat"].lower()
+    assert "look-ahead" in caveat and "not investment advice" in caveat
 
 
 def test_bottom_signals_deterministic_summaries():
@@ -289,3 +293,52 @@ def test_bottom_signals_deterministic_summaries():
     assert "55" in en and "Watch" in en
     zh = _deterministic_zh_summary(section)
     assert "55" in zh and "观望" in zh
+
+
+def test_bottom_signals_section_summary_bakes_in_advice_and_caveat():
+    # the advice + caveat must land in the rendered summary text (not just in
+    # metrics fields the frontend never shows)
+    from whenshouldubuybitcoin.daily_report import (
+        _deterministic_en_summary,
+        _deterministic_zh_summary,
+    )
+
+    section = {
+        "chart": "On-Chain Bottom Signals",
+        "metrics": {
+            "composite_score": 81.0,
+            "zone": "Extremely Undervalued",
+            "s1": 8, "s2": 17, "s3": 18, "s4": 19, "s5": 20,
+            "mvrv": 1.16,
+            "supply_loss_pct": 51.1,
+            "advice": (
+                "Rare reading on a two-cycle sample — if accumulating, scale in "
+                "gradually; not a signal to go all-in."
+            ),
+            "caveat": (
+                "Composite uses full-sample statistics (look-ahead) over a "
+                "two-cycle backtest. Treat as one sentiment input, not "
+                "investment advice."
+            ),
+        },
+    }
+    en = _deterministic_en_summary(section)
+    assert "not a signal to go all-in" in en
+    assert "Caveat:" in en and "look-ahead" in en.lower()
+    zh = _deterministic_zh_summary(section)
+    assert "情绪参考" in zh and "并非买入信号" in zh
+
+
+def test_overall_summary_mentions_bottom_signal_with_caveat(monkeypatch):
+    monkeypatch.setenv("REPORT_SUMMARY_DISABLE_LLM", "1")
+    monkeypatch.delenv("REPORT_SUMMARY_API_KEY", raising=False)
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+    payload = build_report_payload(
+        _minimal_btc_df(), bottom_signals_snapshot=_bottom_signals_snapshot()
+    )
+    enriched = enrich_with_human_summary(payload)
+    overall_en = enriched["human_summary"]["localized"]["en"]["overall_summary"].lower()
+    assert "on-chain bottom composite" in overall_en
+    assert "sentiment" in overall_en and "not a buy trigger" in overall_en
+    overall_zh = enriched["human_summary"]["localized"]["zh"]["overall_summary"]
+    assert "链上底部" in overall_zh and "并非买入信号" in overall_zh

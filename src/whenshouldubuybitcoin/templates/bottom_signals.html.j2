@@ -16,10 +16,17 @@
          font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','Segoe UI',Roboto,sans-serif;
          line-height:1.5; }
   .wrap { max-width:1280px; margin:0 auto; }
-  .pagetitle { font-size:13px; color:var(--muted); margin-bottom:16px; }
-  .pagetitle b { color:var(--text); font-size:15px; }
-  .pagetitle a { color:#0066cc; text-decoration:none; }
-  .pagetitle a:hover { text-decoration:underline; }
+  .pagebar { display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:16px; }
+  .back-link { display:inline-flex; align-items:center; gap:6px; padding:7px 11px;
+    background:var(--card); color:var(--text); border:1px solid var(--border);
+    border-radius:8px; text-decoration:none; font-size:13px; font-weight:600;
+    box-shadow:0 1px 3px rgba(0,0,0,0.04); transition:all .18s ease; }
+  .back-link:hover { color:#0066cc; border-color:#bfdbfe; box-shadow:0 3px 10px rgba(0,0,0,0.07);
+    transform:translateY(-1px); }
+  .page-meta { display:flex; align-items:center; gap:8px; flex-wrap:wrap;
+    font-size:13px; color:var(--muted); }
+  .page-meta b { color:var(--text); font-size:15px; }
+  .page-meta .dot { color:#c7c7cc; }
 
   .hero { display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-bottom:24px; }
   .hero-price, .hero-gauge { background:var(--card); border:1px solid var(--border);
@@ -98,6 +105,8 @@
   @media(max-width:900px){ .hero{grid-template-columns:1fr;} .grid{grid-template-columns:repeat(2,1fr);} }
   @media(max-width:600px){
     body{ padding:14px; }
+    .page-meta{ flex-direction:column; align-items:flex-start; gap:2px; }
+    .page-meta .dot{ display:none; }
     .hero{ gap:14px; margin-bottom:18px; }
     .hero-price .big{ font-size:38px; }
     .grid{ grid-template-columns:1fr; gap:12px; }
@@ -109,9 +118,13 @@
 <body>
 <div class="wrap">
 
-  <div class="pagetitle">
-    <a href="../index.html">← Back to dashboard</a> &nbsp;·&nbsp;
-    <b>⛓️ On-Chain Bottom Signals</b> &nbsp;·&nbsp; data through {{ data_date }}
+  <div class="pagebar">
+    <a class="back-link" href="../index.html"><span aria-hidden="true">←</span><span>Dashboard</span></a>
+    <div class="page-meta">
+      <b>On-Chain Bottom Signals</b>
+      <span class="dot">·</span>
+      <span>complete score through {{ data_date }}</span>
+    </div>
   </div>
 
   <div class="hero">
@@ -201,7 +214,7 @@
 
   <div class="chart-box">
     <h3>🎯 How accurate was it: accuracy matrix</h3>
-    <div class="sub">Cell = number of historical trigger segments · share whose segment low landed within 30% above the nearest cycle bottom</div>
+    <div class="sub">Cell = number of historical trigger segments · share whose segment low landed within 30% above the nearest cycle bottom. <b>Illustrative only</b> — {{ cycle_bottoms_label }} bottoms, scored with full-sample look-ahead; not a forward-looking win rate. For scale, a random day already sits within 30% of the nearest bottom ~39% of the time on this data, so read individual cells skeptically.</div>
     <div class="table-scroll">
       <table>
         <thead><tr><th>Threshold</th><th class="num">same day</th><th class="num">3 days straight</th><th class="num">7 days straight</th></tr></thead>
@@ -225,14 +238,14 @@
       <b>S2</b> MVRV deviation from its historical mean (in sigma),
       <b>S3</b> share of circulating supply in unrealized loss (sigma deviation),
       <b>S4</b> 30-day realized-cap net change (historical percentile),
-      <b>S5</b> the Fear &amp; Greed Index. Zones: &lt;60 Watch, 60-70 Mildly Undervalued, 70-80 Undervalued, ≥80 Extremely Undervalued.</p>
-      <p><b>Honest caveats:</b> on-chain history comes from a free API limited to the most recent ~4 years, so the backtest covers the {{ cycle_bottoms_label }} bottoms only — far fewer cycles than ideal. Sigma/percentile statistics use the <b>full sample</b> (the same statistics score early and recent dates), which introduces look-ahead bias into the shaded backtest. S3 uses supply-weighted loss share rather than the value-weighted "relative unrealized loss" used by some paid dashboards. None of this is investment advice.</p>
+      <b>S5</b> the Fear &amp; Greed Index. Zones: &lt;60 Watch, 60-70 Mildly Undervalued, 70-80 Undervalued, ≥80 Extremely Undervalued. <span style="font-style:italic;">(σ = how far a value sits from its historical average in standard deviations; "Nth percentile" = lower than that share of history — both just measure how extreme today is.)</span></p>
+      <p><b>Honest caveats:</b> on-chain history comes from a free API limited to the most recent ~4 years, so the backtest spans only two cycle lows ({{ cycle_bottoms_label }}) — far fewer cycles than ideal. On that sample the composite flagged the 2022 low strongly but largely <b>missed the 2024 cycle low</b> (which scored in the "Watch" zone and never crossed 60), so the accuracy cells above are illustrative, not proof it can time bottoms. Sigma/percentile statistics use the <b>full sample</b> (the same statistics score early and recent dates), which introduces look-ahead bias into the shaded backtest — in practice it marks roughly 4-5× more historical days as ≥80 "Extremely Undervalued" than a same-day expanding-window calculation would. Signals S2-S4 are <b>highly correlated</b> (~0.9 on this sample): they largely restate the same "price fell hard" fact, so a high composite is closer to one factor counted three times than to five independent signals confirming each other. S3 uses supply-weighted loss share rather than the value-weighted "relative unrealized loss" used by some paid dashboards; because S3 and S4 lean on these free-tier proxies, the composite tends to read <b>warmer (higher)</b> than value-weighted dashboards, so treat the zone as a sentiment gauge rather than a buy signal. None of this is investment advice.</p>
       <p>Data sources: <a href="https://bitcoin-data.com" style="color:#0066cc;">bitcoin-data.com (BGeometrics)</a> on-chain series · <a href="https://alternative.me/crypto/fear-and-greed-index/" style="color:#0066cc;">alternative.me</a> Fear &amp; Greed. </p>
     </div>
   </div>
 
   <div class="disclaimer">
-    ⚠️ Personal research, not investment advice. DYOR.<br>
+    ⚠️ Personal research, not investment advice. DYOR. These on-chain signals are one sentiment input, not a buy trigger.<br>
     Part of <a href="../index.html">When Should You Buy Bitcoin</a>.
   </div>
 </div>

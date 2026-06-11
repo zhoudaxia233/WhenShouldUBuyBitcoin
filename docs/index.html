@@ -140,6 +140,7 @@
         .bsc-main { flex:1; min-width:0; }
         .bsc-title { font-weight:600; font-size:1.05em; }
         .bsc-meta { color:#86868b; font-size:0.85em; margin-top:2px; }
+        .bsc-note { color:#86868b; font-size:0.8em; margin-top:6px; line-height:1.4; max-width:640px; }
         .bsc-score-wrap { display:flex; align-items:baseline; gap:6px; white-space:nowrap; }
         .bsc-score { font-size:1.9em; font-weight:700; }
         .bsc-score-max { color:#86868b; font-size:0.9em; }
@@ -1563,6 +1564,7 @@
                 <div class="bsc-main">
                     <div class="bsc-title">⛓️ On-Chain Bottom Signals</div>
                     <div class="bsc-meta" id="bscMeta">—</div>
+                    <div class="bsc-note" id="bscNote"></div>
                 </div>
                 <div class="bsc-score-wrap">
                     <span class="bsc-score" id="bscScore">–</span>
@@ -3081,6 +3083,11 @@
                     );
                     document.getElementById('bscMeta').textContent =
                         (data.date ? 'Data ' + data.date + ' · ' : '') + parts.join(' · ');
+                    const noteEl = document.getElementById('bscNote');
+                    if (noteEl) {
+                        const advice = data.advice ? data.advice + ' ' : '';
+                        noteEl.textContent = advice + 'Sentiment gauge, not a buy signal.';
+                    }
                     card.style.display = 'flex';
                 })
                 .catch(() => {});

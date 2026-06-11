@@ -150,6 +150,19 @@ def test_compute_scores_composite_null_when_any_signal_missing():
     assert df["composite"].isna().all()
 
 
+def test_zone_advice_top_tier_carries_risk_framing():
+    # every zone has advice, and the most aggressive tier must temper, not hype
+    assert set(bs.ZONE_ADVICE) == {z[2] for z in bs.ZONES}
+    top = bs.ZONE_ADVICE["Extremely Undervalued"]
+    # require the specific risk-tempering clauses, not just any keyword (so a
+    # hype line that merely contains "gradually"/"all-in" cannot pass)
+    assert "not a signal to go all-in" in top
+    assert "scale in gradually" in top
+    assert "two-cycle sample" in top
+    # the old hype-only wording is gone
+    assert top != "Extremely undervalued — historically rare readings."
+
+
 def test_zone_for():
     assert bs.zone_for(0)[0] == "Watch"
     assert bs.zone_for(59.9)[0] == "Watch"
@@ -218,6 +231,56 @@ def test_extract_trigger_segments_handles_trailing_run():
     assert len(segs) == 1
     assert segs[0]["endDate"] == "2024-01-05"
     assert segs[0]["after90"] is None  # no data beyond the segment end
+
+
+def test_extract_trigger_segments_breaks_on_calendar_gap():
+    # four qualifying rows, but a 10-day hole splits them into two runs
+    df = pd.DataFrame(
+        {
+            "date": ["2024-01-01", "2024-01-02", "2024-01-12", "2024-01-13"],
+            "close_price": [100.0, 101.0, 102.0, 103.0],
+            "composite": [90.0, 90.0, 90.0, 90.0],
+        }
+    )
+    segs = bs.extract_trigger_segments(df, 80, 1)
+    assert len(segs) == 2
+    assert (segs[0]["startDate"], segs[0]["endDate"]) == ("2024-01-01", "2024-01-02")
+    assert segs[0]["days"] == 2
+    assert segs[1]["startDate"] == "2024-01-12"
+    # "3 days straight" rejects both 2-day runs despite 4 qualifying rows total
+    assert bs.extract_trigger_segments(df, 80, 3) == []
+
+
+def test_extract_trigger_segments_forward_window_spans_gap():
+    # forward 90/180-day windows are calendar-relative to the segment end, so a
+    # low that lands after a data gap (but within 90 days) must still be captured
+    df = pd.DataFrame(
+        {
+            "date": ["2024-01-01", "2024-01-02", "2024-02-20", "2024-03-15"],
+            "close_price": [100.0, 100.0, 60.0, 200.0],
+            "composite": [90.0, 90.0, 10.0, 10.0],
+        }
+    )
+    segs = bs.extract_trigger_segments(df, 80, 1)
+    assert len(segs) == 1  # the qualifying run ends 2024-01-02
+    assert segs[0]["endDate"] == "2024-01-02"
+    # 2024-02-20 (49d later) and 2024-03-15 (73d) both fall inside the 90d window
+    assert segs[0]["after90"]["min"] == pytest.approx(60.0)
+    assert segs[0]["after90"]["max"] == pytest.approx(200.0)
+
+
+def test_extract_trigger_segments_threshold_is_inclusive():
+    # composite exactly equal to the threshold must trigger (>=, not >)
+    df = pd.DataFrame(
+        {
+            "date": pd.date_range("2024-01-01", periods=3).strftime("%Y-%m-%d"),
+            "close_price": [1.0, 2.0, 3.0],
+            "composite": [59.9, 60.0, 60.0],
+        }
+    )
+    segs = bs.extract_trigger_segments(df, 60, 1)
+    assert len(segs) == 1
+    assert segs[0]["startDate"] == "2024-01-02" and segs[0]["days"] == 2
 
 
 def test_extract_trigger_segments_null_composite_never_qualifies():

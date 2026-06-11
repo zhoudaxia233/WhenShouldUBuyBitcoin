@@ -10,6 +10,49 @@ from whenshouldubuybitcoin import bottom_signals as bs
 from whenshouldubuybitcoin import bottom_signals_page as page
 
 
+def test_json_for_script_escapes_script_breakout():
+    # a malicious string must not be able to close the <script> block
+    out = page._json_for_script(["a</script><script>alert(1)</script>b", "x>y", "p&q"])
+    assert "<" not in out and ">" not in out and "&" not in out
+    assert "\\u003c" in out and "\\u003e" in out and "\\u0026" in out
+    # ordinary date/number payloads are unchanged vs plain json.dumps
+    import json as _json
+    plain = ["2024-01-01", 1.5, None]
+    assert page._json_for_script(plain) == _json.dumps(plain)
+
+
+def test_json_for_script_escapes_line_separators():
+    # U+2028 / U+2029 are illegal raw in JS string literals; they must be escaped
+    out = page._json_for_script(["a b c"])
+    assert " " not in out and " " not in out
+    assert "\\u2028" in out and "\\u2029" in out
+
+
+def test_generated_script_block_has_no_unescaped_breakout(tmp_path):
+    # even if a date somehow contained markup, the embedded JSON stays inert
+    scores_df, price_df, backtest = _synthetic_inputs()
+    scores_df = scores_df.copy()
+    scores_df.loc[scores_df.index[0], "date"] = "</script><x>"
+    snapshot = page.generate_bottom_signals_page(
+        scores_df, price_df, backtest,
+        output_path=tmp_path / "p.html", info_path=tmp_path / "i.json",
+    )
+    html = (tmp_path / "p.html").read_text()
+    script = html.split("<script>")[-1]
+    assert "</script><x>" not in script  # the injected markup is escaped
+    assert snapshot["composite"] >= 0
+
+
+def test_homepage_card_renders_advice_and_caveat():
+    # the homepage summary card is the real "first glance"; it must surface the
+    # advice + a sentiment-gauge caveat, not just a bare "81 / Extremely Undervalued"
+    html = Path(__file__).resolve().parent.parent / "docs" / "index.html"
+    text = html.read_text()
+    assert 'id="bscNote"' in text  # the note element exists
+    assert "data.advice" in text  # JS renders the advice line from info JSON
+    assert "Sentiment gauge, not a buy signal" in text
+
+
 def test_status_for_score_bands():
     assert page._status_for_score(None) == ("No data", "#71717a")
     assert page._status_for_score(17.0)[0] == "Bottom zone"
@@ -86,6 +129,21 @@ def test_generate_page_writes_html_and_info(tmp_path):
 
     html = html_path.read_text()
     assert "On-Chain Bottom Signals" in html
+    # the not-investment-advice disclaimer must be present (design requirement)
+    assert "Personal research, not investment advice. DYOR." in html
+    # honest disclosures: warmer-than-reference bias + illustrative backtest
+    assert "warmer" in html
+    assert "Illustrative only" in html
+    # the page must own its two biggest known flaws, not just generic caveats
+    assert "missed the 2024 cycle low" in html
+    assert "highly correlated" in html
+    # quantified honesty + jargon gloss
+    assert "39% of the time" in html  # random-baseline anchor for the matrix
+    assert "expanding-window calculation" in html  # look-ahead magnitude
+    assert "how far a value sits from its historical average" in html  # sigma gloss
+    assert 'class="back-link"' in html
+    assert "complete score through" in html
+    assert "data through" not in html
     assert "const TRIG =" in html
     assert "const cycleBots =" in html
     assert page.PLOTLY_CDN in html
