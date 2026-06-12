@@ -104,7 +104,7 @@ Expected: six `✓` lines each reporting ~1400+ rows (4-year window) with their 
 
 - [ ] **Step 1.3: Sanity-check values against the reference site**
 
-Inspect the last rows: `sth_realized_price` ≈ $74-75k, `realized_price` ≈ $53-54k, `lth_realized_price` ≈ $48-49k, `mvrv` ≈ 1.1-1.2 (these matched a third-party dashboard on 2026-06-08). Note whether `supply_loss_pct` arrives as a fraction (≈0.2) or percent (≈20), and whether `realized_cap_change_30d_usd` is in USD (≈ -2e10) or billions (≈ -20) — Task 4's normalizers depend on knowing both representations exist.
+Inspect the last rows: `sth_realized_price` ≈ $74-75k, `realized_price` ≈ $53-54k, `lth_realized_price` ≈ $48-49k, `mvrv` ≈ 1.1-1.2 (these matched the reference dashboard on 2026-06-08). Note whether `supply_loss_pct` arrives as a fraction (≈0.2) or percent (≈20), and whether `realized_cap_change_30d_usd` is in USD (≈ -2e10) or billions (≈ -20) — Task 4's normalizers depend on knowing both representations exist.
 
 - [ ] **Step 1.4: Commit**
 
@@ -1936,7 +1936,7 @@ Create `src/whenshouldubuybitcoin/templates/bottom_signals.html.j2` exactly as f
       <b>S4</b> 30-day realized-cap net change (historical percentile),
       <b>S5</b> the Fear &amp; Greed Index. Zones: &lt;60 Watch, 60-70 Mildly Undervalued, 70-80 Undervalued, ≥80 Extremely Undervalued.</p>
       <p><b>Honest caveats:</b> on-chain history comes from a free API limited to the most recent ~4 years, so the backtest covers the {{ cycle_bottoms_label }} bottoms only — far fewer cycles than ideal. Sigma/percentile statistics use the <b>full sample</b> (the same statistics score early and recent dates), which introduces look-ahead bias into the shaded backtest. S3 uses supply-weighted loss share rather than the value-weighted "relative unrealized loss" used by some paid dashboards. None of this is investment advice.</p>
-      <p>Data sources: <a href="https://bitcoin-data.com" style="color:#0066cc;">bitcoin-data.com (BGeometrics)</a> on-chain series · <a href="https://alternative.me/crypto/fear-and-greed-index/" style="color:#0066cc;">alternative.me</a> Fear &amp; Greed. </p>
+      <p>Data sources: <a href="https://bitcoin-data.com" style="color:#0066cc;">bitcoin-data.com (BGeometrics)</a> on-chain series · <a href="https://alternative.me/crypto/fear-and-greed-index/" style="color:#0066cc;">alternative.me</a> Fear &amp; Greed.</p>
     </div>
   </div>
 
@@ -2644,7 +2644,7 @@ Expected: all PASS (new and pre-existing)
 Run: `poetry run python main.py`
 Expected:
 - "GENERATING ON-CHAIN BOTTOM SIGNALS" prints "✓ On-chain metrics are fresh; skipping API calls" (Task 9 seeded today's window — zero requests spent) or fetches at most 6 calls;
-- `✓ Bottom signals: composite NN (Zone)` — **acceptance check:** composite ≈ 45-65 with S5 = 20, S2 ≈ 12-16, S1 ≤ 6 (same ordering as a third-party dashboard showed on 2026-06-08: S1 4.2, S2 14.2, S3 7.1, S4 10, S5 20, total 55);
+- `✓ Bottom signals: composite NN (Zone)` — **acceptance check:** composite ≈ 45-65 with S5 = 20, S2 ≈ 12-16, S1 ≤ 6 (same ordering as the reference dashboard showed on 2026-06-08: S1 4.2, S2 14.2, S3 7.1, S4 10, S5 20, total 55);
 - `docs/charts/bottom_signals.html` and `docs/charts/bottom_signals_info.json` exist;
 - `daily_report.json` contains an "On-Chain Bottom Signals" section;
 - component status shows `✓ bottom_signals`.
@@ -2768,7 +2768,7 @@ Expected: freshness guard skips API calls; all component statuses `✓`; regener
 
 - [ ] **Step 13.3: Acceptance summary against the reference site**
 
-Record in the final commit/PR description: today's composite, per-signal scores, and zone, side-by-side with a third-party dashboard's same-day values (expected: same zone and same per-signal ordering; exact numbers differ by design for S3/S4 — substituted metric and percentile scoring).
+Record in the final commit/PR description: today's composite, per-signal scores, and zone, side-by-side with the reference dashboard's same-day values (expected: same zone and same per-signal ordering; exact numbers differ by design for S3/S4 — substituted metric and percentile scoring).
 
 - [ ] **Step 13.4: Pre-merge housekeeping per AGENTS.md**
 
