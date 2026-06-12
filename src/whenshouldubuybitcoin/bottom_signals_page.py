@@ -267,6 +267,8 @@ def _build_cards(latest: pd.Series, scores_df: pd.DataFrame) -> list[dict]:
 
         cards.append(
             {
+                "key": key,
+                "short": SIGNAL_SHORT_LABELS[key],
                 "title": title,
                 "subtitle": subtitle,
                 "status": status,
