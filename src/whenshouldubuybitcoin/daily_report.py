@@ -12,7 +12,6 @@ from pathlib import Path
 from typing import Any
 
 import httpx
-import numpy as np
 import pandas as pd
 
 from whenshouldubuybitcoin.visualization import (
@@ -162,6 +161,7 @@ def build_report_payload(
     yield_df: pd.DataFrame | None = None,
     oi_df: pd.DataFrame | None = None,
     free_signal_snapshot: dict[str, Any] | None = None,
+    bottom_signals_snapshot: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Build structured metrics for daily report sections."""
 
@@ -404,6 +404,32 @@ def build_report_payload(
                 }
             )
 
+    if bottom_signals_snapshot:
+        bottom_data_date = bottom_signals_snapshot.get("date")
+        metrics: dict[str, Any] = {
+            "data_date": str(bottom_data_date)[:10] if bottom_data_date else None,
+            "composite_score": _safe_float(bottom_signals_snapshot.get("composite")),
+            "zone": bottom_signals_snapshot.get("zone"),
+            "advice": bottom_signals_snapshot.get("advice"),
+            "mvrv": _safe_float(bottom_signals_snapshot.get("mvrv")),
+            "supply_loss_pct": _safe_float(bottom_signals_snapshot.get("supply_loss_pct")),
+            "realized_cap_change_30d_usd": _safe_float(
+                bottom_signals_snapshot.get("realized_cap_change_30d_usd")
+            ),
+            "fear_greed": _safe_float(bottom_signals_snapshot.get("fear_greed")),
+            "caveat": (
+                "Composite uses full-sample statistics (look-ahead) over a "
+                "~4-year, two-cycle backtest and a supply-weighted loss proxy "
+                "that reads warmer than value-weighted dashboards. Treat as one "
+                "sentiment input, not investment advice."
+            ),
+        }
+        for sig in bottom_signals_snapshot.get("signals", []):
+            key = sig.get("key")
+            if key:
+                metrics[key] = _safe_float(sig.get("score"))
+        payload["sections"].append({"chart": "On-Chain Bottom Signals", "metrics": metrics})
+
     return payload
 
 
@@ -568,6 +594,37 @@ def _deterministic_en_summary(section: dict[str, Any]) -> str:
             f"Fear & Greed is {fng:.0f} ({m.get('fear_greed_classification') or 'N/A'}), with a panic score proxy of {panic_score:.0f}/100 (higher = more fear)."
             f" Hashrate 30d change is {_pct(hashrate_chg)} and miner stress proxy is {miner_proxy}."
             " These metrics are used to read crowd sentiment and miner pressure."
+        )
+
+    if chart == "On-Chain Bottom Signals":
+        comp = _safe_float(m.get("composite_score"))
+        if comp is None:
+            return "On-chain bottom-signal data is unavailable in the current daily snapshot."
+        zone = str(m.get("zone") or "Watch")
+        data_date = str(m.get("data_date") or "").strip()
+        date_phrase = f" through {data_date}" if data_date else ""
+
+        def _s(key: str) -> str:
+            v = _safe_float(m.get(key))
+            return f"{v:.0f}" if v is not None else "N/A"
+
+        mvrv = _safe_float(m.get("mvrv"))
+        loss = _safe_float(m.get("supply_loss_pct"))
+        tail = ""
+        if mvrv is not None and loss is not None:
+            tail = (
+                f" MVRV is {mvrv:.2f} and about {loss:.1f}% of circulating supply"
+                " sits in unrealized loss."
+            )
+        advice = str(m.get("advice") or "").strip()
+        caveat = str(m.get("caveat") or "").strip()
+        return (
+            f"The on-chain bottom composite{date_phrase} scores {comp:.0f}/100, in the {zone} zone."
+            f" Per-signal scores out of 20: holder cost {_s('s1')}, MVRV {_s('s2')},"
+            f" supply-in-loss {_s('s3')}, capital flow {_s('s4')}, fear&greed {_s('s5')}."
+            + tail
+            + (f" {advice}" if advice else "")
+            + (f" Caveat: {caveat}" if caveat else "")
         )
 
     return "No usable interpretation is available for this chart today."
@@ -738,6 +795,38 @@ def _deterministic_zh_summary(section: dict[str, Any]) -> str:
             "这组指标主要用来观察市场情绪与矿工压力。"
         )
 
+    if chart == "On-Chain Bottom Signals":
+        comp = _safe_float(m.get("composite_score"))
+        if comp is None:
+            return "今日链上底部信号数据不可用。"
+        zone_map = {
+            "Watch": "观望区",
+            "Mildly Undervalued": "偏低估区",
+            "Undervalued": "低估区",
+            "Extremely Undervalued": "极度低估区",
+        }
+        zone = zone_map.get(str(m.get("zone")), "观望区")
+        data_date = str(m.get("data_date") or "").strip()
+        date_phrase = f"截至{data_date}，" if data_date else ""
+
+        def _s(key: str) -> str:
+            v = _safe_float(m.get(key))
+            return f"{v:.0f}" if v is not None else "暂缺"
+
+        mvrv = _safe_float(m.get("mvrv"))
+        loss = _safe_float(m.get("supply_loss_pct"))
+        tail = ""
+        if mvrv is not None and loss is not None:
+            tail = f"当前 MVRV {mvrv:.2f}，约 {loss:.1f}% 的流通供应处于浮亏。"
+        return (
+            f"{date_phrase}链上底部综合评分 {comp:.0f}/100，处于{zone}。"
+            f"五项信号得分（每项满分 20）：持有者成本 {_s('s1')}、MVRV {_s('s2')}、"
+            f"亏损供应 {_s('s3')}、资金流向 {_s('s4')}、恐慌贪婪 {_s('s5')}。"
+            + tail
+            + "（该综合分基于全样本统计含前视、~4年两周期回测、供给加权代理偏暖，"
+            "仅作情绪参考之一，并非买入信号或投资建议。）"
+        )
+
     return "今日该图表暂无可用解读。"
 
 
@@ -903,6 +992,24 @@ def enrich_with_human_summary(payload: dict[str, Any], *, source_signature: str 
     zh_items = deterministic_zh_items
     overall_zh = "整体看，均线结构仍偏空，流动性继续上行，融资与信用压力不高，宏观风险处于中性，期货仓位处在去杠杆阶段。"
 
+    _bs_section = next(
+        (s for s in payload.get("sections", []) if s.get("chart") == "On-Chain Bottom Signals"),
+        None,
+    )
+    if _bs_section:
+        _comp = _safe_float(_bs_section.get("metrics", {}).get("composite_score"))
+        _zone = _bs_section.get("metrics", {}).get("zone")
+        if _comp is not None:
+            overall_en += (
+                f" The on-chain bottom composite reads {_comp:.0f}/100 ({_zone}), but on a"
+                " warm, two-cycle, look-ahead proxy that missed the 2024 cycle low —"
+                " treat it as sentiment, not a buy trigger."
+            )
+            overall_zh += (
+                f"链上底部综合评分 {_comp:.0f}/100（{_zone}），但该指标基于偏暖的两周期、"
+                "含前视且漏判过 2024 周期底的代理，仅作情绪参考，并非买入信号。"
+            )
+
     if llm_en and isinstance(llm_en.get("items"), list):
         llm_items = llm_en["items"]
         llm_map = {
@@ -1030,6 +1137,7 @@ def generate_daily_report(
     yield_df: pd.DataFrame | None = None,
     oi_df: pd.DataFrame | None = None,
     free_signal_snapshot: dict[str, Any] | None = None,
+    bottom_signals_snapshot: dict[str, Any] | None = None,
     output_path: Path = DEFAULT_REPORT_PATH,
 ) -> dict[str, Any]:
     """Build, summarize, and persist daily report payload."""
@@ -1040,6 +1148,7 @@ def generate_daily_report(
         yield_df=yield_df,
         oi_df=oi_df,
         free_signal_snapshot=free_signal_snapshot,
+        bottom_signals_snapshot=bottom_signals_snapshot,
     )
     source_signature = _summary_source_signature(payload)
     payload["summary_source_signature"] = source_signature

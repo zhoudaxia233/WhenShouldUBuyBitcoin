@@ -135,6 +135,19 @@
             box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
         }
 
+        .bottom-signals-card { display:flex; align-items:center; gap:16px; background:white; border-radius:18px; padding:18px 24px; margin-bottom:20px; box-shadow:0 2px 8px rgba(0,0,0,0.06); text-decoration:none; color:#1d1d1f; transition:box-shadow .2s; }
+        .bottom-signals-card:hover { box-shadow:0 4px 16px rgba(0,0,0,0.10); }
+        .bsc-main { flex:1; min-width:0; }
+        .bsc-title { font-weight:600; font-size:1.05em; }
+        .bsc-meta { color:#86868b; font-size:0.85em; margin-top:2px; }
+        .bsc-note { color:#86868b; font-size:0.8em; margin-top:6px; line-height:1.4; max-width:640px; }
+        .bsc-score-wrap { display:flex; align-items:baseline; gap:6px; white-space:nowrap; }
+        .bsc-score { font-size:1.9em; font-weight:700; }
+        .bsc-score-max { color:#86868b; font-size:0.9em; }
+        .bsc-zone { font-size:0.8em; font-weight:600; padding:4px 10px; border-radius:999px; background:rgba(0,0,0,0.05); }
+        .bsc-arrow { color:#86868b; font-size:1.4em; }
+        @media (max-width:600px){ .bottom-signals-card{ padding:14px 16px; gap:10px; flex-wrap:wrap; } .bsc-score{ font-size:1.5em; } }
+
         .daily-report-card {
             background: white;
             border-radius: 18px;
@@ -1547,6 +1560,19 @@
                     Today's summary is unavailable. Please run the data update first.
                 </div>
             </div>
+            <a id="bottomSignalsCard" class="bottom-signals-card" href="charts/bottom_signals.html" style="display:none;">
+                <div class="bsc-main">
+                    <div class="bsc-title">⛓️ On-Chain Bottom Signals</div>
+                    <div class="bsc-meta" id="bscMeta">—</div>
+                    <div class="bsc-note" id="bscNote"></div>
+                </div>
+                <div class="bsc-score-wrap">
+                    <span class="bsc-score" id="bscScore">–</span>
+                    <span class="bsc-score-max">/100</span>
+                    <span class="bsc-zone" id="bscZone">–</span>
+                </div>
+                <div class="bsc-arrow">›</div>
+            </a>
             <div class="chart-container">
                 <div class="chart-section-tabs">
                     <button class="chart-section-tab active" onclick="switchChartSection('core', this)">Core</button>
@@ -3038,6 +3064,36 @@
             dateInput.max = fiveYearsFromNow.toISOString().split('T')[0];
         });
         
+        // Populate the On-Chain Bottom Signals summary card from the generated info JSON
+        function updateBottomSignalsCard() {
+            fetch('charts/bottom_signals_info.json')
+                .then(r => r.ok ? r.json() : null)
+                .then(data => {
+                    if (!data || typeof data.composite !== 'number') return;
+                    const card = document.getElementById('bottomSignalsCard');
+                    if (!card) return;
+                    const scoreEl = document.getElementById('bscScore');
+                    scoreEl.textContent = Math.round(data.composite);
+                    scoreEl.style.color = data.zone_color || '#1d1d1f';
+                    const zoneEl = document.getElementById('bscZone');
+                    zoneEl.textContent = data.zone || '';
+                    zoneEl.style.color = data.zone_color || '#1d1d1f';
+                    const parts = (data.signals || []).map(
+                        s => s.key.toUpperCase() + ' ' + Math.round(s.score)
+                    );
+                    document.getElementById('bscMeta').textContent =
+                        (data.date ? 'Data ' + data.date + ' · ' : '') + parts.join(' · ') +
+                        ' · each 0–20 · equal weight';
+                    const noteEl = document.getElementById('bscNote');
+                    if (noteEl) {
+                        const advice = data.advice ? data.advice + ' ' : '';
+                        noteEl.textContent = advice + 'Sentiment gauge, not a buy signal.';
+                    }
+                    card.style.display = 'flex';
+                })
+                .catch(() => {});
+        }
+
         // Load and update OI quadrant legend with current quadrant info
         function updateOIQuadrantLegend() {
             fetch('charts/oi_quadrant_info.json')
@@ -3120,6 +3176,7 @@
         
         // Update OI quadrant legend on page load
         updateOIQuadrantLegend();
+        updateBottomSignalsCard();
     </script>
 </body>
 </html>

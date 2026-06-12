@@ -1,0 +1,290 @@
+"""
+On-chain bottom-signal scoring and backtest.
+
+Five signals scored 0-20 each sum to a 0-100 composite:
+  S1 price vs holder cost-basis lines, S2 MVRV sigma deviation,
+  S3 supply-in-loss sigma deviation, S4 30d realized-cap flow percentile,
+  S5 Fear & Greed.
+Sigma/percentile statistics are computed once over the full available sample
+(not expanding windows); the dashboard page states the look-ahead caveat.
+"""
+
+import math
+from typing import Optional
+
+import numpy as np
+import pandas as pd
+
+MIN_OBSERVATIONS = 180
+
+# (lower bound inclusive, upper bound exclusive, label, color)
+ZONES = [
+    (0.0, 60.0, "Watch", "#6e6e73"),
+    (60.0, 70.0, "Mildly Undervalued", "#10b981"),
+    (70.0, 80.0, "Undervalued", "#f59e0b"),
+    (80.0, math.inf, "Extremely Undervalued", "#ef4444"),
+]
+
+ZONE_ADVICE = {
+    "Watch": "Not cheap yet — keep watching.",
+    "Mildly Undervalued": "Getting interesting — consider scaling in slowly.",
+    "Undervalued": "Historically a productive DCA zone — accumulate gradually, not all at once.",
+    "Extremely Undervalued": (
+        "Rare reading on a two-cycle sample — if accumulating, scale in "
+        "gradually; not a signal to go all-in."
+    ),
+}
+
+# (date, daily-close price) of cycle bottoms inside the free-tier data window.
+CYCLE_BOTTOMS = [
+    ("2022-11-21", 15797.53),
+    ("2024-09-06", 53914.82),
+]
+
+# A trigger segment "hits" when its minimum price is within this multiple
+# of its assigned cycle bottom.
+BOTTOM_HIT_MULTIPLE = 1.3
+
+THRESHOLDS = (60, 70, 80)
+DURATIONS = (1, 3, 7)
+# CYCLE_BOTTOMS / BOTTOM_HIT_MULTIPLE / THRESHOLDS / DURATIONS are consumed by the backtest functions below.
+
+# Sigma-deviation anchor curves: (sigma anchors, score anchors).
+S2_SIGMA_ANCHORS = ([-1.5, 0.0, 2.0], [20.0, 8.0, 0.0])
+S3_SIGMA_ANCHORS = ([-1.0, 0.0, 0.5, 2.0], [0.0, 6.0, 10.0, 20.0])
+
+
+def zone_for(composite) -> Optional[tuple[str, str]]:
+    """Return (label, color) for a composite score, or None for missing input."""
+    if composite is None or pd.isna(composite):
+        return None
+    for low, high, label, color in ZONES:
+        if low <= composite < high:
+            return label, color
+    return None
+
+
+def _interp(x: float, xs, ys) -> float:
+    """Piecewise-linear interpolation clamped to the anchor range."""
+    return float(np.interp(x, xs, ys))
+
+
+def score_s1_holder_cost(price, lth, avg, sth) -> Optional[float]:
+    """Price vs holder cost-basis lines, interpolated in log space.
+
+    Anchors: >= 1.2*STH -> 0; STH -> 5; AVG -> 10; LTH -> 15; <= 0.8*LTH -> 20.
+    """
+    vals = [price, lth, avg, sth]
+    if any(v is None or pd.isna(v) or v <= 0 for v in vals):
+        return None
+    raw = np.log([0.8 * lth, lth, avg, sth, 1.2 * sth])
+    cum = np.maximum.accumulate(raw)
+    # Nudge only positions that were flattened (ties after cummax), preserving
+    # exact boundary anchors where no crossing occurred.
+    nudge = np.where(cum == raw, 0.0, np.arange(5) * 1e-9)
+    log_xs = cum + nudge
+    ys = [20.0, 15.0, 10.0, 5.0, 0.0]
+    return _interp(np.log(price), log_xs, ys)
+
+
+def full_sample_deviation(series: pd.Series) -> pd.Series:
+    """Deviation from the full-sample mean in population-std units.
+
+    All-NaN result when the sample is shorter than MIN_OBSERVATIONS or flat.
+    """
+    s = pd.to_numeric(series, errors="coerce")
+    valid = s.dropna()
+    if len(valid) < MIN_OBSERVATIONS or valid.std(ddof=0) == 0:
+        return pd.Series(np.nan, index=s.index)
+    return (s - valid.mean()) / valid.std(ddof=0)
+
+
+def _sigma_to_score(dev: pd.Series, anchors_sigma, anchors_score) -> pd.Series:
+    return dev.apply(
+        lambda v: np.nan if pd.isna(v) else _interp(v, anchors_sigma, anchors_score)
+    )
+
+
+def score_s2_mvrv(series: pd.Series) -> pd.Series:
+    """MVRV deviation: +2 sigma -> 0, 0 -> 8, -1.5 sigma -> 20."""
+    return _sigma_to_score(full_sample_deviation(series), *S2_SIGMA_ANCHORS)
+
+
+def score_s3_supply_loss(series: pd.Series) -> pd.Series:
+    """Supply-in-loss deviation: -1 sigma -> 0, 0 -> 6, +0.5 -> 10, +2 -> 20."""
+    return _sigma_to_score(full_sample_deviation(series), *S3_SIGMA_ANCHORS)
+
+
+def score_s4_capital_flow(series: pd.Series) -> pd.Series:
+    """20 x (1 - full-sample percentile rank) of the 30d realized-cap change."""
+    s = pd.to_numeric(series, errors="coerce")
+    if s.notna().sum() < MIN_OBSERVATIONS:
+        return pd.Series(np.nan, index=s.index)
+    return 20.0 * (1.0 - s.rank(pct=True))
+
+
+def score_s5_fear_greed(value) -> Optional[float]:
+    """Fear & Greed: <= 10 -> 20; >= 75 -> 0; linear between."""
+    if value is None or pd.isna(value):
+        return None
+    return _interp(float(value), [10.0, 75.0], [20.0, 0.0])
+
+
+def compute_bottom_signal_scores(
+    onchain_df: pd.DataFrame, price_df: pd.DataFrame
+) -> pd.DataFrame:
+    """Join on-chain data with daily closes and score S1-S5 plus the composite.
+
+    price_df needs `date` and `close_price`. Returns one row per on-chain date
+    that has a close price, sorted ascending, with raw inputs, s1..s5, the
+    diagnostic columns (s2_dev, s3_dev, s4_pctile), composite, zone, zone_color.
+    """
+    prices = price_df[["date", "close_price"]].copy()
+    prices["date"] = pd.to_datetime(prices["date"]).dt.strftime("%Y-%m-%d")
+    onchain = onchain_df.copy()
+    onchain["date"] = pd.to_datetime(onchain["date"]).dt.strftime("%Y-%m-%d")
+    df = (
+        onchain.merge(prices, on="date", how="inner")
+        .sort_values("date")
+        .reset_index(drop=True)
+    )
+
+    df["s1"] = [
+        score_s1_holder_cost(p, lth, avg, sth)
+        for p, lth, avg, sth in zip(
+            df["close_price"],
+            df["lth_realized_price"],
+            df["realized_price"],
+            df["sth_realized_price"],
+        )
+    ]
+    df["s2_dev"] = full_sample_deviation(df["mvrv"])
+    df["s2"] = _sigma_to_score(df["s2_dev"], *S2_SIGMA_ANCHORS)
+    df["s3_dev"] = full_sample_deviation(df["supply_loss_pct"])
+    df["s3"] = _sigma_to_score(df["s3_dev"], *S3_SIGMA_ANCHORS)
+    s4_raw = pd.to_numeric(df["realized_cap_change_30d_usd"], errors="coerce")
+    df["s4_pctile"] = (
+        s4_raw.rank(pct=True)
+        if s4_raw.notna().sum() >= MIN_OBSERVATIONS
+        else pd.Series(np.nan, index=df.index)
+    )
+    df["s4"] = 20.0 * (1.0 - df["s4_pctile"])
+    df["s5"] = [score_s5_fear_greed(v) for v in df["fear_greed"]]
+
+    score_cols = ["s1", "s2", "s3", "s4", "s5"]
+    for col in score_cols:
+        df[col] = pd.to_numeric(df[col], errors="coerce")
+    df["composite"] = df[score_cols].sum(axis=1, min_count=len(score_cols))
+
+    zones = df["composite"].map(zone_for)
+    df["zone"] = zones.map(lambda z: z[0] if z else None)
+    df["zone_color"] = zones.map(lambda z: z[1] if z else None)
+    return df
+
+
+def _build_segment(
+    df: pd.DataFrame, dates: pd.Series, start: int, end: int, min_duration: int
+) -> Optional[dict]:
+    """Assemble the segment dict for rows [start, end]; None if too short.
+
+    Duration is measured in calendar days (end - start + 1) so a run broken by
+    a missing date can never be counted as longer than it really is.
+    """
+    days = int((dates.iloc[end] - dates.iloc[start]).days) + 1
+    if days < min_duration:
+        return None
+    seg = df.iloc[start : end + 1]
+    end_date = dates.iloc[end]
+    seg_dict = {
+        "startDate": str(df["date"].iloc[start]),
+        "endDate": str(df["date"].iloc[end]),
+        "days": days,
+        "priceStart": float(seg["close_price"].iloc[0]),
+        "priceEnd": float(seg["close_price"].iloc[-1]),
+        "minPrice": float(seg["close_price"].min()),
+        "maxPrice": float(seg["close_price"].max()),
+        "avgPrice": float(seg["close_price"].mean()),
+    }
+    for horizon in (90, 180):
+        mask = (dates > end_date) & (dates <= end_date + pd.Timedelta(days=horizon))
+        window = df.loc[mask, "close_price"]
+        seg_dict[f"after{horizon}"] = (
+            {"min": float(window.min()), "max": float(window.max())}
+            if not window.empty
+            else None
+        )
+    return seg_dict
+
+
+def extract_trigger_segments(
+    scores_df: pd.DataFrame, threshold: float, min_duration: int
+) -> list[dict]:
+    """Calendar-consecutive runs with composite >= threshold, kept when long enough.
+
+    scores_df must be date-sorted with columns date, close_price, composite. A
+    run is broken both by a sub-threshold row and by a gap in the daily series
+    (so "3 days straight" means three adjacent calendar days, not three rows
+    that happen to straddle a hole). Null composites never qualify. Forward
+    90/180-day windows are relative to the segment end date; None when no data
+    exists beyond the segment.
+    """
+    df = scores_df.reset_index(drop=True)
+    composite = pd.to_numeric(df["composite"], errors="coerce")
+    qualifying = composite.ge(threshold).fillna(False)
+    dates = pd.to_datetime(df["date"])
+
+    segments: list[dict] = []
+    start = None
+    for i in range(len(df)):
+        active = bool(qualifying.iloc[i])
+        gap = start is not None and (dates.iloc[i] - dates.iloc[i - 1]).days != 1
+        if start is not None and (not active or gap):
+            seg = _build_segment(df, dates, start, i - 1, min_duration)
+            if seg:
+                segments.append(seg)
+            start = None
+        if active and start is None:
+            start = i
+    if start is not None:
+        seg = _build_segment(df, dates, start, len(df) - 1, min_duration)
+        if seg:
+            segments.append(seg)
+    return segments
+
+
+def assign_cycle_bottom(segment: dict, bottoms=None) -> tuple[str, float]:
+    """Nearest cycle bottom (by days) to the segment midpoint."""
+    bottoms = bottoms or CYCLE_BOTTOMS
+    start = pd.Timestamp(segment["startDate"])
+    end = pd.Timestamp(segment["endDate"])
+    mid = start + (end - start) / 2
+    return min(bottoms, key=lambda b: abs((pd.Timestamp(b[0]) - mid).days))
+
+
+def build_backtest(scores_df: pd.DataFrame) -> dict:
+    """Precompute trigger segments and the accuracy matrix for all combos.
+
+    Returns {"trig": {th: {dur: [segments]}}, "matrix": {th: {dur: cell}}}
+    with string keys ready for JSON embedding; cell accuracy is a rounded
+    percent or None when no segments exist.
+    """
+    trig: dict = {}
+    matrix: dict = {}
+    for th in THRESHOLDS:
+        trig[str(th)] = {}
+        matrix[str(th)] = {}
+        for dur in DURATIONS:
+            segments = extract_trigger_segments(scores_df, th, dur)
+            hits = sum(
+                1
+                for seg in segments
+                if seg["minPrice"]
+                <= assign_cycle_bottom(seg)[1] * BOTTOM_HIT_MULTIPLE
+            )
+            trig[str(th)][str(dur)] = segments
+            matrix[str(th)][str(dur)] = {
+                "segments": len(segments),
+                "hits": hits,
+                "accuracy": round(100.0 * hits / len(segments)) if segments else None,
+            }
+    return {"trig": trig, "matrix": matrix}
