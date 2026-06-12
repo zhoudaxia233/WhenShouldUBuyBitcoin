@@ -3082,7 +3082,8 @@
                         s => s.key.toUpperCase() + ' ' + Math.round(s.score)
                     );
                     document.getElementById('bscMeta').textContent =
-                        (data.date ? 'Data ' + data.date + ' · ' : '') + parts.join(' · ');
+                        (data.date ? 'Data ' + data.date + ' · ' : '') + parts.join(' · ') +
+                        ' · each 0–20 · equal weight';
                     const noteEl = document.getElementById('bscNote');
                     if (noteEl) {
                         const advice = data.advice ? data.advice + ' ' : '';

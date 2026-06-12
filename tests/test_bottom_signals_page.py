@@ -158,6 +158,45 @@ def test_generate_page_writes_html_and_info(tmp_path):
     assert snapshot["date"] == scores_df["date"].iloc[-1]
 
 
+def test_page_shows_weights_explicitly(tmp_path):
+    # the composite's weighting must be stated on the page, not implied by the
+    # /20 denominator: equal-weight wording, the summation formula, and one
+    # contribution segment per signal next to the gauge
+    scores_df, price_df, backtest = _synthetic_inputs()
+    html_path = tmp_path / "bottom_signals.html"
+    page.generate_bottom_signals_page(
+        scores_df, price_df, backtest,
+        output_path=html_path, info_path=tmp_path / "i.json",
+    )
+    html = html_path.read_text()
+    assert "equal weight" in html
+    assert "S1 + S2 + S3 + S4 + S5" in html
+    assert html.count('class="breakdown-seg"') == 5
+
+
+def test_page_does_not_mention_reference_dashboard(tmp_path):
+    # the page stands on its own: data sources stay attributed, but no
+    # "inspired by" credit to any other dashboard
+    scores_df, price_df, backtest = _synthetic_inputs()
+    html_path = tmp_path / "bottom_signals.html"
+    page.generate_bottom_signals_page(
+        scores_df, price_df, backtest,
+        output_path=html_path, info_path=tmp_path / "i.json",
+    )
+    html = html_path.read_text()
+    assert "inspired by" not in html.lower()
+    assert "Inspired by" not in html
+    assert "bitcoin-data.com" in html and "alternative.me" in html
+
+
+def test_homepage_card_states_signal_scale():
+    # the S1..S5 chips on the homepage card are meaningless without the scale;
+    # the card must say each signal is 0-20 with equal weight
+    html = Path(__file__).resolve().parent.parent / "docs" / "index.html"
+    text = html.read_text()
+    assert "each 0–20 · equal weight" in text
+
+
 def test_generate_page_snapshot_values_are_finite(tmp_path):
     scores_df, price_df, backtest = _synthetic_inputs()
     snapshot = page.generate_bottom_signals_page(

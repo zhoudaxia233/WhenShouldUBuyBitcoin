@@ -42,6 +42,14 @@
   .hero-gauge .glabel { font-size:13px; color:var(--muted); align-self:flex-start; }
   .gauge-zone { margin-top:6px; padding:6px 18px; border-radius:999px; font-size:15px; font-weight:600; }
   .gauge-advice { margin-top:8px; font-size:14px; font-weight:600; }
+  .gauge-breakdown { display:flex; gap:10px; width:100%; max-width:380px; margin-top:16px; }
+  .breakdown-seg { flex:1 1 0; display:flex; flex-direction:column; align-items:center; gap:3px; min-width:0; }
+  .breakdown-score { font-size:12px; font-weight:700; font-variant-numeric:tabular-nums; }
+  .breakdown-bar { width:100%; height:34px; background:var(--card2); border-radius:5px;
+                   overflow:hidden; display:flex; align-items:flex-end; }
+  .breakdown-fill { width:100%; }
+  .breakdown-name { font-size:10px; color:var(--muted); text-align:center; line-height:1.25; }
+  .gauge-formula { margin-top:9px; font-size:11px; color:var(--muted); text-align:center; }
 
   .section-title { font-size:14px; font-weight:600; margin:8px 0 14px; }
   .grid { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin-bottom:28px; }
@@ -139,10 +147,20 @@
       {{ gauge|safe }}
       <div class="gauge-zone" style="background:{{ zone_color }}22;color:{{ zone_color }};">{{ zone }}</div>
       <div class="gauge-advice" style="color:{{ zone_color }};">{{ advice }}</div>
+      <div class="gauge-breakdown">
+        {% for card in cards %}
+        <div class="breakdown-seg" title="{{ card.title }}: {{ card.score_text }}/20">
+          <span class="breakdown-score" style="color:{{ card.color }};">{{ card.score_text }}</span>
+          <div class="breakdown-bar"><div class="breakdown-fill" style="height:{{ card.bar_pct }}%;background:{{ card.color }};"></div></div>
+          <span class="breakdown-name">{{ card.key|upper }}<br>{{ card.short }}</span>
+        </div>
+        {% endfor %}
+      </div>
+      <div class="gauge-formula">Composite = S1 + S2 + S3 + S4 + S5 · each signal 0–20 pts · equal weight (20% of the total)</div>
     </div>
   </div>
 
-  <div class="section-title">5 signals + moving-average reference</div>
+  <div class="section-title">5 signals — each scored 0–20, equal weight — plus a moving-average reference</div>
   <div class="grid">
     {% for card in cards %}
     <div class="card" style="border-color:{{ card.color }}55;">
@@ -233,14 +251,14 @@
     </div>
     <div class="sys-note">
       <h4>About this system</h4>
-      <p>Five on-chain/sentiment signals are each scored 0-20 and summed into a 0-100 composite:
+      <p>Five on-chain/sentiment signals are each scored 0-20 and summed into a 0-100 composite with equal weight — no signal counts more than another, so each contributes at most 20 of the 100 points:
       <b>S1</b> price vs long-term-holder / average / short-term-holder cost basis,
       <b>S2</b> MVRV deviation from its historical mean (in sigma),
       <b>S3</b> share of circulating supply in unrealized loss (sigma deviation),
       <b>S4</b> 30-day realized-cap net change (historical percentile),
       <b>S5</b> the Fear &amp; Greed Index. Zones: &lt;60 Watch, 60-70 Mildly Undervalued, 70-80 Undervalued, ≥80 Extremely Undervalued. <span style="font-style:italic;">(σ = how far a value sits from its historical average in standard deviations; "Nth percentile" = lower than that share of history — both just measure how extreme today is.)</span></p>
       <p><b>Honest caveats:</b> on-chain history comes from a free API limited to the most recent ~4 years, so the backtest spans only two cycle lows ({{ cycle_bottoms_label }}) — far fewer cycles than ideal. On that sample the composite flagged the 2022 low strongly but largely <b>missed the 2024 cycle low</b> (which scored in the "Watch" zone and never crossed 60), so the accuracy cells above are illustrative, not proof it can time bottoms. Sigma/percentile statistics use the <b>full sample</b> (the same statistics score early and recent dates), which introduces look-ahead bias into the shaded backtest — in practice it marks roughly 4-5× more historical days as ≥80 "Extremely Undervalued" than a same-day expanding-window calculation would. Signals S2-S4 are <b>highly correlated</b> (~0.9 on this sample): they largely restate the same "price fell hard" fact, so a high composite is closer to one factor counted three times than to five independent signals confirming each other. S3 uses supply-weighted loss share rather than the value-weighted "relative unrealized loss" used by some paid dashboards; because S3 and S4 lean on these free-tier proxies, the composite tends to read <b>warmer (higher)</b> than value-weighted dashboards, so treat the zone as a sentiment gauge rather than a buy signal. None of this is investment advice.</p>
-      <p>Data sources: <a href="https://bitcoin-data.com" style="color:#0066cc;">bitcoin-data.com (BGeometrics)</a> on-chain series · <a href="https://alternative.me/crypto/fear-and-greed-index/" style="color:#0066cc;">alternative.me</a> Fear &amp; Greed. </p>
+      <p>Data sources: <a href="https://bitcoin-data.com" style="color:#0066cc;">bitcoin-data.com (BGeometrics)</a> on-chain series · <a href="https://alternative.me/crypto/fear-and-greed-index/" style="color:#0066cc;">alternative.me</a> Fear &amp; Greed.</p>
     </div>
   </div>
 
