@@ -129,8 +129,12 @@ def test_generate_page_writes_html_and_info(tmp_path):
 
     html = html_path.read_text()
     assert "On-Chain Bottom Signals" in html
-    # the not-investment-advice disclaimer must be present (design requirement)
-    assert "Personal research, not investment advice. DYOR." in html
+    # the standalone footer disclaimer was removed; the methodology note still
+    # carries a one-line not-investment-advice statement, so the page is not
+    # left with zero risk language
+    assert "Personal research, not investment advice. DYOR." not in html
+    assert 'class="disclaimer"' not in html
+    assert "None of this is investment advice." in html
     # honest disclosures: warmer-than-reference bias + illustrative backtest
     assert "warmer" in html
     assert "Illustrative only" in html
@@ -156,6 +160,32 @@ def test_generate_page_writes_html_and_info(tmp_path):
     assert len(info["signals"]) == 5
     assert info["zone"] in {z[2] for z in bs.ZONES}
     assert snapshot["date"] == scores_df["date"].iloc[-1]
+
+
+def test_page_price_context_is_aligned_to_latest_score_date(tmp_path):
+    scores_df, price_df, backtest = _synthetic_inputs()
+    latest_score_date = pd.to_datetime(scores_df["date"].iloc[-1])
+    future_prices = pd.DataFrame(
+        {
+            "date": pd.date_range(latest_score_date + pd.Timedelta(days=1), periods=2),
+            "close_price": [250_000.0, 300_000.0],
+        }
+    )
+    price_with_future_rows = pd.concat([price_df, future_prices], ignore_index=True)
+
+    snapshot = page.generate_bottom_signals_page(
+        scores_df,
+        price_with_future_rows,
+        backtest,
+        output_path=tmp_path / "bottom_signals.html",
+        info_path=tmp_path / "bottom_signals_info.json",
+    )
+
+    aligned_closes = pd.to_numeric(price_df["close_price"], errors="coerce")
+    assert snapshot["date"] == scores_df["date"].iloc[-1]
+    assert snapshot["ath"] == pytest.approx(float(aligned_closes.max()))
+    assert snapshot["ma120"] == pytest.approx(float(aligned_closes.rolling(120).mean().iloc[-1]))
+    assert snapshot["ma200"] == pytest.approx(float(aligned_closes.rolling(200).mean().iloc[-1]))
 
 
 def test_page_shows_weights_explicitly(tmp_path):

@@ -405,7 +405,9 @@ def build_report_payload(
             )
 
     if bottom_signals_snapshot:
+        bottom_data_date = bottom_signals_snapshot.get("date")
         metrics: dict[str, Any] = {
+            "data_date": str(bottom_data_date)[:10] if bottom_data_date else None,
             "composite_score": _safe_float(bottom_signals_snapshot.get("composite")),
             "zone": bottom_signals_snapshot.get("zone"),
             "advice": bottom_signals_snapshot.get("advice"),
@@ -599,6 +601,8 @@ def _deterministic_en_summary(section: dict[str, Any]) -> str:
         if comp is None:
             return "On-chain bottom-signal data is unavailable in the current daily snapshot."
         zone = str(m.get("zone") or "Watch")
+        data_date = str(m.get("data_date") or "").strip()
+        date_phrase = f" through {data_date}" if data_date else ""
 
         def _s(key: str) -> str:
             v = _safe_float(m.get(key))
@@ -615,7 +619,7 @@ def _deterministic_en_summary(section: dict[str, Any]) -> str:
         advice = str(m.get("advice") or "").strip()
         caveat = str(m.get("caveat") or "").strip()
         return (
-            f"The on-chain bottom composite scores {comp:.0f}/100, in the {zone} zone."
+            f"The on-chain bottom composite{date_phrase} scores {comp:.0f}/100, in the {zone} zone."
             f" Per-signal scores out of 20: holder cost {_s('s1')}, MVRV {_s('s2')},"
             f" supply-in-loss {_s('s3')}, capital flow {_s('s4')}, fear&greed {_s('s5')}."
             + tail
@@ -802,6 +806,8 @@ def _deterministic_zh_summary(section: dict[str, Any]) -> str:
             "Extremely Undervalued": "极度低估区",
         }
         zone = zone_map.get(str(m.get("zone")), "观望区")
+        data_date = str(m.get("data_date") or "").strip()
+        date_phrase = f"截至{data_date}，" if data_date else ""
 
         def _s(key: str) -> str:
             v = _safe_float(m.get(key))
@@ -813,7 +819,7 @@ def _deterministic_zh_summary(section: dict[str, Any]) -> str:
         if mvrv is not None and loss is not None:
             tail = f"当前 MVRV {mvrv:.2f}，约 {loss:.1f}% 的流通供应处于浮亏。"
         return (
-            f"链上底部综合评分 {comp:.0f}/100，处于{zone}。"
+            f"{date_phrase}链上底部综合评分 {comp:.0f}/100，处于{zone}。"
             f"五项信号得分（每项满分 20）：持有者成本 {_s('s1')}、MVRV {_s('s2')}、"
             f"亏损供应 {_s('s3')}、资金流向 {_s('s4')}、恐慌贪婪 {_s('s5')}。"
             + tail

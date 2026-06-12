@@ -263,6 +263,7 @@ def test_report_includes_bottom_signals_section():
     sections = {s["chart"]: s for s in payload["sections"]}
     assert "On-Chain Bottom Signals" in sections
     metrics = sections["On-Chain Bottom Signals"]["metrics"]
+    assert metrics["data_date"] == "2026-06-08"
     assert metrics["composite_score"] == 55.0
     assert metrics["zone"] == "Watch"
     assert metrics["s5"] == 20.0
@@ -284,6 +285,7 @@ def test_bottom_signals_deterministic_summaries():
         "metrics": {
             "composite_score": snapshot["composite"],
             "zone": snapshot["zone"],
+            "data_date": snapshot["date"],
             "s1": 4.2, "s2": 14.2, "s3": 7.1, "s4": 10.0, "s5": 20.0,
             "mvrv": 1.18,
             "supply_loss_pct": 20.6,
@@ -291,8 +293,10 @@ def test_bottom_signals_deterministic_summaries():
     }
     en = _deterministic_en_summary(section)
     assert "55" in en and "Watch" in en
+    assert "through 2026-06-08" in en
     zh = _deterministic_zh_summary(section)
     assert "55" in zh and "观望" in zh
+    assert "2026-06-08" in zh
 
 
 def test_bottom_signals_section_summary_bakes_in_advice_and_caveat():

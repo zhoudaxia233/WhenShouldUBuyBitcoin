@@ -106,9 +106,6 @@
   .sys-note h4 { margin:0 0 8px; font-size:14px; color:var(--text); }
   .sys-note p { margin:6px 0; }
   .sys-note b { color:var(--text); }
-  .disclaimer { margin-top:32px; padding-top:18px; border-top:1px solid var(--border);
-                text-align:center; color:var(--muted); font-size:12px; line-height:1.9; }
-  .disclaimer a { color:#0066cc; text-decoration:none; }
 
   @media(max-width:900px){ .hero{grid-template-columns:1fr;} .grid{grid-template-columns:repeat(2,1fr);} }
   @media(max-width:600px){
@@ -260,11 +257,6 @@
       <p><b>Honest caveats:</b> on-chain history comes from a free API limited to the most recent ~4 years, so the backtest spans only two cycle lows ({{ cycle_bottoms_label }}) — far fewer cycles than ideal. On that sample the composite flagged the 2022 low strongly but largely <b>missed the 2024 cycle low</b> (which scored in the "Watch" zone and never crossed 60), so the accuracy cells above are illustrative, not proof it can time bottoms. Sigma/percentile statistics use the <b>full sample</b> (the same statistics score early and recent dates), which introduces look-ahead bias into the shaded backtest — in practice it marks roughly 4-5× more historical days as ≥80 "Extremely Undervalued" than a same-day expanding-window calculation would. Signals S2-S4 are <b>highly correlated</b> (~0.9 on this sample): they largely restate the same "price fell hard" fact, so a high composite is closer to one factor counted three times than to five independent signals confirming each other. S3 uses supply-weighted loss share rather than the value-weighted "relative unrealized loss" used by some paid dashboards; because S3 and S4 lean on these free-tier proxies, the composite tends to read <b>warmer (higher)</b> than value-weighted dashboards, so treat the zone as a sentiment gauge rather than a buy signal. None of this is investment advice.</p>
       <p>Data sources: <a href="https://bitcoin-data.com" style="color:#0066cc;">bitcoin-data.com (BGeometrics)</a> on-chain series · <a href="https://alternative.me/crypto/fear-and-greed-index/" style="color:#0066cc;">alternative.me</a> Fear &amp; Greed.</p>
     </div>
-  </div>
-
-  <div class="disclaimer">
-    ⚠️ Personal research, not investment advice. DYOR. These on-chain signals are one sentiment input, not a buy trigger.<br>
-    Part of <a href="../index.html">When Should You Buy Bitcoin</a>.
   </div>
 </div>
 

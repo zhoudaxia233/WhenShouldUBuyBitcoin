@@ -302,8 +302,21 @@ def generate_bottom_signals_page(
         raise ValueError("no rows with a composite score; cannot render page")
     latest = scored.iloc[-1]
 
-    closes = pd.to_numeric(price_df["close_price"], errors="coerce").dropna()
     price = float(latest["close_price"])
+    latest_day = pd.to_datetime(str(latest["date"]), utc=True).date()
+    price_context = price_df.copy()
+    price_context["_context_date"] = pd.to_datetime(
+        price_context["date"], errors="coerce", utc=True
+    ).dt.date
+    price_context = price_context[
+        price_context["_context_date"].notna()
+        & (price_context["_context_date"] <= latest_day)
+    ].sort_values("_context_date")
+    if price_context.empty:
+        raise ValueError("no price rows on or before latest bottom-signal date")
+    closes = pd.to_numeric(price_context["close_price"], errors="coerce").dropna()
+    if closes.empty:
+        raise ValueError("no numeric close prices on or before latest bottom-signal date")
     # 24h change from the scored frame so it describes the same day as `price`
     # (the full price series can run ahead of the on-chain data date).
     scored_closes = pd.to_numeric(scored["close_price"], errors="coerce").dropna()
