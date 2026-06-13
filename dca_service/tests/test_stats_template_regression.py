@@ -117,49 +117,81 @@ def test_light_mode_summary_box_uses_satsflow_palette():
     assert "color: var(--dashboard-text);" in html
 
 
-def test_saylor_mobile_uses_inline_summary_without_summary_card():
+def test_saylor_mobile_kpi_hierarchy_is_compact():
+    """Mobile reserve card shows a tight hierarchy: huge value with an inline
+    P&L pill, one BTC/avg stat row, and a single caption line. The desktop
+    summary card stays hidden on mobile."""
     html = _load_stats_template()
     mobile_css = html.split("@media (max-width: 767.98px)", 1)[1]
 
-    assert 'class="saylor-mobile-kpis"' in html
-    assert 'class="saylor-mobile-inline-stats"' in html
-    assert 'id="saylorReserveValueMobile"' in html
+    # Markup: the value line carries the inline P&L badge.
+    assert 'class="saylor-value-line"' in html
+    assert 'class="saylor-mobile-pnl-chip" id="saylorPnlMobileBadge"' in html
+    # Compact stat row + single caption.
+    assert 'class="saylor-mobile-statline"' in html
     assert 'id="saylorTotalBtcMobile"' in html
     assert 'id="saylorAvgCostMobile"' in html
-    assert 'id="saylorPnlMobile"' in html
-    assert 'id="saylorPnlMobileBadge"' in html
+    assert 'class="saylor-mobile-caption"' in html
     assert 'id="saylorPurchaseEventsMobile"' in html
-    assert 'id="saylorRangeBtcMobile"' in html
-    assert 'class="saylor-mobile-chart-legend"' in html
-    assert "function setTextIfPresent(id, value)" in html
-    assert "saylorReserveValueMobile" in html
+    assert 'id="saylorAsOfMobile"' in html
 
-    mobile_kpi_block = mobile_css[
-        mobile_css.index(".saylor-mobile-kpis {") : mobile_css.index(".saylor-mobile-topline {")
+    # P&L badge renders as a pill.
+    pnl_chip_block = mobile_css[
+        mobile_css.index(".saylor-mobile-pnl-chip {") : mobile_css.index(".saylor-mobile-pnl-chip.saylor-positive")
     ]
-    assert ".saylor-mobile-kpis {" in html
-    assert "display: none;" in mobile_kpi_block
+    assert "display: inline-flex;" in pnl_chip_block
+    assert "border-radius: 999px;" in pnl_chip_block
 
-    mobile_pnl_block = mobile_css[
-        mobile_css.index(".saylor-mobile-pnl-chip {") : mobile_css.index(".saylor-mobile-inline-stats {")
+    # Stat row is a flex line with tabular numerals.
+    statline_block = mobile_css[
+        mobile_css.index(".saylor-mobile-statline {") : mobile_css.index(".saylor-mobile-statline strong")
     ]
-    assert "display: inline-flex;" in mobile_pnl_block
+    assert "display: flex;" in statline_block
+    assert "font-variant-numeric: tabular-nums;" in statline_block
 
-    inline_block = mobile_css[
-        mobile_css.index(".saylor-mobile-inline-stats {") : mobile_css.index(".saylor-summary-box {")
-    ]
-    assert "display: flex;" in inline_block
-    assert "font-size: 0.96rem;" in inline_block
-    assert "font-variant-numeric: tabular-nums;" in inline_block
-
+    # Desktop summary card is hidden on mobile.
     summary_block = mobile_css[
-        mobile_css.index(".saylor-summary-box {") : mobile_css.index(".saylor-mobile-chart-legend {")
+        mobile_css.index(".saylor-summary-box {") : mobile_css.index(".saylor-range-pills {")
     ]
     assert "display: none;" in summary_block
-    assert "font-size: clamp(3.25rem, 15vw, 4.25rem);" in mobile_css
+
+    # Big reserve value uses the tightened clamp so the badge can sit inline.
+    assert "font-size: clamp(2.95rem, 13vw, 3.7rem);" in mobile_css
 
 
-def test_saylor_mobile_places_chart_before_reset_control():
+def test_saylor_mobile_range_pills_default_1y_and_wired_to_chart():
+    """Mobile chart has 3M/6M/1Y/All range pills (1Y active by default) that
+    drive the chart's x-axis, and the selection survives re-renders."""
+    html = _load_stats_template()
+    mobile_css = html.split("@media (max-width: 767.98px)", 1)[1]
+
+    assert 'id="saylorRangePills"' in html
+    assert 'data-range="3m"' in html
+    assert 'data-range="6m"' in html
+    assert 'data-range="all"' in html
+    # 1Y is the default active range, in both the markup and the JS state.
+    assert 'data-range="1y" class="active"' in html
+    assert "let saylorSelectedRange = '1y';" in html
+
+    # Wiring.
+    assert "function setSaylorRange(" in html
+    assert "function applySaylorSelectedRange(" in html
+    assert "saylorChartInstance.options.scales.x.min = " in html
+    assert "saylorRangePills.addEventListener('click'" in html
+    # Selected range is re-applied after every (re)render of the chart.
+    assert "applySaylorSelectedRange();" in html
+
+    pills_block = mobile_css[
+        mobile_css.index(".saylor-range-pills {") : mobile_css.index(".saylor-range-pills button {")
+    ]
+    assert "display: grid;" in pills_block
+    assert "order: 0;" in pills_block
+    assert ".saylor-range-pills button.active {" in mobile_css
+
+
+def test_saylor_mobile_chart_layout_and_subtle_reset():
+    """Mobile order is pills -> legend -> reset toolbar -> taller chart, and the
+    reset control is a subtle link revealed only after a manual zoom/pan."""
     html = _load_stats_template()
     mobile_css = html.split("@media (max-width: 767.98px)", 1)[1]
 
@@ -169,17 +201,58 @@ def test_saylor_mobile_places_chart_before_reset_control():
     assert "display: flex;" in card_body_block
     assert "flex-direction: column;" in card_body_block
 
-    chart_block = mobile_css[
-        mobile_css.index(".saylor-chart-wrap {") : mobile_css.index("#saylorChart {")
+    legend_block = mobile_css[
+        mobile_css.index(".saylor-mobile-chart-legend {") : mobile_css.index(".saylor-mobile-chart-legend .legend-line")
     ]
-    assert "order: 1;" in chart_block
-    assert "height: 390px;" in chart_block
+    assert "order: 1;" in legend_block
 
     toolbar_block = mobile_css[
         mobile_css.index(".saylor-chart-toolbar {") : mobile_css.index(".saylor-reset-btn {")
     ]
     assert "order: 2;" in toolbar_block
-    assert "margin: 18px 0 0;" in toolbar_block
+
+    chart_block = mobile_css[
+        mobile_css.index(".saylor-chart-wrap {") : mobile_css.index("#saylorChart {")
+    ]
+    assert "order: 3;" in chart_block
+    assert "height: 430px;" in chart_block
+
+    # Reset is a hidden-by-default link, revealed on gesture.
+    reset_block = mobile_css[
+        mobile_css.index(".saylor-reset-link {") : mobile_css.index(".saylor-reset-link.is-visible")
+    ]
+    assert "opacity: 0;" in reset_block
+    assert "pointer-events: none;" in reset_block
+    # Removed from the tab order while hidden (not just transparent).
+    assert "visibility: hidden;" in reset_block
+    assert ".saylor-reset-link.is-visible {" in mobile_css
+    assert "function revealSaylorResetControl(" in html
+    assert "onPanComplete: revealSaylorResetControl" in html
+    assert "onZoomComplete: revealSaylorResetControl" in html
+    # Existing reset button id + click handler preserved.
+    assert 'id="resetSaylorZoomBtn"' in html
+    assert "resetSaylorZoomBtn.addEventListener('click', resetSaylorZoom)" in html
+
+
+def test_saylor_mobile_clears_floating_bottom_nav():
+    """The stats page reserves bottom space so the chart x-axis and controls
+    clear the fixed mobile bottom nav."""
+    html = _load_stats_template()
+    mobile_css = html.split("@media (max-width: 767.98px)", 1)[1]
+
+    assert "env(safe-area-inset-bottom)" in mobile_css
+    nav_clear_block = mobile_css[
+        mobile_css.index("body.stats-page {") : mobile_css.index("body.stats-page {") + 220
+    ]
+    assert "padding-bottom:" in nav_clear_block
+    assert "env(safe-area-inset-bottom)" in nav_clear_block
+
+
+def test_saylor_as_of_set_on_desktop_and_mobile():
+    """The 'As of' date populates both the desktop element and the mobile caption."""
+    html = _load_stats_template()
+    assert "document.getElementById('saylorAsOf').textContent" in html
+    assert "setTextIfPresent('saylorAsOfMobile'" in html
 
 
 def test_saylor_mobile_purchase_bubbles_stay_prominent_and_amount_scaled():
