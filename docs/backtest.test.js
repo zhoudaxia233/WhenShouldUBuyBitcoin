@@ -14,6 +14,7 @@ import {
     AHR999PercentileStrategy,
     AHR999FixedRangeStrategy,
     BacktestEngine,
+    BacktestUI,
     AHR999_FIXED_RANGE_DEFAULT_MULTIPLIERS,
 } from "./backtest.js";
 
@@ -697,6 +698,32 @@ describe("DataLoader", () => {
             expect(typeof val).toBe("number");
             expect(isNaN(val)).toBe(false);
         });
+    });
+});
+
+describe("BacktestUI", () => {
+    it("shows a sanitized message when generated data is missing", async () => {
+        const ui = new BacktestUI();
+        vi.spyOn(ui.dataLoader, "load").mockRejectedValue(
+            new Error("ENOENT: no such file or directory, open '/app/docs/data/btc_metrics.csv'")
+        );
+        const originalAlert = globalThis.alert;
+        const alertMock = vi.fn();
+        globalThis.alert = alertMock;
+        const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
+
+        try {
+            await ui.initialize();
+        } finally {
+            globalThis.alert = originalAlert;
+            consoleError.mockRestore();
+        }
+
+        expect(alertMock).toHaveBeenCalledWith(
+            expect.stringContaining("Backtest data is not available yet")
+        );
+        expect(alertMock.mock.calls[0][0]).not.toContain("ENOENT");
+        expect(alertMock.mock.calls[0][0]).not.toContain("/app/docs/data");
     });
 });
 
