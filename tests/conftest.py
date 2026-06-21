@@ -25,10 +25,10 @@ from _artifact_guard import (  # noqa: E402  (import after sys.path tweak)
 
 @pytest.fixture(autouse=True)
 def _guard_real_artifacts():
-    """Fail any test that writes a tracked generated artifact in place.
+    """Fail any test that writes a generated artifact in place.
 
     Several page generators default ``output_path`` / ``info_path`` to the real
-    tracked file under ``docs/charts/``. Tests are expected to redirect those
+    file under ``docs/charts/``. Tests are expected to redirect those
     into ``tmp_path``; a test that forgets would silently overwrite the tracked
     artifact and dirty the working tree. This autouse guard snapshots those
     files before each test and, if any changed afterward, restores the originals

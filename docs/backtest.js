@@ -1585,7 +1585,9 @@ class BacktestUI {
             this.attachEventListeners();
         } catch (error) {
             console.error("Failed to initialize backtest UI:", error);
-            alert("Failed to load data for backtesting: " + error.message);
+            alert(
+                "Backtest data is not available yet. Run the data generation job and refresh this page."
+            );
         }
     }
 

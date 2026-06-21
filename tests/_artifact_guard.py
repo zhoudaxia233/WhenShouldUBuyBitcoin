@@ -2,8 +2,8 @@
 
 This module deliberately imports nothing from pytest so its logic can be
 unit-tested directly. The companion ``tests/conftest.py`` wires an autouse
-fixture around these functions to fail any test that accidentally overwrites a
-tracked generated artifact with its production default output path.
+fixture around these functions to fail any test that accidentally writes a
+generated artifact to its production default output path.
 
 The two protected paths are the *defaults* of
 ``whenshouldubuybitcoin.bottom_signals_page.generate_bottom_signals_page``
@@ -22,8 +22,8 @@ from pathlib import Path
 # regardless of any monkeypatch.chdir(tmp_path) a test may perform.
 _REPO_ROOT = Path(__file__).resolve().parent.parent
 
-# Absolute paths of the tracked artifacts whose production default output path
-# would clobber them. Extend this list to guard more default-output artifacts
+# Absolute paths of artifacts whose production default output path would clobber
+# a real generated file. Extend this list to guard more default-output artifacts
 # (e.g. docs/data/daily_report.json).
 PROTECTED_ARTIFACTS: list[Path] = [
     _REPO_ROOT / "docs" / "charts" / "bottom_signals.html",

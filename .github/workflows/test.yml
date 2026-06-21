@@ -98,8 +98,7 @@ jobs:
       - name: Check for syntax errors
         run: |
           node --check docs/backtest.js
-          node -e "JSON.parse(require('fs').readFileSync('docs/data/btc_metadata.json', 'utf8'))"
-          echo "✓ All JSON files are valid"
+          echo "✓ JavaScript syntax is valid"
 
   test-dca-service:
     runs-on: ubuntu-latest
@@ -140,4 +139,3 @@ jobs:
 
       - name: Run DCA Service tests
         run: PYTHONPATH=src poetry run pytest tests/ -v
-

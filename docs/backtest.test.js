@@ -3,7 +3,10 @@
  * Run with: npm test
  */
 
-import { describe, it, expect, beforeAll } from "vitest";
+import { describe, it, expect, beforeAll, afterAll, vi } from "vitest";
+import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import {
     DataLoader,
     DailyDCAStrategy,
@@ -11,18 +14,88 @@ import {
     AHR999PercentileStrategy,
     AHR999FixedRangeStrategy,
     BacktestEngine,
+    BacktestUI,
     AHR999_FIXED_RANGE_DEFAULT_MULTIPLIERS,
 } from "./backtest.js";
 
 let dataLoader;
+let fixtureRoot;
+let cwdSpy;
+
+function writeBacktestFixture(root) {
+    const dataDir = join(root, "docs", "data");
+    mkdirSync(dataDir, { recursive: true });
+
+    const trendA = 0.0001;
+    const trendB = 2.4;
+    const genesis = Date.UTC(2009, 0, 3);
+    const dayMs = 24 * 60 * 60 * 1000;
+    const lines = ["date,close_price,trend_value,ratio_dca,ratio_trend,ahr999"];
+
+    for (
+        let t = Date.UTC(2014, 0, 1), i = 0;
+        t <= Date.UTC(2026, 11, 31);
+        t += dayMs, i += 1
+    ) {
+        const ageDays = Math.floor((t - genesis) / dayMs);
+        const trend = trendA * Math.pow(ageDays, trendB);
+        const cheap =
+            t >= Date.UTC(2020, 2, 1) && t <= Date.UTC(2025, 10, 13);
+        const middle =
+            t >= Date.UTC(2025, 0, 1) && t <= Date.UTC(2025, 10, 13);
+        const ratioTrend = middle
+            ? 0.85 + 0.03 * Math.sin(i / 15)
+            : cheap
+              ? 0.65 + 0.05 * Math.sin(i / 15)
+              : 1.35 + 0.25 * Math.sin(i / 80);
+        const price = Math.max(100, trend * ratioTrend);
+        const ratioDca = middle
+            ? 0.7 + 0.03 * Math.sin(i / 20)
+            : cheap
+              ? 0.45 + 0.05 * Math.sin(i / 20)
+              : 1.1 + 0.25 * Math.sin(i / 95 + 1);
+        const ahr999 = ratioDca * ratioTrend;
+        const date = new Date(t).toISOString().slice(0, 10);
+
+        lines.push(
+            [
+                date,
+                price.toFixed(2),
+                trend.toFixed(2),
+                ratioDca.toFixed(6),
+                ratioTrend.toFixed(6),
+                ahr999.toFixed(6),
+            ].join(",")
+        );
+    }
+
+    writeFileSync(join(dataDir, "btc_metrics.csv"), `${lines.join("\n")}\n`);
+    writeFileSync(
+        join(dataDir, "btc_metadata.json"),
+        JSON.stringify({ trend_a: trendA, trend_b: trendB })
+    );
+}
 
 // Load data once before all tests
 beforeAll(async () => {
+    fixtureRoot = mkdtempSync(join(tmpdir(), "satsflow-backtest-"));
+    writeBacktestFixture(fixtureRoot);
+
+    cwdSpy = vi.spyOn(process, "cwd").mockReturnValue(fixtureRoot);
     dataLoader = new DataLoader();
-    await dataLoader.load();
+    try {
+        await dataLoader.load();
+    } finally {
+        cwdSpy.mockRestore();
+    }
     console.log(
         `Loaded ${dataLoader.historicalData.length} rows of historical data`
     );
+});
+
+afterAll(() => {
+    if (cwdSpy) cwdSpy.mockRestore();
+    if (fixtureRoot) rmSync(fixtureRoot, { recursive: true, force: true });
 });
 
 describe("Bug Fix: Historical Date Range Detection", () => {
@@ -625,6 +698,32 @@ describe("DataLoader", () => {
             expect(typeof val).toBe("number");
             expect(isNaN(val)).toBe(false);
         });
+    });
+});
+
+describe("BacktestUI", () => {
+    it("shows a sanitized message when generated data is missing", async () => {
+        const ui = new BacktestUI();
+        vi.spyOn(ui.dataLoader, "load").mockRejectedValue(
+            new Error("ENOENT: no such file or directory, open '/app/docs/data/btc_metrics.csv'")
+        );
+        const originalAlert = globalThis.alert;
+        const alertMock = vi.fn();
+        globalThis.alert = alertMock;
+        const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
+
+        try {
+            await ui.initialize();
+        } finally {
+            globalThis.alert = originalAlert;
+            consoleError.mockRestore();
+        }
+
+        expect(alertMock).toHaveBeenCalledWith(
+            expect.stringContaining("Backtest data is not available yet")
+        );
+        expect(alertMock.mock.calls[0][0]).not.toContain("ENOENT");
+        expect(alertMock.mock.calls[0][0]).not.toContain("/app/docs/data");
     });
 });
 

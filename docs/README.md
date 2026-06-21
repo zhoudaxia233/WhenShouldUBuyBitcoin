@@ -16,13 +16,11 @@ This web interface provides a browser-based tool to check Bitcoin's buy zone sta
 ### Data Flow
 
 ```
-Python (daily via GitHub Actions)
+Python (daily in SatsFlow service, or manual workflow)
   ↓
 Generate btc_metrics.csv & btc_metadata.json
   ↓
-Commit to GitHub
-  ↓
-GitHub Pages serves static files
+Write ignored runtime files under docs/data and docs/charts
   ↓
 User opens webpage
   ↓
@@ -115,8 +113,8 @@ docs/
   └── README.md         # This file
 
 data/                   # Data shared with Python
-  ├── btc_metrics.csv   # Historical prices and metrics
-  └── btc_metadata.json # Trend parameters (a, b)
+  ├── btc_metrics.csv   # Generated historical prices and metrics (ignored)
+  └── btc_metadata.json # Generated trend parameters (ignored)
 
 charts/                 # Python-generated interactive charts
   ├── valuation_ratios.html
@@ -165,7 +163,7 @@ function calculateDistance(ratio) {
 ### "Failed to load historical data"
 
 - Ensure `data/btc_metrics.csv` exists
-- Run `python main.py` to generate data
+- Run `python main.py` or use SatsFlow's Update Charts button to generate data
 - Check file paths in `CONFIG` object
 
 ### "Failed to fetch price from all sources"
@@ -176,13 +174,13 @@ function calculateDistance(ratio) {
 ### "Trend parameters not found"
 
 - Ensure `data/btc_metadata.json` exists
-- Run `python main.py` to generate metadata
+- Run `python main.py` or use SatsFlow's Update Charts button to generate metadata
 - Check that `trend_a` and `trend_b` exist in JSON
 
 ### Charts not loading
 
 - Ensure charts are in the correct path: `../charts/`
-- Run `python main.py` to generate charts
+- Run `python main.py` or use SatsFlow's Update Charts button to generate charts
 - Charts link opens in a new tab
 
 ## Performance
