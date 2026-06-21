@@ -2,7 +2,7 @@
  * Real-time Bitcoin Buy Zone Checker
  *
  * This JavaScript implementation mirrors the Python version but runs entirely in the browser.
- * It fetches real-time BTC prices from Yahoo Finance and calculates buy zone status.
+ * It fetches real-time BTC prices from exchange APIs and calculates buy zone status.
  */
 
 // ============================================================================

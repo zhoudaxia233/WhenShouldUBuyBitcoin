@@ -4,7 +4,7 @@ This web interface provides a browser-based tool to check Bitcoin's buy zone sta
 
 ## Features
 
-- **Real-time Price**: Fetches current BTC price from Yahoo Finance
+- **Real-time Price**: Fetches current BTC price from Binance, then falls back to Coinbase
 - **Buy Zone Analysis**: Calculates whether Bitcoin is in the "double undervaluation" buy zone
 - **Dual Timezone**: Shows time in both UTC and Berlin (CET/CEST)
 - **Distance Calculation**: Shows exactly how much BTC needs to drop to enter buy zone
@@ -28,9 +28,9 @@ User opens webpage
   ↓
 JavaScript loads CSV/JSON data
   ↓
-User clicks "Check Now" button
+User clicks "Check Real-Time Status" button
   ↓
-Fetch real-time price from Yahoo Finance
+Fetch real-time price from Binance, falling back to Coinbase
   ↓
 Calculate DCA & Trend in browser
   ↓
@@ -68,28 +68,9 @@ http-server -p 8000
 
 Simply open `docs/index.html` in your browser. Note: Some features may not work due to CORS restrictions when opening local files.
 
-## Yahoo Finance CORS Issue
+## Real-Time Price APIs
 
-### Problem
-
-Yahoo Finance API may block direct browser requests due to CORS (Cross-Origin Resource Sharing) restrictions.
-
-### Solution Options
-
-1. **Enable CORS Proxy** (in `realtime.js`):
-   ```javascript
-   const CONFIG = {
-       USE_CORS_PROXY: true,  // Change to true
-       CORS_PROXY: 'https://corsproxy.io/?',
-       // ...
-   };
-   ```
-
-2. **Use Alternative Proxy**:
-   - https://corsproxy.io/
-   - https://cors-anywhere.herokuapp.com/ (may require activation)
-
-3. **Deploy to GitHub Pages** (usually works better than localhost)
+The browser tries Binance first and Coinbase second. No API key or proxy is required. If both exchange APIs fail, the page shows an error instead of using a stale price.
 
 ## Deploying to GitHub Pages
 
@@ -112,22 +93,18 @@ https://<username>.github.io/<repository-name>/
 
 ### Step 3: Test the Live Site
 
-Visit your GitHub Pages URL and click the "Check Real-Time Buy Zone Status" button.
+Visit your GitHub Pages URL and click the "Check Real-Time Status" button.
 
-## Automatic Daily Updates
+## Data Updates
 
-The GitHub Actions workflow (`.github/workflows/update-data.yml`) automatically:
+The GitHub Actions workflow (`.github/workflows/update-data.yml`) is currently manual trigger only:
 
-- Runs daily at 00:30 UTC
-- Executes `python main.py`
-- Updates `btc_metrics.csv` and `btc_metadata.json`
-- Commits changes back to the repository
-- GitHub Pages automatically redeploys
+- `workflow_dispatch` is enabled
+- The cron schedule is intentionally commented out
+- The update job runs `poetry run python main.py --strict-update`
+- Generated file changes are reported, not committed by the workflow
 
-This ensures:
-- Historical data is always up-to-date
-- Charts reflect the latest close prices
-- DCA and Trend parameters are recalculated daily
+Historical charts, daily summaries, and on-chain metrics can lag behind the real-time price check. Check the displayed update timestamps before treating non-price metrics as current.
 
 ## File Structure
 
@@ -191,13 +168,10 @@ function calculateDistance(ratio) {
 - Run `python main.py` to generate data
 - Check file paths in `CONFIG` object
 
-### "CORS error - Yahoo Finance blocked"
+### "Failed to fetch price from all sources"
 
-- Enable CORS proxy in `realtime.js`:
-  ```javascript
-  USE_CORS_PROXY: true
-  ```
-- Or deploy to GitHub Pages (CORS often works better from deployed sites)
+- Check browser network access to Binance and Coinbase
+- Retry later if an exchange API is temporarily unavailable
 
 ### "Trend parameters not found"
 
@@ -214,7 +188,7 @@ function calculateDistance(ratio) {
 ## Performance
 
 - **First Load**: ~1-2 seconds (loading CSV data)
-- **Button Click**: ~1-2 seconds (Yahoo Finance API call)
+- **Button Click**: ~1-2 seconds (Binance or Coinbase API call)
 - **No Backend**: All calculations run in your browser
 - **Data Size**: ~200KB CSV + ~1KB JSON (fast to load)
 
@@ -241,4 +215,3 @@ Requires:
 ## License
 
 Same as the main project (see root LICENSE file)
-
