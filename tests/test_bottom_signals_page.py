@@ -229,6 +229,33 @@ def test_homepage_card_states_signal_scale():
     assert "each 0–20 · equal weight" in text
 
 
+def test_homepage_bottom_signals_link_is_cache_busted_by_data_date():
+    # The card fetches fresh JSON, while the self-contained detail HTML can be
+    # cached separately. Carry the JSON date into the link so a click cannot
+    # reuse an older bottom_signals.html snapshot.
+    html = Path(__file__).resolve().parent.parent / "docs" / "index.html"
+    text = html.read_text()
+    assert (
+        "card.href = 'charts/bottom_signals.html?v=' + encodeURIComponent(data.date);"
+        in text
+    )
+
+
+def test_homepage_bottom_signals_info_fetch_bypasses_cache():
+    html = Path(__file__).resolve().parent.parent / "docs" / "index.html"
+    text = html.read_text()
+    assert "charts/bottom_signals_info.json?t=' + Date.now()" in text
+    assert 'cache: "no-store"' in text
+
+
+def test_homepage_bottom_signals_mobile_main_text_gets_full_width():
+    # On mobile the score pill sits beside the main copy; without a full-width
+    # main flex item, the title/meta wrap into a very narrow column.
+    html = Path(__file__).resolve().parent.parent / "docs" / "index.html"
+    text = html.read_text()
+    assert ".bsc-main{ flex-basis:100%;" in text
+
+
 def test_generate_page_snapshot_values_are_finite(tmp_path):
     scores_df, price_df, backtest = _synthetic_inputs()
     snapshot = page.generate_bottom_signals_page(
