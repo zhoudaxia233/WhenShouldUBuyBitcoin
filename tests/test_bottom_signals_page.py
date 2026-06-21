@@ -129,6 +129,8 @@ def test_generate_page_writes_html_and_info(tmp_path):
 
     html = html_path.read_text()
     assert "On-Chain Bottom Signals" in html
+    assert '<link rel="icon" type="image/svg+xml" href="../bitcoin.svg">' in html
+    assert '<link rel="shortcut icon" href="../bitcoin.svg">' in html
     # the standalone footer disclaimer was removed; the methodology note still
     # carries a one-line not-investment-advice statement, so the page is not
     # left with zero risk language
