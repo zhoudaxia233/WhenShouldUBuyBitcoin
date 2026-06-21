@@ -146,7 +146,7 @@
         .bsc-score-max { color:#86868b; font-size:0.9em; }
         .bsc-zone { font-size:0.8em; font-weight:600; padding:4px 10px; border-radius:999px; background:rgba(0,0,0,0.05); }
         .bsc-arrow { color:#86868b; font-size:1.4em; }
-        @media (max-width:600px){ .bottom-signals-card{ padding:14px 16px; gap:10px; flex-wrap:wrap; } .bsc-score{ font-size:1.5em; } }
+        @media (max-width:600px){ .bottom-signals-card{ padding:14px 16px; gap:10px; flex-wrap:wrap; } .bsc-main{ flex-basis:100%; } .bsc-score-wrap{ margin-left:auto; } .bsc-score{ font-size:1.5em; } }
 
         .daily-report-card {
             background: white;
@@ -3066,12 +3066,15 @@
         
         // Populate the On-Chain Bottom Signals summary card from the generated info JSON
         function updateBottomSignalsCard() {
-            fetch('charts/bottom_signals_info.json')
+            fetch('charts/bottom_signals_info.json?t=' + Date.now(), { cache: "no-store" })
                 .then(r => r.ok ? r.json() : null)
                 .then(data => {
                     if (!data || typeof data.composite !== 'number') return;
                     const card = document.getElementById('bottomSignalsCard');
                     if (!card) return;
+                    if (data.date) {
+                        card.href = 'charts/bottom_signals.html?v=' + encodeURIComponent(data.date);
+                    }
                     const scoreEl = document.getElementById('bscScore');
                     scoreEl.textContent = Math.round(data.composite);
                     scoreEl.style.color = data.zone_color || '#1d1d1f';
