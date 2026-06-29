@@ -78,9 +78,11 @@ def test_settings_page_exposes_active_exchange_and_kraken_credentials():
     assert 'id="krakenForm"' in html
     assert "/api/kraken/credentials" in html
     assert 'data-bs-target="#krakenHelpSection"' in html
-    assert 'data-bs-target="#krakenTradingHelpSection"' in html
-    assert "How to get Kraken API Key" in html
-    assert "How to create Kraken Trading API Key" in html
+    assert 'data-bs-target="#krakenTradingHelpSection"' not in html
+    assert 'id="krakenTradingHelpSection"' not in html
+    assert "How to create Kraken API Keys" in html
+    assert "Creating a Read-Only API Key on Kraken Pro:" in html
+    assert "Creating a Trading API Key on Kraken Pro:" in html
     assert '<button type="submit" class="btn btn-primary w-100">\n                                <span id="saveKrakenTradingButtonText">Save Kraken Trading Credentials</span>' in html
 
 
