@@ -186,7 +186,7 @@
                                 <label class="form-label">Trading API Secret</label>
                                 <input type="password" class="form-control" id="krakenTradingApiSecret" placeholder="Enter new secret to update">
                             </div>
-                            <button type="submit" class="btn btn-danger w-100">
+                            <button type="submit" class="btn btn-primary w-100">
                                 <span id="saveKrakenTradingButtonText">Save Kraken Trading Credentials</span>
                             </button>
                         </form>
@@ -209,6 +209,51 @@
                             <span id="testKrakenTradingText">Verify Kraken Trading</span>
                         </button>
                         <div id="krakenTradingTestResult" class="mt-2 small"></div>
+                    </div>
+                </div>
+
+                <div class="mt-4">
+                    <button class="btn btn-sm btn-outline-primary me-2 mb-2" type="button" data-bs-toggle="collapse" data-bs-target="#krakenHelpSection">
+                        ℹ️ How to get Kraken API Key
+                    </button>
+                    <button class="btn btn-sm btn-outline-primary mb-2" type="button" data-bs-toggle="collapse" data-bs-target="#krakenTradingHelpSection">
+                        ⚠ How to create Kraken Trading API Key
+                    </button>
+
+                    <div class="collapse mt-2" id="krakenHelpSection">
+                        <div class="card card-body satsflow-soft-panel">
+                            <h6>Creating a Read-Only API Key on Kraken Pro:</h6>
+                            <ol class="mb-0 small">
+                                <li>Log into your <strong>Kraken Pro</strong> account.</li>
+                                <li>Open <strong>Settings</strong>, then <strong>API</strong>.</li>
+                                <li>Click <strong>Add key</strong> and name it, for example "DCA Read-Only".</li>
+                                <li>Enable read/query permissions for funds and closed/open orders or trades.</li>
+                                <li>Leave trading and withdrawal permissions disabled.</li>
+                                <li>Copy the <strong>API Key</strong> and <strong>Private Key</strong> immediately.</li>
+                                <li>Paste them into the read-only form above and click <strong>Save Kraken Credentials</strong>.</li>
+                            </ol>
+                            <div class="alert alert-warning small mt-3 mb-0">
+                                <strong>Security Note:</strong> The Private Key is encrypted before storage and never displayed again.
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="collapse mt-2" id="krakenTradingHelpSection">
+                        <div class="card card-body satsflow-soft-panel">
+                            <h6>Creating a Trading API Key on Kraken Pro:</h6>
+                            <ol class="mb-0 small">
+                                <li>Create a separate API key in <strong>Settings</strong> → <strong>API</strong>.</li>
+                                <li>Enable the read/query permissions needed for funds and order/trade history.</li>
+                                <li>Enable the order creation permission needed for spot market buys.</li>
+                                <li>Leave withdrawal permissions disabled.</li>
+                                <li>Copy the <strong>API Key</strong> and <strong>Private Key</strong> immediately.</li>
+                                <li>Paste them into the trading form above and click <strong>Save Kraken Trading Credentials</strong>.</li>
+                                <li>Click <strong>Verify Kraken Trading</strong> before enabling LIVE mode.</li>
+                            </ol>
+                            <div class="alert alert-satsflow-danger small mt-3 mb-0">
+                                <strong>LIVE Trading:</strong> Use a dedicated key, start with small amounts, and never enable withdrawals.
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>

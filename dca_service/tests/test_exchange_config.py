@@ -77,6 +77,23 @@ def test_settings_page_exposes_active_exchange_and_kraken_credentials():
     assert "/api/exchange/active" in html
     assert 'id="krakenForm"' in html
     assert "/api/kraken/credentials" in html
+    assert 'data-bs-target="#krakenHelpSection"' in html
+    assert 'data-bs-target="#krakenTradingHelpSection"' in html
+    assert "How to get Kraken API Key" in html
+    assert "How to create Kraken Trading API Key" in html
+    assert '<button type="submit" class="btn btn-primary w-100">\n                                <span id="saveKrakenTradingButtonText">Save Kraken Trading Credentials</span>' in html
+
+
+def test_settings_menu_labels_exchange_not_binance():
+    html = (TEMPLATE_DIR / "_shared_header.html").read_text(encoding="utf-8")
+    settings_items = [
+        line for line in html.splitlines()
+        if 'href="/settings/binance"' in line
+    ]
+
+    assert len(settings_items) == 2
+    assert all("Exchange</a>" in item for item in settings_items)
+    assert all(">Binance</a>" not in item for item in settings_items)
 
 
 def test_strategy_page_checks_active_exchange_trading_status():
