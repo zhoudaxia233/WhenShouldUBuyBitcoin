@@ -7,11 +7,10 @@ using real-time BTC prices, without waiting for daily close.
 
 import numpy as np
 import pandas as pd
-from datetime import datetime
 from zoneinfo import ZoneInfo
 from typing import Optional, Dict
 
-from .data_fetcher import get_realtime_btc_price
+from .data_fetcher import get_realtime_btc_price, get_realtime_btc_price_with_source
 from .persistence import load_existing_metrics
 from .metrics import get_ahr999_zone, calculate_ahr999_percentile, calculate_ahr999_percentile_below_one
 
@@ -103,7 +102,7 @@ def calculate_distance_to_buy_zone(ratio: float) -> Dict[str, float]:
         }
 
 
-def check_realtime_status(verbose: bool = True) -> Optional[Dict]:
+def check_realtime_status(verbose: bool = True, exchange: str | None = None) -> Optional[Dict]:
     """
     Check the current real-time buy zone status.
     
@@ -145,7 +144,11 @@ def check_realtime_status(verbose: bool = True) -> Optional[Dict]:
         print("\n📡 Fetching real-time BTC price...")
     
     try:
-        price_time, realtime_price = get_realtime_btc_price()
+        if exchange:
+            price_time, realtime_price, price_source = get_realtime_btc_price_with_source(exchange)
+        else:
+            price_time, realtime_price = get_realtime_btc_price()
+            price_source = "binance_public_api"
         
         if verbose:
             # Convert UTC time to Berlin time for display
@@ -229,6 +232,7 @@ def check_realtime_status(verbose: bool = True) -> Optional[Dict]:
     result = {
         "timestamp": price_time,
         "realtime_price": realtime_price,
+        "price_source": price_source,
         "dca_cost": realtime_dca,
         "ratio_dca": ratio_dca,
         "dca_distance": dca_distance,

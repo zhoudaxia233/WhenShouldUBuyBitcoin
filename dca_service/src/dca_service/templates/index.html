@@ -2375,7 +2375,7 @@
         <!-- Wallet Overview Section -->
         <section class="wallet-overview-section mb-4" aria-label="Wallet overview">
                 <div id="walletError" class="alert alert-warning d-none">
-                    Configure Binance API credentials to view hot wallet data.
+                    Configure exchange API credentials to view hot wallet data.
                 </div>
                 <div id="walletContent">
                     <div class="wallet-card-grid">
@@ -2384,7 +2384,7 @@
                             <div class="metric-label mb-3">Total BTC Balance</div>
                             <div class="metric-value mb-3" id="totalBtc">--</div>
                             <div class="metric-subtext">
-                                <span id="hotBalance" title="Binance (Hot)">Hot: --</span> | 
+                                <span id="hotBalance" title="Exchange (Hot)">Hot: --</span> |
                                 <span id="coldBalance" title="Cold Storage">Cold: --</span>
                             </div>
                             <div class="mt-4">
@@ -2394,11 +2394,11 @@
                             </div>
                         </article>
                         
-                        <!-- Available USDC (Binance) -->
+                        <!-- Available quote balance (active exchange) -->
                         <article class="metric-card">
-                            <div class="metric-label mb-4">Available USDC</div>
+                            <div class="metric-label mb-4" id="quoteBalanceLabel">Available USDC</div>
                             <div class="metric-value mb-3" id="quoteBalance">--</div>
-                            <div class="metric-subtext">Binance Balance</div>
+                            <div class="metric-subtext">Exchange Balance</div>
                             <div class="mobile-card-icon" aria-hidden="true"><i class="bi bi-currency-dollar"></i></div>
                         </article>
                         
@@ -2761,6 +2761,24 @@
 
             window.formatDashboardStatusReason = formatDashboardStatusReason;
 
+            function updateQuoteBalanceUI(exchangeHoldings) {
+                if (!exchangeHoldings) return;
+                const quoteAsset = exchangeHoldings.quote_asset || 'USDC';
+                const labelEl = document.getElementById('quoteBalanceLabel');
+                const quoteEl = document.getElementById('quoteBalance');
+                if (labelEl) {
+                    labelEl.textContent = `Available ${quoteAsset}`;
+                }
+                if (quoteEl && exchangeHoldings.quote_balance !== null && exchangeHoldings.quote_balance !== undefined) {
+                    const quoteBalance = toFiniteNumber(exchangeHoldings.quote_balance);
+                    if (quoteBalance !== null) {
+                        quoteEl.textContent = `${quoteBalance.toFixed(2)} ${quoteAsset}`;
+                    }
+                }
+            }
+
+            window.updateQuoteBalanceUI = updateQuoteBalanceUI;
+
             const parseCache = (key) => {
                 try {
                     const raw = localStorage.getItem(key);
@@ -2781,7 +2799,7 @@
             }
 
             if (wallet && wallet.total_btc !== undefined && wallet.total_btc !== null) {
-                const binance = parseCache('binance_holdings');
+                const exchangeHoldings = parseCache('exchange_holdings');
                 const totalBtc = toFiniteNumber(wallet.total_btc);
                 const hotBtc = toFiniteNumber(wallet.hot_wallet_balance ?? 0);
                 const coldBtc = toFiniteNumber(wallet.cold_wallet_balance ?? 0);
@@ -2789,7 +2807,6 @@
                 const totalBtcEl = document.getElementById('totalBtc');
                 const hotEl = document.getElementById('hotBalance');
                 const coldEl = document.getElementById('coldBalance');
-                const quoteEl = document.getElementById('quoteBalance');
                 const progressEl = document.getElementById('progressPercent');
                 const targetEl = document.getElementById('targetAmount');
                 const progressBarEl = document.getElementById('progressBar');
@@ -2803,12 +2820,7 @@
                 if (hotEl && hotBtc !== null) hotEl.textContent = `Hot: ${hotBtc.toFixed(8)}`;
                 if (coldEl && coldBtc !== null) coldEl.textContent = `Cold: ${coldBtc.toFixed(8)}`;
 
-                if (quoteEl && binance && binance.quote_balance !== null && binance.quote_balance !== undefined) {
-                    const quoteBalance = toFiniteNumber(binance.quote_balance);
-                    if (quoteBalance !== null) {
-                        quoteEl.textContent = `$${quoteBalance.toFixed(2)}`;
-                    }
-                }
+                updateQuoteBalanceUI(exchangeHoldings);
 
                 if (strategy && strategy.target_btc_amount) {
                     const target = toFiniteNumber(strategy.target_btc_amount);
@@ -5083,7 +5095,7 @@
             // Pre-fill modal with current cold wallet balance
             document.getElementById('coldWalletInput').value = data.cold_wallet_balance;
             
-            // Show warning if no Binance credentials (hot wallet will be 0)
+            // Show warning if no exchange credentials are configured (hot wallet will be 0)
             const errorBox = document.getElementById('walletError');
             if (data.hot_wallet_balance === 0 && data.hot_wallet_avg_price === 0) {
                 errorBox.classList.remove('d-none');
@@ -5111,14 +5123,12 @@
                 // 1. Load all cached data FIRST for instant display
                 const cachedWallet = loadFromCache('wallet_summary');
                 const cachedStrategy = loadFromCache('strategy_config');
-                const cachedBinance = loadFromCache('binance_holdings');
+                const cachedExchangeHoldings = loadFromCache('exchange_holdings');
                 
                 if (cachedWallet) updateWalletUI(cachedWallet, cachedStrategy);
                 
-                // Show cached USDC immediately
-                if (cachedBinance && cachedBinance.quote_balance !== null && cachedBinance.quote_balance !== undefined) {
-                    document.getElementById('quoteBalance').textContent = '$' + cachedBinance.quote_balance.toFixed(2);
-                }
+                // Show cached quote balance immediately
+                window.updateQuoteBalanceUI(cachedExchangeHoldings);
                 
                 // 2. Fetch fresh wallet data
                 const response = await fetch('/api/wallet/summary');
@@ -5131,15 +5141,13 @@
                 
                 updateWalletUI(data, strategy);
                 
-                // 4. Fetch fresh Binance holdings
+                // 4. Fetch fresh active exchange holdings
                 try {
-                    const binanceResponse = await fetch('/api/binance/holdings');
-                    const binanceData = await binanceResponse.json();
-                    saveToCache('binance_holdings', binanceData);
+                    const exchangeResponse = await fetch('/api/exchange/holdings');
+                    const exchangeData = await exchangeResponse.json();
+                    saveToCache('exchange_holdings', exchangeData);
                     
-                    if (binanceData.connected && binanceData.quote_balance !== null) {
-                        document.getElementById('quoteBalance').textContent = '$' + binanceData.quote_balance.toFixed(2);
-                    }
+                    window.updateQuoteBalanceUI(exchangeData);
                 } catch (err) {
                     console.log('Could not fetch quote balance:', err);
                 }

@@ -344,7 +344,7 @@
                             </label>
                         </div>
                         <div class="form-text text-muted ps-4">
-                            Records "virtual" buys only. No real orders are sent to Binance. Safe for testing.
+                            Records "virtual" buys only. No real orders are sent to the active exchange. Safe for testing.
                         </div>
                        
                         <div class="form-check mt-2">
@@ -354,7 +354,7 @@
                             </label>
                         </div>
                         <div class="form-text text-muted ps-4" id="live_mode_warning">
-                            <span class="text-danger">⚠ WARNING:</span> This will place <strong>REAL MARKET BUY ORDERS</strong> on your Binance account.
+                            <span class="text-danger">⚠ WARNING:</span> This will place <strong>REAL MARKET BUY ORDERS</strong> on your active exchange account.
                         </div>
                     </div>
 
@@ -689,10 +689,10 @@
                 </div>
                 <div class="modal-body">
                     <p class="fw-bold">You are about to enable LIVE trading.</p>
-                    <p>This means the system will place <strong>REAL MARKET BUY ORDERS</strong> on your Binance account using your configured API keys.</p>
+                    <p>This means the system will place <strong>REAL MARKET BUY ORDERS</strong> on your active exchange account using your configured API keys.</p>
                     <p>Please confirm that:</p>
                     <ul>
-                        <li>You have sufficient USDT/USDC in your Binance Spot wallet.</li>
+                        <li>You have sufficient quote-asset balance in your active exchange spot wallet.</li>
                         <li>You accept the risk of automated trading.</li>
                         <li>Your API keys have "Enable Spot & Margin Trading" permission.</li>
                     </ul>
@@ -753,7 +753,10 @@
         async function loadStrategy() {
             try {
                 // First check trading status
-                const tradingStatusResp = await fetch('/api/binance/trading-status');
+                const activeExchangeResp = await fetch('/api/exchange/active');
+                const activeExchangeData = await activeExchangeResp.json();
+                const activeExchange = activeExchangeData.active_exchange || 'BINANCE';
+                const tradingStatusResp = await fetch(`/api/${activeExchange.toLowerCase()}/trading-status`);
                 const tradingStatus = await tradingStatusResp.json();
                 
                 const liveRadio = document.getElementById('execution_mode_live');
@@ -764,7 +767,7 @@
                     liveRadio.disabled = true;
                     liveWarning.innerHTML = `
                         <span class="text-warning">⚠ LIVE MODE DISABLED:</span> ${tradingStatus.error_message}<br>
-                        <a href="/settings/binance" class="text-primary">Configure Binance credentials</a> to enable live trading.
+                        <a href="/settings/binance" class="text-primary">Configure ${activeExchange} credentials</a> to enable live trading.
                     `;
                 }
                 

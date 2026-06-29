@@ -7,7 +7,7 @@ def test_dashboard_wallet_section_uses_dash_placeholders_and_cache_hydration():
     html = template_path.read_text(encoding="utf-8")
 
     assert 'id="totalBtc">--<' in html
-    assert 'id="hotBalance" title="Binance (Hot)">Hot: --<' in html
+    assert 'id="hotBalance" title="Exchange (Hot)">Hot: --<' in html
     assert 'id="coldBalance" title="Cold Storage">Cold: --<' in html
     assert 'id="quoteBalance">--<' in html
     assert 'id="progressPercent">--%<' in html

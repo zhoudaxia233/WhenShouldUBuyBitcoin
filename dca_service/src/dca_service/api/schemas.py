@@ -60,7 +60,7 @@ class WalletSummary(BaseModel):
     """Comprehensive wallet information including both hot and cold storage"""
     cold_wallet_balance: float
     hot_wallet_balance: float
-    hot_wallet_avg_price: float  # Average buy price from Binance trade history
+    hot_wallet_avg_price: float  # Average buy price from active exchange trade history
     total_btc: float
     current_price: float  # Current BTC market price
     cold_wallet_value_usd: float

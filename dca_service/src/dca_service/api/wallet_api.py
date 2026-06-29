@@ -1,54 +1,47 @@
 """
 Wallet management API endpoints.
-Handles cold wallet balance tracking and Binance hot wallet information.
+Handles cold wallet balance tracking and active exchange hot wallet information.
 """
 from datetime import datetime, timezone
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 from sqlmodel import Session
-from typing import Optional
 
 from dca_service.database import get_session
-from dca_service.models import GlobalSettings, BinanceCredentials, User
+from dca_service.models import GlobalSettings, User
 from dca_service.api.schemas import WalletSummary, ColdWalletBalanceUpdate
-from dca_service.services.binance_client import BinanceClient
 from dca_service.services.security import decrypt_text
+from dca_service.services.exchange_config import get_active_exchange, get_credentials, get_exchange_symbol
 from dca_service.core.logging import logger
-from sqlmodel import select
 from dca_service.auth.dependencies import get_current_user
 
 router = APIRouter(prefix="/wallet", tags=["wallet"])
 
 
-def _get_binance_client(session: Session) -> Optional[BinanceClient]:
+def _get_exchange_client(session: Session):
     """
-    Create authenticated Binance client from stored credentials.
+    Create authenticated active-exchange client from stored credentials.
     Prefers READ_ONLY credentials, falls back to TRADING if needed.
-    
-    Returns:
-        BinanceClient instance or None if credentials not configured
     """
-    # Try READ_ONLY credentials first
-    creds = session.exec(
-        select(BinanceCredentials).where(BinanceCredentials.credential_type == "READ_ONLY")
-    ).first()
-    
-    # Fallback to TRADING credentials if READ_ONLY not found
+    exchange = get_active_exchange(session)
+    creds = get_credentials(session, exchange, "READ_ONLY")
     if not creds:
-        creds = session.exec(
-            select(BinanceCredentials).where(BinanceCredentials.credential_type == "TRADING")
-        ).first()
+        creds = get_credentials(session, exchange, "TRADING")
     
     if not creds:
-        logger.debug("No Binance credentials configured")
-        return None
+        logger.debug(f"No {exchange} credentials configured")
+        return None, exchange, get_exchange_symbol(exchange)
     
     try:
         api_key = decrypt_text(creds.api_key_encrypted)
         api_secret = decrypt_text(creds.api_secret_encrypted)
-        return BinanceClient(api_key, api_secret)
+        if exchange == "KRAKEN":
+            from dca_service.services.kraken_client import KrakenClient
+            return KrakenClient(api_key, api_secret), exchange, get_exchange_symbol(exchange)
+        from dca_service.services.binance_client import BinanceClient
+        return BinanceClient(api_key, api_secret), exchange, get_exchange_symbol(exchange)
     except Exception as e:
-        logger.error(f"Failed to decrypt Binance credentials: {e}")
-        return None
+        logger.error(f"Failed to decrypt {exchange} credentials: {e}")
+        return None, exchange, get_exchange_symbol(exchange)
 
 
 async def fetch_wallet_summary(session: Session) -> WalletSummary:
@@ -72,8 +65,7 @@ async def fetch_wallet_summary(session: Session) -> WalletSummary:
     hot_wallet_avg_price = 0.0
     current_price = 0.0
     
-    # Try to get Binance data
-    client = _get_binance_client(session)
+    client, exchange, exchange_symbol = _get_exchange_client(session)
     if client:
         try:
             # Fetch balances
@@ -81,21 +73,21 @@ async def fetch_wallet_summary(session: Session) -> WalletSummary:
             hot_wallet_balance = balances.get("BTC", 0.0)
             
             # Fetch current price
-            current_price = await client.get_current_price("BTCUSDC")
+            current_price = await client.get_current_price(exchange_symbol)
             
             # Calculate average buy price (cost basis)
-            hot_wallet_avg_price = await client.calculate_avg_buy_price("BTCUSDC")
+            hot_wallet_avg_price = await client.calculate_avg_buy_price(exchange_symbol)
             
             await client.close()
         except Exception as e:
-            logger.error(f"Error fetching Binance data: {e}")
+            logger.error(f"Error fetching {exchange} data: {e}")
             if client:
                 await client.close()
     else:
-        # Fallback: try to get current price from data_fetcher if Binance not configured
+        # Fallback: try to get current price from the selected public exchange source.
         try:
-            from whenshouldubuybitcoin.data_fetcher import get_realtime_btc_price
-            _, current_price = get_realtime_btc_price()
+            from whenshouldubuybitcoin.data_fetcher import get_realtime_btc_price_with_source
+            _, current_price, _price_source = get_realtime_btc_price_with_source(exchange)
         except Exception as e:
             logger.warning(f"Could not fetch BTC price from fallback source: {e}")
             current_price = 0.0
@@ -126,8 +118,8 @@ async def get_wallet_summary(
     """
     Get comprehensive wallet information including:
     - Cold wallet balance (from database)
-    - Hot wallet balance (from Binance)
-    - Average buy price (calculated from Binance trade history)
+    - Hot wallet balance (from active exchange)
+    - Average buy price (calculated from active exchange trade history)
     - Current BTC price
     - USD values for all holdings
     """

@@ -194,7 +194,7 @@ def test_limited_budget_cap(session, strategy):
     
     # We need to temporarily set the mock
     original_get_metrics = engine_module.get_latest_metrics
-    engine_module.get_latest_metrics = lambda: mock_metrics
+    engine_module.get_latest_metrics = lambda **_: mock_metrics
     
     try:
         decision = calculate_dca_decision(session)
@@ -255,7 +255,7 @@ def test_unlimited_budget_spending(session, strategy):
         "peak180": 50000.0
     }
     original_get_metrics = engine_module.get_latest_metrics
-    engine_module.get_latest_metrics = lambda: mock_metrics
+    engine_module.get_latest_metrics = lambda **_: mock_metrics
     
     try:
         # Should allow spending despite monthly cap being hit

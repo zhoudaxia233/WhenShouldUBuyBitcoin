@@ -4,7 +4,7 @@ This web interface provides a browser-based tool to check Bitcoin's buy zone sta
 
 ## Features
 
-- **Real-time Price**: Fetches current BTC price from Binance, then falls back to Coinbase
+- **Real-time Price**: Static browser check fetches current BTC price from Binance, then falls back to Coinbase
 - **Buy Zone Analysis**: Calculates whether Bitcoin is in the "double undervaluation" buy zone
 - **Dual Timezone**: Shows time in both UTC and Berlin (CET/CEST)
 - **Distance Calculation**: Shows exactly how much BTC needs to drop to enter buy zone
@@ -68,7 +68,7 @@ Simply open `docs/index.html` in your browser. Note: Some features may not work 
 
 ## Real-Time Price APIs
 
-The browser tries Binance first and Coinbase second. No API key or proxy is required. If both exchange APIs fail, the page shows an error instead of using a stale price.
+The static browser page has no access to the DCA app's active exchange setting, so it tries Binance first and Coinbase second. No API key or proxy is required. If both exchange APIs fail, the page shows an error instead of using a stale price.
 
 ## Deploying to GitHub Pages
 

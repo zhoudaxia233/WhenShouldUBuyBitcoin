@@ -7,10 +7,10 @@ Tests the mailer service including:
 - Error handling and graceful degradation
 """
 import pytest
-from unittest.mock import Mock, patch, MagicMock
+from unittest.mock import patch, MagicMock
 import smtplib
 
-from dca_service.services.mailer import send_email
+from dca_service.services.mailer import send_email, send_trade_failure_notification
 
 
 @pytest.fixture
@@ -68,6 +68,30 @@ class TestMailerMissingConfig:
         
         # Should not attempt SMTP connection
         mock_smtp.assert_not_called()
+
+
+def test_trade_failure_notification_uses_transaction_exchange():
+    transaction = MagicMock(
+        exchange="KRAKEN",
+        intended_amount_usd=50.0,
+        timestamp="2026-06-29T12:00:00Z",
+    )
+    decision = MagicMock(
+        suggested_amount_usd=50.0,
+        price_usd=50000.0,
+        ahr999_value=0.5,
+    )
+
+    with (
+        patch("dca_service.services.mailer._get_email_config", return_value={"enabled": True}),
+        patch("dca_service.services.mailer.send_email") as mock_send,
+    ):
+        send_trade_failure_notification(transaction, decision, "Kraken trading error")
+
+    body = mock_send.call_args.args[1]
+    assert "LIVE trade on Kraken has failed" in body
+    assert "Check your Kraken settings" in body
+    assert "Binance" not in body
     
     @patch('dca_service.services.mailer.settings')
     @patch('dca_service.services.mailer.smtplib.SMTP')

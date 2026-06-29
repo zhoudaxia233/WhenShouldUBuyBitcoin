@@ -30,7 +30,7 @@ Using two independent metrics reduces false signals and identifies stronger buyi
 ### Data Updates
 
 - Historical data update workflow is currently **manual trigger only** (`workflow_dispatch`); cron schedule is intentionally commented out
-- Real-time check fetches **live BTC price** from Binance first, then falls back to Coinbase
+- DCA service real-time checks fetch **live BTC price** from the configured active exchange, then fall back to Coinbase with the fallback source labeled
 - Historical charts and daily summaries use the generated files in `docs/data/`; check each page's displayed update timestamp before treating non-price metrics as current.
 
 ### Local DCA Service (Poetry)
