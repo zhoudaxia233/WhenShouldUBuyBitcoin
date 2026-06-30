@@ -166,6 +166,8 @@ def _realtime_source_label(price_source: str | None, active_exchange: str) -> st
         return f"Coinbase fallback for {active_exchange}"
     if active_exchange == "KRAKEN":
         return "Kraken"
+    if active_exchange == "BITVAVO":
+        return "Bitvavo"
     return "Binance"
 
 

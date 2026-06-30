@@ -211,6 +211,19 @@ def get_realtime_btc_price_with_source(exchange: str = "BINANCE") -> tuple[datet
                 return datetime.now(), price, "kraken_public_api"
         except Exception as e:
             print(f"⚠ Kraken API error: {e}")
+    elif selected_exchange == "BITVAVO":
+        try:
+            response = requests.get(
+                "https://api.bitvavo.com/v2/ticker/price?market=BTC-EUR", timeout=5
+            )
+            response.raise_for_status()
+            data = response.json()
+            price = float(data["price"])
+            if validate_price(price):
+                print(f"✓ Fetched real-time price from Bitvavo: ${price:,.2f}")
+                return datetime.now(), price, "bitvavo_public_api"
+        except Exception as e:
+            print(f"⚠ Bitvavo API error: {e}")
     else:
         try:
             response = requests.get(

@@ -324,6 +324,9 @@ class DCAScheduler:
                         if exchange == "KRAKEN":
                             from dca_service.services.kraken_client import KrakenClient
                             client = KrakenClient(api_key, api_secret)
+                        elif exchange == "BITVAVO":
+                            from dca_service.services.bitvavo_client import BitvavoClient
+                            client = BitvavoClient(api_key, api_secret)
                         else:
                             from dca_service.services.binance_client import BinanceClient
                             client = BinanceClient(api_key, api_secret)

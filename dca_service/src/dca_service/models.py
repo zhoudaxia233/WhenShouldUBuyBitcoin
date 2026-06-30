@@ -125,6 +125,17 @@ class KrakenCredentials(SQLModel, table=True):
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
+class BitvavoCredentials(SQLModel, table=True):
+    __tablename__ = "bitvavo_credentials"
+
+    id: int | None = Field(default=None, primary_key=True)
+    credential_type: str = Field(default="READ_ONLY", index=True)  # "READ_ONLY" or "TRADING"
+    api_key_encrypted: str
+    api_secret_encrypted: str
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+
 
 class GlobalSettings(SQLModel, table=True):
     """

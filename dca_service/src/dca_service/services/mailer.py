@@ -135,7 +135,7 @@ def send_trade_failure_notification(transaction, decision, error_msg: str):
         return
     
     exchange = (getattr(transaction, "exchange", None) or "BINANCE").upper()
-    exchange_label = "Kraken" if exchange == "KRAKEN" else "Binance"
+    exchange_label = "Kraken" if exchange == "KRAKEN" else "Bitvavo" if exchange == "BITVAVO" else "Binance"
     subject = f"⚠ DCA Trade FAILED - {error_msg[:50]}"
     
     body = f"""

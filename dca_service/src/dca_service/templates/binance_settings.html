@@ -137,6 +137,7 @@
                 <select class="form-select" id="activeExchangeSelect">
                     <option value="BINANCE">Binance</option>
                     <option value="KRAKEN">Kraken Pro</option>
+                    <option value="BITVAVO">Bitvavo</option>
                 </select>
                 <div id="activeExchangeStatus" class="form-text mt-2 text-muted">Checking...</div>
             </div>
@@ -246,6 +247,103 @@
                             </ol>
                             <div class="alert alert-satsflow-danger small mt-3 mb-0">
                                 <strong>LIVE Trading:</strong> Use a dedicated key, start with small amounts, and never enable withdrawals.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card dashboard-panel mb-4">
+            <div class="card-header dashboard-panel-header">
+                <h5 class="mb-0">Bitvavo Settings</h5>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-satsflow mb-4">
+                    <strong>Bitvavo connection:</strong>
+                    <ul class="mb-0 mt-2 small">
+                        <li>Bitvavo uses <strong>BTC-EUR</strong> for DCA prices, balances, LIVE orders, and sync.</li>
+                        <li>Read-only credentials fetch hot wallet data and sync buy history.</li>
+                        <li>Trading credentials are used only when LIVE mode is enabled and Bitvavo is the active exchange.</li>
+                        <li>Coinbase is only a labeled public price fallback; it is never used for DCA orders.</li>
+                    </ul>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6 class="mb-3">Read-Only API Credentials</h6>
+                        <form id="bitvavoForm">
+                            <div class="mb-3">
+                                <label class="form-label">API Key</label>
+                                <input type="text" class="form-control" id="bitvavoApiKey" placeholder="Enter new key to update">
+                                <div id="currentBitvavoKeyDisplay" class="form-text text-muted mt-1"></div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">API Secret</label>
+                                <input type="password" class="form-control" id="bitvavoApiSecret" placeholder="Enter new secret to update">
+                            </div>
+                            <button type="submit" class="btn btn-primary w-100">
+                                <span id="saveBitvavoButtonText">Save Bitvavo Credentials</span>
+                            </button>
+                        </form>
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="mb-3">Trading API Credentials</h6>
+                        <form id="bitvavoTradingForm">
+                            <div class="mb-3">
+                                <label class="form-label">Trading API Key</label>
+                                <input type="text" class="form-control" id="bitvavoTradingApiKey" placeholder="Enter new key to update">
+                                <div id="currentBitvavoTradingKeyDisplay" class="form-text text-muted mt-1"></div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Trading API Secret</label>
+                                <input type="password" class="form-control" id="bitvavoTradingApiSecret" placeholder="Enter new secret to update">
+                            </div>
+                            <button type="submit" class="btn btn-primary w-100">
+                                <span id="saveBitvavoTradingButtonText">Save Bitvavo Trading Credentials</span>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <div class="row mt-4">
+                    <div class="col-md-6">
+                        <strong>Read-Only Status:</strong>
+                        <p id="bitvavoCredStatus" class="mb-2 small">Checking...</p>
+                        <button id="testBitvavoConnectionBtn" class="btn btn-outline-secondary w-100">
+                            <span id="testBitvavoButtonText">Test Bitvavo Connection</span>
+                        </button>
+                        <div id="bitvavoTestResult" class="mt-2 small"></div>
+                    </div>
+                    <div class="col-md-6">
+                        <strong>Trading Status:</strong>
+                        <p id="bitvavoTradingCredStatus" class="mb-2 small">Checking...</p>
+                        <button id="testBitvavoTradingBtn" class="btn btn-outline-danger w-100">
+                            <span id="testBitvavoTradingText">Verify Bitvavo Trading</span>
+                        </button>
+                        <div id="bitvavoTradingTestResult" class="mt-2 small"></div>
+                    </div>
+                </div>
+
+                <div class="mt-4">
+                    <button class="btn btn-sm btn-outline-primary mb-2" type="button" data-bs-toggle="collapse" data-bs-target="#bitvavoHelpSection">
+                        ℹ️ How to create Bitvavo API Keys
+                    </button>
+
+                    <div class="collapse mt-2" id="bitvavoHelpSection">
+                        <div class="card card-body satsflow-soft-panel">
+                            <h6>Creating Bitvavo API Keys:</h6>
+                            <ol class="mb-0 small">
+                                <li>Log into your <strong>Bitvavo</strong> account.</li>
+                                <li>Open <strong>Account</strong>, then <strong>API</strong>.</li>
+                                <li>Create one read-only key for balances and trade history.</li>
+                                <li>Create a separate trading key only if you want LIVE DCA orders.</li>
+                                <li>Leave withdrawal permissions disabled.</li>
+                                <li>Copy the <strong>API Key</strong> and <strong>API Secret</strong> immediately.</li>
+                                <li>Paste them into the matching form above and save.</li>
+                            </ol>
+                            <div class="alert alert-satsflow-danger small mt-3 mb-0">
+                                <strong>LIVE Trading:</strong> Use a dedicated key, start with small EUR amounts, and never enable withdrawals.
                             </div>
                         </div>
                     </div>
@@ -746,6 +844,98 @@
             const response = await fetch('/api/kraken/trading-status');
             const result = await response.json();
             resultDiv.textContent = result.can_enable_live ? '✔ Kraken trading credentials verified' : `❌ ${result.error_message || 'Trading verification failed'}`;
+            resultDiv.className = result.can_enable_live ? 'mt-2 small text-success fw-bold' : 'mt-2 small text-danger fw-bold';
+        });
+
+        async function loadBitvavoStatus() {
+            const readStatus = await fetch('/api/bitvavo/credentials/status?credential_type=READ_ONLY').then(r => r.json());
+            const tradingStatus = await fetch('/api/bitvavo/credentials/status?credential_type=TRADING').then(r => r.json());
+            const readEl = document.getElementById('bitvavoCredStatus');
+            const readKeyEl = document.getElementById('currentBitvavoKeyDisplay');
+            const tradingEl = document.getElementById('bitvavoTradingCredStatus');
+            const tradingKeyEl = document.getElementById('currentBitvavoTradingKeyDisplay');
+
+            if (readStatus.has_credentials) {
+                readEl.textContent = '✔ Bitvavo read-only credentials stored';
+                readEl.className = 'mb-2 small text-success fw-bold';
+                readKeyEl.textContent = readStatus.masked_api_key ? `Current: ${readStatus.masked_api_key}` : '';
+                readKeyEl.className = 'form-text text-success masked-key';
+            } else {
+                readEl.textContent = '⚠ No Bitvavo read-only credentials stored';
+                readEl.className = 'mb-2 small text-warning fw-bold';
+                readKeyEl.textContent = '';
+            }
+
+            if (tradingStatus.has_credentials) {
+                tradingEl.textContent = '✔ Bitvavo trading credentials stored';
+                tradingEl.className = 'mb-2 small text-success fw-bold';
+                tradingKeyEl.textContent = tradingStatus.masked_api_key ? `Current: ${tradingStatus.masked_api_key}` : '';
+                tradingKeyEl.className = 'form-text text-success masked-key';
+            } else {
+                tradingEl.textContent = '⚠ No Bitvavo trading credentials stored';
+                tradingEl.className = 'mb-2 small text-warning fw-bold';
+                tradingKeyEl.textContent = '';
+            }
+        }
+
+        async function saveBitvavoCredentials(formId, keyId, secretId, credentialType, saveTextId) {
+            const apiKey = document.getElementById(keyId).value.trim();
+            const apiSecret = document.getElementById(secretId).value.trim();
+            if (!apiKey || !apiSecret) {
+                notyf.error('Both Bitvavo API Key and Secret are required');
+                return;
+            }
+            const form = document.getElementById(formId);
+            const btn = form.querySelector('button[type="submit"]');
+            const saveText = document.getElementById(saveTextId);
+            const originalText = saveText.textContent;
+            btn.disabled = true;
+            saveText.textContent = 'Saving...';
+            try {
+                const response = await fetch('/api/bitvavo/credentials', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ api_key: apiKey, api_secret: apiSecret, credential_type: credentialType })
+                });
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.detail || 'Unknown error');
+                }
+                document.getElementById(keyId).value = '';
+                document.getElementById(secretId).value = '';
+                await loadBitvavoStatus();
+                notyf.success('Bitvavo credentials saved');
+            } catch (error) {
+                notyf.error('Error saving Bitvavo credentials: ' + error.message);
+            } finally {
+                btn.disabled = false;
+                saveText.textContent = originalText;
+            }
+        }
+
+        document.getElementById('bitvavoForm').addEventListener('submit', (event) => {
+            event.preventDefault();
+            saveBitvavoCredentials('bitvavoForm', 'bitvavoApiKey', 'bitvavoApiSecret', 'READ_ONLY', 'saveBitvavoButtonText');
+        });
+
+        document.getElementById('bitvavoTradingForm').addEventListener('submit', (event) => {
+            event.preventDefault();
+            saveBitvavoCredentials('bitvavoTradingForm', 'bitvavoTradingApiKey', 'bitvavoTradingApiSecret', 'TRADING', 'saveBitvavoTradingButtonText');
+        });
+
+        document.getElementById('testBitvavoConnectionBtn').addEventListener('click', async () => {
+            const resultDiv = document.getElementById('bitvavoTestResult');
+            const response = await fetch('/api/bitvavo/test-connection?credential_type=READ_ONLY', { method: 'POST' });
+            const result = await response.json();
+            resultDiv.textContent = result.success ? '✔ Connected to Bitvavo' : `❌ Connection failed: ${result.error_message}`;
+            resultDiv.className = result.success ? 'mt-2 small text-success fw-bold' : 'mt-2 small text-danger fw-bold';
+        });
+
+        document.getElementById('testBitvavoTradingBtn').addEventListener('click', async () => {
+            const resultDiv = document.getElementById('bitvavoTradingTestResult');
+            const response = await fetch('/api/bitvavo/trading-status');
+            const result = await response.json();
+            resultDiv.textContent = result.can_enable_live ? '✔ Bitvavo trading credentials verified' : `❌ ${result.error_message || 'Trading verification failed'}`;
             resultDiv.className = result.can_enable_live ? 'mt-2 small text-success fw-bold' : 'mt-2 small text-danger fw-bold';
         });
 
@@ -1259,6 +1449,7 @@
         // Load all statuses on page load
         loadActiveExchange();
         loadKrakenStatus();
+        loadBitvavoStatus();
         loadCredentialsStatus();
         loadTradingStatus();
         loadEmailStatus();

@@ -11,6 +11,7 @@ from dca_service.api import (
     strategy_api,
     dca_api,
     binance_api,
+    bitvavo_api,
     kraken_api,
     email_settings_api,
     exchange_api,
@@ -121,6 +122,7 @@ app.include_router(routes.router, prefix=settings.API_V1_STR)
 app.include_router(strategy_api.router, prefix=settings.API_V1_STR)
 app.include_router(dca_api.router, prefix=settings.API_V1_STR)
 app.include_router(binance_api.router, prefix=settings.API_V1_STR)
+app.include_router(bitvavo_api.router, prefix=settings.API_V1_STR)
 app.include_router(kraken_api.router, prefix=settings.API_V1_STR)
 app.include_router(exchange_api.router, prefix=settings.API_V1_STR)
 app.include_router(wallet_api.router, prefix=settings.API_V1_STR)

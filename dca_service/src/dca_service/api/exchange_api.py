@@ -49,7 +49,7 @@ async def get_active_exchange_holdings(
     current_user: User = Depends(get_current_user),
 ):
     active_exchange = get_active_exchange(session)
-    quote_asset = "USD" if active_exchange == "KRAKEN" else settings.DCA_QUOTE_ASSET
+    quote_asset = "EUR" if active_exchange == "BITVAVO" else "USD" if active_exchange == "KRAKEN" else settings.DCA_QUOTE_ASSET
     strategy = session.exec(select(DCAStrategy)).first()
     target_btc = strategy.target_btc_amount if strategy else 1.0
     creds = get_credentials(session, active_exchange, "READ_ONLY")
@@ -80,6 +80,10 @@ async def get_active_exchange_holdings(
             from dca_service.services.kraken_client import KrakenClient
 
             client = KrakenClient(api_key, api_secret)
+        elif active_exchange == "BITVAVO":
+            from dca_service.services.bitvavo_client import BitvavoClient
+
+            client = BitvavoClient(api_key, api_secret)
         else:
             from dca_service.services.binance_client import BinanceClient
 

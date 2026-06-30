@@ -36,6 +36,7 @@ TRADING_STYLE_AI_CACHE: Dict[str, Dict[str, Any]] = {}
 TRADING_STYLE_AI_PROMPT_VERSION = "v2_concise_chill"
 BINANCE_PUBLIC_TICKER_URL = "https://api.binance.com/api/v3/ticker/price"
 KRAKEN_PUBLIC_TICKER_URL = "https://api.kraken.com/0/public/Ticker"
+BITVAVO_PUBLIC_TICKER_URL = "https://api.bitvavo.com/v2/ticker/price"
 COINBASE_PUBLIC_RATES_URL = "https://api.coinbase.com/v2/exchange-rates"
 BINANCE_PRICE_CACHE_TTL_SECONDS = 6
 BINANCE_SAFE_POLL_SECONDS = 3
@@ -345,6 +346,87 @@ def _fetch_kraken_realtime_price(symbol: str) -> Dict[str, Any]:
         raise HTTPException(status_code=502, detail="Failed to fetch Kraken realtime price")
 
 
+def _fetch_bitvavo_realtime_price(symbol: str) -> Dict[str, Any]:
+    normalized_symbol = _normalize_symbol(symbol)
+    exchange_symbol = get_exchange_symbol("BITVAVO")
+    now_utc = datetime.now(timezone.utc)
+    cache_key = f"BITVAVO:{exchange_symbol}"
+
+    cache_entry = BINANCE_PRICE_CACHE.get(cache_key)
+    if cache_entry and cache_entry.get("expires_at") and cache_entry["expires_at"] > now_utc:
+        return {
+            "symbol": normalized_symbol,
+            "exchange_symbol": exchange_symbol,
+            "requested_exchange": "BITVAVO",
+            "price": float(cache_entry["price"]),
+            "updated_at": cache_entry["updated_at"],
+            "cache_hit": True,
+            "stale_fallback": False,
+            "source": "bitvavo_public_api",
+            "coinbase_fallback": False,
+            "cache_ttl_seconds": BINANCE_PRICE_CACHE_TTL_SECONDS,
+            "poll_recommendation_seconds": BINANCE_SAFE_POLL_SECONDS,
+            "request_weight": 1,
+        }
+
+    try:
+        with httpx.Client(timeout=8.0) as client:
+            response = client.get(BITVAVO_PUBLIC_TICKER_URL, params={"market": exchange_symbol})
+
+        if response.status_code >= 400:
+            detail = _extract_http_error_detail(response)
+            reason = f"Bitvavo ticker HTTP {response.status_code}"
+            if detail:
+                reason = f"{reason}: {detail}"
+            raise ValueError(reason)
+
+        body = response.json()
+        if isinstance(body, list):
+            body = body[0] if body else {}
+        price = float(body["price"])
+        if price <= 0:
+            raise ValueError("Bitvavo returned non-positive price")
+
+        updated_at = now_utc.isoformat()
+        BINANCE_PRICE_CACHE[cache_key] = {
+            "price": price,
+            "updated_at": updated_at,
+            "expires_at": now_utc + timedelta(seconds=BINANCE_PRICE_CACHE_TTL_SECONDS),
+        }
+        return {
+            "symbol": normalized_symbol,
+            "exchange_symbol": exchange_symbol,
+            "requested_exchange": "BITVAVO",
+            "price": price,
+            "updated_at": updated_at,
+            "cache_hit": False,
+            "stale_fallback": False,
+            "source": "bitvavo_public_api",
+            "coinbase_fallback": False,
+            "cache_ttl_seconds": BINANCE_PRICE_CACHE_TTL_SECONDS,
+            "poll_recommendation_seconds": BINANCE_SAFE_POLL_SECONDS,
+            "request_weight": 1,
+        }
+    except Exception:
+        if cache_entry and cache_entry.get("price"):
+            return {
+                "symbol": normalized_symbol,
+                "exchange_symbol": exchange_symbol,
+                "requested_exchange": "BITVAVO",
+                "price": float(cache_entry["price"]),
+                "updated_at": cache_entry["updated_at"],
+                "cache_hit": False,
+                "stale_fallback": True,
+                "source": "bitvavo_public_api",
+                "coinbase_fallback": False,
+                "cache_ttl_seconds": BINANCE_PRICE_CACHE_TTL_SECONDS,
+                "poll_recommendation_seconds": BINANCE_SAFE_POLL_SECONDS,
+                "request_weight": 1,
+                "warning": "Using stale Bitvavo price cache because the public price fetch failed.",
+            }
+        raise HTTPException(status_code=502, detail="Failed to fetch Bitvavo realtime price")
+
+
 def _fetch_coinbase_realtime_price(symbol: str, requested_exchange: str) -> Dict[str, Any]:
     normalized_symbol = _normalize_symbol(symbol)
     now_utc = datetime.now(timezone.utc)
@@ -384,6 +466,8 @@ def _fetch_public_realtime_price(session: Session, symbol: str) -> Dict[str, Any
     try:
         if active_exchange == "KRAKEN":
             return _fetch_kraken_realtime_price(symbol)
+        if active_exchange == "BITVAVO":
+            return _fetch_bitvavo_realtime_price(symbol)
         snapshot = _fetch_binance_realtime_price(symbol)
         snapshot.setdefault("requested_exchange", "BINANCE")
         snapshot.setdefault("exchange_symbol", _normalize_symbol(symbol))
@@ -1006,6 +1090,9 @@ def _execute_live_add_position_order(
         if exchange == "KRAKEN":
             from dca_service.services.kraken_client import KrakenClient
             client = KrakenClient(api_key, api_secret)
+        elif exchange == "BITVAVO":
+            from dca_service.services.bitvavo_client import BitvavoClient
+            client = BitvavoClient(api_key, api_secret)
         else:
             client = BinanceClient(api_key, api_secret)
         try:

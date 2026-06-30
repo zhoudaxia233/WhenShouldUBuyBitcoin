@@ -1,10 +1,15 @@
 from sqlmodel import Session, select
 
 from dca_service.config import settings
-from dca_service.models import BinanceCredentials, GlobalSettings, KrakenCredentials
+from dca_service.models import (
+    BinanceCredentials,
+    BitvavoCredentials,
+    GlobalSettings,
+    KrakenCredentials,
+)
 
 
-SUPPORTED_EXCHANGES = {"BINANCE", "KRAKEN"}
+SUPPORTED_EXCHANGES = {"BINANCE", "KRAKEN", "BITVAVO"}
 
 
 def normalize_exchange(exchange: str | None) -> str:
@@ -47,12 +52,18 @@ def get_exchange_symbol(exchange: str, quote_asset: str | None = None) -> str:
     quote = (quote_asset or settings.DCA_QUOTE_ASSET or "USDC").strip().upper()
     if active_exchange == "KRAKEN":
         return "XBTUSD"
+    if active_exchange == "BITVAVO":
+        return "BTC-EUR"
     return f"BTC{quote}"
 
 
 def get_credentials(session: Session, exchange: str, credential_type: str):
     active_exchange = normalize_exchange(exchange)
-    model = KrakenCredentials if active_exchange == "KRAKEN" else BinanceCredentials
+    model = BinanceCredentials
+    if active_exchange == "KRAKEN":
+        model = KrakenCredentials
+    elif active_exchange == "BITVAVO":
+        model = BitvavoCredentials
     return session.exec(
         select(model).where(model.credential_type == credential_type)
     ).first()

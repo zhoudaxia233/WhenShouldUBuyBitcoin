@@ -37,6 +37,9 @@ def _get_exchange_client(session: Session):
         if exchange == "KRAKEN":
             from dca_service.services.kraken_client import KrakenClient
             return KrakenClient(api_key, api_secret), exchange, get_exchange_symbol(exchange)
+        if exchange == "BITVAVO":
+            from dca_service.services.bitvavo_client import BitvavoClient
+            return BitvavoClient(api_key, api_secret), exchange, get_exchange_symbol(exchange)
         from dca_service.services.binance_client import BinanceClient
         return BinanceClient(api_key, api_secret), exchange, get_exchange_symbol(exchange)
     except Exception as e:

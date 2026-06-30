@@ -62,17 +62,20 @@ class TradeSyncService:
             if exchange == "KRAKEN":
                 from dca_service.services.kraken_client import KrakenClient
                 return KrakenClient(api_key, api_secret)
+            if exchange == "BITVAVO":
+                from dca_service.services.bitvavo_client import BitvavoClient
+                return BitvavoClient(api_key, api_secret)
             from dca_service.services.binance_client import BinanceClient
             return BinanceClient(api_key, api_secret)
         except Exception as e:
             logger.error(f"❌ Failed to decrypt credentials: {e}")
             return None
 
-    async def _sync_kraken_trades(self) -> int:
-        symbol = get_exchange_symbol("KRAKEN")
-        client = self._get_client("KRAKEN")
+    async def _sync_normalized_trades(self, exchange: str) -> int:
+        symbol = get_exchange_symbol(exchange)
+        client = self._get_client(exchange)
         if not client:
-            logger.warning("❌ No Kraken credentials found. Skipping sync.")
+            logger.warning(f"❌ No {exchange} credentials found. Skipping sync.")
             return 0
 
         try:
@@ -81,9 +84,9 @@ class TradeSyncService:
             existing_app_orders = set(
                 self.session.exec(
                     select(DCATransaction.exchange_order_id)
-                    .where(DCATransaction.exchange == "KRAKEN")
+                    .where(DCATransaction.exchange == exchange)
                     .where(DCATransaction.exchange_order_id.is_not(None))
-                    .where(DCATransaction.source.in_(["DCA", "BINANCE", "KRAKEN"]))
+                    .where(DCATransaction.source.in_(["DCA", "BINANCE", "KRAKEN", "BITVAVO"]))
                 ).all()
             )
 
@@ -97,7 +100,7 @@ class TradeSyncService:
 
                 exists = self.session.exec(
                     select(DCATransaction)
-                    .where(DCATransaction.exchange == "KRAKEN")
+                    .where(DCATransaction.exchange == exchange)
                     .where(DCATransaction.exchange_trade_id == trade_id)
                 ).first()
                 if exists:
@@ -117,16 +120,16 @@ class TradeSyncService:
                     btc_amount=qty,
                     price=price,
                     ahr999=0.0,
-                    notes="Imported from Kraken",
+                    notes=f"Imported from {exchange.title()}",
                     source="MANUAL",
                     is_manual=True,
                     fee_amount=float(trade.get("commission", 0.0)),
-                    fee_asset=str(trade.get("commission_asset") or "USD"),
+                    fee_asset=str(trade.get("commission_asset") or ("EUR" if exchange == "BITVAVO" else "USD")),
                     intended_amount_usd=quote_qty,
                     executed_amount_usd=quote_qty,
                     executed_amount_btc=qty,
                     avg_execution_price_usd=price,
-                    exchange="KRAKEN",
+                    exchange=exchange,
                     exchange_order_id=order_id,
                     exchange_trade_id=trade_id,
                     exchange_symbol=symbol,
@@ -154,8 +157,8 @@ class TradeSyncService:
         logger.info(f"{'='*80}")
 
         exchange = get_active_exchange(self.session)
-        if exchange == "KRAKEN":
-            return await self._sync_kraken_trades()
+        if exchange in {"KRAKEN", "BITVAVO"}:
+            return await self._sync_normalized_trades(exchange)
         
         client = self._get_client("BINANCE")
         if not client:
