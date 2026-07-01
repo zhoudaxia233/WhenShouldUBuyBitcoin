@@ -102,12 +102,33 @@ def test_save_bitvavo_credentials(client: TestClient, session: Session):
     assert status.json()["masked_api_key"] == "bit****-key"
 
 
-def test_settings_page_exposes_active_exchange_and_kraken_credentials():
+def test_settings_page_exposes_exchange_draft_flow_and_credentials():
     html = (TEMPLATE_DIR / "binance_settings.html").read_text(encoding="utf-8")
 
     assert "<title>Exchange Settings</title>" in html
     assert 'id="activeExchangeSelect"' in html
+    assert "Exchange to configure" in html
+    assert 'id="activeExchangeLabel"' in html
+    assert 'id="editingExchangeLabel"' in html
+    assert 'id="activeExchangePendingNotice"' in html
+    assert 'id="makeActiveExchangeBtn"' in html
+    assert 'id="discardExchangeDraftBtn"' in html
+    assert 'id="activeExchangeConfirmModal"' in html
+    assert 'id="confirmActiveExchangeBtn"' in html
     assert "/api/exchange/active" in html
+    assert 'data-exchange-panel="BINANCE"' in html
+    assert 'data-exchange-panel="KRAKEN"' in html
+    assert 'data-exchange-panel="BITVAVO"' in html
+
+    change_marker = "document.getElementById('activeExchangeSelect').addEventListener('change'"
+    change_handler = html[html.index(change_marker) : html.index("});", html.index(change_marker))]
+    assert "fetch('/api/exchange/active'" not in change_handler
+
+    save_marker = "async function saveActiveExchangeDraft()"
+    save_handler = html[html.index(save_marker) : html.index("async function loadKrakenStatus", html.index(save_marker))]
+    assert "fetch('/api/exchange/active'" in save_handler
+    assert "body: JSON.stringify({ active_exchange: editingExchange })" in save_handler
+
     assert 'id="krakenForm"' in html
     assert "/api/kraken/credentials" in html
     assert 'data-bs-target="#krakenHelpSection"' in html
