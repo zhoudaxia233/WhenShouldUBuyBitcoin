@@ -18,9 +18,15 @@
 #   - SSL certificate paths
 #   - HTTP to HTTPS redirect
 
-# Rate limiting zone - prevent brute force login attempts
-# 5r/m = 5 requests per minute per IP address
-limit_req_zone $binary_remote_addr zone=login_limit:10m rate=5r/m;
+# Rate-limit login submissions, but never page views. Mobile carrier networks
+# commonly share public IPs, so counting GET requests can block innocent users.
+map $request_method $login_limit_key {
+    default "";
+    POST $binary_remote_addr;
+}
+
+# 5r/m = 5 login submissions per minute per IP address
+limit_req_zone $login_limit_key zone=login_limit:10m rate=5r/m;
 
 # Upstream backend (Docker container)
 upstream dca_backend {
@@ -33,7 +39,7 @@ server {
     listen [::]:80;
     server_name yourdomain.com;  # REPLACE: Change to your domain (e.g., btc.example.com)
     
-    # Rate limiting for login endpoint (prevent brute force attacks)
+    # Rate limiting for login submissions (prevent brute force attacks)
     location /api/auth/login {
         limit_req zone=login_limit burst=3 nodelay;
         limit_req_status 429;

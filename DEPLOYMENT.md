@@ -322,7 +322,13 @@ https://yourdomain.com
 
 **Test rate limiting:**
 ```bash
-# From your local machine, test login rate limiting
+# Opening the login page is never rate limited
+for i in {1..10}; do
+    curl -o /dev/null -s -w "%{http_code}\n" \
+        https://yourdomain.com/api/auth/login
+done
+
+# From your local machine, test login submission rate limiting
 for i in {1..10}; do 
     curl -X POST https://yourdomain.com/api/auth/login \
         -d "email=test@test.com&password=wrong" || true
@@ -330,8 +336,8 @@ for i in {1..10}; do
     sleep 1
 done
 
-# First 5 attempts: 401 Unauthorized
-# After 5 attempts: 429 Too Many Requests (rate limited)
+# GET requests remain 200 OK. Rapid POST requests eventually return
+# 429 Too Many Requests (rate limited).
 ```
 
 ---
