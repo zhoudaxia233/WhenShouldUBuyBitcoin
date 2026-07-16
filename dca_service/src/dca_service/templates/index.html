@@ -2831,7 +2831,6 @@
 
             if (preview) {
                 const previewAhrEl = document.getElementById('previewAhr');
-                const previewPriceEl = document.getElementById('previewPrice');
                 const previewBandEl = document.getElementById('previewBand');
                 const previewActionEl = document.getElementById('previewAction');
                 const previewReasonEl = document.getElementById('previewReason');
@@ -2840,18 +2839,12 @@
                 const globalRefreshEl = document.getElementById('globalRefreshTime');
 
                 const ahrValue = toFiniteNumber(preview.ahr999_value);
-                const priceValue = toFiniteNumber(preview.price_usd);
                 const suggestedAmount = toFiniteNumber(preview.suggested_amount_usd);
                 const remainingBudget = toFiniteNumber(preview.remaining_budget);
 
                 if (previewAhrEl && ahrValue !== null) {
                     previewAhrEl.textContent = ahrValue.toFixed(2);
                     setDashboardTextIfPresent('mobilePreviewAhr', ahrValue.toFixed(2));
-                }
-                if (previewPriceEl && priceValue !== null) {
-                    previewPriceEl.textContent = `$${priceValue.toLocaleString()}`;
-                    window.__dashboardPriceUsd = priceValue;
-                    updateMobileFiatEstimate();
                 }
                 if (previewBandEl && typeof preview.ahr_band === 'string' && preview.ahr_band.trim() !== '') {
                     const bandText = preview.ahr_band.toUpperCase();
@@ -4024,9 +4017,6 @@
                 updateStrategyUI(strategy);
 
                 // 2. Preview
-                const cachedPreview = loadFromCache('dca_preview');
-                if (cachedPreview) updatePreviewUI(cachedPreview);
-
                 const response = await fetch('/api/dca/preview');
                 const decision = await response.json();
                 saveToCache('dca_preview', decision);
@@ -5358,9 +5348,11 @@
         async function initializeDashboard() {
             applyRefreshFlag();
             await loadExecutionMode();
-            await loadTransactions();
-            await loadPreview();
-            await loadWalletSummary();
+            await Promise.all([
+                loadTransactions(),
+                loadPreview(),
+                loadWalletSummary()
+            ]);
             await fetchRealtimePriceForDashboard();
             startDashboardPricePolling();
             connectSSE();  // Connect to server-sent events for real-time updates

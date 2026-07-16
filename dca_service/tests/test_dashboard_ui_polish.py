@@ -117,7 +117,8 @@ def test_dashboard_mobile_app_cards_are_hydrated_from_existing_data():
 
     assert "function setDashboardTextIfPresent(id, value)" in html
     assert "window.__dashboardTotalBtc = totalBtc;" in html
-    assert "window.__dashboardPriceUsd = priceValue;" in html
+    assert "function updateDashboardRealtimePrice(payload)" in html
+    assert "window.__dashboardPriceUsd = price;" in html
     assert "setDashboardTextIfPresent('mobileHeroPrice'" not in html
     assert "setDashboardTextIfPresent('mobileDcaBudget'" not in html
     assert "progressBarEl.style.width = `${progress}%`;" in html
