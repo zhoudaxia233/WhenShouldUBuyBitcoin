@@ -61,7 +61,14 @@ Protect `/api/auth/login` from brute-force attacks:
 
 **nginx rate limiting:**
 ```nginx
-limit_req_zone $binary_remote_addr zone=login_limit:10m rate=5r/m;
+# Do not count GET requests for the login page. Carrier-grade NAT can put many
+# innocent mobile users behind the same public IP address.
+map $request_method $login_limit_key {
+    default "";
+    POST $binary_remote_addr;
+}
+
+limit_req_zone $login_limit_key zone=login_limit:10m rate=5r/m;
 
 location /api/auth/login {
     limit_req zone=login_limit burst=3 nodelay;
