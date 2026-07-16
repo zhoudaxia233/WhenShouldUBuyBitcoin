@@ -1,7 +1,7 @@
 from pathlib import Path
 
 
-def test_dashboard_preview_cache_hydrates_context_but_not_stale_price():
+def test_dashboard_uses_realtime_cache_for_price_and_preview_cache_for_context():
     repo_root = Path(__file__).resolve().parents[2]
     template_path = repo_root / "dca_service" / "src" / "dca_service" / "templates" / "index.html"
     html = template_path.read_text(encoding="utf-8")
@@ -22,5 +22,6 @@ def test_dashboard_preview_cache_hydrates_context_but_not_stale_price():
         html.index("Hydrate wallet and DCA preview from cache") :
         html.index("})();", html.index("Hydrate wallet and DCA preview from cache"))
     ]
-    assert "previewPriceEl" not in hydration
-    assert "priceValue" not in hydration
+    assert "parseCache('dashboard_realtime_price')" in hydration
+    assert "toFiniteNumber(realtimePrice?.price)" in hydration
+    assert "preview.price_usd" not in hydration

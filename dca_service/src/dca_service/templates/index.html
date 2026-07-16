@@ -2775,6 +2775,7 @@
             const wallet = parseCache('wallet_summary');
             const strategy = parseCache('strategy_config');
             const preview = parseCache('dca_preview');
+            const realtimePrice = parseCache('dashboard_realtime_price');
             window.__dashboardStrategy = strategy || null;
             if (typeof updateFixedDcaStopCapDisplay === 'function') {
                 updateFixedDcaStopCapDisplay(strategy);
@@ -2827,6 +2828,14 @@
 
             if (strategy && strategy.execution_frequency && strategy.execution_time_utc) {
                 setStrategyScheduleBadge(strategy);
+            }
+
+            const cachedPrice = toFiniteNumber(realtimePrice?.price);
+            const previewPriceEl = document.getElementById('previewPrice');
+            if (previewPriceEl && cachedPrice !== null && cachedPrice > 0) {
+                previewPriceEl.textContent = `$${cachedPrice.toLocaleString()}`;
+                window.__dashboardPriceUsd = cachedPrice;
+                updateMobileFiatEstimate();
             }
 
             if (preview) {
@@ -3891,9 +3900,6 @@
             // Update metrics display
             document.getElementById('previewAhr').textContent = decision.ahr999_value.toFixed(2);
             setDashboardTextIfPresent('mobilePreviewAhr', decision.ahr999_value.toFixed(2));
-            document.getElementById('previewPrice').textContent = '$' + decision.price_usd.toLocaleString();
-            window.__dashboardPriceUsd = decision.price_usd;
-            updateMobileFiatEstimate();
             const bandText = decision.ahr_band.toUpperCase();
             document.getElementById('previewBand').textContent = bandText;
             setDashboardTextIfPresent('mobilePreviewBand', bandText);
@@ -4666,6 +4672,7 @@
 
             previewPriceEl.textContent = `$${price.toLocaleString()}`;
             window.__dashboardPriceUsd = price;
+            saveToCache('dashboard_realtime_price', { price });
             if (window.__latestDrawdownDecision) {
                 window.__latestDrawdownDecision.price_usd = price;
                 updatePreviewActionState(window.__latestDrawdownDecision);
@@ -5351,9 +5358,9 @@
             await Promise.all([
                 loadTransactions(),
                 loadPreview(),
-                loadWalletSummary()
+                loadWalletSummary(),
+                fetchRealtimePriceForDashboard()
             ]);
-            await fetchRealtimePriceForDashboard();
             startDashboardPricePolling();
             connectSSE();  // Connect to server-sent events for real-time updates
         }
