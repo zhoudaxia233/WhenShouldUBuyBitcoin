@@ -24,17 +24,20 @@ from dca_service.models import (
     User,
     SummaryApiSettings,
     DCAStrategy,
-    BinanceCredentials,
 )
 from dca_service.auth.dependencies import get_current_user
 from dca_service.services.security import decrypt_text
 from dca_service.services.binance_client import BinanceClient
+from dca_service.services.exchange_config import get_active_exchange, get_credentials, get_exchange_symbol
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
 TRADING_STYLE_AI_CACHE: Dict[str, Dict[str, Any]] = {}
 TRADING_STYLE_AI_PROMPT_VERSION = "v2_concise_chill"
 BINANCE_PUBLIC_TICKER_URL = "https://api.binance.com/api/v3/ticker/price"
+KRAKEN_PUBLIC_TICKER_URL = "https://api.kraken.com/0/public/Ticker"
+BITVAVO_PUBLIC_TICKER_URL = "https://api.bitvavo.com/v2/ticker/price"
+COINBASE_PUBLIC_RATES_URL = "https://api.coinbase.com/v2/exchange-rates"
 BINANCE_PRICE_CACHE_TTL_SECONDS = 6
 BINANCE_SAFE_POLL_SECONDS = 3
 BINANCE_TICKER_REQUEST_WEIGHT = 2
@@ -258,6 +261,220 @@ def _fetch_binance_realtime_price(symbol: str) -> Dict[str, Any]:
                 "warning": f"Using stale price cache due to fetch error: {e}",
             }
         raise HTTPException(status_code=502, detail=f"Failed to fetch realtime price: {e}")
+
+
+def _fetch_kraken_realtime_price(symbol: str) -> Dict[str, Any]:
+    normalized_symbol = _normalize_symbol(symbol)
+    exchange_symbol = get_exchange_symbol("KRAKEN")
+    now_utc = datetime.now(timezone.utc)
+    cache_key = f"KRAKEN:{exchange_symbol}"
+
+    cache_entry = BINANCE_PRICE_CACHE.get(cache_key)
+    if cache_entry and cache_entry.get("expires_at") and cache_entry["expires_at"] > now_utc:
+        return {
+            "symbol": normalized_symbol,
+            "exchange_symbol": exchange_symbol,
+            "requested_exchange": "KRAKEN",
+            "price": float(cache_entry["price"]),
+            "updated_at": cache_entry["updated_at"],
+            "cache_hit": True,
+            "stale_fallback": False,
+            "source": "kraken_public_api",
+            "coinbase_fallback": False,
+            "cache_ttl_seconds": BINANCE_PRICE_CACHE_TTL_SECONDS,
+            "poll_recommendation_seconds": BINANCE_SAFE_POLL_SECONDS,
+            "request_weight": 1,
+        }
+
+    try:
+        with httpx.Client(timeout=8.0) as client:
+            response = client.get(KRAKEN_PUBLIC_TICKER_URL, params={"pair": exchange_symbol})
+
+        if response.status_code >= 400:
+            detail = _extract_http_error_detail(response)
+            reason = f"Kraken ticker HTTP {response.status_code}"
+            if detail:
+                reason = f"{reason}: {detail}"
+            raise ValueError(reason)
+
+        body = response.json()
+        result = body.get("result") or {}
+        if not result:
+            raise ValueError("Kraken returned no ticker result")
+        ticker = next(iter(result.values()))
+        price = float(ticker["c"][0])
+        if price <= 0:
+            raise ValueError("Kraken returned non-positive price")
+
+        updated_at = now_utc.isoformat()
+        BINANCE_PRICE_CACHE[cache_key] = {
+            "price": price,
+            "updated_at": updated_at,
+            "expires_at": now_utc + timedelta(seconds=BINANCE_PRICE_CACHE_TTL_SECONDS),
+        }
+        return {
+            "symbol": normalized_symbol,
+            "exchange_symbol": exchange_symbol,
+            "requested_exchange": "KRAKEN",
+            "price": price,
+            "updated_at": updated_at,
+            "cache_hit": False,
+            "stale_fallback": False,
+            "source": "kraken_public_api",
+            "coinbase_fallback": False,
+            "cache_ttl_seconds": BINANCE_PRICE_CACHE_TTL_SECONDS,
+            "poll_recommendation_seconds": BINANCE_SAFE_POLL_SECONDS,
+            "request_weight": 1,
+        }
+    except Exception:
+        if cache_entry and cache_entry.get("price"):
+            return {
+                "symbol": normalized_symbol,
+                "exchange_symbol": exchange_symbol,
+                "requested_exchange": "KRAKEN",
+                "price": float(cache_entry["price"]),
+                "updated_at": cache_entry["updated_at"],
+                "cache_hit": False,
+                "stale_fallback": True,
+                "source": "kraken_public_api",
+                "coinbase_fallback": False,
+                "cache_ttl_seconds": BINANCE_PRICE_CACHE_TTL_SECONDS,
+                "poll_recommendation_seconds": BINANCE_SAFE_POLL_SECONDS,
+                "request_weight": 1,
+                "warning": "Using stale Kraken price cache because the public price fetch failed.",
+            }
+        raise HTTPException(status_code=502, detail="Failed to fetch Kraken realtime price")
+
+
+def _fetch_bitvavo_realtime_price(symbol: str) -> Dict[str, Any]:
+    normalized_symbol = _normalize_symbol(symbol)
+    exchange_symbol = get_exchange_symbol("BITVAVO")
+    now_utc = datetime.now(timezone.utc)
+    cache_key = f"BITVAVO:{exchange_symbol}"
+
+    cache_entry = BINANCE_PRICE_CACHE.get(cache_key)
+    if cache_entry and cache_entry.get("expires_at") and cache_entry["expires_at"] > now_utc:
+        return {
+            "symbol": normalized_symbol,
+            "exchange_symbol": exchange_symbol,
+            "requested_exchange": "BITVAVO",
+            "price": float(cache_entry["price"]),
+            "updated_at": cache_entry["updated_at"],
+            "cache_hit": True,
+            "stale_fallback": False,
+            "source": "bitvavo_public_api",
+            "coinbase_fallback": False,
+            "cache_ttl_seconds": BINANCE_PRICE_CACHE_TTL_SECONDS,
+            "poll_recommendation_seconds": BINANCE_SAFE_POLL_SECONDS,
+            "request_weight": 1,
+        }
+
+    try:
+        with httpx.Client(timeout=8.0) as client:
+            response = client.get(BITVAVO_PUBLIC_TICKER_URL, params={"market": exchange_symbol})
+
+        if response.status_code >= 400:
+            detail = _extract_http_error_detail(response)
+            reason = f"Bitvavo ticker HTTP {response.status_code}"
+            if detail:
+                reason = f"{reason}: {detail}"
+            raise ValueError(reason)
+
+        body = response.json()
+        if isinstance(body, list):
+            body = body[0] if body else {}
+        price = float(body["price"])
+        if price <= 0:
+            raise ValueError("Bitvavo returned non-positive price")
+
+        updated_at = now_utc.isoformat()
+        BINANCE_PRICE_CACHE[cache_key] = {
+            "price": price,
+            "updated_at": updated_at,
+            "expires_at": now_utc + timedelta(seconds=BINANCE_PRICE_CACHE_TTL_SECONDS),
+        }
+        return {
+            "symbol": normalized_symbol,
+            "exchange_symbol": exchange_symbol,
+            "requested_exchange": "BITVAVO",
+            "price": price,
+            "updated_at": updated_at,
+            "cache_hit": False,
+            "stale_fallback": False,
+            "source": "bitvavo_public_api",
+            "coinbase_fallback": False,
+            "cache_ttl_seconds": BINANCE_PRICE_CACHE_TTL_SECONDS,
+            "poll_recommendation_seconds": BINANCE_SAFE_POLL_SECONDS,
+            "request_weight": 1,
+        }
+    except Exception:
+        if cache_entry and cache_entry.get("price"):
+            return {
+                "symbol": normalized_symbol,
+                "exchange_symbol": exchange_symbol,
+                "requested_exchange": "BITVAVO",
+                "price": float(cache_entry["price"]),
+                "updated_at": cache_entry["updated_at"],
+                "cache_hit": False,
+                "stale_fallback": True,
+                "source": "bitvavo_public_api",
+                "coinbase_fallback": False,
+                "cache_ttl_seconds": BINANCE_PRICE_CACHE_TTL_SECONDS,
+                "poll_recommendation_seconds": BINANCE_SAFE_POLL_SECONDS,
+                "request_weight": 1,
+                "warning": "Using stale Bitvavo price cache because the public price fetch failed.",
+            }
+        raise HTTPException(status_code=502, detail="Failed to fetch Bitvavo realtime price")
+
+
+def _fetch_coinbase_realtime_price(symbol: str, requested_exchange: str) -> Dict[str, Any]:
+    normalized_symbol = _normalize_symbol(symbol)
+    now_utc = datetime.now(timezone.utc)
+    with httpx.Client(timeout=8.0) as client:
+        response = client.get(COINBASE_PUBLIC_RATES_URL, params={"currency": "BTC"})
+
+    if response.status_code >= 400:
+        detail = _extract_http_error_detail(response)
+        reason = f"Coinbase rates HTTP {response.status_code}"
+        if detail:
+            reason = f"{reason}: {detail}"
+        raise HTTPException(status_code=502, detail=f"Failed to fetch realtime price: {reason}")
+
+    body = response.json()
+    price = float(body["data"]["rates"]["USD"])
+    if price <= 0:
+        raise HTTPException(status_code=502, detail="Coinbase returned non-positive price")
+
+    return {
+        "symbol": normalized_symbol,
+        "exchange_symbol": "BTC-USD",
+        "requested_exchange": requested_exchange,
+        "price": price,
+        "updated_at": now_utc.isoformat(),
+        "cache_hit": False,
+        "stale_fallback": False,
+        "source": "coinbase_public_api",
+        "coinbase_fallback": True,
+        "cache_ttl_seconds": BINANCE_PRICE_CACHE_TTL_SECONDS,
+        "poll_recommendation_seconds": BINANCE_SAFE_POLL_SECONDS,
+        "request_weight": 1,
+    }
+
+
+def _fetch_public_realtime_price(session: Session, symbol: str) -> Dict[str, Any]:
+    active_exchange = get_active_exchange(session)
+    try:
+        if active_exchange == "KRAKEN":
+            return _fetch_kraken_realtime_price(symbol)
+        if active_exchange == "BITVAVO":
+            return _fetch_bitvavo_realtime_price(symbol)
+        snapshot = _fetch_binance_realtime_price(symbol)
+        snapshot.setdefault("requested_exchange", "BINANCE")
+        snapshot.setdefault("exchange_symbol", _normalize_symbol(symbol))
+        snapshot.setdefault("coinbase_fallback", False)
+        return snapshot
+    except Exception:
+        return _fetch_coinbase_realtime_price(symbol, active_exchange)
 
 
 def _calculate_harmonic_dca_cost_with_current_price(prices: List[float], current_price_usd: float) -> Optional[float]:
@@ -860,24 +1077,34 @@ def _execute_live_add_position_order(
     symbol: str,
     amount_usdc: float,
 ) -> Dict[str, Any]:
-    creds = session.exec(
-        select(BinanceCredentials).where(BinanceCredentials.credential_type == "TRADING")
-    ).first()
+    exchange = get_active_exchange(session)
+    exchange_symbol = get_exchange_symbol(exchange)
+    creds = get_credentials(session, exchange, "TRADING")
     if not creds or not creds.api_key_encrypted:
-        raise ValueError("Trading credentials not configured. Please add TRADING API keys in Binance settings.")
+        raise ValueError(f"Trading credentials not configured. Please add TRADING API keys for {exchange}.")
 
     api_key = decrypt_text(creds.api_key_encrypted)
     api_secret = decrypt_text(creds.api_secret_encrypted)
 
     async def _execute() -> Dict[str, Any]:
-        client = BinanceClient(api_key, api_secret)
+        if exchange == "KRAKEN":
+            from dca_service.services.kraken_client import KrakenClient
+            client = KrakenClient(api_key, api_secret)
+        elif exchange == "BITVAVO":
+            from dca_service.services.bitvavo_client import BitvavoClient
+            client = BitvavoClient(api_key, api_secret)
+        else:
+            client = BinanceClient(api_key, api_secret)
         try:
-            return await client.execute_market_order_with_confirmation(
-                symbol=symbol,
+            result = await client.execute_market_order_with_confirmation(
+                symbol=exchange_symbol,
                 quote_quantity=amount_usdc,
                 max_wait_seconds=10,
                 poll_interval=1.0,
             )
+            result["exchange"] = exchange
+            result["exchange_symbol"] = exchange_symbol
+            return result
         finally:
             await client.close()
 
@@ -3423,13 +3650,14 @@ def _run_ai_style_analysis(
 @router.get("/stats/realtime-price")
 def get_realtime_price(
     symbol: str = Query(default="BTCUSDC"),
+    session: Session = Depends(get_session),
     current_user: User = Depends(get_current_user),
 ):
     """
-    Return realtime ticker price from Binance public API with a short TTL cache.
-    Cache + client polling guidance are tuned to stay far below Binance limits.
+    Return realtime ticker price from the configured active exchange with a short TTL cache.
+    Cache + client polling guidance are tuned to stay far below public ticker limits.
     """
-    price_snapshot = _fetch_binance_realtime_price(symbol)
+    price_snapshot = _fetch_public_realtime_price(session, symbol)
     market_context = _load_recent_market_context(float(price_snapshot["price"]))
     price_snapshot.update(
         {
@@ -3493,7 +3721,7 @@ def get_add_position_advice(
             "request_weight": BINANCE_TICKER_REQUEST_WEIGHT,
         }
     else:
-        price_snapshot = _fetch_binance_realtime_price(normalized_symbol)
+        price_snapshot = _fetch_public_realtime_price(session, normalized_symbol)
 
     _, aggregate_meta, behavior_data, source_signature = _build_buy_behavior_snapshot(session)
     market_context = _load_recent_market_context(float(price_snapshot["price"]))
@@ -3593,10 +3821,21 @@ def confirm_add_position(
             executed_usd = float(live_result.get("quote_spent") or amount_usdc)
             fee_amount = float(live_result.get("total_fee") or 0.0)
             fee_asset = str(live_result.get("fee_asset") or "USDC")
-            binance_order_id = live_result.get("order_id")
+            exchange = str(live_result.get("exchange") or get_active_exchange(session))
+            exchange_symbol = str(live_result.get("exchange_symbol") or get_exchange_symbol(exchange))
+            exchange_order_id = str(live_result.get("order_id")) if live_result.get("order_id") is not None else None
+            binance_order_id = live_result.get("order_id") if exchange == "BINANCE" else None
             fills = live_result.get("trades") or []
             fill_trade_ids = []
+            exchange_trade_ids = []
             for fill in fills:
+                fill_id = None
+                try:
+                    fill_id = fill.get("id")
+                except AttributeError:
+                    fill_id = None
+                if fill_id is not None:
+                    exchange_trade_ids.append(str(fill_id))
                 try:
                     fill_trade_ids.append(int(fill.get("id")))
                 except (TypeError, ValueError, AttributeError):
@@ -3604,13 +3843,21 @@ def confirm_add_position(
             # We store at most one Binance trade id on the aggregate order row.
             # For split fills, order_id + source="BINANCE" prevents sync duplicates.
             primary_trade_id = fill_trade_ids[0] if fill_trade_ids else None
+            primary_exchange_trade_id = exchange_trade_ids[0] if exchange_trade_ids else None
             if executed_price <= 0 or executed_btc <= 0:
                 raise ValueError("Live order returned invalid execution data.")
 
-            # Idempotency guard: sync service may import the same Binance trade in a narrow
+            # Idempotency guard: sync service may import the same exchange trade in a narrow
             # race window before this request writes its local transaction row.
             existing_tx = None
-            if binance_order_id is not None:
+            if exchange_order_id is not None:
+                existing_tx = session.exec(
+                    select(DCATransaction)
+                    .where(DCATransaction.exchange == exchange)
+                    .where(DCATransaction.exchange_order_id == exchange_order_id)
+                    .order_by(col(DCATransaction.timestamp).desc())
+                ).first()
+            if existing_tx is None and binance_order_id is not None:
                 existing_tx = session.exec(
                     select(DCATransaction)
                     .where(DCATransaction.binance_order_id == binance_order_id)
@@ -3633,12 +3880,16 @@ def confirm_add_position(
                 tx.fee_asset = fee_asset
                 # Distinguish "manual-triggered but app-executed" from "synced manual import"
                 # so incremental sync recognizes this order as already recorded.
-                tx.source = "BINANCE"
+                tx.source = exchange
                 tx.is_manual = True
                 if tx.binance_order_id is None:
                     tx.binance_order_id = binance_order_id
                 if tx.binance_trade_id is None and primary_trade_id is not None:
                     tx.binance_trade_id = primary_trade_id
+                tx.exchange = exchange
+                tx.exchange_order_id = exchange_order_id
+                tx.exchange_trade_id = primary_exchange_trade_id
+                tx.exchange_symbol = exchange_symbol
                 session.add(tx)
             else:
                 tx = DCATransaction(
@@ -3654,10 +3905,14 @@ def confirm_add_position(
                     avg_execution_price_usd=executed_price,
                     fee_amount=fee_amount,
                     fee_asset=fee_asset,
-                    source="BINANCE",
+                    source=exchange,
                     is_manual=True,
                     binance_order_id=binance_order_id,
                     binance_trade_id=primary_trade_id,
+                    exchange=exchange,
+                    exchange_order_id=exchange_order_id,
+                    exchange_trade_id=primary_exchange_trade_id,
+                    exchange_symbol=exchange_symbol,
                 )
                 session.add(tx)
 

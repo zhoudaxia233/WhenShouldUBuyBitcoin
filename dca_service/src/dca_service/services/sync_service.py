@@ -1,10 +1,8 @@
 from datetime import datetime, timezone
-from typing import List, Optional
 from sqlmodel import Session, select, col
-from sqlalchemy.exc import IntegrityError
 
-from dca_service.models import DCATransaction, BinanceCredentials
-from dca_service.services.binance_client import BinanceClient
+from dca_service.models import DCATransaction
+from dca_service.services.exchange_config import get_active_exchange, get_credentials, get_exchange_symbol
 from dca_service.services.security import decrypt_text
 from dca_service.core.logging import logger
 
@@ -40,24 +38,17 @@ class TradeSyncService:
         logger.info("📍 No previous trades found in database, will fetch all available trades")
         return 0
 
-    def _get_client(self) -> Optional[BinanceClient]:
-        """Get authenticated Binance client (READ_ONLY preferred)"""
-        logger.info("🔑 Looking for Binance credentials...")
+    def _get_client(self, exchange: str = "BINANCE"):
+        """Get authenticated active exchange client (READ_ONLY preferred)"""
+        logger.info(f"🔑 Looking for {exchange} credentials...")
         
-        # Try READ_ONLY first
-        creds = self.session.exec(
-            select(BinanceCredentials).where(BinanceCredentials.credential_type == "READ_ONLY")
-        ).first()
-        
-        # Fallback to TRADING
+        creds = get_credentials(self.session, exchange, "READ_ONLY")
         if not creds:
             logger.info("🔑 READ_ONLY credentials not found, trying TRADING credentials...")
-            creds = self.session.exec(
-                select(BinanceCredentials).where(BinanceCredentials.credential_type == "TRADING")
-            ).first()
+            creds = get_credentials(self.session, exchange, "TRADING")
         
         if not creds or not creds.api_key_encrypted:
-            logger.warning("❌ No Binance credentials found in database")
+            logger.warning(f"❌ No {exchange} credentials found in database")
             return None
         
         logger.info(f"✅ Found credentials: type={creds.credential_type}, "
@@ -68,10 +59,88 @@ class TradeSyncService:
             api_key = decrypt_text(creds.api_key_encrypted)
             api_secret = decrypt_text(creds.api_secret_encrypted)
             logger.info("✅ Credentials decrypted successfully")
+            if exchange == "KRAKEN":
+                from dca_service.services.kraken_client import KrakenClient
+                return KrakenClient(api_key, api_secret)
+            if exchange == "BITVAVO":
+                from dca_service.services.bitvavo_client import BitvavoClient
+                return BitvavoClient(api_key, api_secret)
+            from dca_service.services.binance_client import BinanceClient
             return BinanceClient(api_key, api_secret)
         except Exception as e:
             logger.error(f"❌ Failed to decrypt credentials: {e}")
             return None
+
+    async def _sync_normalized_trades(self, exchange: str) -> int:
+        symbol = get_exchange_symbol(exchange)
+        client = self._get_client(exchange)
+        if not client:
+            logger.warning(f"❌ No {exchange} credentials found. Skipping sync.")
+            return 0
+
+        try:
+            trades = await client.get_all_btc_trades(symbol)
+            added_count = 0
+            existing_app_orders = set(
+                self.session.exec(
+                    select(DCATransaction.exchange_order_id)
+                    .where(DCATransaction.exchange == exchange)
+                    .where(DCATransaction.exchange_order_id.is_not(None))
+                    .where(DCATransaction.source.in_(["DCA", "BINANCE", "KRAKEN", "BITVAVO"]))
+                ).all()
+            )
+
+            for trade in trades:
+                trade_id = str(trade["id"])
+                order_id = str(trade["order_id"])
+                if order_id in existing_app_orders:
+                    continue
+                if not trade.get("is_buyer", False):
+                    continue
+
+                exists = self.session.exec(
+                    select(DCATransaction)
+                    .where(DCATransaction.exchange == exchange)
+                    .where(DCATransaction.exchange_trade_id == trade_id)
+                ).first()
+                if exists:
+                    continue
+
+                trade_time = trade["time"]
+                if isinstance(trade_time, (int, float)):
+                    trade_time = datetime.fromtimestamp(float(trade_time), tz=timezone.utc)
+
+                quote_qty = float(trade["quote_qty"])
+                qty = float(trade["qty"])
+                price = float(trade["price"])
+                new_tx = DCATransaction(
+                    timestamp=trade_time,
+                    status="SUCCESS",
+                    fiat_amount=quote_qty,
+                    btc_amount=qty,
+                    price=price,
+                    ahr999=0.0,
+                    notes=f"Imported from {exchange.title()}",
+                    source="MANUAL",
+                    is_manual=True,
+                    fee_amount=float(trade.get("commission", 0.0)),
+                    fee_asset=str(trade.get("commission_asset") or ("EUR" if exchange == "BITVAVO" else "USD")),
+                    intended_amount_usd=quote_qty,
+                    executed_amount_usd=quote_qty,
+                    executed_amount_btc=qty,
+                    avg_execution_price_usd=price,
+                    exchange=exchange,
+                    exchange_order_id=order_id,
+                    exchange_trade_id=trade_id,
+                    exchange_symbol=symbol,
+                )
+                self.session.add(new_tx)
+                added_count += 1
+
+            self.session.commit()
+            return added_count
+        finally:
+            await client.close()
 
     async def sync_trades(self, symbol: str = "BTCUSDC", start_from_scratch: bool = False) -> int:
         """
@@ -86,8 +155,12 @@ class TradeSyncService:
         logger.info(f"{'='*80}")
         logger.info(f"🔄 Starting trade sync for {symbol}")
         logger.info(f"{'='*80}")
+
+        exchange = get_active_exchange(self.session)
+        if exchange in {"KRAKEN", "BITVAVO"}:
+            return await self._sync_normalized_trades(exchange)
         
-        client = self._get_client()
+        client = self._get_client("BINANCE")
         if not client:
             logger.warning("❌ No Binance credentials found. Skipping sync.")
             return 0

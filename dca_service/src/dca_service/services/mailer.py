@@ -134,12 +134,14 @@ def send_trade_failure_notification(transaction, decision, error_msg: str):
         logger.debug("Email not configured, skipping failure notification")
         return
     
+    exchange = (getattr(transaction, "exchange", None) or "BINANCE").upper()
+    exchange_label = "Kraken" if exchange == "KRAKEN" else "Bitvavo" if exchange == "BITVAVO" else "Binance"
     subject = f"⚠ DCA Trade FAILED - {error_msg[:50]}"
     
     body = f"""
 LIVE DCA Trade Failed
 
-An attempt to execute a LIVE trade on Binance has failed.
+An attempt to execute a LIVE trade on {exchange_label} has failed.
 
 ===== TRADE DETAILS =====
 Status: FAILED
@@ -154,14 +156,14 @@ Time: {transaction.timestamp}
 
 ===== TROUBLESHOOTING =====
 Common issues:
-1. Invalid API Key or Secret - Check Binance settings
-2. Insufficient trading permissions - Enable "Spot & Margin Trading" in Binance API settings
-3. Insufficient funds - Ensure you have USDC/USDT in Spot wallet
+1. Invalid API Key or Secret - Check {exchange_label} settings
+2. Insufficient trading permissions - Check trading permissions in {exchange_label} API settings
+3. Insufficient funds - Ensure you have quote funds in Spot wallet
 4. Network issues - Temporary connectivity problem
 
 ===== NEXT STEPS =====
 1. Review the error message above
-2. Check your Binance settings at: http://localhost:8000/settings/binance
+2. Check your {exchange_label} settings at: http://localhost:8000/settings/binance
 3. The system will retry on the next scheduled run
 4. No funds were spent in this failed attempt
 

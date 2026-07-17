@@ -173,15 +173,15 @@ def get_latest_btc_price() -> tuple[datetime, float]:
         raise
 
 
-def get_realtime_btc_price() -> tuple[datetime, float]:
+def get_realtime_btc_price_with_source(exchange: str = "BINANCE") -> tuple[datetime, float, str]:
     """
-    Get the current real-time BTC price.
+    Get the current real-time BTC price and label its source.
 
-    Priority: Binance -> Coinbase
+    Selected exchange -> Coinbase fallback.
     Yahoo Finance is only used for historical data analysis.
 
     Returns:
-        Tuple of (datetime, price) for the current price
+        Tuple of (datetime, price, source) for the current price
 
     Raises:
         Exception: If data fetching fails from all sources
@@ -195,21 +195,50 @@ def get_realtime_btc_price() -> tuple[datetime, float]:
         """Validate price is within reasonable range"""
         return 1000 < price < 200000
 
-    # Try Binance first
-    try:
-        response = requests.get(
-            "https://api.binance.com/api/v3/ticker/price?symbol=BTCUSDC", timeout=5
-        )
-        response.raise_for_status()
-        data = response.json()
-
-        if data and "price" in data:
+    selected_exchange = (exchange or "BINANCE").strip().upper()
+    if selected_exchange == "KRAKEN":
+        try:
+            response = requests.get(
+                "https://api.kraken.com/0/public/Ticker?pair=XBTUSD", timeout=5
+            )
+            response.raise_for_status()
+            data = response.json()
+            result = data.get("result") or {}
+            ticker = next(iter(result.values()))
+            price = float(ticker["c"][0])
+            if validate_price(price):
+                print(f"✓ Fetched real-time price from Kraken: ${price:,.2f}")
+                return datetime.now(), price, "kraken_public_api"
+        except Exception as e:
+            print(f"⚠ Kraken API error: {e}")
+    elif selected_exchange == "BITVAVO":
+        try:
+            response = requests.get(
+                "https://api.bitvavo.com/v2/ticker/price?market=BTC-EUR", timeout=5
+            )
+            response.raise_for_status()
+            data = response.json()
             price = float(data["price"])
             if validate_price(price):
-                print(f"✓ Fetched real-time price from Binance: ${price:,.2f}")
-                return datetime.now(), price
-    except Exception as e:
-        print(f"⚠ Binance API error: {e}")
+                print(f"✓ Fetched real-time price from Bitvavo: ${price:,.2f}")
+                return datetime.now(), price, "bitvavo_public_api"
+        except Exception as e:
+            print(f"⚠ Bitvavo API error: {e}")
+    else:
+        try:
+            response = requests.get(
+                "https://api.binance.com/api/v3/ticker/price?symbol=BTCUSDC", timeout=5
+            )
+            response.raise_for_status()
+            data = response.json()
+
+            if data and "price" in data:
+                price = float(data["price"])
+                if validate_price(price):
+                    print(f"✓ Fetched real-time price from Binance: ${price:,.2f}")
+                    return datetime.now(), price, "binance_public_api"
+        except Exception as e:
+            print(f"⚠ Binance API error: {e}")
 
     # Fallback to Coinbase
     try:
@@ -228,12 +257,17 @@ def get_realtime_btc_price() -> tuple[datetime, float]:
             price = float(data["data"]["rates"]["USD"])
             if validate_price(price):
                 print(f"✓ Fetched real-time price from Coinbase: ${price:,.2f}")
-                return datetime.now(), price
+                return datetime.now(), price, "coinbase_public_api"
     except Exception as e:
         print(f"⚠ Coinbase API error: {e}")
 
     # All sources failed
-    raise Exception("Failed to fetch real-time price from Binance and Coinbase")
+    raise Exception(f"Failed to fetch real-time price from {selected_exchange} and Coinbase")
+
+
+def get_realtime_btc_price() -> tuple[datetime, float]:
+    price_time, price, _source = get_realtime_btc_price_with_source("BINANCE")
+    return price_time, price
 
 
 def fetch_usdjpy_history(

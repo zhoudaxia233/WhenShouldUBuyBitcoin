@@ -104,13 +104,16 @@ class CsvMetricsBackend:
             raise e
 
 class RealtimeMetricsBackend:
+    def __init__(self, active_exchange: str = "BINANCE"):
+        self.active_exchange = (active_exchange or "BINANCE").upper()
+
     def get_latest_metrics(self) -> Metrics:
         try:
             from whenshouldubuybitcoin.realtime_check import check_realtime_status
             
             # Call the existing realtime function
             # verbose=False to avoid printing to stdout
-            data = check_realtime_status(verbose=False)
+            data = check_realtime_status(verbose=False, exchange=self.active_exchange)
             
             if not data:
                 raise ValueError("Realtime check returned no data")
@@ -149,7 +152,7 @@ class RealtimeMetricsBackend:
                 timestamp=timestamp,
                 source=MetricsSource(
                     backend="realtime",
-                    label="Binance"
+                    label=_realtime_source_label(data.get("price_source"), self.active_exchange)
                 )
             )
             
@@ -158,12 +161,22 @@ class RealtimeMetricsBackend:
         except Exception as e:
             raise e
 
-def get_metrics_backend() -> BaseMetricsBackend:
+def _realtime_source_label(price_source: str | None, active_exchange: str) -> str:
+    if price_source == "coinbase_public_api":
+        return f"Coinbase fallback for {active_exchange}"
+    if active_exchange == "KRAKEN":
+        return "Kraken"
+    if active_exchange == "BITVAVO":
+        return "Bitvavo"
+    return "Binance"
+
+
+def get_metrics_backend(active_exchange: str = "BINANCE") -> BaseMetricsBackend:
     if settings.METRICS_BACKEND == "realtime":
-        return RealtimeMetricsBackend()
+        return RealtimeMetricsBackend(active_exchange=active_exchange)
     return CsvMetricsBackend()
 
-def get_latest_metrics() -> Optional[Dict[str, Any]]:
+def get_latest_metrics(active_exchange: str = "BINANCE") -> Optional[Dict[str, Any]]:
     """
     Top-level function to get metrics from the configured backend.
     Handles fallback logic if enabled.
@@ -171,7 +184,7 @@ def get_latest_metrics() -> Optional[Dict[str, Any]]:
     {"ahr999": float, "price_usd": float, "timestamp": datetime, "source": str}
     or None if all attempts fail.
     """
-    backend = get_metrics_backend()
+    backend = get_metrics_backend(active_exchange=active_exchange)
     
     try:
         metrics = backend.get_latest_metrics()

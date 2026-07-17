@@ -13,6 +13,7 @@ from dca_service.services.metrics_provider import (
     get_drawdown_percentile_snapshot,
     get_drawdown_context,
 )
+from dca_service.services.exchange_config import get_active_exchange
 from whenshouldubuybitcoin.strategies.dynamic_ahr999 import (
     calculate_buy_amount,
     DynamicAhr999Params,
@@ -165,7 +166,7 @@ def calculate_dca_decision(session: Session) -> DCADecision:
     """
     # 1. Load Strategy
     strategy = session.exec(select(DCAStrategy)).first()
-    metrics = get_latest_metrics()
+    metrics = get_latest_metrics(active_exchange=get_active_exchange(session))
     # Bottoming/macro preview is display-only and should still be returned even
     # when primary trading metrics are stale/unavailable.
     csv_bottoming_signal = get_latest_bottoming_volume_signal()

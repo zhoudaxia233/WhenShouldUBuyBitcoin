@@ -8,7 +8,7 @@ This test ensures that the single enforce_monthly_cap field correctly controls:
 """
 
 import pytest
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timezone
 from sqlmodel import Session, SQLModel, create_engine
 from sqlmodel.pool import StaticPool
 
@@ -94,7 +94,7 @@ class TestEnforceMonthlyCapTrue:
             "source_label": "Test"
         }
         original = engine_module.get_latest_metrics
-        engine_module.get_latest_metrics = lambda: mock_metrics
+        engine_module.get_latest_metrics = lambda **_: mock_metrics
         
         try:
             decision = calculate_dca_decision(session)
@@ -136,7 +136,7 @@ class TestEnforceMonthlyCapTrue:
             "source_label": "Test"
         }
         original = engine_module.get_latest_metrics
-        engine_module.get_latest_metrics = lambda: mock_metrics
+        engine_module.get_latest_metrics = lambda **_: mock_metrics
         
         try:
             decision = calculate_dca_decision(session)
@@ -202,7 +202,7 @@ class TestEnforceMonthlyCapFalse:
             "source_label": "Test"
         }
         original = engine_module.get_latest_metrics
-        engine_module.get_latest_metrics = lambda: mock_metrics
+        engine_module.get_latest_metrics = lambda **_: mock_metrics
         
         try:
             decision = calculate_dca_decision(session)
@@ -243,7 +243,7 @@ class TestEnforceMonthlyCapFalse:
             "source_label": "Test"
         }
         original = engine_module.get_latest_metrics
-        engine_module.get_latest_metrics = lambda: mock_metrics
+        engine_module.get_latest_metrics = lambda **_: mock_metrics
         
         try:
             decision = calculate_dca_decision(session)
@@ -289,7 +289,7 @@ class TestEnforceMonthlyCapFalse:
             "source_label": "Test"
         }
         original = engine_module.get_latest_metrics
-        engine_module.get_latest_metrics = lambda: mock_metrics
+        engine_module.get_latest_metrics = lambda **_: mock_metrics
         
         try:
             decision = calculate_dca_decision(session)
@@ -331,4 +331,3 @@ class TestMigrationCompatibility:
         # Should not raise any errors
         assert strategy.enforce_monthly_cap is True
         assert not hasattr(strategy, 'unlimited_monthly_budget')
-

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Binance Settings</title>
+    <title>Exchange Settings</title>
     <script>
         (function () {
             const savedTheme = localStorage.getItem('dca_theme');
@@ -28,6 +28,54 @@
             transition: background-color 0.2s ease, color 0.2s ease;
         }
         .masked-key { font-family: monospace; letter-spacing: 2px; }
+        .exchange-state-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 0.75rem;
+        }
+        .exchange-state-tile {
+            border: 1px solid var(--dashboard-border, #e5e7eb);
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.62);
+            padding: 0.85rem 0.95rem;
+            min-height: 78px;
+        }
+        .exchange-state-label {
+            display: block;
+            color: #6b7280;
+            font-size: 0.78rem;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+        }
+        .exchange-state-value {
+            display: block;
+            margin-top: 0.25rem;
+            font-size: 1.05rem;
+            font-weight: 800;
+        }
+        .exchange-state-note {
+            display: block;
+            margin-top: 0.15rem;
+            color: #6b7280;
+            font-size: 0.82rem;
+        }
+        .exchange-draft-bar {
+            align-items: center;
+            background: rgba(255, 138, 0, 0.08);
+            border: 1px solid rgba(255, 138, 0, 0.32);
+            border-radius: 8px;
+            display: flex;
+            gap: 1rem;
+            justify-content: space-between;
+            padding: 0.9rem 1rem;
+        }
+        .exchange-draft-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            justify-content: flex-end;
+        }
         /* Settings dropdown styling */
         .dropdown-menu {
             min-width: 200px;
@@ -90,6 +138,19 @@
                 height: 44px;
                 border-radius: 12px;
             }
+            .exchange-state-grid {
+                grid-template-columns: 1fr;
+            }
+            .exchange-draft-bar {
+                align-items: stretch;
+                flex-direction: column;
+            }
+            .exchange-draft-actions {
+                justify-content: stretch;
+            }
+            .exchange-draft-actions .btn {
+                flex: 1 1 140px;
+            }
         }
 
         html[data-bs-theme="dark"] body {
@@ -116,6 +177,14 @@
             color: #eef2f8;
             border-color: #3a4a5f;
         }
+        html[data-bs-theme="dark"] .exchange-state-tile {
+            background: rgba(27, 36, 48, 0.72);
+            border-color: #2f3a49;
+        }
+        html[data-bs-theme="dark"] .exchange-state-label,
+        html[data-bs-theme="dark"] .exchange-state-note {
+            color: #9ba7b7;
+        }
     </style>
 </head>
 <body class="satsflow-page">
@@ -124,10 +193,264 @@
         {% include "_shared_header.html" %}
 
         <div class="page-title-block">
-            <h1>Binance Settings</h1>
-            <p class="text-muted mb-0">Read-only exchange connection and notification settings.</p>
+            <h1>Exchange Settings</h1>
+            <p class="text-muted mb-0">Configure one exchange at a time. Make it active only when you are ready to route DCA through it.</p>
         </div>
 
+        <div class="card dashboard-panel mb-4">
+            <div class="card-header dashboard-panel-header">
+                <h5 class="mb-0">Exchange Routing</h5>
+            </div>
+            <div class="card-body">
+                <div class="exchange-state-grid mb-3">
+                    <div class="exchange-state-tile">
+                        <span class="exchange-state-label">Active exchange</span>
+                        <span id="activeExchangeLabel" class="exchange-state-value">Checking...</span>
+                        <span id="activeExchangeStatus" class="exchange-state-note">Current DCA route</span>
+                    </div>
+                    <div class="exchange-state-tile">
+                        <span class="exchange-state-label">Editing</span>
+                        <span id="editingExchangeLabel" class="exchange-state-value">Checking...</span>
+                        <span class="exchange-state-note">Settings shown below</span>
+                    </div>
+                    <div class="exchange-state-tile">
+                        <span class="exchange-state-label">Data source</span>
+                        <span id="editingExchangeRouteLabel" class="exchange-state-value">Checking...</span>
+                        <span id="editingExchangeRouteNote" class="exchange-state-note">Updates with the selector</span>
+                    </div>
+                </div>
+
+                <label class="form-label" for="activeExchangeSelect">Exchange to configure</label>
+                <select class="form-select" id="activeExchangeSelect">
+                    <option value="BINANCE">Binance</option>
+                    <option value="KRAKEN">Kraken Pro</option>
+                    <option value="BITVAVO">Bitvavo</option>
+                </select>
+                <div class="form-text mt-2 text-muted">Changing this updates the settings below. Use Make active to apply it.</div>
+
+                <div id="activeExchangePendingNotice" class="exchange-draft-bar mt-3 d-none" role="status">
+                    <div>
+                        <div class="small text-muted">Pending active exchange change</div>
+                        <strong id="activeExchangeDraftTitle">Binance is still active</strong>
+                        <div id="activeExchangeDraftDetail" class="small text-muted">You are editing another exchange.</div>
+                    </div>
+                    <div class="exchange-draft-actions">
+                        <button id="discardExchangeDraftBtn" type="button" class="btn btn-outline-secondary">Discard</button>
+                        <button id="makeActiveExchangeBtn" type="button" class="btn btn-primary">Make active</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card dashboard-panel mb-4 exchange-config-panel d-none" data-exchange-panel="KRAKEN">
+            <div class="card-header dashboard-panel-header">
+                <h5 class="mb-0">Kraken Pro Settings</h5>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-satsflow mb-4">
+                    <strong>Kraken Pro connection:</strong>
+                    <ul class="mb-0 mt-2 small">
+                        <li>Read-only credentials fetch hot wallet data and sync buy history.</li>
+                        <li>Trading credentials are used only when LIVE mode is enabled and Kraken is the active exchange.</li>
+                        <li>Coinbase is only a labeled public price fallback; it is never used for DCA orders.</li>
+                    </ul>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6 class="mb-3">Read-Only API Credentials</h6>
+                        <form id="krakenForm">
+                            <div class="mb-3">
+                                <label class="form-label">API Key</label>
+                                <input type="text" class="form-control" id="krakenApiKey" placeholder="Enter new key to update">
+                                <div id="currentKrakenKeyDisplay" class="form-text text-muted mt-1"></div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">API Secret</label>
+                                <input type="password" class="form-control" id="krakenApiSecret" placeholder="Enter new secret to update">
+                            </div>
+                            <button type="submit" class="btn btn-primary w-100">
+                                <span id="saveKrakenButtonText">Save Kraken Credentials</span>
+                            </button>
+                        </form>
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="mb-3">Trading API Credentials</h6>
+                        <form id="krakenTradingForm">
+                            <div class="mb-3">
+                                <label class="form-label">Trading API Key</label>
+                                <input type="text" class="form-control" id="krakenTradingApiKey" placeholder="Enter new key to update">
+                                <div id="currentKrakenTradingKeyDisplay" class="form-text text-muted mt-1"></div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Trading API Secret</label>
+                                <input type="password" class="form-control" id="krakenTradingApiSecret" placeholder="Enter new secret to update">
+                            </div>
+                            <button type="submit" class="btn btn-primary w-100">
+                                <span id="saveKrakenTradingButtonText">Save Kraken Trading Credentials</span>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <div class="row mt-4">
+                    <div class="col-md-6">
+                        <strong>Read-Only Status:</strong>
+                        <p id="krakenCredStatus" class="mb-2 small">Checking...</p>
+                        <button id="testKrakenConnectionBtn" class="btn btn-outline-secondary w-100">
+                            <span id="testKrakenButtonText">Test Kraken Connection</span>
+                        </button>
+                        <div id="krakenTestResult" class="mt-2 small"></div>
+                    </div>
+                    <div class="col-md-6">
+                        <strong>Trading Status:</strong>
+                        <p id="krakenTradingCredStatus" class="mb-2 small">Checking...</p>
+                        <button id="testKrakenTradingBtn" class="btn btn-outline-danger w-100">
+                            <span id="testKrakenTradingText">Verify Kraken Trading</span>
+                        </button>
+                        <div id="krakenTradingTestResult" class="mt-2 small"></div>
+                    </div>
+                </div>
+
+                <div class="mt-4">
+                    <button class="btn btn-sm btn-outline-primary mb-2" type="button" data-bs-toggle="collapse" data-bs-target="#krakenHelpSection">
+                        ℹ️ How to create Kraken API Keys
+                    </button>
+
+                    <div class="collapse mt-2" id="krakenHelpSection">
+                        <div class="card card-body satsflow-soft-panel">
+                            <h6>Creating a Read-Only API Key on Kraken Pro:</h6>
+                            <ol class="mb-0 small">
+                                <li>Log into your <strong>Kraken Pro</strong> account.</li>
+                                <li>Open <strong>Settings</strong>, then <strong>API</strong>.</li>
+                                <li>Click <strong>Add key</strong> and name it, for example "DCA Read-Only".</li>
+                                <li>Enable read/query permissions for funds and closed/open orders or trades.</li>
+                                <li>Leave trading and withdrawal permissions disabled.</li>
+                                <li>Copy the <strong>API Key</strong> and <strong>Private Key</strong> immediately.</li>
+                                <li>Paste them into the read-only form above and click <strong>Save Kraken Credentials</strong>.</li>
+                            </ol>
+                            <div class="alert alert-warning small mt-3 mb-0">
+                                <strong>Security Note:</strong> The Private Key is encrypted before storage and never displayed again.
+                            </div>
+
+                            <hr class="my-3">
+                            <h6>Creating a Trading API Key on Kraken Pro:</h6>
+                            <ol class="mb-0 small">
+                                <li>Create a separate API key in <strong>Settings</strong> → <strong>API</strong>.</li>
+                                <li>Enable the read/query permissions needed for funds and order/trade history.</li>
+                                <li>Enable the order creation permission needed for spot market buys.</li>
+                                <li>Leave withdrawal permissions disabled.</li>
+                                <li>Copy the <strong>API Key</strong> and <strong>Private Key</strong> immediately.</li>
+                                <li>Paste them into the trading form above and click <strong>Save Kraken Trading Credentials</strong>.</li>
+                                <li>Click <strong>Verify Kraken Trading</strong> before enabling LIVE mode.</li>
+                            </ol>
+                            <div class="alert alert-satsflow-danger small mt-3 mb-0">
+                                <strong>LIVE Trading:</strong> Use a dedicated key, start with small amounts, and never enable withdrawals.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card dashboard-panel mb-4 exchange-config-panel d-none" data-exchange-panel="BITVAVO">
+            <div class="card-header dashboard-panel-header">
+                <h5 class="mb-0">Bitvavo Settings</h5>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-satsflow mb-4">
+                    <strong>Bitvavo connection:</strong>
+                    <ul class="mb-0 mt-2 small">
+                        <li>Bitvavo uses <strong>BTC-EUR</strong> for DCA prices, balances, LIVE orders, and sync.</li>
+                        <li>Read-only credentials fetch hot wallet data and sync buy history.</li>
+                        <li>Trading credentials are used only when LIVE mode is enabled and Bitvavo is the active exchange.</li>
+                        <li>Coinbase is only a labeled public price fallback; it is never used for DCA orders.</li>
+                    </ul>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6 class="mb-3">Read-Only API Credentials</h6>
+                        <form id="bitvavoForm">
+                            <div class="mb-3">
+                                <label class="form-label">API Key</label>
+                                <input type="text" class="form-control" id="bitvavoApiKey" placeholder="Enter new key to update">
+                                <div id="currentBitvavoKeyDisplay" class="form-text text-muted mt-1"></div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">API Secret</label>
+                                <input type="password" class="form-control" id="bitvavoApiSecret" placeholder="Enter new secret to update">
+                            </div>
+                            <button type="submit" class="btn btn-primary w-100">
+                                <span id="saveBitvavoButtonText">Save Bitvavo Credentials</span>
+                            </button>
+                        </form>
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="mb-3">Trading API Credentials</h6>
+                        <form id="bitvavoTradingForm">
+                            <div class="mb-3">
+                                <label class="form-label">Trading API Key</label>
+                                <input type="text" class="form-control" id="bitvavoTradingApiKey" placeholder="Enter new key to update">
+                                <div id="currentBitvavoTradingKeyDisplay" class="form-text text-muted mt-1"></div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Trading API Secret</label>
+                                <input type="password" class="form-control" id="bitvavoTradingApiSecret" placeholder="Enter new secret to update">
+                            </div>
+                            <button type="submit" class="btn btn-primary w-100">
+                                <span id="saveBitvavoTradingButtonText">Save Bitvavo Trading Credentials</span>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <div class="row mt-4">
+                    <div class="col-md-6">
+                        <strong>Read-Only Status:</strong>
+                        <p id="bitvavoCredStatus" class="mb-2 small">Checking...</p>
+                        <button id="testBitvavoConnectionBtn" class="btn btn-outline-secondary w-100">
+                            <span id="testBitvavoButtonText">Test Bitvavo Connection</span>
+                        </button>
+                        <div id="bitvavoTestResult" class="mt-2 small"></div>
+                    </div>
+                    <div class="col-md-6">
+                        <strong>Trading Status:</strong>
+                        <p id="bitvavoTradingCredStatus" class="mb-2 small">Checking...</p>
+                        <button id="testBitvavoTradingBtn" class="btn btn-outline-danger w-100">
+                            <span id="testBitvavoTradingText">Verify Bitvavo Trading</span>
+                        </button>
+                        <div id="bitvavoTradingTestResult" class="mt-2 small"></div>
+                    </div>
+                </div>
+
+                <div class="mt-4">
+                    <button class="btn btn-sm btn-outline-primary mb-2" type="button" data-bs-toggle="collapse" data-bs-target="#bitvavoHelpSection">
+                        ℹ️ How to create Bitvavo API Keys
+                    </button>
+
+                    <div class="collapse mt-2" id="bitvavoHelpSection">
+                        <div class="card card-body satsflow-soft-panel">
+                            <h6>Creating Bitvavo API Keys:</h6>
+                            <ol class="mb-0 small">
+                                <li>Log into your <strong>Bitvavo</strong> account.</li>
+                                <li>Open <strong>Account</strong>, then <strong>API</strong>.</li>
+                                <li>Create one read-only key for balances and trade history.</li>
+                                <li>Create a separate trading key only if you want LIVE DCA orders.</li>
+                                <li>Leave withdrawal permissions disabled.</li>
+                                <li>Copy the <strong>API Key</strong> and <strong>API Secret</strong> immediately.</li>
+                                <li>Paste them into the matching form above and save.</li>
+                            </ol>
+                            <div class="alert alert-satsflow-danger small mt-3 mb-0">
+                                <strong>LIVE Trading:</strong> Use a dedicated key, start with small EUR amounts, and never enable withdrawals.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="exchange-config-panel" data-exchange-panel="BINANCE">
         <div class="card dashboard-panel">
             <div class="card-header dashboard-panel-header">
                 <h5 class="mb-0">Binance Settings (Read-Only)</h5>
@@ -325,6 +648,7 @@
                 </div>
             </div>
         </div>
+        </div>
 
         <!-- Email Notifications Section -->
         <div class="card dashboard-panel mt-4">
@@ -462,6 +786,28 @@
         </div>
     </div>
 
+    <div class="modal fade" id="activeExchangeConfirmModal" tabindex="-1" aria-labelledby="activeExchangeConfirmTitle" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="activeExchangeConfirmTitle">Make exchange active?</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p id="activeExchangeConfirmBody" class="mb-3">This changes the active DCA exchange.</p>
+                    <ul class="small mb-0">
+                        <li>Price source, hot wallet, sync, manual LIVE buys, and scheduled LIVE orders will use <span id="activeExchangeConfirmRouteName">this exchange</span>.</li>
+                        <li>Saved credentials for other exchanges stay available but inactive until you switch back.</li>
+                    </ul>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button id="confirmActiveExchangeBtn" type="button" class="btn btn-primary">Make active</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/notyf@3.10.0/notyf.min.js"></script>
     <script>
@@ -473,6 +819,50 @@
         const THEME_STORAGE_KEY = 'dca_theme';
         const THEME_ICON_SUN = '<svg class="theme-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"></circle><line x1="12" y1="2.5" x2="12" y2="5"></line><line x1="12" y1="19" x2="12" y2="21.5"></line><line x1="2.5" y1="12" x2="5" y2="12"></line><line x1="19" y1="12" x2="21.5" y2="12"></line><line x1="5.2" y1="5.2" x2="6.9" y2="6.9"></line><line x1="17.1" y1="17.1" x2="18.8" y2="18.8"></line><line x1="17.1" y1="6.9" x2="18.8" y2="5.2"></line><line x1="5.2" y1="18.8" x2="6.9" y2="17.1"></line></svg>';
         const THEME_ICON_MOON = '<svg class="theme-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M14.5 3.5a8.8 8.8 0 1 0 6 14.9 9.2 9.2 0 0 1-6.8-2.7 9.3 9.3 0 0 1-2.8-6.9 8.9 8.9 0 0 1 3.6-7.3Z"></path></svg>';
+        const EXCHANGE_LABELS = {
+            BINANCE: 'Binance',
+            KRAKEN: 'Kraken Pro',
+            BITVAVO: 'Bitvavo'
+        };
+        const EXCHANGE_ROUTE_NOTES = {
+            BINANCE: 'BTCUSDC via Binance',
+            KRAKEN: 'XBTUSD via Kraken',
+            BITVAVO: 'BTC-EUR via Bitvavo'
+        };
+        let activeExchange = 'BINANCE';
+        let editingExchange = 'BINANCE';
+        const activeExchangeModal = new bootstrap.Modal(document.getElementById('activeExchangeConfirmModal'));
+
+        function exchangeLabel(exchange) {
+            return EXCHANGE_LABELS[exchange] || exchange;
+        }
+
+        function renderExchangeDraftState() {
+            const activeLabel = exchangeLabel(activeExchange);
+            const editingLabel = exchangeLabel(editingExchange);
+            const hasDraft = editingExchange !== activeExchange;
+
+            document.getElementById('activeExchangeSelect').value = editingExchange;
+            document.getElementById('activeExchangeLabel').textContent = activeLabel;
+            document.getElementById('editingExchangeLabel').textContent = editingLabel;
+            document.getElementById('activeExchangeStatus').textContent = hasDraft ? 'Still routing DCA here' : 'Current DCA route';
+            document.getElementById('editingExchangeRouteLabel').textContent = editingLabel;
+            document.getElementById('editingExchangeRouteNote').textContent = EXCHANGE_ROUTE_NOTES[editingExchange] || 'Selected exchange source';
+
+            document.querySelectorAll('[data-exchange-panel]').forEach((panel) => {
+                panel.classList.toggle('d-none', panel.dataset.exchangePanel !== editingExchange);
+            });
+
+            const pendingNotice = document.getElementById('activeExchangePendingNotice');
+            pendingNotice.classList.toggle('d-none', !hasDraft);
+            document.getElementById('activeExchangeDraftTitle').textContent = `${activeLabel} is still active`;
+            document.getElementById('activeExchangeDraftDetail').textContent = `You are configuring ${editingLabel}. Credentials saved below do not change the active DCA route.`;
+            document.getElementById('makeActiveExchangeBtn').textContent = `Make ${editingLabel} active`;
+            document.getElementById('activeExchangeConfirmTitle').textContent = `Make ${editingLabel} active?`;
+            document.getElementById('activeExchangeConfirmBody').textContent = `${activeLabel} remains active until you confirm this change.`;
+            document.getElementById('activeExchangeConfirmRouteName').textContent = editingLabel;
+            document.getElementById('confirmActiveExchangeBtn').textContent = `Make ${editingLabel} active`;
+        }
 
         function updateThemeToggleButton(theme) {
             const btn = document.getElementById('themeToggleBtn');
@@ -500,6 +890,252 @@
                 });
             }
         })();
+
+        async function loadActiveExchange() {
+            try {
+                const response = await fetch('/api/exchange/active');
+                if (!response.ok) throw new Error('Failed to load active exchange');
+                const data = await response.json();
+                activeExchange = data.active_exchange || 'BINANCE';
+                editingExchange = activeExchange;
+                renderExchangeDraftState();
+            } catch (error) {
+                console.error('Error loading active exchange:', error);
+                renderExchangeDraftState();
+                document.getElementById('activeExchangeLabel').textContent = 'Unknown';
+                document.getElementById('activeExchangeStatus').textContent = 'Error checking active exchange';
+            }
+        }
+
+        document.getElementById('activeExchangeSelect').addEventListener('change', (event) => {
+            editingExchange = event.target.value;
+            renderExchangeDraftState();
+        });
+
+        document.getElementById('discardExchangeDraftBtn').addEventListener('click', () => {
+            editingExchange = activeExchange;
+            renderExchangeDraftState();
+        });
+
+        document.getElementById('makeActiveExchangeBtn').addEventListener('click', () => {
+            if (editingExchange === activeExchange) return;
+            renderExchangeDraftState();
+            activeExchangeModal.show();
+        });
+
+        document.getElementById('confirmActiveExchangeBtn').addEventListener('click', saveActiveExchangeDraft);
+
+        async function saveActiveExchangeDraft() {
+            const confirmBtn = document.getElementById('confirmActiveExchangeBtn');
+            const originalText = confirmBtn.textContent;
+            confirmBtn.disabled = true;
+            confirmBtn.textContent = 'Saving...';
+            try {
+                const response = await fetch('/api/exchange/active', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ active_exchange: editingExchange })
+                });
+                if (!response.ok) throw new Error('Failed to update active exchange');
+                const data = await response.json();
+                activeExchange = data.active_exchange || editingExchange;
+                editingExchange = activeExchange;
+                renderExchangeDraftState();
+                activeExchangeModal.hide();
+                notyf.success(`${exchangeLabel(activeExchange)} is now active for DCA`);
+            } catch (error) {
+                console.error('Error saving active exchange:', error);
+                notyf.error('Failed to update active exchange');
+                await loadActiveExchange();
+            } finally {
+                confirmBtn.disabled = false;
+                confirmBtn.textContent = originalText;
+            }
+        }
+
+        async function loadKrakenStatus() {
+            const readStatus = await fetch('/api/kraken/credentials/status?credential_type=READ_ONLY').then(r => r.json());
+            const tradingStatus = await fetch('/api/kraken/credentials/status?credential_type=TRADING').then(r => r.json());
+            const readEl = document.getElementById('krakenCredStatus');
+            const readKeyEl = document.getElementById('currentKrakenKeyDisplay');
+            const tradingEl = document.getElementById('krakenTradingCredStatus');
+            const tradingKeyEl = document.getElementById('currentKrakenTradingKeyDisplay');
+
+            if (readStatus.has_credentials) {
+                readEl.textContent = '✔ Kraken read-only credentials stored';
+                readEl.className = 'mb-2 small text-success fw-bold';
+                readKeyEl.textContent = readStatus.masked_api_key ? `Current: ${readStatus.masked_api_key}` : '';
+                readKeyEl.className = 'form-text text-success masked-key';
+            } else {
+                readEl.textContent = '⚠ No Kraken read-only credentials stored';
+                readEl.className = 'mb-2 small text-warning fw-bold';
+                readKeyEl.textContent = '';
+            }
+
+            if (tradingStatus.has_credentials) {
+                tradingEl.textContent = '✔ Kraken trading credentials stored';
+                tradingEl.className = 'mb-2 small text-success fw-bold';
+                tradingKeyEl.textContent = tradingStatus.masked_api_key ? `Current: ${tradingStatus.masked_api_key}` : '';
+                tradingKeyEl.className = 'form-text text-success masked-key';
+            } else {
+                tradingEl.textContent = '⚠ No Kraken trading credentials stored';
+                tradingEl.className = 'mb-2 small text-warning fw-bold';
+                tradingKeyEl.textContent = '';
+            }
+        }
+
+        async function saveKrakenCredentials(formId, keyId, secretId, credentialType, saveTextId) {
+            const apiKey = document.getElementById(keyId).value.trim();
+            const apiSecret = document.getElementById(secretId).value.trim();
+            if (!apiKey || !apiSecret) {
+                notyf.error('Both Kraken API Key and Secret are required');
+                return;
+            }
+            const form = document.getElementById(formId);
+            const btn = form.querySelector('button[type="submit"]');
+            const saveText = document.getElementById(saveTextId);
+            const originalText = saveText.textContent;
+            btn.disabled = true;
+            saveText.textContent = 'Saving...';
+            try {
+                const response = await fetch('/api/kraken/credentials', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ api_key: apiKey, api_secret: apiSecret, credential_type: credentialType })
+                });
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.detail || 'Unknown error');
+                }
+                document.getElementById(keyId).value = '';
+                document.getElementById(secretId).value = '';
+                await loadKrakenStatus();
+                notyf.success('Kraken credentials saved');
+            } catch (error) {
+                notyf.error('Error saving Kraken credentials: ' + error.message);
+            } finally {
+                btn.disabled = false;
+                saveText.textContent = originalText;
+            }
+        }
+
+        document.getElementById('krakenForm').addEventListener('submit', (event) => {
+            event.preventDefault();
+            saveKrakenCredentials('krakenForm', 'krakenApiKey', 'krakenApiSecret', 'READ_ONLY', 'saveKrakenButtonText');
+        });
+
+        document.getElementById('krakenTradingForm').addEventListener('submit', (event) => {
+            event.preventDefault();
+            saveKrakenCredentials('krakenTradingForm', 'krakenTradingApiKey', 'krakenTradingApiSecret', 'TRADING', 'saveKrakenTradingButtonText');
+        });
+
+        document.getElementById('testKrakenConnectionBtn').addEventListener('click', async () => {
+            const resultDiv = document.getElementById('krakenTestResult');
+            const response = await fetch('/api/kraken/test-connection?credential_type=READ_ONLY', { method: 'POST' });
+            const result = await response.json();
+            resultDiv.textContent = result.success ? '✔ Connected to Kraken' : `❌ Connection failed: ${result.error_message}`;
+            resultDiv.className = result.success ? 'mt-2 small text-success fw-bold' : 'mt-2 small text-danger fw-bold';
+        });
+
+        document.getElementById('testKrakenTradingBtn').addEventListener('click', async () => {
+            const resultDiv = document.getElementById('krakenTradingTestResult');
+            const response = await fetch('/api/kraken/trading-status');
+            const result = await response.json();
+            resultDiv.textContent = result.can_enable_live ? '✔ Kraken trading credentials verified' : `❌ ${result.error_message || 'Trading verification failed'}`;
+            resultDiv.className = result.can_enable_live ? 'mt-2 small text-success fw-bold' : 'mt-2 small text-danger fw-bold';
+        });
+
+        async function loadBitvavoStatus() {
+            const readStatus = await fetch('/api/bitvavo/credentials/status?credential_type=READ_ONLY').then(r => r.json());
+            const tradingStatus = await fetch('/api/bitvavo/credentials/status?credential_type=TRADING').then(r => r.json());
+            const readEl = document.getElementById('bitvavoCredStatus');
+            const readKeyEl = document.getElementById('currentBitvavoKeyDisplay');
+            const tradingEl = document.getElementById('bitvavoTradingCredStatus');
+            const tradingKeyEl = document.getElementById('currentBitvavoTradingKeyDisplay');
+
+            if (readStatus.has_credentials) {
+                readEl.textContent = '✔ Bitvavo read-only credentials stored';
+                readEl.className = 'mb-2 small text-success fw-bold';
+                readKeyEl.textContent = readStatus.masked_api_key ? `Current: ${readStatus.masked_api_key}` : '';
+                readKeyEl.className = 'form-text text-success masked-key';
+            } else {
+                readEl.textContent = '⚠ No Bitvavo read-only credentials stored';
+                readEl.className = 'mb-2 small text-warning fw-bold';
+                readKeyEl.textContent = '';
+            }
+
+            if (tradingStatus.has_credentials) {
+                tradingEl.textContent = '✔ Bitvavo trading credentials stored';
+                tradingEl.className = 'mb-2 small text-success fw-bold';
+                tradingKeyEl.textContent = tradingStatus.masked_api_key ? `Current: ${tradingStatus.masked_api_key}` : '';
+                tradingKeyEl.className = 'form-text text-success masked-key';
+            } else {
+                tradingEl.textContent = '⚠ No Bitvavo trading credentials stored';
+                tradingEl.className = 'mb-2 small text-warning fw-bold';
+                tradingKeyEl.textContent = '';
+            }
+        }
+
+        async function saveBitvavoCredentials(formId, keyId, secretId, credentialType, saveTextId) {
+            const apiKey = document.getElementById(keyId).value.trim();
+            const apiSecret = document.getElementById(secretId).value.trim();
+            if (!apiKey || !apiSecret) {
+                notyf.error('Both Bitvavo API Key and Secret are required');
+                return;
+            }
+            const form = document.getElementById(formId);
+            const btn = form.querySelector('button[type="submit"]');
+            const saveText = document.getElementById(saveTextId);
+            const originalText = saveText.textContent;
+            btn.disabled = true;
+            saveText.textContent = 'Saving...';
+            try {
+                const response = await fetch('/api/bitvavo/credentials', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ api_key: apiKey, api_secret: apiSecret, credential_type: credentialType })
+                });
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.detail || 'Unknown error');
+                }
+                document.getElementById(keyId).value = '';
+                document.getElementById(secretId).value = '';
+                await loadBitvavoStatus();
+                notyf.success('Bitvavo credentials saved');
+            } catch (error) {
+                notyf.error('Error saving Bitvavo credentials: ' + error.message);
+            } finally {
+                btn.disabled = false;
+                saveText.textContent = originalText;
+            }
+        }
+
+        document.getElementById('bitvavoForm').addEventListener('submit', (event) => {
+            event.preventDefault();
+            saveBitvavoCredentials('bitvavoForm', 'bitvavoApiKey', 'bitvavoApiSecret', 'READ_ONLY', 'saveBitvavoButtonText');
+        });
+
+        document.getElementById('bitvavoTradingForm').addEventListener('submit', (event) => {
+            event.preventDefault();
+            saveBitvavoCredentials('bitvavoTradingForm', 'bitvavoTradingApiKey', 'bitvavoTradingApiSecret', 'TRADING', 'saveBitvavoTradingButtonText');
+        });
+
+        document.getElementById('testBitvavoConnectionBtn').addEventListener('click', async () => {
+            const resultDiv = document.getElementById('bitvavoTestResult');
+            const response = await fetch('/api/bitvavo/test-connection?credential_type=READ_ONLY', { method: 'POST' });
+            const result = await response.json();
+            resultDiv.textContent = result.success ? '✔ Connected to Bitvavo' : `❌ Connection failed: ${result.error_message}`;
+            resultDiv.className = result.success ? 'mt-2 small text-success fw-bold' : 'mt-2 small text-danger fw-bold';
+        });
+
+        document.getElementById('testBitvavoTradingBtn').addEventListener('click', async () => {
+            const resultDiv = document.getElementById('bitvavoTradingTestResult');
+            const response = await fetch('/api/bitvavo/trading-status');
+            const result = await response.json();
+            resultDiv.textContent = result.can_enable_live ? '✔ Bitvavo trading credentials verified' : `❌ ${result.error_message || 'Trading verification failed'}`;
+            resultDiv.className = result.can_enable_live ? 'mt-2 small text-success fw-bold' : 'mt-2 small text-danger fw-bold';
+        });
 
         // Check credentials status on load
         async function loadCredentialsStatus() {
@@ -1009,6 +1645,9 @@
         }
 
         // Load all statuses on page load
+        loadActiveExchange();
+        loadKrakenStatus();
+        loadBitvavoStatus();
         loadCredentialsStatus();
         loadTradingStatus();
         loadEmailStatus();

@@ -5,8 +5,6 @@ Uses APScheduler to check every minute if a DCA transaction should be executed
 based on the strategy configuration (execution_time_utc, execution_frequency).
 """
 from datetime import datetime, timezone, timedelta
-from typing import Optional
-import sys
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from apscheduler.schedulers.background import BackgroundScheduler
@@ -57,7 +55,7 @@ class DCAScheduler:
             func=self._sync_trades_job,
             trigger=CronTrigger(minute='*/10'),  # Every 10 minutes
             id='trade_sync',
-            name='Binance Trade Sync',
+            name='Exchange Trade Sync',
             replace_existing=True
         )
 
@@ -298,33 +296,43 @@ class DCAScheduler:
             binance_order_id = None  # Will be set for LIVE trades
             fee_amount = 0.0  # Will be set for LIVE trades
             fee_asset = "USDC"  # Will be set for LIVE trades
+            exchange = None
+            exchange_order_id = None
+            exchange_symbol = None
             
             # Execute Real Trade if LIVE mode
             if strategy.execution_mode == "LIVE":
                 try:
-                    from dca_service.models import BinanceCredentials
                     from dca_service.services.security import decrypt_text
-                    from dca_service.services.binance_client import BinanceClient
+                    from dca_service.services.exchange_config import (
+                        get_active_exchange,
+                        get_credentials,
+                        get_exchange_symbol,
+                    )
                     import asyncio
                     
-                    # 1. Get TRADING credentials (not read-only)
-                    creds = session.exec(
-                        select(BinanceCredentials).where(BinanceCredentials.credential_type == "TRADING")
-                    ).first()
+                    exchange = get_active_exchange(session)
+                    exchange_symbol = get_exchange_symbol(exchange)
+                    creds = get_credentials(session, exchange, "TRADING")
                     if not creds or not creds.api_key_encrypted:
-                        raise ValueError("Trading credentials not configured. Please add trading API keys in settings.")
+                        raise ValueError(f"{exchange} trading credentials not configured. Please add trading API keys in settings.")
                     
-                    # 2. Decrypt both api_key and api_secret
                     api_key = decrypt_text(creds.api_key_encrypted)
                     api_secret = decrypt_text(creds.api_secret_encrypted)
                     
-                    # 3. Define async execution wrapper
                     async def execute_live_trade():
-                        client = BinanceClient(api_key, api_secret)
+                        if exchange == "KRAKEN":
+                            from dca_service.services.kraken_client import KrakenClient
+                            client = KrakenClient(api_key, api_secret)
+                        elif exchange == "BITVAVO":
+                            from dca_service.services.bitvavo_client import BitvavoClient
+                            client = BitvavoClient(api_key, api_secret)
+                        else:
+                            from dca_service.services.binance_client import BinanceClient
+                            client = BinanceClient(api_key, api_secret)
                         try:
-                            # Use new method that waits for trade confirmation
                             return await client.execute_market_order_with_confirmation(
-                                symbol="BTCUSDC",
+                                symbol=exchange_symbol,
                                 quote_quantity=decision.suggested_amount_usd,
                                 max_wait_seconds=10,
                                 poll_interval=1.0
@@ -332,12 +340,12 @@ class DCAScheduler:
                         finally:
                             await client.close()
                     
-                    # 4. Run async code synchronously
-                    logger.info(f"LIVE MODE: Attempting to buy ${decision.suggested_amount_usd:.2f} of BTC on Binance...")
+                    logger.info(f"LIVE MODE: Attempting to buy ${decision.suggested_amount_usd:.2f} of BTC on {exchange}...")
                     result = asyncio.run(execute_live_trade())
                     
-                    # 5. Parse Response - now we have confirmed trades!
-                    binance_order_id = result["order_id"]
+                    exchange_order_id = str(result["order_id"])
+                    if exchange == "BINANCE":
+                        binance_order_id = result["order_id"]
                     executed_btc = result["total_btc"]
                     executed_price = result["avg_price"]
                     executed_usd = result["quote_spent"]
@@ -346,7 +354,7 @@ class DCAScheduler:
                     
                     source = "DCA"  # Changed from "BINANCE" to "DCA" for bot-triggered trades
                     logger.info(
-                        f"LIVE TRADE SUCCESSFUL: Order#{binance_order_id} - "
+                        f"LIVE TRADE SUCCESSFUL: {exchange} order {exchange_order_id} - "
                         f"Bought {executed_btc:.8f} BTC @ ${executed_price:,.2f} avg "
                         f"(Fee: {fee_amount:.8f} {fee_asset})"
                     )
@@ -354,7 +362,7 @@ class DCAScheduler:
                 except Exception as e:
                     logger.error(f"LIVE Trading failed: {e}")
                     # Don't re-raise - we'll record as FAILED transaction instead
-                    source = "BINANCE_FAILED"
+                    source = f"{exchange or 'EXCHANGE'}_FAILED"
                     error_msg = str(e)
                     # Check for specific error types
                     if "401" in error_msg or "permissions" in error_msg.lower():
@@ -380,7 +388,9 @@ class DCAScheduler:
                     fee_amount=0.0,
                     fee_asset="USDC",
                     source=source,
-                    binance_order_id=None  # Failed trades have no order ID
+                    binance_order_id=None,  # Failed trades have no order ID
+                    exchange=exchange,
+                    exchange_symbol=exchange_symbol,
                 )
             else:
                 transaction = DCATransaction(
@@ -397,7 +407,10 @@ class DCAScheduler:
                     fee_amount=fee_amount,  # Now using actual fee from confirmed trades
                     fee_asset=fee_asset,  # Now using actual fee asset
                     source=source,
-                    binance_order_id=binance_order_id  # Save Binance order ID
+                    binance_order_id=binance_order_id,  # Save Binance order ID
+                    exchange=exchange,
+                    exchange_order_id=exchange_order_id,
+                    exchange_symbol=exchange_symbol,
                 )
 
                 # Deduct executed amount from accumulated savings
@@ -492,7 +505,7 @@ class DCAScheduler:
 
     def _sync_trades_job(self):
         """
-        Background job to sync trades from Binance.
+        Background job to sync trades from the active exchange.
         """
         try:
             # We need to run the async sync service synchronously here

@@ -31,6 +31,12 @@ class DCATransaction(SQLModel, table=True):
     
     # Source field - where the transaction came from
     source: Optional[str] = Field(default="SIMULATED")  # SIMULATED, BINANCE, LEDGER
+
+    # Generic exchange metadata. Legacy Binance columns stay for old rows.
+    exchange: Optional[str] = Field(default=None, index=True)  # BINANCE, KRAKEN
+    exchange_order_id: Optional[str] = Field(default=None, index=True)
+    exchange_trade_id: Optional[str] = Field(default=None, index=True)
+    exchange_symbol: Optional[str] = None
     
     # Binance order ID (for LIVE trades executed by the bot)
     binance_order_id: Optional[int] = None  # Binance order ID to match trades
@@ -108,6 +114,28 @@ class BinanceCredentials(SQLModel, table=True):
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
+class KrakenCredentials(SQLModel, table=True):
+    __tablename__ = "kraken_credentials"
+
+    id: int | None = Field(default=None, primary_key=True)
+    credential_type: str = Field(default="READ_ONLY", index=True)  # "READ_ONLY" or "TRADING"
+    api_key_encrypted: str
+    api_secret_encrypted: str
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+
+class BitvavoCredentials(SQLModel, table=True):
+    __tablename__ = "bitvavo_credentials"
+
+    id: int | None = Field(default=None, primary_key=True)
+    credential_type: str = Field(default="READ_ONLY", index=True)  # "READ_ONLY" or "TRADING"
+    api_key_encrypted: str
+    api_secret_encrypted: str
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+
 
 class GlobalSettings(SQLModel, table=True):
     """
@@ -118,6 +146,7 @@ class GlobalSettings(SQLModel, table=True):
     
     id: int = Field(default=1, primary_key=True)
     cold_wallet_balance: float = Field(default=0.0)  # Current BTC in cold storage
+    active_exchange: str = Field(default="BINANCE")
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 

@@ -78,6 +78,19 @@ def _migrate_transaction_table():
                     ALTER TABLE dca_transactions 
                     ADD COLUMN binance_order_id INTEGER
                 """))
+
+            for column_name in [
+                "exchange",
+                "exchange_order_id",
+                "exchange_trade_id",
+                "exchange_symbol",
+            ]:
+                if column_name not in existing_column_names:
+                    logger.info(f"Adding '{column_name}' column to dca_transactions table...")
+                    session.exec(text(f"""
+                        ALTER TABLE dca_transactions
+                        ADD COLUMN {column_name} TEXT
+                    """))
             
             # Check and add binance_trade_id column (Phase 7)
             if 'binance_trade_id' not in existing_column_names:
@@ -197,8 +210,35 @@ def create_db_and_tables():
     # Then run migration to add columns to existing tables that might be missing them
     _migrate_transaction_table()
     _migrate_strategy_table()
+    _migrate_global_settings_table()
     # Initialize global settings singleton
     _init_global_settings()
+
+
+def _migrate_global_settings_table():
+    try:
+        with Session(engine) as session:
+            table_exists = session.exec(text("""
+                SELECT name FROM sqlite_master
+                WHERE type='table' AND name='global_settings'
+            """)).first()
+            if not table_exists:
+                return
+
+            existing_columns = session.exec(text("""
+                SELECT name FROM pragma_table_info('global_settings')
+            """)).all()
+            existing_column_names = {col[0] if hasattr(col, "__getitem__") else str(col) for col in existing_columns}
+            if "active_exchange" not in existing_column_names:
+                logger.info("Adding 'active_exchange' column to global_settings table...")
+                session.exec(text("""
+                    ALTER TABLE global_settings
+                    ADD COLUMN active_exchange TEXT DEFAULT 'BINANCE'
+                """))
+                session.commit()
+    except Exception as e:
+        logger.error(f"Global settings migration failed: {e}")
+        raise
 
 
 def _init_global_settings():
