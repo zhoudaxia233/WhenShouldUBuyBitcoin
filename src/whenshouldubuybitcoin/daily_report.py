@@ -21,7 +21,7 @@ from whenshouldubuybitcoin.visualization import (
 
 EXCLUDED_CHARTS = {"Valuation Ratios", "Price Comparison"}
 DEFAULT_REPORT_PATH = Path("docs/data/daily_report.json")
-SUMMARY_TEMPLATE_VERSION = "bottoming-conclusion-v2"
+SUMMARY_TEMPLATE_VERSION = "fact-grounded-conclusions-v3"
 
 
 def _safe_float(value: Any) -> float | None:
@@ -179,7 +179,7 @@ def build_report_payload(
     if not ma_df.empty:
         latest = ma_df.iloc[-1]
         spread = _safe_float(latest.get("ma_spread"))
-        regime = "bullish" if spread is not None and spread >= 0 else "bearish"
+        regime = "bullish" if spread is not None and spread > 0 else "bearish" if spread is not None and spread < 0 else "neutral"
         last_golden = ma_df.loc[ma_df.get("golden_cross", False), "date"]
         last_death = ma_df.loc[ma_df.get("death_cross", False), "date"]
 
@@ -294,10 +294,17 @@ def build_report_payload(
             latest = mrs_df.iloc[-1]
             score = _safe_float(latest.get("macro_risk_score"))
             regime = "high" if score is not None and score >= 70 else "low" if score is not None and score <= 30 else "neutral"
-            high_mask = mrs_df["macro_risk_score"] >= 70
+            mature_mask = mrs_df["fwd_30d_return_pct"].notna()
+            high_mask = (mrs_df["macro_risk_score"] >= 70) & mature_mask
+            high_sample_count = int(high_mask.sum())
             high_hit_rate = (
                 float((mrs_df.loc[high_mask, "fwd_30d_return_pct"] < 0).mean() * 100.0)
-                if high_mask.any()
+                if high_sample_count
+                else None
+            )
+            validation_through = (
+                pd.to_datetime(mrs_df.loc[mature_mask, "date"]).max().date().isoformat()
+                if mature_mask.any()
                 else None
             )
             payload["sections"].append(
@@ -307,6 +314,8 @@ def build_report_payload(
                         "score": score,
                         "regime": regime,
                         "high_risk_hit_rate": high_hit_rate,
+                        "high_risk_sample_count": high_sample_count,
+                        "validation_through": validation_through,
                         "fwd_30d_return": _safe_float(latest.get("fwd_30d_return_pct")),
                         "btc_price": _safe_float(latest.get("close_price")),
                     },
@@ -433,43 +442,141 @@ def build_report_payload(
     return payload
 
 
+def _number(value: Any, digits: int = 0, *, scale: float = 1.0) -> str:
+    number = _safe_float(value)
+    return "N/A" if number is None else f"{number * scale:.{digits}f}"
+
+
+def _funding_stress_flags(metrics: dict[str, Any]) -> int | None:
+    values = [_safe_float(metrics.get(key)) for key in ("sofr", "move", "hy_oas")]
+    if any(value is None for value in values):
+        return None
+    return sum(
+        value >= threshold for value, threshold in zip(values, (5.0, 120.0, 5.0))
+    )
+
+
+def _market_conclusion(section: dict[str, Any]) -> tuple[str, str] | None:
+    """One factual conclusion per chart, shared by both languages and the overview."""
+    chart = section["chart"]
+    m = section["metrics"]
+    labels = {
+        "MA Cross Analysis": "均线",
+        "Net Liquidity": "净流动性",
+        "Funding & Credit Stress": "融资与信用压力",
+        "Macro Risk Score": "宏观风险评分",
+        "USD/JPY Risk Map": "美元兑日元风险",
+        "Futures OI & Price": "期货持仓象限",
+    }
+    if chart not in labels:
+        return None
+    unavailable = (
+        f"{chart} data is unavailable for a current assessment.",
+        f"{labels[chart]}数据不足，暂无法判断当前状态。",
+    )
+
+    if chart == "MA Cross Analysis":
+        spread = _safe_float(m.get("ma_spread"))
+        if spread is None:
+            return unavailable
+        state = (
+            ("bullish", "多头")
+            if spread > 0
+            else ("bearish", "空头") if spread < 0 else ("neutral", "持平")
+        )
+        return f"Moving averages are {state[0]}.", f"均线结构为{state[1]}。"
+    if chart == "Net Liquidity":
+        delta = _safe_float(m.get("net_liquidity_90d_delta"))
+        if _safe_float(m.get("net_liquidity_bil")) is None or delta is None:
+            return unavailable
+        state = (
+            ("rising", "上行")
+            if delta > 0
+            else ("falling", "下行") if delta < 0 else ("unchanged", "持平")
+        )
+        return (
+            f"Net liquidity is {state[0]} over 90 days.",
+            f"净流动性过去90天{state[1]}。",
+        )
+    if chart == "Funding & Credit Stress":
+        flags = _funding_stress_flags(m)
+        if flags is None:
+            return unavailable
+        state = (
+            ("tight", "偏紧")
+            if flags >= 2
+            else ("neutral", "中性") if flags == 1 else ("loose", "偏松")
+        )
+        return (
+            f"Funding and credit conditions are {state[0]} ({flags}/3 stress thresholds triggered).",
+            f"融资与信用条件{state[1]}（{flags}/3项触发压力阈值）。",
+        )
+    if chart == "Macro Risk Score":
+        score = _safe_float(m.get("score"))
+        if score is None:
+            return unavailable
+        state = (
+            ("high risk", "高风险")
+            if score >= 70
+            else ("low risk", "低风险") if score <= 30 else ("neutral", "中性")
+        )
+        return (
+            f"The macro score is in the {state[0]} zone.",
+            f"宏观风险评分位于{state[1]}区间。",
+        )
+    if chart == "USD/JPY Risk Map":
+        if any(
+            _safe_float(m.get(key)) is None for key in ("usdjpy", "spread")
+        ) or not m.get("risk_level"):
+            return unavailable
+        return (
+            f"The USD/JPY model classifies the current state as {m['risk_level']}.",
+            f"美元兑日元模型当前识别为{m['risk_level']}。",
+        )
+    quadrant = m.get("quadrant")
+    quadrant_zh = {
+        "Risky Up (leveraged)": "杠杆推动上涨",
+        "Healthy Up (spot-led)": "现货主导上涨",
+        "Squeeze Setup (crowded)": "价格下跌、持仓增加",
+        "Flush-Out (deleveraging)": "去杠杆",
+        "Neutral": "中性",
+    }.get(quadrant)
+    if quadrant_zh is None:
+        return unavailable
+    return f"The futures positioning quadrant is {quadrant}.", f"期货持仓象限为{quadrant_zh}（{quadrant}）。"
+
+
 def _deterministic_en_summary(section: dict[str, Any]) -> str:
     chart = section["chart"]
     m = section["metrics"]
+    conclusion = _market_conclusion(section)
 
     if chart == "Net Liquidity":
-        delta = _safe_float(m.get("net_liquidity_90d_delta"))
-        direction = "rising" if delta is not None and delta >= 0 else "falling"
         return (
-            f"Net liquidity is around {_safe_float(m.get('net_liquidity_bil')):.0f} bn USD, and the 90-day change is {_safe_float(m.get('net_liquidity_90d_delta')):.0f} bn USD."
-            f" WALCL is {_safe_float(m.get('walcl_bil')):.0f} bn, TGA is {_safe_float(m.get('tga_bil')):.0f} bn, and RRP is {_safe_float(m.get('rrp_bil')):.0f} bn."
-            f" The current liquidity direction is {direction} based on the 90-day delta."
-            if m.get("net_liquidity_bil") is not None and m.get("net_liquidity_90d_delta") is not None
-            else "Net liquidity data is incomplete, so the current liquidity direction cannot be determined reliably."
+            f"{conclusion[0]} Net liquidity is around {_number(m.get('net_liquidity_bil'))} bn USD, and the 90-day change is {_number(m.get('net_liquidity_90d_delta'))} bn USD."
+            f" WALCL is {_number(m.get('walcl_bil'))} bn, TGA is {_number(m.get('tga_bil'))} bn, and RRP is {_number(m.get('rrp_bil'))} bn."
         )
 
     if chart == "Funding & Credit Stress":
-        flags = int(m.get("stress_flags", 0))
-        level = "tight" if flags >= 2 else "neutral" if flags == 1 else "loose"
-        sofr = _safe_float(m.get("sofr"))
-        move = _safe_float(m.get("move"))
-        hy_oas = _safe_float(m.get("hy_oas"))
         return (
-            f"SOFR is {sofr:.2f}%, MOVE is {move:.1f}, and HY OAS is {hy_oas:.2f}%."
-            f" {flags} out of 3 indicators are above stress thresholds, so funding and credit conditions are currently {level}."
-            " This reading is based directly on the three threshold checks in the model."
-            if sofr is not None and move is not None and hy_oas is not None
-            else "Funding and credit stress data is incomplete, so the current stress state cannot be assessed."
+            f"{conclusion[0]} SOFR is {_number(m.get('sofr'), 2)}%, MOVE is {_number(m.get('move'), 1)}, and HY OAS is {_number(m.get('hy_oas'), 2)}%."
         )
 
     if chart == "Macro Risk Score":
-        score = _safe_float(m.get("score"))
-        regime = m.get("regime", "neutral")
-        regime_cn = {"high": "high risk", "low": "low risk", "neutral": "neutral"}.get(regime, "neutral")
+        hit_rate = _safe_float(m.get("high_risk_hit_rate"))
+        sample_count = m.get("high_risk_sample_count")
+        validation_date = m.get("validation_through")
+        history = (
+            f" Historical high-risk readings were followed by negative 30-day returns in {_pct(hit_rate)} of evaluated cases."
+            if hit_rate is not None else " No evaluated high-risk samples are available for a 30-day hit rate."
+        )
+        if sample_count is not None:
+            history += f" Evaluated high-risk samples: {sample_count}."
+        if validation_date:
+            history += f" Validation covers signal dates through {validation_date}."
         return (
-            f"The Macro Risk Score is {score:.1f}/100, which sits in the {regime_cn} zone."
-            f" The model's historical high-risk hit rate is about {_pct(_safe_float(m.get('high_risk_hit_rate')))} for 30-day negative returns."
-            f" The current forward 30-day return proxy in the payload is {_pct(_safe_float(m.get('fwd_30d_return')))}."
+            f"{conclusion[0]} The Macro Risk Score is {_number(m.get('score'), 1)}/100."
+            + history
         )
 
     if chart == "USD/JPY Risk Map":
@@ -478,27 +585,23 @@ def _deterministic_en_summary(section: dict[str, Any]) -> str:
         spread_30d = _safe_float(m.get("spread_30d_change_pct_pts"))
         spread_30d_text = "N/A" if spread_30d is None else f"{spread_30d:+.2f}pp"
         return (
-            f"USD/JPY is at {usdjpy:.2f}, and the US-JP 2Y spread is {spread:.2f}%."
-            f" The model classifies this as {m.get('risk_level', 'MODERATE RISK')}."
+            f"{conclusion[0]} USD/JPY is at {usdjpy:.2f}, and the US-JP 2Y spread is {spread:.2f}%."
             f" Over the last 30 days, USD/JPY changed {_pct(_safe_float(m.get('usdjpy_30d_change_pct')))} and the spread changed {spread_30d_text}."
             if usdjpy is not None and spread is not None
-            else "USD/JPY risk-map data is incomplete, so a current risk tier cannot be assigned."
+            else conclusion[0]
         )
 
     if chart == "Futures OI & Price":
         oi_pctile = _safe_float(m.get("oi_percentile"))
         oi_pctile_text = "N/A" if oi_pctile is None else f"{oi_pctile:.1f}"
         return (
-            f"Futures OI notional is around {_usd(_safe_float(m.get('oi_usd')))}, with a 30-day change of {_pct(_safe_float(m.get('oi_30d_change_pct')))}."
-            f" It sits around the {oi_pctile_text}th historical percentile, and the current quadrant is {m.get('quadrant', 'N/A')}."
-            " The current state is read directly from the percentile and quadrant values."
+            f"{conclusion[0]} Futures OI notional is around {_usd(_safe_float(m.get('oi_usd')))}, with a 30-day change of {_pct(_safe_float(m.get('oi_30d_change_pct')))}."
+            f" Its historical percentile is {oi_pctile_text}."
         )
 
     if chart == "MA Cross Analysis":
-        spread = _safe_float(m.get("ma_spread"))
-        regime_cn = "bullish" if spread is not None and spread >= 0 else "bearish"
         return (
-            f"MA Spread (50D-200D) is {spread:,.2f}, which keeps the medium-term structure {regime_cn}."
+            f"{conclusion[0]} MA Spread (50D-200D) is {_number(m.get('ma_spread'), 2)}."
             f" The 50-day MA is {_usd(_safe_float(m.get('ma_50')), 2)} and the 200-day MA is {_usd(_safe_float(m.get('ma_200')), 2)}."
             f" The latest cross dates are golden: {m.get('last_golden_cross') or 'N/A'}, death: {m.get('last_death_cross') or 'N/A'}."
         )
@@ -633,76 +736,60 @@ def _deterministic_en_summary(section: dict[str, Any]) -> str:
 def _deterministic_zh_summary(section: dict[str, Any]) -> str:
     chart = section["chart"]
     m = section["metrics"]
+    conclusion = _market_conclusion(section)
 
     if chart == "Net Liquidity":
-        net_liq = _safe_float(m.get("net_liquidity_bil"))
-        delta = _safe_float(m.get("net_liquidity_90d_delta"))
-        if net_liq is None or delta is None:
-            return "净流动性数据不完整，当前无法判断流动性方向。"
-        direction = "上行" if delta >= 0 else "下行"
         return (
-            f"当前净流动性约为{net_liq:.0f}亿美元，过去90天变化约为{delta:.0f}亿美元，当前方向为{direction}。"
-            f"WALCL约为{_safe_float(m.get('walcl_bil')):.0f}亿美元，TGA约为{_safe_float(m.get('tga_bil')):.0f}亿美元，RRP约为{_safe_float(m.get('rrp_bil')):.0f}亿美元。"
-            "这组数据对应的是流动性边际改善，而不是流动性收缩。"
+            f"{conclusion[1]}当前净流动性约为{_number(m.get('net_liquidity_bil'), scale=10)}亿美元，过去90天变化约为{_number(m.get('net_liquidity_90d_delta'), scale=10)}亿美元。"
+            f"WALCL约为{_number(m.get('walcl_bil'), scale=10)}亿美元，TGA约为{_number(m.get('tga_bil'), scale=10)}亿美元，RRP约为{_number(m.get('rrp_bil'), scale=10)}亿美元。"
         )
 
     if chart == "Funding & Credit Stress":
-        sofr = _safe_float(m.get("sofr"))
-        move = _safe_float(m.get("move"))
-        hy_oas = _safe_float(m.get("hy_oas"))
-        flags = int(m.get("stress_flags", 0))
-        if sofr is None or move is None or hy_oas is None:
-            return "融资与信用压力数据不完整，当前无法判定压力状态。"
-        level = "偏紧" if flags >= 2 else "中性" if flags == 1 else "偏松"
         return (
-            f"SOFR为{sofr:.2f}%，MOVE为{move:.1f}，HY OAS为{hy_oas:.2f}%，三项里有{flags}项触发压力阈值，整体金融条件处于{level}。"
-            "当前读数显示资金成本和信用利差都在可控区间。"
-            "现状解读是：融资端未出现系统性紧张，信用压力也未明显扩散。"
+            f"{conclusion[1]}SOFR为{_number(m.get('sofr'), 2)}%，MOVE为{_number(m.get('move'), 1)}，HY OAS为{_number(m.get('hy_oas'), 2)}%。"
         )
 
     if chart == "Macro Risk Score":
-        score = _safe_float(m.get("score"))
-        if score is None:
-            return "宏观风险评分数据不完整，当前无法判定风险区间。"
-        regime = m.get("regime", "neutral")
-        regime_cn = {"high": "高风险", "low": "低风险", "neutral": "中性"}.get(regime, "中性")
+        hit_rate = _safe_float(m.get("high_risk_hit_rate"))
+        sample_count = m.get("high_risk_sample_count")
+        validation_date = m.get("validation_through")
+        history = (
+            f"已完成观察的历史高风险样本中，随后30天收益为负的比例为{_pct(hit_rate)}。"
+            if hit_rate is not None else "暂无已完成观察的高风险样本，无法统计30天负收益命中率。"
+        )
+        if sample_count is not None:
+            history += f"已完成观察的高风险样本数：{sample_count}。"
+        if validation_date:
+            history += f"验证覆盖的信号日期截至{validation_date}。"
         return (
-            f"当前宏观风险评分为{score:.1f}/100，位于{regime_cn}区间。"
-            f"历史上高风险区间对应的30天负收益命中率约为{_pct(_safe_float(m.get('high_risk_hit_rate')))}。"
-            f"当前样本对应的前瞻30天收益代理值为{_pct(_safe_float(m.get('fwd_30d_return')))}，说明当前风险温度并不在极端区间。"
+            f"{conclusion[1]}当前宏观风险评分为{_number(m.get('score'), 1)}/100。" + history
         )
 
     if chart == "USD/JPY Risk Map":
         usdjpy = _safe_float(m.get("usdjpy"))
         spread = _safe_float(m.get("spread"))
         if usdjpy is None or spread is None:
-            return "美元兑日元或利差数据不完整，暂时无法给出稳定的风险分层判断。"
+            return conclusion[1]
         fx_chg = _safe_float(m.get("usdjpy_30d_change_pct"))
         spread_chg = _safe_float(m.get("spread_30d_change_pct_pts"))
-        fx_dir = "上行" if fx_chg is not None and fx_chg >= 0 else "回落"
-        spread_dir = "走阔" if spread_chg is not None and spread_chg >= 0 else "收窄"
-        fx_chg_text = _pct(fx_chg)
-        spread_chg_text = "N/A" if spread_chg is None else f"{spread_chg:+.2f}pp"
+        fx_change = "USD/JPY变化数据不足" if fx_chg is None else f"USD/JPY变化为{fx_chg:+.2f}%"
+        spread_change = "利差变化数据不足" if spread_chg is None else f"利差变化为{spread_chg:+.2f}个百分点"
         return (
-            f"当前USD/JPY为{usdjpy:.2f}，美日2年期利差约{spread:.2f}%，模型识别为{m.get('risk_level', 'MODERATE RISK')}。"
-            f"过去30天里，USD/JPY约{fx_dir}{fx_chg_text}，利差约{spread_dir}{spread_chg_text}。"
-            "现状解读是：汇率与利差同向走高，套息交易相关风险在抬升，当前处于中等风险偏上的状态。"
+            f"{conclusion[1]}当前USD/JPY为{usdjpy:.2f}，美日2年期利差约{spread:.2f}%。"
+            f"过去30天，{fx_change}，{spread_change}。"
         )
 
     if chart == "Futures OI & Price":
         oi_percentile = _safe_float(m.get("oi_percentile"))
         percentile_text = "N/A" if oi_percentile is None else f"{oi_percentile:.1f}"
         return (
-            f"期货未平仓名义规模约为{_usd(_safe_float(m.get('oi_usd')))}，30天变化为{_pct(_safe_float(m.get('oi_30d_change_pct')))}。"
-            f"当前大约位于历史{percentile_text}分位，象限为{m.get('quadrant', 'N/A')}。"
-            "现状解读是：杠杆仓位处在低位且仍在回落，市场结构仍偏去杠杆。"
+            f"{conclusion[1]}期货未平仓名义规模约为{_usd(_safe_float(m.get('oi_usd')))}，30天变化为{_pct(_safe_float(m.get('oi_30d_change_pct')))}。"
+            f"当前大约位于历史{percentile_text}分位。"
         )
 
     if chart == "MA Cross Analysis":
-        spread = _safe_float(m.get("ma_spread"))
-        regime_cn = "多头" if spread is not None and spread >= 0 else "空头"
         return (
-            f"50日与200日均线价差为{spread:,.2f}，中期结构仍偏{regime_cn}。"
+            f"{conclusion[1]}50日与200日均线价差为{_number(m.get('ma_spread'), 2)}。"
             f"当前50日均线{_usd(_safe_float(m.get('ma_50')), 2)}，200日均线{_usd(_safe_float(m.get('ma_200')), 2)}。"
             f"最近一次金叉为{m.get('last_golden_cross') or 'N/A'}，最近一次死叉为{m.get('last_death_cross') or 'N/A'}。"
         )
@@ -879,6 +966,8 @@ def _call_llm_summary(payload: dict[str, Any], language: str) -> dict[str, Any] 
             "5) 禁止空话和模板话，如“需谨慎”“可能会影响”“表明一定稳定性”“该结论仅基于...”。\n"
             "6) 不要给投资建议。\n"
             "7) 若字段缺失，简短说明“数据不足”。\n"
+            "8) 保留链上指标的data_date及caveat；延迟快照不能描述为今日数据，不能为统一日期而改写。\n"
+            "9) 总评必须与各分项及实际数值同向；不为缺失数据补方向。净流动性_bil单位为十亿美元，换成亿美元需乘10。\n"
             "最后写2-3句中文整体总结。\n"
             + json.dumps(payload, ensure_ascii=False)
         )
@@ -898,6 +987,8 @@ def _call_llm_summary(payload: dict[str, Any], language: str) -> dict[str, Any] 
             "5) No generic indicator definitions, no data-source disclaimers, no investment advice.\n"
             "6) Avoid repeating BTC spot price across sections.\n"
             "7) If a field is missing, state that briefly.\n"
+            "8) Preserve on-chain data_date and caveat; never present a delayed snapshot as today's data.\n"
+            "9) Keep the overall summary consistent with the section metrics; never infer direction from missing values.\n"
             "Then add a 2-3 sentence overall summary.\n"
             + json.dumps(payload, ensure_ascii=False)
         )
@@ -987,10 +1078,14 @@ def enrich_with_human_summary(payload: dict[str, Any], *, source_signature: str 
 
     llm_en = _call_llm_summary(payload, "en")
     llm_zh = _call_llm_summary(payload, "zh")
+    conclusions = [
+        conclusion for section in payload.get("sections", [])
+        if (conclusion := _market_conclusion(section)) is not None
+    ]
     en_items = deterministic_en_items
-    overall_en = "Overall, moving averages remain bearish, liquidity is rising, funding stress is limited, macro risk is neutral, and futures positioning is in a deleveraging regime."
+    overall_en = " ".join(conclusion[0] for conclusion in conclusions)
     zh_items = deterministic_zh_items
-    overall_zh = "整体看，均线结构仍偏空，流动性继续上行，融资与信用压力不高，宏观风险处于中性，期货仓位处在去杠杆阶段。"
+    overall_zh = "".join(conclusion[1] for conclusion in conclusions)
 
     _bs_section = next(
         (s for s in payload.get("sections", []) if s.get("chart") == "On-Chain Bottom Signals"),
@@ -999,23 +1094,27 @@ def enrich_with_human_summary(payload: dict[str, Any], *, source_signature: str 
     if _bs_section:
         _comp = _safe_float(_bs_section.get("metrics", {}).get("composite_score"))
         _zone = _bs_section.get("metrics", {}).get("zone")
+        _date = _bs_section.get("metrics", {}).get("data_date")
         if _comp is not None:
             overall_en += (
-                f" The on-chain bottom composite reads {_comp:.0f}/100 ({_zone}), but on a"
+                f" The on-chain bottom composite{' through ' + str(_date) if _date else ''} reads {_comp:.0f}/100 ({_zone}), but on a"
                 " warm, two-cycle, look-ahead proxy that missed the 2024 cycle low —"
                 " treat it as sentiment, not a buy trigger."
             )
             overall_zh += (
-                f"链上底部综合评分 {_comp:.0f}/100（{_zone}），但该指标基于偏暖的两周期、"
+                f"{'截至' + str(_date) + '，' if _date else ''}链上底部综合评分 {_comp:.0f}/100（{_zone}），但该指标基于偏暖的两周期、"
                 "含前视且漏判过 2024 周期底的代理，仅作情绪参考，并非买入信号。"
             )
+
+    overall_en = overall_en.strip() or "Available data is insufficient for an overall market assessment."
+    overall_zh = overall_zh.strip() or "当前数据不足，暂无法形成整体市场判断。"
 
     if llm_en and isinstance(llm_en.get("items"), list):
         llm_items = llm_en["items"]
         llm_map = {
             str(item.get("chart")): str(item.get("summary"))
             for item in llm_items
-            if item.get("chart") and item.get("summary")
+            if isinstance(item, dict) and item.get("chart") and isinstance(item.get("summary"), str) and item["summary"].strip()
         }
         if llm_map:
             en_items = [
@@ -1031,7 +1130,7 @@ def enrich_with_human_summary(payload: dict[str, Any], *, source_signature: str 
         llm_zh_map = {
             str(item.get("chart")): str(item.get("summary"))
             for item in llm_zh_items
-            if item.get("chart") and item.get("summary")
+            if isinstance(item, dict) and item.get("chart") and isinstance(item.get("summary"), str) and item["summary"].strip()
         }
         if llm_zh_map:
             zh_items = [
@@ -1157,11 +1256,6 @@ def generate_daily_report(
     existing_signature = None
     if isinstance(existing_report, dict):
         existing_signature = existing_report.get("summary_source_signature")
-        if not isinstance(existing_signature, str) or not existing_signature:
-            try:
-                existing_signature = _summary_source_signature(existing_report)
-            except Exception:
-                existing_signature = None
 
     if existing_signature == source_signature and _has_reusable_human_summary(existing_report):
         payload["human_summary"] = existing_report["human_summary"]

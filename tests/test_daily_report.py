@@ -346,3 +346,73 @@ def test_overall_summary_mentions_bottom_signal_with_caveat(monkeypatch):
     assert "sentiment" in overall_en and "not a buy trigger" in overall_en
     overall_zh = enriched["human_summary"]["localized"]["zh"]["overall_summary"]
     assert "链上底部" in overall_zh and "并非买入信号" in overall_zh
+
+
+def test_template_upgrade_regenerates_summary_even_when_market_data_is_unchanged(
+    tmp_path, monkeypatch
+):
+    from whenshouldubuybitcoin import daily_report
+
+    monkeypatch.setenv("REPORT_SUMMARY_DISABLE_LLM", "1")
+    output = tmp_path / "report.json"
+    current_version = daily_report.SUMMARY_TEMPLATE_VERSION
+    monkeypatch.setattr(
+        daily_report, "SUMMARY_TEMPLATE_VERSION", "bottoming-conclusion-v2"
+    )
+    previous = generate_daily_report(_sample_btc_df(), output_path=output)
+    previous["human_summary"]["overall_summary"] = "Old contradictory summary"
+    daily_report.save_daily_report(previous, output)
+
+    monkeypatch.setattr(daily_report, "SUMMARY_TEMPLATE_VERSION", current_version)
+    report = generate_daily_report(_sample_btc_df(), output_path=output)
+    assert report["summary_generation"]["reused_from_existing"] is False
+    assert "Old contradictory summary" not in report["human_summary"]["overall_summary"]
+
+
+def test_unsigned_legacy_report_is_regenerated(tmp_path, monkeypatch):
+    from whenshouldubuybitcoin import daily_report
+
+    monkeypatch.setenv("REPORT_SUMMARY_DISABLE_LLM", "1")
+    output = tmp_path / "report.json"
+    previous = generate_daily_report(_sample_btc_df(), output_path=output)
+    previous.pop("summary_source_signature")
+    previous["human_summary"]["overall_summary"] = "Old contradictory summary"
+    daily_report.save_daily_report(previous, output)
+
+    report = generate_daily_report(_sample_btc_df(), output_path=output)
+    assert report["summary_generation"]["reused_from_existing"] is False
+    assert "Old contradictory summary" not in report["human_summary"]["overall_summary"]
+
+
+def test_partial_llm_items_ignore_malformed_entries_and_keep_rule_fallback(monkeypatch):
+    payload = build_report_payload(_sample_btc_df(), macro_df=_sample_macro_df())
+    response = {
+        "items": [
+            None,
+            "invalid",
+            {"chart": "MA Cross Analysis", "summary": "Custom MA wording"},
+        ],
+    }
+    with patch(
+        "whenshouldubuybitcoin.daily_report._call_llm_summary", return_value=response
+    ):
+        report = enrich_with_human_summary(payload)
+    for lang in ("en", "zh"):
+        summaries = {
+            item["chart"]: item["summary"]
+            for item in report["human_summary"]["localized"][lang]["items"]
+        }
+        assert summaries["MA Cross Analysis"] == "Custom MA wording"
+        assert summaries["Net Liquidity"]
+
+
+def test_equal_moving_averages_have_neutral_payload_and_summary(monkeypatch):
+    monkeypatch.setenv("REPORT_SUMMARY_DISABLE_LLM", "1")
+    btc_df = _sample_btc_df()
+    btc_df["ma_50"] = btc_df["ma_200"]
+    btc_df["ma_spread"] = btc_df["ma_50"] - btc_df["ma_200"]
+    payload = build_report_payload(btc_df)
+    ma = next(s for s in payload["sections"] if s["chart"] == "MA Cross Analysis")
+    assert ma["metrics"]["regime"] == "neutral"
+    report = enrich_with_human_summary(payload)
+    assert "neutral" in report["human_summary"]["overall_summary"]
