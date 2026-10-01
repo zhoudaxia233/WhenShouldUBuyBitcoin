@@ -100,6 +100,16 @@ jobs:
           node --check docs/backtest.js
           echo "✓ JavaScript syntax is valid"
 
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Lint Python (pyflakes rules)
+        run: |
+          pip install ruff==0.14.4
+          ruff check src dca_service/src main.py scripts --select F
+
   test-dca-service:
     runs-on: ubuntu-latest
     defaults:
