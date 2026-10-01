@@ -243,48 +243,32 @@
         }
 
         /* Chart Tabs */
+        .chart-tabs-row {
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 16px;
+            border-bottom: 1px solid #d2d2d7;
+        }
+
         .chart-tabs {
             display: flex;
             gap: 8px;
-            margin-bottom: 20px;
-            border-bottom: 1px solid #d2d2d7;
             overflow-x: auto;
         }
 
-        .chart-section-tabs {
-            display: flex;
-            gap: 8px;
-            margin-bottom: 12px;
-        }
-
-        .chart-section-tab {
-            padding: 8px 14px;
-            font-size: 13px;
-            font-weight: 600;
-            color: #6e6e73;
-            background: #f5f5f7;
-            border: 1px solid #d2d2d7;
-            border-radius: 999px;
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
-
-        .chart-section-tab.active {
-            color: #0071e3;
-            border-color: #0071e3;
-            background: #e8f4fd;
-        }
-
         .chart-tab {
-            padding: 12px 24px;
+            padding: 12px 20px;
             font-size: 15px;
             font-weight: 500;
             color: #86868b;
             background: none;
             border: none;
             border-bottom: 2px solid transparent;
+            margin-bottom: -1px;
             cursor: pointer;
-            transition: all 0.2s ease;
+            transition: color 0.2s ease, border-color 0.2s ease;
         }
 
         .chart-tab:hover {
@@ -296,6 +280,39 @@
             border-bottom-color: #0071e3;
         }
 
+        .chart-tab:focus-visible,
+        .chart-fullscreen-btn:focus-visible,
+        .reference-toggle:focus-visible,
+        .reference-card:focus-visible,
+        .reference-viewer-close:focus-visible,
+        .chart-fullscreen-close:focus-visible {
+            outline: 2px solid #0071e3;
+            outline-offset: 2px;
+        }
+
+        .chart-fullscreen-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            flex-shrink: 0;
+            min-height: 32px;
+            margin-bottom: 8px;
+            padding: 6px 12px;
+            border: 1px solid #d2d2d7;
+            border-radius: 8px;
+            background: #ffffff;
+            color: #1d1d1f;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.2s ease, border-color 0.2s ease;
+        }
+
+        .chart-fullscreen-btn:hover {
+            background: #f5f5f7;
+            border-color: #b9b9be;
+        }
+
         .chart-content {
             display: none;
         }
@@ -304,11 +321,25 @@
             display: block;
         }
 
-        .chart-container iframe {
-            width: 100%;
-            height: 600px;
-            border: none;
+        /* The page owns chart size; each chart fills its frame */
+        .chart-frame {
+            position: relative;
+            height: var(--frame-h, 600px);
             border-radius: 12px;
+            overflow: hidden;
+            background: #ffffff;
+        }
+
+        .chart-frame--square {
+            height: auto;
+            aspect-ratio: 1 / 1;
+        }
+
+        .chart-frame iframe {
+            display: block;
+            width: 100%;
+            height: 100%;
+            border: none;
         }
 
         .chart-iframe {
@@ -318,6 +349,270 @@
 
         .chart-iframe.is-loaded {
             opacity: 1;
+        }
+
+        .chart-touch-hint {
+            display: none;
+            margin: 10px 0 0;
+            font-size: 12px;
+            color: #86868b;
+            text-align: center;
+        }
+
+        @media (pointer: coarse) {
+            .chart-touch-hint {
+                display: block;
+            }
+        }
+
+        /* Reference charts */
+        .reference-charts {
+            margin-top: 24px;
+            border-top: 1px solid #e5e5ea;
+            padding-top: 8px;
+        }
+
+        .reference-toggle {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 4px 10px;
+            width: 100%;
+            min-height: 44px;
+            padding: 10px 4px;
+            border: none;
+            background: none;
+            color: #1d1d1f;
+            font: inherit;
+            text-align: left;
+            cursor: pointer;
+        }
+
+        .reference-toggle-chevron {
+            color: #86868b;
+            transition: transform 0.2s ease;
+        }
+
+        .reference-toggle[aria-expanded="true"] .reference-toggle-chevron {
+            transform: rotate(90deg);
+        }
+
+        .reference-toggle-label {
+            font-size: 15px;
+            font-weight: 600;
+        }
+
+        .reference-toggle-count {
+            min-width: 22px;
+            padding: 1px 7px;
+            border-radius: 999px;
+            background: #f5f5f7;
+            color: #6e6e73;
+            font-size: 12px;
+            font-weight: 600;
+            text-align: center;
+        }
+
+        .reference-toggle-note {
+            margin-left: auto;
+            font-size: 12px;
+            color: #86868b;
+        }
+
+        .reference-panel {
+            padding: 8px 0 4px;
+        }
+
+        .reference-viewer {
+            margin-bottom: 16px;
+            padding: 16px;
+            border: 1px solid #e5e5ea;
+            border-radius: 14px;
+            background: #fbfbfd;
+            scroll-margin-top: 16px;
+        }
+
+        .reference-viewer-head {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        .reference-viewer-title {
+            margin: 0;
+            font-size: 17px;
+            font-weight: 600;
+            color: #1d1d1f;
+        }
+
+        .reference-viewer-desc {
+            margin: 4px 0 0;
+            font-size: 13px;
+            color: #6e6e73;
+        }
+
+        .reference-viewer-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-shrink: 0;
+        }
+
+        .reference-viewer-actions .chart-fullscreen-btn {
+            margin-bottom: 0;
+        }
+
+        .reference-viewer-close {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 32px;
+            height: 32px;
+            border: none;
+            border-radius: 8px;
+            background: transparent;
+            color: #6e6e73;
+            cursor: pointer;
+        }
+
+        .reference-viewer-close:hover {
+            background: #ececf0;
+            color: #1d1d1f;
+        }
+
+        .futures-oi-layout {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) minmax(260px, 400px);
+            gap: 16px;
+            align-items: start;
+        }
+
+        .oi-quadrant-legend {
+            margin-top: 8px;
+            padding: 8px 10px;
+            border: 1px solid #e5e5ea;
+            border-radius: 10px;
+            background: #ffffff;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
+        .reference-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+            gap: 12px;
+        }
+
+        .reference-card {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 6px;
+            padding: 14px 16px;
+            border: 1px solid #e5e5ea;
+            border-radius: 14px;
+            background: #ffffff;
+            color: #1d1d1f;
+            font: inherit;
+            text-align: left;
+            cursor: pointer;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .reference-card:hover {
+            border-color: #b9b9be;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+        }
+
+        .reference-card[aria-pressed="true"] {
+            border-color: #0071e3;
+            box-shadow: 0 0 0 1px #0071e3;
+        }
+
+        .reference-card-title {
+            font-size: 15px;
+            font-weight: 600;
+        }
+
+        .reference-card-desc {
+            font-size: 13px;
+            line-height: 1.45;
+            color: #6e6e73;
+        }
+
+        .reference-tag {
+            margin-top: auto;
+            padding: 2px 8px;
+            border-radius: 999px;
+            background: #f5f5f7;
+            color: #6e6e73;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .reference-tag--warn {
+            background: #fff4e5;
+            color: #a35200;
+        }
+
+        /* Full-screen chart viewer */
+        .chart-fullscreen {
+            position: fixed;
+            inset: 0;
+            z-index: 2000;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            height: 100dvh;
+            background: #ffffff;
+        }
+
+        .chart-fullscreen[hidden] {
+            display: none;
+        }
+
+        .chart-fullscreen-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 10px 12px 10px 20px;
+            padding-top: max(10px, env(safe-area-inset-top));
+            border-bottom: 1px solid #e5e5ea;
+        }
+
+        .chart-fullscreen-title {
+            margin: 0;
+            font-size: 16px;
+            font-weight: 600;
+            color: #1d1d1f;
+        }
+
+        .chart-fullscreen-close {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+            border: none;
+            border-radius: 10px;
+            background: #f5f5f7;
+            color: #1d1d1f;
+            cursor: pointer;
+        }
+
+        .chart-fullscreen-frame {
+            flex: 1 1 auto;
+            width: 100%;
+            min-height: 0;
+            border: none;
+            padding-bottom: env(safe-area-inset-bottom);
+        }
+
+        body.chart-fullscreen-open {
+            overflow: hidden;
         }
 
         /* Check Section (Results Only) */
@@ -1352,10 +1647,6 @@
                 padding: 24px 18px;
             }
 
-            .chart-container iframe {
-                height: 480px;
-            }
-
             .check-section,
             .forecast-section,
             .backtest-section {
@@ -1400,8 +1691,57 @@
                 color: #0071e3;
             }
 
-            .chart-container iframe {
-                height: 360px;
+            .chart-tabs-row {
+                align-items: center;
+                border-bottom: none;
+            }
+
+            .chart-tabs {
+                flex: 1 1 auto;
+            }
+
+            .chart-tabs-row .chart-tab {
+                margin-bottom: 0;
+                padding: 10px 8px;
+                font-size: 14px;
+                white-space: nowrap;
+            }
+
+            .chart-tabs-row .chart-fullscreen-btn {
+                margin-bottom: 0;
+                min-width: 40px;
+                min-height: 40px;
+                justify-content: center;
+            }
+
+            .chart-fullscreen-btn span {
+                display: none;
+            }
+
+            .chart-frame {
+                height: var(--frame-h-mobile, 440px);
+            }
+
+            .chart-frame--square {
+                height: auto;
+            }
+
+            .futures-oi-layout {
+                grid-template-columns: 1fr;
+            }
+
+            .reference-toggle-note {
+                margin-left: 0;
+                flex-basis: 100%;
+                padding-left: 24px;
+            }
+
+            .reference-viewer {
+                padding: 12px 10px;
+            }
+
+            .reference-grid {
+                grid-template-columns: 1fr;
             }
 
             .daily-report-header {
@@ -1573,71 +1913,147 @@
                 </div>
                 <div class="bsc-arrow">›</div>
             </a>
-            <div class="chart-container">
-                <div class="chart-section-tabs">
-                    <button class="chart-section-tab active" onclick="switchChartSection('core', this)">Core</button>
-                    <button class="chart-section-tab" onclick="switchChartSection('advanced', this)">Advanced</button>
-                </div>
-                <div class="chart-tabs">
-                    <button class="chart-tab active" data-section="core" data-chart="ratios" onclick="switchChart('ratios', this)">Valuation Ratios</button>
-                <button class="chart-tab" data-section="core" data-chart="prices" onclick="switchChart('prices', this)">Price Comparison</button>
-                <button class="chart-tab" data-section="core" data-chart="macro-score" onclick="switchChart('macro-score', this)">Macro Risk Score</button>
-                <button class="chart-tab" data-section="advanced" data-chart="net-liquidity" onclick="switchChart('net-liquidity', this)">Net Liquidity</button>
-                <button class="chart-tab" data-section="advanced" data-chart="funding-stress" onclick="switchChart('funding-stress', this)">Funding & Credit Stress</button>
-                <button class="chart-tab" data-section="advanced" data-chart="futures-oi" onclick="switchChart('futures-oi', this)">Futures OI & Price</button>
-                <button class="chart-tab" data-section="advanced" data-chart="usdjpy" onclick="switchChart('usdjpy', this)">USD/JPY Risk Map</button>
-                <button class="chart-tab" data-section="advanced" data-chart="ma-cross" onclick="switchChart('ma-cross', this)">MA Cross Analysis</button>
-            </div>
-
-            <!-- Chart Content Areas -->
-            <div class="chart-display">
-                <div id="ratios-chart" class="chart-content active">
-                    <iframe class="chart-iframe" data-src="charts/valuation_ratios.html"></iframe>
-                </div>
-                
-                <div id="prices-chart" class="chart-content">
-                    <iframe class="chart-iframe" data-src="charts/price_comparison.html"></iframe>
+            <section class="chart-container" aria-label="Charts">
+                <div class="chart-tabs-row">
+                    <div class="chart-tabs" role="tablist" aria-label="Valuation charts">
+                        <button class="chart-tab active" type="button" role="tab" aria-selected="true" aria-controls="ratios-chart" data-chart="ratios" onclick="switchChart('ratios', this)">Valuation Ratios</button>
+                        <button class="chart-tab" type="button" role="tab" aria-selected="false" aria-controls="prices-chart" data-chart="prices" onclick="switchChart('prices', this)">Price Comparison</button>
+                    </div>
+                    <button class="chart-fullscreen-btn" type="button" onclick="openActiveCoreChartFullscreen(this)" aria-label="Open the selected chart full screen">
+                        <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M2 6V2h4M10 2h4v4M14 10v4h-4M6 14H2v-4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        <span>Full screen</span>
+                    </button>
                 </div>
 
-                <div id="net-liquidity-chart" class="chart-content">
-                    <iframe class="chart-iframe" data-src="charts/net_liquidity.html" style="height: 840px;"></iframe>
-                </div>
-
-                <div id="funding-stress-chart" class="chart-content">
-                    <iframe class="chart-iframe" data-src="charts/funding_credit_stress.html" style="height: 840px;"></iframe>
-                </div>
-
-                <div id="macro-score-chart" class="chart-content">
-                    <iframe class="chart-iframe" data-src="charts/macro_risk_score.html" style="height: 920px;"></iframe>
-                </div>
-                
-                <div id="usdjpy-chart" class="chart-content">
-                    <iframe class="chart-iframe" data-src="charts/usdjpy_risk_map.html" style="height: 800px;"></iframe>
-                </div>
-
-                <div id="futures-oi-chart" class="chart-content">
-                    <div style="display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-start;">
-                        <div style="flex: 1; min-width: 300px;">
-                            <iframe class="chart-iframe" data-src="charts/futures_oi.html" style="width: 100%; height: 650px; border: none;"></iframe>
+                <div class="chart-display">
+                    <div id="ratios-chart" class="chart-content active" role="tabpanel" data-title="Valuation Ratios">
+                        <div class="chart-frame" style="--frame-h: 620px; --frame-h-mobile: 440px;">
+                            <iframe class="chart-iframe" title="Valuation Ratios chart" data-src="charts/valuation_ratios.html"></iframe>
                         </div>
-                        <div style="flex: 0 0 auto; min-width: 300px; max-width: 460px; width: 100%;">
-                            <iframe class="chart-iframe" data-src="charts/oi_quadrant.html" style="width: 100%; height: 480px; border: none;"></iframe>
-                            <!-- Quadrant Legend (below chart) - exact width match with reduced padding -->
-                            <div id="oi-quadrant-legend" style="background: white; padding: 4px 8px; border-radius: 4px; margin: 6px auto 0 auto; width: calc(100% - 80px); font-size: 0.85em; border: 1px solid #e5e5e5; box-shadow: 0 1px 2px rgba(0,0,0,0.04); word-wrap: break-word; overflow-wrap: break-word; line-height: 1.4;">
-                                <div id="q1-legend" style="color: #FF6347; margin-bottom: 1px;"><b>↗ Price ↑ & OI ↑</b> — Risky Up (leveraged)</div>
-                                <div id="q2-legend" style="color: #28a745; margin-bottom: 1px;"><b>↘ Price ↑ & OI ↓</b> — Healthy Up (spot-led)</div>
-                                <div id="q3-legend" style="color: #FFC107; margin-bottom: 1px;"><b>↖ Price ↓ & OI ↑</b> — Squeeze Setup (crowded)</div>
-                                <div id="q4-legend" style="color: #6c757d;"><b>↙ Price ↓ & OI ↓</b> — Flush-Out (deleveraging)</div>
-                            </div>
+                    </div>
+                    <div id="prices-chart" class="chart-content" role="tabpanel" data-title="Price Comparison">
+                        <div class="chart-frame" style="--frame-h: 620px; --frame-h-mobile: 440px;">
+                            <iframe class="chart-iframe" title="Price Comparison chart" data-src="charts/price_comparison.html"></iframe>
                         </div>
                     </div>
                 </div>
+                <p class="chart-touch-hint">Tap a chart to read values. Use Full screen to drag and pinch-zoom.</p>
 
-                <div id="ma-cross-chart" class="chart-content">
-                    <iframe class="chart-iframe" data-src="charts/ma_cross_analysis.html" style="height: 800px;"></iframe>
+                <div class="reference-charts">
+                    <button id="referenceToggle" class="reference-toggle" type="button" aria-expanded="false" aria-controls="referencePanel" onclick="toggleReferenceCharts()">
+                        <svg class="reference-toggle-chevron" viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M6 3l5 5-5 5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        <span class="reference-toggle-label">More reference charts</span>
+                        <span class="reference-toggle-count">6</span>
+                        <span class="reference-toggle-note">Background context, not used in buy decisions</span>
+                    </button>
+
+                    <div id="referencePanel" class="reference-panel" hidden>
+                        <div id="referenceViewer" class="reference-viewer" hidden>
+                            <div class="reference-viewer-head">
+                                <div class="reference-viewer-text">
+                                    <h3 id="referenceViewerTitle" class="reference-viewer-title"></h3>
+                                    <p id="referenceViewerDesc" class="reference-viewer-desc"></p>
+                                </div>
+                                <div class="reference-viewer-actions">
+                                    <button class="chart-fullscreen-btn" type="button" onclick="openReferenceChartFullscreen(this)" aria-label="Open this chart full screen">
+                                        <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M2 6V2h4M10 2h4v4M14 10v4h-4M6 14H2v-4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                        <span>Full screen</span>
+                                    </button>
+                                    <button class="reference-viewer-close" type="button" onclick="closeReferenceChart()" aria-label="Close chart">
+                                        <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div id="ref-macro-score" class="reference-chart" hidden>
+                                <div class="chart-frame" style="--frame-h: 760px; --frame-h-mobile: 560px;">
+                                    <iframe class="chart-iframe" title="Macro Risk Score chart" data-src="charts/macro_risk_score.html"></iframe>
+                                </div>
+                            </div>
+                            <div id="ref-net-liquidity" class="reference-chart" hidden>
+                                <div class="chart-frame" style="--frame-h: 700px; --frame-h-mobile: 540px;">
+                                    <iframe class="chart-iframe" title="Net Liquidity chart" data-src="charts/net_liquidity.html"></iframe>
+                                </div>
+                            </div>
+                            <div id="ref-funding-stress" class="reference-chart" hidden>
+                                <div class="chart-frame" style="--frame-h: 700px; --frame-h-mobile: 540px;">
+                                    <iframe class="chart-iframe" title="Funding and Credit Stress chart" data-src="charts/funding_credit_stress.html"></iframe>
+                                </div>
+                            </div>
+                            <div id="ref-futures-oi" class="reference-chart" hidden>
+                                <div class="futures-oi-layout">
+                                    <div class="chart-frame" style="--frame-h: 560px; --frame-h-mobile: 460px;">
+                                        <iframe class="chart-iframe" title="Futures open interest chart" data-src="charts/futures_oi.html"></iframe>
+                                    </div>
+                                    <div class="futures-oi-quadrant">
+                                        <div class="chart-frame chart-frame--square">
+                                            <iframe class="chart-iframe" title="Price versus open interest change chart" data-src="charts/oi_quadrant.html"></iframe>
+                                        </div>
+                                        <div id="oi-quadrant-legend" class="oi-quadrant-legend">
+                                            <div id="q1-legend" style="color: #FF6347;"><b>↗ Price ↑ &amp; OI ↑</b> — Risky Up (leveraged)</div>
+                                            <div id="q2-legend" style="color: #28a745;"><b>↘ Price ↑ &amp; OI ↓</b> — Healthy Up (spot-led)</div>
+                                            <div id="q3-legend" style="color: #B8860B;"><b>↖ Price ↓ &amp; OI ↑</b> — Squeeze Setup (crowded)</div>
+                                            <div id="q4-legend" style="color: #6c757d;"><b>↙ Price ↓ &amp; OI ↓</b> — Flush-Out (deleveraging)</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div id="ref-usdjpy" class="reference-chart" hidden>
+                                <div class="chart-frame" style="--frame-h: 640px; --frame-h-mobile: 500px;">
+                                    <iframe class="chart-iframe" title="USD/JPY Risk Map chart" data-src="charts/usdjpy_risk_map.html"></iframe>
+                                </div>
+                            </div>
+                            <div id="ref-ma-cross" class="reference-chart" hidden>
+                                <div class="chart-frame" style="--frame-h: 700px; --frame-h-mobile: 540px;">
+                                    <iframe class="chart-iframe" title="MA Cross Analysis chart" data-src="charts/ma_cross_analysis.html"></iframe>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="reference-grid">
+                            <button class="reference-card" type="button" data-ref="macro-score" aria-pressed="false" onclick="toggleReferenceChart('macro-score')">
+                                <span class="reference-card-title">Macro Risk Score</span>
+                                <span class="reference-card-desc">One score from liquidity, funding rates, bond volatility and credit spreads.</span>
+                                <span class="reference-tag reference-tag--warn">Unproven signal</span>
+                            </button>
+                            <button class="reference-card" type="button" data-ref="net-liquidity" aria-pressed="false" onclick="toggleReferenceChart('net-liquidity')">
+                                <span class="reference-card-title">Net Liquidity</span>
+                                <span class="reference-card-desc">Fed balance sheet minus Treasury cash and reverse repo, next to BTC.</span>
+                                <span class="reference-tag">Macro backdrop</span>
+                            </button>
+                            <button class="reference-card" type="button" data-ref="funding-stress" aria-pressed="false" onclick="toggleReferenceChart('funding-stress')">
+                                <span class="reference-card-title">Funding &amp; Credit Stress</span>
+                                <span class="reference-card-desc">SOFR, bond-market volatility (MOVE) and high-yield credit spreads.</span>
+                                <span class="reference-tag">Macro backdrop</span>
+                            </button>
+                            <button class="reference-card" type="button" data-ref="futures-oi" aria-pressed="false" onclick="toggleReferenceChart('futures-oi')">
+                                <span class="reference-card-title">Futures Open Interest</span>
+                                <span class="reference-card-desc">Leverage in BTC futures over the last 30 days, and its 5-day direction.</span>
+                                <span class="reference-tag">Short-term</span>
+                            </button>
+                            <button class="reference-card" type="button" data-ref="usdjpy" aria-pressed="false" onclick="toggleReferenceChart('usdjpy')">
+                                <span class="reference-card-title">USD/JPY Risk Map</span>
+                                <span class="reference-card-desc">Yen carry-trade stress: the exchange rate against the US–Japan rate gap.</span>
+                                <span class="reference-tag">Macro backdrop</span>
+                            </button>
+                            <button class="reference-card" type="button" data-ref="ma-cross" aria-pressed="false" onclick="toggleReferenceChart('ma-cross')">
+                                <span class="reference-card-title">MA Cross Analysis</span>
+                                <span class="reference-card-desc">Golden and death crosses, with the 50, 100 and 200-week averages.</span>
+                                <span class="reference-tag">Lagging</span>
+                            </button>
+                        </div>
+                    </div>
                 </div>
+            </section>
 
-            </div>
+            <div id="chartFullscreen" class="chart-fullscreen" role="dialog" aria-modal="true" aria-labelledby="chartFullscreenTitle" hidden>
+                <div class="chart-fullscreen-bar">
+                    <h2 id="chartFullscreenTitle" class="chart-fullscreen-title"></h2>
+                    <button id="chartFullscreenClose" class="chart-fullscreen-close" type="button" onclick="closeChartFullscreen()" aria-label="Close full screen">
+                        <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+                    </button>
+                </div>
+                <iframe id="chartFullscreenFrame" class="chart-fullscreen-frame" title="Full-screen chart"></iframe>
             </div>
         </div>
 
@@ -2142,10 +2558,29 @@
             }
         }
 
-        function setActiveChart(chartType) {
-            const contents = document.querySelectorAll('.chart-content');
-            contents.forEach(content => content.classList.remove('active'));
+        const REFERENCE_CHARTS_STORAGE_KEY = 'referenceChartsOpen';
+        let chartFullscreenOpener = null;
 
+        // Touch devices get a look-only chart in the page so a swipe scrolls
+        // the page; dragging and pinch-zoom live in the full-screen viewer.
+        function chartFrameMode() {
+            return window.matchMedia && window.matchMedia('(pointer: coarse)').matches ? 'preview' : 'interactive';
+        }
+
+        function loadChartIframes(container) {
+            const iframes = container.querySelectorAll('iframe.chart-iframe');
+            iframes.forEach(iframe => {
+                if (iframe.dataset.src && !iframe.getAttribute('src')) {
+                    iframe.addEventListener('load', () => {
+                        iframe.classList.add('is-loaded');
+                    }, { once: true });
+                    iframe.src = iframe.dataset.src + '?mode=' + chartFrameMode();
+                }
+            });
+        }
+
+        function setActiveChart(chartType) {
+            document.querySelectorAll('.chart-content').forEach(content => content.classList.remove('active'));
             const target = document.getElementById(`${chartType}-chart`);
             if (target) {
                 target.classList.add('active');
@@ -2153,55 +2588,143 @@
             }
         }
 
-        function loadChartIframes(container) {
-            const iframes = container.querySelectorAll('iframe.chart-iframe');
-            iframes.forEach(iframe => {
-                if (iframe.dataset.src && !iframe.src) {
-                    iframe.addEventListener('load', () => {
-                        iframe.classList.add('is-loaded');
-                    }, { once: true });
-                    iframe.src = iframe.dataset.src;
-                }
-            });
-        }
-
         function switchChart(chartType, sourceElement) {
-            const tabs = document.querySelectorAll('.chart-tab');
-            tabs.forEach(tab => tab.classList.remove('active'));
-            if (sourceElement) {
-                sourceElement.classList.add('active');
-            }
+            document.querySelectorAll('.chart-tab').forEach(tab => {
+                const isActive = tab === sourceElement;
+                tab.classList.toggle('active', isActive);
+                tab.setAttribute('aria-selected', isActive ? 'true' : 'false');
+            });
             setActiveChart(chartType);
         }
 
-        function switchChartSection(sectionName, sourceElement) {
-            const sectionTabs = document.querySelectorAll('.chart-section-tab');
-            sectionTabs.forEach(tab => tab.classList.remove('active'));
-            if (sourceElement) {
-                sourceElement.classList.add('active');
-            }
-
-            const chartTabs = document.querySelectorAll('.chart-tab');
-            chartTabs.forEach(tab => {
-                const isInSection = tab.dataset.section === sectionName;
-                tab.style.display = isInSection ? '' : 'none';
-                if (!isInSection) {
-                    tab.classList.remove('active');
-                }
-            });
-
-            const activeVisibleTab = document.querySelector(`.chart-tab.active[data-section="${sectionName}"]`);
-            if (activeVisibleTab) {
-                setActiveChart(activeVisibleTab.dataset.chart);
-                return;
-            }
-
-            const firstVisibleTab = document.querySelector(`.chart-tab[data-section="${sectionName}"]`);
-            if (firstVisibleTab) {
-                const chartType = firstVisibleTab.dataset.chart;
-                switchChart(chartType, firstVisibleTab);
+        function readReferenceChartsOpen() {
+            try {
+                return localStorage.getItem(REFERENCE_CHARTS_STORAGE_KEY) === 'true';
+            } catch (error) {
+                return false;
             }
         }
+
+        function saveReferenceChartsOpen(isOpen) {
+            try {
+                localStorage.setItem(REFERENCE_CHARTS_STORAGE_KEY, isOpen ? 'true' : 'false');
+            } catch (error) {
+                // Storage can be unavailable (private mode); the section still works.
+            }
+        }
+
+        function setReferenceChartsOpen(isOpen) {
+            const toggle = document.getElementById('referenceToggle');
+            const panel = document.getElementById('referencePanel');
+            if (!toggle || !panel) return;
+            toggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+            panel.hidden = !isOpen;
+        }
+
+        function toggleReferenceCharts() {
+            const isOpen = document.getElementById('referenceToggle').getAttribute('aria-expanded') !== 'true';
+            setReferenceChartsOpen(isOpen);
+            saveReferenceChartsOpen(isOpen);
+        }
+
+        function openReferenceChart(refId) {
+            const viewer = document.getElementById('referenceViewer');
+            const chart = document.getElementById(`ref-${refId}`);
+            const card = document.querySelector(`.reference-card[data-ref="${refId}"]`);
+            if (!viewer || !chart || !card) return;
+
+            document.querySelectorAll('.reference-chart').forEach(item => { item.hidden = item !== chart; });
+            document.querySelectorAll('.reference-card').forEach(item => {
+                item.setAttribute('aria-pressed', item === card ? 'true' : 'false');
+            });
+            document.getElementById('referenceViewerTitle').textContent = card.querySelector('.reference-card-title').textContent;
+            document.getElementById('referenceViewerDesc').textContent = card.querySelector('.reference-card-desc').textContent;
+            viewer.dataset.ref = refId;
+            viewer.hidden = false;
+            loadChartIframes(chart);
+            if (refId === 'futures-oi') {
+                updateOIQuadrantLegend();
+            }
+            viewer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        function closeReferenceChart() {
+            const viewer = document.getElementById('referenceViewer');
+            const refId = viewer.dataset.ref;
+            viewer.hidden = true;
+            delete viewer.dataset.ref;
+            document.querySelectorAll('.reference-card').forEach(item => item.setAttribute('aria-pressed', 'false'));
+            const card = refId && document.querySelector(`.reference-card[data-ref="${refId}"]`);
+            if (card) card.focus();
+        }
+
+        function toggleReferenceChart(refId) {
+            const viewer = document.getElementById('referenceViewer');
+            if (!viewer.hidden && viewer.dataset.ref === refId) {
+                closeReferenceChart();
+            } else {
+                openReferenceChart(refId);
+            }
+        }
+
+        function openChartFullscreen(src, title, opener) {
+            const dialog = document.getElementById('chartFullscreen');
+            const frame = document.getElementById('chartFullscreenFrame');
+            chartFullscreenOpener = opener || document.activeElement;
+            document.getElementById('chartFullscreenTitle').textContent = title;
+            frame.title = `${title} chart, full screen`;
+            frame.src = src + '?mode=full';
+            dialog.hidden = false;
+            document.body.classList.add('chart-fullscreen-open');
+            history.pushState({ chartFullscreen: true }, '');
+            document.getElementById('chartFullscreenClose').focus();
+        }
+
+        function closeChartFullscreen(fromHistory) {
+            const dialog = document.getElementById('chartFullscreen');
+            if (dialog.hidden) return;
+            dialog.hidden = true;
+            document.getElementById('chartFullscreenFrame').src = 'about:blank';
+            document.body.classList.remove('chart-fullscreen-open');
+            if (!fromHistory && history.state && history.state.chartFullscreen) {
+                history.back();
+            }
+            if (chartFullscreenOpener && chartFullscreenOpener.focus) {
+                chartFullscreenOpener.focus();
+            }
+            chartFullscreenOpener = null;
+        }
+
+        function openActiveCoreChartFullscreen(opener) {
+            const active = document.querySelector('.chart-content.active');
+            const iframe = active && active.querySelector('iframe.chart-iframe');
+            if (iframe) openChartFullscreen(iframe.dataset.src, active.dataset.title, opener);
+        }
+
+        function openReferenceChartFullscreen(opener) {
+            const viewer = document.getElementById('referenceViewer');
+            const chart = document.getElementById(`ref-${viewer.dataset.ref}`);
+            const iframe = chart && chart.querySelector('iframe.chart-iframe');
+            if (iframe) {
+                openChartFullscreen(iframe.dataset.src, document.getElementById('referenceViewerTitle').textContent, opener);
+            }
+        }
+
+        document.addEventListener('keydown', event => {
+            const tab = event.target.closest && event.target.closest('.chart-tab');
+            if (!tab || (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight')) return;
+            const tabs = [...document.querySelectorAll('.chart-tab')];
+            const step = event.key === 'ArrowRight' ? 1 : -1;
+            const next = tabs[(tabs.indexOf(tab) + step + tabs.length) % tabs.length];
+            switchChart(next.dataset.chart, next);
+            next.focus();
+            event.preventDefault();
+        });
+
+        window.addEventListener('popstate', () => closeChartFullscreen(true));
+        document.addEventListener('keydown', event => {
+            if (event.key === 'Escape') closeChartFullscreen();
+        });
 
         let dailyReportLanguage = "en";
         let dailyReportData = null;
@@ -2354,8 +2877,8 @@
         }
 
         document.addEventListener('DOMContentLoaded', () => {
-            const coreSectionTab = document.querySelector('.chart-section-tab[onclick*="core"]');
-            switchChartSection('core', coreSectionTab);
+            setActiveChart('ratios');
+            setReferenceChartsOpen(readReferenceChartsOpen());
             loadDailyReport();
         });
 
@@ -3177,8 +3700,6 @@
                 document.getElementById('lastUpdate').textContent = 'Unknown';
             });
         
-        // Update OI quadrant legend on page load
-        updateOIQuadrantLegend();
         updateBottomSignalsCard();
     </script>
 </body>

@@ -9,7 +9,9 @@ This module provides interactive charts using Plotly to visualize:
 
 from pathlib import Path
 from typing import Tuple
+import html
 import json
+import re
 import tempfile
 import webbrowser
 
@@ -92,230 +94,112 @@ def get_output_dir() -> Path:
     return charts_dir
 
 
-def add_yaxis_autoscale_script(html_path: Path) -> None:
+TEMPLATES_DIR = Path(__file__).parent / "templates"
+
+CHART_CONFIG = {
+    "responsive": True,
+    "displaylogo": False,
+    "scrollZoom": False,
+    "modeBarButtonsToRemove": ["select2d", "lasso2d", "autoScale2d", "toImage"],
+}
+
+_TAG_RE = re.compile(r"</?[a-zA-Z][^>]*>")
+_LINE_BREAK_RE = re.compile(r"<br\s*/?>", re.IGNORECASE)
+
+
+def _split_chart_title(title_text: str) -> tuple[str, list[str]]:
+    """Split a Plotly title into plain title text and subtitle segments."""
+    lines = [_TAG_RE.sub("", line).strip() for line in _LINE_BREAK_RE.split(title_text or "")]
+    lines = [line for line in lines if line]
+    if not lines:
+        return "", []
+    segments = [
+        segment.strip()
+        for line in lines[1:]
+        for segment in line.split("|")
+        if segment.strip()
+    ]
+    return lines[0], segments
+
+
+def _chart_header_html(title: str, segments: list[str]) -> str:
+    items = "".join(
+        f'<span class="chart-sub-item">{html.escape(segment)}</span>' for segment in segments
+    )
+    subtitle = f'<p class="chart-subtitle">{items}</p>' if items else ""
+    return (
+        '<header class="chart-header">'
+        f'<div class="chart-heading"><h1 class="chart-title">{html.escape(title)}</h1>{subtitle}</div>'
+        '<div class="chart-header-actions" id="chart-header-actions">'
+        '<div class="chart-presets" id="chart-presets" role="group" aria-label="Time range"></div>'
+        "</div></header>"
+    )
+
+
+def write_chart_html(fig: go.Figure, output_path: Path, auto_open: bool = False) -> None:
     """
-    Add JavaScript code to enable y-axis auto-scaling when x-axis range changes.
+    Write a chart page that fills the frame it is embedded in.
 
-    This function reads the HTML file, injects JavaScript code that listens for
-    x-axis range changes and automatically adjusts the y-axis to fit visible data.
-
-    Args:
-        html_path: Path to the HTML file to modify
+    The homepage owns the chart size, so the figure gets no fixed height or
+    width. The Plotly title moves into an HTML header (Plotly titles cannot
+    wrap on narrow screens), all charts share one plotly.min.js next to them,
+    and the chart runtime adds time presets, y-axis fitting and touch modes.
     """
-    if not html_path.exists():
-        return
+    output_path = Path(output_path)
+    title, segments = _split_chart_title(fig.layout.title.text or "")
+    fig.update_layout(title_text="", height=None, width=None, autosize=True)
+    fig.update_layout(margin=dict(t=30, b=40))
+    fig.update_xaxes(automargin=True)
+    fig.update_yaxes(automargin=True)
+    # Dates on the time axis are self-explanatory
+    fig.for_each_xaxis(
+        lambda axis: axis.update(title_text="")
+        if (axis.title.text or "").strip().lower() == "date"
+        else None
+    )
+    if fig.layout.legend.orientation == "h":
+        # Size legend entries by their text so they wrap instead of overlapping
+        fig.update_layout(
+            legend=dict(
+                x=0,
+                xanchor="left",
+                y=1.02,
+                yanchor="bottom",
+                entrywidth=0,
+                entrywidthmode="pixels",
+                bgcolor="rgba(0,0,0,0)",
+                borderwidth=0,
+            )
+        )
 
-    # Read the HTML content
-    with open(html_path, "r", encoding="utf-8") as f:
-        html_content = f.read()
+    _write_figure_html_atomic(
+        fig,
+        output_path,
+        auto_open=auto_open,
+        include_plotlyjs="directory",
+        default_height="100%",
+        default_width="100%",
+        config=CHART_CONFIG,
+    )
 
-    # JavaScript code to enable y-axis auto-scaling on x-axis range changes
-    # Find the plotly graph div by class and attach event listener
-    autoscale_script = """
-    <script>
-    (function() {
-        // Enable y-axis auto-scaling when x-axis range changes (including box select/zoom)
-        function setupYAxisAutoScale() {
-            // Find all plotly graph divs
-            var plotlyDivs = document.querySelectorAll('.plotly-graph-div');
-            
-            plotlyDivs.forEach(function(gd) {
-                if (!gd || !gd._fullLayout) {
-                    // Retry if Plotly not ready
-                    setTimeout(setupYAxisAutoScale, 200);
-                    return;
-                }
-                
-                // Track previous x-axis range
-                var prevXRange = null;
-                var updateTimeout = null;
-                var isUpdatingYAxis = false;  // Flag to prevent recursive updates
-                
-                // Function to force y-axis autorange update
-                function forceYAxisAutorange() {
-                    // Prevent recursive calls
-                    if (isUpdatingYAxis) {
-                        return;
-                    }
-                    
-                    if (updateTimeout) {
-                        clearTimeout(updateTimeout);
-                    }
-                    
-                    updateTimeout = setTimeout(function() {
-                        try {
-                            // Get current x-axis state
-                            var xaxis = gd._fullLayout.xaxis;
-                            var currentXRange = xaxis.range && !xaxis.autorange ? xaxis.range : null;
-                            
-                            // Check if x-axis range actually changed
-                            var shouldUpdate = false;
-                            if (currentXRange && prevXRange) {
-                                // Compare ranges (allow 1ms difference for floating point)
-                                if (Math.abs(currentXRange[0] - prevXRange[0]) > 1 || 
-                                    Math.abs(currentXRange[1] - prevXRange[1]) > 1) {
-                                    shouldUpdate = true;
-                                }
-                            } else if (currentXRange !== prevXRange) {
-                                shouldUpdate = true;
-                            }
-                            
-                            if (shouldUpdate || currentXRange) {
-                                // Update previous range
-                                prevXRange = currentXRange ? [currentXRange[0], currentXRange[1]] : null;
-                                
-                                // Set flag to prevent recursive updates
-                                isUpdatingYAxis = true;
-                                
-                                // Force y-axis autorange - use a single relayout call
-                                Plotly.relayout(gd, {
-                                    'yaxis.autorange': true
-                                }).then(function() {
-                                    // Reset flag after a short delay to allow layout to settle
-                                    setTimeout(function() {
-                                        isUpdatingYAxis = false;
-                                    }, 100);
-                                }).catch(function(err) {
-                                    // Reset flag on error
-                                    isUpdatingYAxis = false;
-                                });
-                            }
-                        } catch(e) {
-                            console.error('Error updating y-axis autorange:', e);
-                            isUpdatingYAxis = false;
-                        }
-                    }, 100);
-                }
-                
-                // Listen for relayout events, but only respond to user-initiated x-axis changes
-                gd.on('plotly_relayout', function(eventData) {
-                    // Skip if we're currently updating y-axis (to prevent recursion)
-                    if (isUpdatingYAxis) {
-                        return;
-                    }
-                    
-                    // Check what changed in this event
-                    var isXAxisChange = false;
-                    var isYAxisRangeChange = false;
-                    
-                    for (var key in eventData) {
-                        // Check for x-axis range changes (user zoom/box select)
-                        if (key.indexOf('xaxis.range') === 0 || key === 'xaxis.autorange') {
-                            isXAxisChange = true;
-                        }
-                        // Check for y-axis RANGE changes (not autorange, which is our own update)
-                        if (key.indexOf('yaxis.range') === 0) {
-                            isYAxisRangeChange = true;
-                        }
-                    }
-                    
-                    // If both x and y ranges changed, user did a box-select, so DON'T auto-scale
-                    if (isXAxisChange && isYAxisRangeChange) {
-                        // Box-select: user manually set both axes, respect their selection
-                        var xaxis = gd._fullLayout.xaxis;
-                        var currentXRange = xaxis && xaxis.range && !xaxis.autorange ? xaxis.range : null;
-                        if (currentXRange) {
-                            prevXRange = [currentXRange[0], currentXRange[1]];
-                        }
-                        return;
-                    }
-                    
-                    // If only x-axis changed, check if the range actually changed
-                    if (isXAxisChange) {
-                        var xaxis = gd._fullLayout.xaxis;
-                        var currentXRange = xaxis && xaxis.range && !xaxis.autorange ? xaxis.range : null;
-                        
-                        // Check if range actually changed (to prevent duplicate auto-scale calls)
-                        var rangeChanged = false;
-                        if (currentXRange && prevXRange) {
-                            if (Math.abs(currentXRange[0] - prevXRange[0]) > 1 || 
-                                Math.abs(currentXRange[1] - prevXRange[1]) > 1) {
-                                rangeChanged = true;
-                            }
-                        } else if (currentXRange !== prevXRange) {
-                            rangeChanged = true;
-                        }
-                        
-                        // Only trigger auto-scale if range actually changed
-                        if (rangeChanged && currentXRange) {
-                            prevXRange = [currentXRange[0], currentXRange[1]];
-                            forceYAxisAutorange();
-                        }
-                    }
-                });
-                
-                // Use afterplot event as a backup - it fires after all rendering is complete
-                // This is safer because it won't trigger during our own relayout calls
-                gd.on('plotly_afterplot', function() {
-                    // Skip if we're updating
-                    if (isUpdatingYAxis) {
-                        return;
-                    }
-                    
-                    // Check if x-axis has a manual range (indicating zoom/box select)
-                    var xaxis = gd._fullLayout.xaxis;
-                    var yaxis = gd._fullLayout.yaxis;
-                    
-                    if (xaxis && xaxis.range && !xaxis.autorange) {
-                        // If y-axis is also manually set (not autorange), this was a box-select
-                        // Don't override user's manual y-axis selection
-                        if (yaxis && yaxis.range && !yaxis.autorange) {
-                            // Box-select: both axes manually set, just update tracking
-                            var currentXRange = [xaxis.range[0], xaxis.range[1]];
-                            if (!prevXRange || 
-                                Math.abs(currentXRange[0] - prevXRange[0]) > 1 || 
-                                Math.abs(currentXRange[1] - prevXRange[1]) > 1) {
-                                prevXRange = [currentXRange[0], currentXRange[1]];
-                            }
-                            return;
-                        }
-                        
-                        // Only x-axis manually set: normal zoom, apply auto-scale
-                        var currentXRange = [xaxis.range[0], xaxis.range[1]];
-                        
-                        // Check if range actually changed
-                        var rangeChanged = false;
-                        if (prevXRange) {
-                            if (Math.abs(currentXRange[0] - prevXRange[0]) > 1 || 
-                                Math.abs(currentXRange[1] - prevXRange[1]) > 1) {
-                                rangeChanged = true;
-                            }
-                        } else {
-                            rangeChanged = true;
-                        }
-                        
-                        if (rangeChanged) {
-                            prevXRange = [currentXRange[0], currentXRange[1]];
-                            forceYAxisAutorange();
-                        }
-                    }
-                });
-                
-                // Initialize previous range
-                var xaxis = gd._fullLayout.xaxis;
-                if (xaxis && xaxis.range && !xaxis.autorange) {
-                    prevXRange = [xaxis.range[0], xaxis.range[1]];
-                }
-            });
-        }
-        
-        // Setup when page is ready
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', function() {
-                setTimeout(setupYAxisAutoScale, 500);
-            });
-        } else {
-            // DOM already loaded, wait for Plotly to initialize
-            setTimeout(setupYAxisAutoScale, 1000);
-        }
-    })();
-    </script>
-    """
-
-    # Insert the script before the closing </body> tag
-    if "</body>" in html_content:
-        html_content = html_content.replace("</body>", autoscale_script + "\n</body>")
-        _atomic_write_text(html_path, html_content)
+    page = output_path.read_text(encoding="utf-8")
+    style = (TEMPLATES_DIR / "chart_runtime.css").read_text(encoding="utf-8")
+    script = (TEMPLATES_DIR / "chart_runtime.js").read_text(encoding="utf-8")
+    head = (
+        '<meta name="viewport" content="width=device-width, initial-scale=1">'
+        f'<style id="chart-runtime-style">{style}</style>'
+        f'<script id="chart-runtime">{script}</script>'
+    )
+    page, head_count = re.subn(r"<head>", lambda _: "<head>" + head, page, count=1)
+    page, body_count = re.subn(
+        r"<body>\s*<div>",
+        lambda _: "<body>" + _chart_header_html(title, segments) + '<div class="chart-plot">',
+        page,
+        count=1,
+    )
+    if head_count != 1 or body_count != 1:
+        raise ValueError(f"Unexpected Plotly HTML layout in {output_path}")
+    _atomic_write_text(output_path, page)
 
 
 def add_info_modal_script(html_path: Path, title: str, content_html: str) -> None:
@@ -473,7 +357,12 @@ def add_info_modal_script(html_path: Path, title: str, content_html: str) -> Non
                 if (evt.key === 'Escape' && overlay.style.display === 'flex') closeModal();
             }});
 
-            document.body.appendChild(btn);
+            var actions = document.getElementById('chart-header-actions');
+            if (actions) {{
+                actions.insertBefore(btn, actions.firstChild);
+            }} else {{
+                document.body.appendChild(btn);
+            }}
             document.body.appendChild(overlay);
         }}
 
@@ -630,9 +519,10 @@ def plot_valuation_ratios(
         line_color="rgb(40, 167, 69)",
         line_width=2,
     )
+    # Annotation positions on a log axis are given in log10 units
     fig.add_annotation(
         x=0.01,
-        y=0.45,
+        y=np.log10(0.45),
         xref="paper",
         yref="y",
         text="🔥 ahr999 Bottom Zone (0.45)",
@@ -652,7 +542,7 @@ def plot_valuation_ratios(
     )
     fig.add_annotation(
         x=0.01,
-        y=1.2,
+        y=np.log10(1.2),
         xref="paper",
         yref="y",
         text="⚠️ ahr999 Watch Zone (1.2)",
@@ -672,22 +562,21 @@ def plot_valuation_ratios(
             "xanchor": "center",
         },
         xaxis_title="Date",
-        yaxis_title="Ratio Value",
+        yaxis_title="Ratio Value (log)",
         yaxis=dict(
-            autorange=True,  # Enable auto-scaling for y-axis
-            fixedrange=False,  # Allow y-axis to be zoomed and auto-adjusted
+            # Early ahr999 values reach ~35; a linear axis flattens recent 0.4-1.5 moves
+            type="log",
+            tickmode="array",
+            tickvals=[0.2, 0.3, 0.5, 1, 2, 3, 5, 10, 20, 30],
+            ticktext=["0.2", "0.3", "0.5", "1", "2", "3", "5", "10", "20", "30"],
+            autorange=True,
+            fixedrange=False,
         ),
         hovermode="x unified",
         template="plotly_white",
         height=650,
         showlegend=True,
-        legend=dict(
-            yanchor="top",
-            y=0.99,
-            xanchor="left",
-            x=0.01,
-            bgcolor="rgba(255, 255, 255, 0.8)",
-        ),
+        legend=dict(orientation="h"),
     )
 
     # Add range slider
@@ -698,10 +587,7 @@ def plot_valuation_ratios(
     # Save to HTML
     output_dir = get_output_dir()
     output_path = output_dir / output_filename
-    _write_figure_html_atomic(fig, output_path, auto_open=auto_open)
-
-    # Add JavaScript to enable y-axis auto-scaling when x-axis range changes
-    add_yaxis_autoscale_script(output_path)
+    write_chart_html(fig, output_path, auto_open=auto_open)
 
     print(f"✓ Saved interactive chart to: {output_path}")
     if auto_open:
@@ -841,10 +727,7 @@ def plot_price_comparison(
     # Save to HTML
     output_dir = get_output_dir()
     output_path = output_dir / output_filename
-    _write_figure_html_atomic(fig, output_path, auto_open=auto_open)
-
-    # Add JavaScript to enable y-axis auto-scaling when x-axis range changes
-    add_yaxis_autoscale_script(output_path)
+    write_chart_html(fig, output_path, auto_open=auto_open)
 
     print(f"✓ Saved price comparison chart to: {output_path}")
     if auto_open:
@@ -1023,7 +906,7 @@ def plot_double_undervaluation_stats(
     # Save to HTML
     output_dir = get_output_dir()
     output_path = output_dir / output_filename
-    _write_figure_html_atomic(fig, output_path, auto_open=auto_open)
+    write_chart_html(fig, output_path, auto_open=auto_open)
 
     print(f"✓ Saved statistics chart to: {output_path}")
     if auto_open:
@@ -1163,10 +1046,7 @@ def plot_usdjpy(
     # Save to HTML
     output_dir = get_output_dir()
     output_path = output_dir / output_filename
-    _write_figure_html_atomic(fig, output_path, auto_open=auto_open)
-
-    # Add JavaScript to enable y-axis auto-scaling when x-axis range changes
-    add_yaxis_autoscale_script(output_path)
+    write_chart_html(fig, output_path, auto_open=auto_open)
 
     print(f"✓ Saved USD/JPY chart to: {output_path}")
     if auto_open:
@@ -1435,42 +1315,24 @@ def plot_usdjpy_risk_map(
         rangeslider_visible=True,
     )
 
-    # Add risk rules text as annotation
-    risk_rules_text = f"""
-    <b>COMBINED RISK RULES:</b><br>
-    • <b>Highest Risk (Systemic Crisis):</b> USD/JPY ≥ 155 AND Spread < 2.0%<br>
-    • <b>Very High Risk:</b> USD/JPY ≥ 150 AND Spread < 2.0%<br>
-    • <b>Elevated Risk:</b> USD/JPY ≥ 150 AND Spread 2.0-2.5%<br>
-    • <b>Neutral:</b> USD/JPY 142-150 AND Spread > 2.5%<br>
-    • <b>Safe:</b> USD/JPY 135-142 AND Spread > 2.5%<br>
-    <br>
-    <b>Current Status:</b> {risk_description}<br>
-    <span style="font-size: 9px; color: gray;">Data Source: {data_source}</span>
-    """
-
-    fig.add_annotation(
-        text=risk_rules_text,
-        xref="paper",
-        yref="paper",
-        x=0.5,
-        y=-0.45,  # Position well below the chart/slider
-        xanchor="center",
-        yanchor="top",
-        showarrow=False,
-        align="left",
-        bgcolor="rgba(255, 255, 255, 0.9)",
-        bordercolor="rgba(0, 0, 0, 0.2)",
-        borderwidth=1,
-        font=dict(size=10),
-    )
-
     # Save to HTML
     output_dir = get_output_dir()
     output_path = output_dir / output_filename
-    _write_figure_html_atomic(fig, output_path, auto_open=auto_open)
-
-    # Add JavaScript to enable y-axis auto-scaling when x-axis range changes
-    add_yaxis_autoscale_script(output_path)
+    write_chart_html(fig, output_path, auto_open=auto_open)
+    add_info_modal_script(
+        output_path,
+        "USD/JPY Risk Rules",
+        (
+            "<h4>Combined risk rules</h4>"
+            "<p><b>Highest Risk (Systemic Crisis):</b> USD/JPY ≥ 155 AND Spread &lt; 2.0%</p>"
+            "<p><b>Very High Risk:</b> USD/JPY ≥ 150 AND Spread &lt; 2.0%</p>"
+            "<p><b>Elevated Risk:</b> USD/JPY ≥ 150 AND Spread 2.0-2.5%</p>"
+            "<p><b>Neutral:</b> USD/JPY 142-150 AND Spread &gt; 2.5%</p>"
+            "<p><b>Safe:</b> USD/JPY 135-142 AND Spread &gt; 2.5%</p>"
+            f"<h4>Current status</h4><p>{html.escape(risk_description)}</p>"
+            f"<p>Data source: {html.escape(data_source)}</p>"
+        ),
+    )
 
     print(f"✓ Saved USD/JPY Risk Map chart to: {output_path}")
     if auto_open:
@@ -1781,7 +1643,8 @@ def plot_ma_cross_analysis(
     # === LAYOUT ===
     fig.update_layout(
         title={
-            "text": "BTC Death / Golden Cross & MA Spread (BTC Price, log, 50D / 200D MA)",
+            "text": "BTC Death / Golden Cross & MA Spread (BTC Price, log, 50D / 200D MA)"
+            "<br><sub>Data Source: Yahoo Finance (BTC-USD)</sub>",
             "x": 0.5,
             "xanchor": "center",
             "y": 0.97,
@@ -1790,38 +1653,8 @@ def plot_ma_cross_analysis(
         hovermode="x unified",
         template="plotly_white",
         height=800,
-        # DISABLE Native Legend to avoid truncation
-        showlegend=False,
-        # Adjust margins:
-        # - Top: 130px to fit title + annotation legend
-        # - Bottom: 100px to fit data source annotation
-        margin=dict(t=130, b=100, l=60, r=40),
-    )
-
-    # Custom Legend Annotation (Centered at Top)
-    fig.add_annotation(
-        text=(
-            "<span style='color:black; font-size:18px'><b>—</b></span> <span style='font-size:13px'>BTC Price</span>   "
-            "<span style='color:#2962FF; font-size:18px'><b>—</b></span> <span style='font-size:13px'>50D MA</span>   "
-            "<span style='color:#D50000; font-size:18px'><b>—</b></span> <span style='font-size:13px'>200D MA</span><br>"
-            "<span style='color:#00C853; font-size:18px'><b>· ·</b></span> <span style='font-size:13px'>50W MA</span>   "
-            "<span style='color:#FF6F00; font-size:18px'><b>- -</b></span> <span style='font-size:13px'>100W MA</span>   "
-            "<span style='color:#9C27B0; font-size:18px'><b>- · -</b></span> <span style='font-size:13px'>200W MA</span><br>"
-            "<span style='color:#00C853; font-size:16px'>▲</span> <span style='font-size:12px'>Golden Cross</span>   "
-            "<span style='color:#D50000; font-size:16px'>▼</span> <span style='font-size:12px'>Death Cross</span>"
-        ),
-        xref="paper",
-        yref="paper",
-        x=0.5,
-        y=1.06,  # Positioned above the plot, below title
-        xanchor="center",
-        yanchor="bottom",
-        showarrow=False,
-        font=dict(size=11, color="#333"),
-        bgcolor="rgba(255, 255, 255, 0.9)",
-        bordercolor="#e5e5e5",
-        borderwidth=1,
-        borderpad=6,
+        showlegend=True,
+        legend=dict(orientation="h"),
     )
 
     # Log scale for top plot
@@ -1832,26 +1665,11 @@ def plot_ma_cross_analysis(
     fig.update_xaxes(rangeslider_visible=False, row=1, col=1)
     fig.update_xaxes(rangeslider_visible=True, row=2, col=1)
 
-    # Add Data Source Annotation (bottom-right in margin area)
-    fig.add_annotation(
-        text="Data Source: Yahoo Finance (BTC-USD)",
-        xref="paper",
-        yref="paper",
-        x=1.0,
-        y=-0.15,  # Lower position in bottom margin
-        showarrow=False,
-        xanchor="right",
-        yanchor="top",
-        font=dict(size=9, color="gray"),
-    )
 
     # Save to HTML
     output_dir = get_output_dir()
     output_path = output_dir / output_filename
-    _write_figure_html_atomic(fig, output_path, auto_open=auto_open)
-
-    # Add auto-scale script
-    add_yaxis_autoscale_script(output_path)
+    write_chart_html(fig, output_path, auto_open=auto_open)
 
     print(f"✓ Saved MA Cross chart to: {output_path}")
     if auto_open:
@@ -1921,7 +1739,7 @@ def plot_net_liquidity_dashboard(
             x=merged["date"],
             y=merged["net_liquidity_bil"],
             mode="lines",
-            name="Net Liquidity (bn USD)",
+            name="Net Liquidity (bn)",
             showlegend=True,
             line=dict(color="#1f77b4", width=2.5),
             hovertemplate="<b>%{x|%Y-%m-%d}</b><br>Net Liquidity: %{y:,.0f} bn<extra></extra>",
@@ -1935,7 +1753,7 @@ def plot_net_liquidity_dashboard(
             x=merged["date"],
             y=merged["walcl_bil"],
             mode="lines",
-            name="Fed Assets (WALCL)",
+            name="Fed Assets",
             showlegend=True,
             line=dict(color="#2ca02c", width=1.6),
             opacity=0.75,
@@ -1950,7 +1768,7 @@ def plot_net_liquidity_dashboard(
             x=merged["date"],
             y=merged["tga_bil"],
             mode="lines",
-            name="TGA (WTREGEN)",
+            name="TGA",
             showlegend=True,
             line=dict(color="#ff7f0e", width=1.4, dash="dot"),
             opacity=0.9,
@@ -1965,7 +1783,7 @@ def plot_net_liquidity_dashboard(
             x=merged["date"],
             y=merged["rrp_bil"],
             mode="lines",
-            name="ON RRP (RRPONTSYD)",
+            name="ON RRP",
             showlegend=True,
             line=dict(color="#d62728", width=1.4, dash="dash"),
             opacity=0.9,
@@ -1979,7 +1797,7 @@ def plot_net_liquidity_dashboard(
         go.Bar(
             x=merged["date"],
             y=merged["net_liquidity_90d_delta"],
-            name="Net Liquidity 90D Change",
+            name="90D Change",
             showlegend=True,
             marker_color=np.where(
                 merged["net_liquidity_90d_delta"] >= 0,
@@ -1998,7 +1816,7 @@ def plot_net_liquidity_dashboard(
             x=merged["date"],
             y=merged["close_price"],
             mode="lines",
-            name="BTC Price (USD)",
+            name="BTC Price",
             showlegend=True,
             line=dict(color="#111111", width=2.1),
             hovertemplate="<b>%{x|%Y-%m-%d}</b><br>BTC: $%{y:,.0f}<extra></extra>",
@@ -2057,8 +1875,7 @@ def plot_net_liquidity_dashboard(
 
     output_dir = get_output_dir()
     output_path = output_dir / output_filename
-    _write_figure_html_atomic(fig, output_path, auto_open=auto_open)
-    add_yaxis_autoscale_script(output_path)
+    write_chart_html(fig, output_path, auto_open=auto_open)
     add_info_modal_script(
         output_path,
         title="How to Read: Net Liquidity",
@@ -2244,8 +2061,7 @@ def plot_funding_credit_stress(
 
     output_dir = get_output_dir()
     output_path = output_dir / output_filename
-    _write_figure_html_atomic(fig, output_path, auto_open=auto_open)
-    add_yaxis_autoscale_script(output_path)
+    write_chart_html(fig, output_path, auto_open=auto_open)
     add_info_modal_script(
         output_path,
         title="How to Read: Funding & Credit Stress",
@@ -2488,8 +2304,7 @@ def plot_macro_risk_score(
 
     output_dir = get_output_dir()
     output_path = output_dir / output_filename
-    _write_figure_html_atomic(fig, output_path, auto_open=auto_open)
-    add_yaxis_autoscale_script(output_path)
+    write_chart_html(fig, output_path, auto_open=auto_open)
     add_info_modal_script(
         output_path,
         title="How to Read: Macro Risk Score",
@@ -2763,39 +2578,6 @@ def create_futures_oi_timeseries_chart(
         + "<span style='font-size:11px; color:#666'>Price Trend Regime (Price vs 200D MA)</span>"
     )
 
-    # Create annotations list with data source and legend
-    annotations_list = [
-        # Data source label (bottom-left)
-        dict(
-            text="Data: Binance",
-            xref="paper",
-            yref="paper",
-            x=0.01,
-            y=0.01,
-            xanchor="left",
-            yanchor="bottom",
-            showarrow=False,
-            font=dict(size=8, color="#999"),
-            opacity=0.6,
-        ),
-        # Legend annotation (under title, outside plot area)
-        dict(
-            text="<span style='font-size:16px; font-weight:bold'>━</span> BTC Price   <span style='font-size:16px; color:#2962FF; font-weight:bold'>- - -</span> 200D MA   <span style='font-size:16px; color:#DAA520; font-weight:bold'>━</span> OI (USD)",
-            xref="paper",
-            yref="paper",
-            x=0.5,
-            y=1.0,  # Top center, just below title
-            xanchor="center",
-            yanchor="bottom",
-            showarrow=False,
-            font=dict(size=12, color="#333"),
-            bgcolor="rgba(255, 255, 255, 0.9)",
-            bordercolor="#e5e5e5",
-            borderwidth=1,
-            borderpad=6,
-        ),
-    ]
-
     fig.update_layout(
         title=dict(
             text=title_text,
@@ -2803,15 +2585,26 @@ def create_futures_oi_timeseries_chart(
             x=0.5,
             xanchor="center",
             yanchor="top",
-            pad=dict(b=40),  # Extra padding below title for legend
         ),
         template="plotly_white",
         height=620,
         hovermode="x unified",
-        showlegend=False,  # Using annotation instead
-        margin=dict(l=60, r=40, t=110, b=50),  # Increased top margin for title block
+        showlegend=True,
+        legend=dict(orientation="h"),
         plot_bgcolor="white",
-        annotations=annotations_list,
+    )
+    # Added (not set via update_layout) so the zone labels above are kept
+    fig.add_annotation(
+        text="Data: Binance",
+        xref="paper",
+        yref="paper",
+        x=0.01,
+        y=0.01,
+        xanchor="left",
+        yanchor="bottom",
+        showarrow=False,
+        font=dict(size=8, color="#999"),
+        opacity=0.6,
     )
 
     fig.update_xaxes(rangeslider_visible=False, row=2, col=1)
@@ -2819,15 +2612,8 @@ def create_futures_oi_timeseries_chart(
 
     # Save
     output_file = Path(output_path)
-    _write_figure_html_atomic(
-        fig,
-        output_file,
-        include_plotlyjs="cdn",
-        config={"displayModeBar": False},
-    )
+    write_chart_html(fig, output_file)
 
-    print(f"✓ Saved Futures OI chart to: {output_file}")
-    add_yaxis_autoscale_script(output_file)
     print(f"✓ Saved Futures OI chart to: {output_file.resolve()}")
 
 
@@ -3080,13 +2866,7 @@ def create_oi_quadrant_chart(
 
     # Save
     output_file = Path(output_path)
-    _write_figure_html_atomic(
-        fig,
-        output_file,
-        full_html=False,
-        include_plotlyjs="cdn",
-        config={"displayModeBar": False},
-    )
+    write_chart_html(fig, output_file)
 
     # Also save current quadrant info to a JSON file for HTML to read
     quadrant_info = {

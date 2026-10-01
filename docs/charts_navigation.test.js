@@ -1,49 +1,108 @@
 /**
- * Tests for chart navigation information architecture.
- * Ensures Core/Advanced grouping and chart source wiring remain stable.
+ * Tests for the homepage chart area:
+ * two core charts in tabs, six reference charts in a collapsed card section,
+ * and a full-screen viewer for interacting with any chart.
  */
 
 import { describe, it, expect, beforeAll } from "vitest";
 import { readFileSync } from "fs";
 import { join } from "path";
 
-describe("Chart Navigation Architecture", () => {
-    let htmlContent;
+const REFERENCE_CHARTS = {
+    "macro-score": "charts/macro_risk_score.html",
+    "net-liquidity": "charts/net_liquidity.html",
+    "funding-stress": "charts/funding_credit_stress.html",
+    "futures-oi": "charts/futures_oi.html",
+    "usdjpy": "charts/usdjpy_risk_map.html",
+    "ma-cross": "charts/ma_cross_analysis.html",
+};
+
+describe("Chart area", () => {
+    let html;
 
     beforeAll(() => {
-        const htmlPath = join(process.cwd(), "docs", "index.html");
-        htmlContent = readFileSync(htmlPath, "utf-8");
+        html = readFileSync(join(process.cwd(), "docs", "index.html"), "utf-8");
     });
 
-    it("should have Core and Advanced section tabs", () => {
-        expect(htmlContent).toContain("switchChartSection('core'");
-        expect(htmlContent).toContain("switchChartSection('advanced'");
+    describe("core charts", () => {
+        it("shows only the two valuation charts as tabs", () => {
+            const tabs = [...html.matchAll(/<button class="chart-tab[^"]*"[^>]*data-chart="([^"]+)"/g)].map(m => m[1]);
+            expect(tabs).toEqual(["ratios", "prices"]);
+        });
+
+        it("marks the tabs up as a tab list", () => {
+            expect(html).toContain('role="tablist"');
+            expect(html).toMatch(/class="chart-tab active"[^>]*role="tab"[^>]*aria-selected="true"/);
+        });
+
+        it("lazy-loads the core chart iframes", () => {
+            expect(html).toContain('data-src="charts/valuation_ratios.html"');
+            expect(html).toContain('data-src="charts/price_comparison.html"');
+        });
+
+        it("no longer has Core/Advanced sections", () => {
+            expect(html).not.toContain("switchChartSection");
+            expect(html).not.toContain("data-section=");
+        });
     });
 
-    it("should group chart tabs by section using data-section", () => {
-        expect(htmlContent).toContain('data-section="core"');
-        expect(htmlContent).toContain('data-section="advanced"');
+    describe("reference charts", () => {
+        it("has a collapsed toggle that controls the reference panel", () => {
+            expect(html).toMatch(/id="referenceToggle"[^>]*aria-expanded="false"[^>]*aria-controls="referencePanel"/);
+            expect(html).toMatch(/id="referencePanel"[^>]*hidden/);
+        });
+
+        it("has a card and a lazy chart for each reference chart", () => {
+            for (const [id, src] of Object.entries(REFERENCE_CHARTS)) {
+                expect(html).toContain(`data-ref="${id}"`);
+                expect(html).toContain(`data-src="${src}"`);
+            }
+            const cards = html.match(/class="reference-card"/g) || [];
+            expect(cards.length).toBe(Object.keys(REFERENCE_CHARTS).length);
+        });
+
+        it("keeps the OI quadrant chart and its legend with the futures chart", () => {
+            expect(html).toContain('data-src="charts/oi_quadrant.html"');
+            expect(html).toContain('id="q1-legend"');
+        });
+
+        it("remembers whether the section is open without depending on storage", () => {
+            const storageCalls = html.match(/localStorage\.(getItem|setItem)\([^)]*\)/g) || [];
+            expect(storageCalls.length).toBeGreaterThan(0);
+            expect(html).toMatch(/try\s*{\s*[^}]*localStorage\.getItem/);
+            expect(html).toMatch(/try\s*{\s*[^}]*localStorage\.setItem/);
+        });
     });
 
-    it("should include USD/JPY risk map iframe and not legacy usdjpy iframe", () => {
-        expect(htmlContent).toContain('src="charts/usdjpy_risk_map.html"');
-        expect(htmlContent).not.toContain('src="charts/usdjpy.html"');
+    describe("full-screen viewer", () => {
+        it("is an accessible modal dialog", () => {
+            expect(html).toMatch(/id="chartFullscreen"[^>]*role="dialog"[^>]*aria-modal="true"/);
+            expect(html).toContain("function openChartFullscreen(");
+            expect(html).toContain("function closeChartFullscreen(");
+        });
+
+        it("closes with Escape and the back button", () => {
+            expect(html).toContain("'Escape'");
+            expect(html).toContain("addEventListener('popstate'");
+            expect(html).toContain("history.pushState");
+        });
+
+        it("loads charts in full mode", () => {
+            expect(html).toContain("'?mode=full'");
+        });
     });
 
-    it("should include robust chart navigation helpers", () => {
-        expect(htmlContent).toContain("function setActiveChart(");
-        expect(htmlContent).toContain("function switchChartSection(");
-        expect(htmlContent).toContain("function loadChartIframes(");
-        expect(htmlContent).toContain("dataset.chart");
-    });
+    describe("chart frames", () => {
+        it("lets CSS size every chart frame instead of inline iframe heights", () => {
+            expect(html).not.toMatch(/<iframe[^>]*class="chart-iframe"[^>]*style=/);
+            expect(html).toContain("--frame-h:");
+            expect(html).toContain("--frame-h-mobile:");
+        });
 
-    it("should lazy-load chart iframes via data-src", () => {
-        expect(htmlContent).toContain('class="chart-iframe"');
-        expect(htmlContent).toContain('data-src="charts/valuation_ratios.html"');
-    });
-
-    it("should initialize chart section to core on first page load", () => {
-        expect(htmlContent).toContain("document.addEventListener('DOMContentLoaded'");
-        expect(htmlContent).toContain("switchChartSection('core', coreSectionTab)");
+        it("picks preview mode on touch devices and interactive mode otherwise", () => {
+            expect(html).toContain("matchMedia('(pointer: coarse)')");
+            expect(html).toContain("'preview'");
+            expect(html).toContain("'interactive'");
+        });
     });
 });
