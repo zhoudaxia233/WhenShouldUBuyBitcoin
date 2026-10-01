@@ -18,6 +18,7 @@ from whenshouldubuybitcoin.data_fetcher import (
     get_realtime_btc_price,
     fetch_fred_series_csv_public,
     fetch_macro_liquidity_indicators,
+    fetch_mof_japan_yield,
 )
 
 
@@ -268,3 +269,20 @@ class TestMacroLiquidityIndicators:
         latest = result.dropna(subset=["net_liquidity_bil"]).iloc[-1]
         # 901000/1000 - 81000/1000 - 490 = 330
         assert round(float(latest["net_liquidity_bil"]), 2) == 330.0
+
+
+class TestMofJapanYieldFetcher:
+    """Test cases for fetch_mof_japan_yield."""
+
+    @patch("whenshouldubuybitcoin.data_fetcher.requests")
+    def test_every_request_has_timeout(self, mock_requests):
+        """A hung MOF server must not block the daily update forever."""
+        mock_response = Mock()
+        mock_response.text = "title\nDate,2Y\n2026/09/30,0.9\n"
+        mock_requests.get.return_value = mock_response
+
+        fetch_mof_japan_yield()
+
+        assert mock_requests.get.call_count == 2
+        for call in mock_requests.get.call_args_list:
+            assert call.kwargs.get("timeout"), f"missing timeout: {call}"

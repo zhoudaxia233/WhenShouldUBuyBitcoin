@@ -610,7 +610,7 @@ def fetch_mof_japan_yield() -> pd.DataFrame:
             try:
                 # Read CSV, skipping the first row (header title)
                 # The actual header is on the second row (index 1)
-                response = requests.get(url)
+                response = requests.get(url, timeout=30)
                 response.raise_for_status()
 
                 # Use io.StringIO to parse the text content

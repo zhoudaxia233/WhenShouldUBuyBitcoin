@@ -1,3 +1,5 @@
+import subprocess
+
 import pytest
 from fastapi.testclient import TestClient
 from sqlmodel import Session, SQLModel, create_engine
@@ -7,6 +9,29 @@ from dca_service.main import app
 from dca_service.database import get_session
 from dca_service.models import User, GlobalSettings
 from dca_service.auth.dependencies import get_current_user
+
+@pytest.fixture(autouse=True)
+def block_real_static_generation(monkeypatch):
+    """Never launch the real main.py from tests.
+
+    Successful DCA transactions trigger static generation, which would otherwise
+    start a real background main.py that fetches live data and rewrites tracked
+    files. Tests that need Popen patch it themselves, which overrides this guard.
+    """
+    import dca_service.services.static_generator as static_generator
+
+    monkeypatch.setattr(static_generator, "_background_process", None)
+    monkeypatch.setattr(static_generator, "_background_started_at", None)
+
+    real_popen = subprocess.Popen
+
+    def guarded_popen(args, *popen_args, **popen_kwargs):
+        if "main.py" in str(args):
+            raise RuntimeError("Tests must not launch the real main.py")
+        return real_popen(args, *popen_args, **popen_kwargs)
+
+    monkeypatch.setattr(subprocess, "Popen", guarded_popen)
+
 
 @pytest.fixture(name="session")
 def session_fixture():
