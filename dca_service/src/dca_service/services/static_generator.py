@@ -8,6 +8,7 @@ import subprocess
 import sys
 import os
 import stat
+import time
 import csv
 import json
 from datetime import date as date_type
@@ -16,6 +17,13 @@ from pathlib import Path
 from typing import Any, Optional
 
 from dca_service.core.logging import logger
+
+# A healthy run takes 30-120 seconds; anything far beyond that is treated as hung.
+STATIC_GENERATION_MAX_RUNTIME_SECONDS = 30 * 60
+
+# Last background run, shared by the daily scheduler, post-DCA trigger and admin route.
+_background_process: Optional[subprocess.Popen] = None
+_background_started_at: Optional[float] = None
 
 
 def resolve_project_root() -> Path:
@@ -156,6 +164,33 @@ def inspect_static_output_freshness(
     }
 
 
+def _reuse_or_stop_running_process() -> Optional[subprocess.Popen]:
+    """Return the running background process, or stop it if it ran too long."""
+    global _background_process, _background_started_at
+    process = _background_process
+    if process is None or process.poll() is not None:
+        return None
+
+    elapsed = time.monotonic() - (_background_started_at or 0.0)
+    if elapsed < STATIC_GENERATION_MAX_RUNTIME_SECONDS:
+        logger.info(f"Static generation already running (PID: {process.pid}); not starting another")
+        return process
+
+    logger.warning(
+        f"Static generation PID {process.pid} exceeded "
+        f"{STATIC_GENERATION_MAX_RUNTIME_SECONDS}s; terminating it"
+    )
+    process.terminate()
+    try:
+        process.wait(timeout=10)
+    except subprocess.TimeoutExpired:
+        process.kill()
+        process.wait(timeout=10)
+    _background_process = None
+    _background_started_at = None
+    return None
+
+
 def trigger_static_generation(background: bool = True) -> Optional[subprocess.Popen]:
     """
     Trigger static file generation by running main.py as a subprocess.
@@ -177,6 +212,7 @@ def trigger_static_generation(background: bool = True) -> Optional[subprocess.Po
         FileNotFoundError: If main.py cannot be found
         subprocess.CalledProcessError: If main.py execution fails (only when background=False)
     """
+    global _background_process, _background_started_at
     try:
         project_root = resolve_project_root()
         main_py_path = project_root / "main.py"
@@ -197,6 +233,10 @@ def trigger_static_generation(background: bool = True) -> Optional[subprocess.Po
         )
         
         if background:
+            running = _reuse_or_stop_running_process()
+            if running is not None:
+                return running
+
             # Run as background process (non-blocking)
             # Write full output to a dedicated log file for diagnostics.
             # Avoid PIPE here; long-running verbose jobs can block when pipe
@@ -220,6 +260,8 @@ def trigger_static_generation(background: bool = True) -> Optional[subprocess.Po
                 text=True
             )
             log_handle.close()
+            _background_process = process
+            _background_started_at = time.monotonic()
             with log_path.open("a", encoding="utf-8") as log_file:
                 log_file.write(f"PID: {process.pid}\n")
                 log_file.flush()

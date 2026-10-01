@@ -96,7 +96,7 @@ def fetch_btc_history(
             )
         else:
             # Fetch all available data (from earliest Yahoo Finance has)
-            print(f"Fetching ALL available BTC price history from Yahoo Finance...")
+            print("Fetching ALL available BTC price history from Yahoo Finance...")
             # Yahoo Finance has data from 2014-09-17
             df = btc.history(
                 start="2014-09-17",
@@ -281,7 +281,7 @@ def fetch_usdjpy_history(
             )
         else:
             # Fetch all available data (from earliest Yahoo Finance has)
-            print(f"Fetching ALL available USD/JPY history from Yahoo Finance...")
+            print("Fetching ALL available USD/JPY history from Yahoo Finance...")
             # Fetch from 2000-01-01 for reasonable amount of data
             df = usdjpy.history(
                 start="2000-01-01",
@@ -367,7 +367,7 @@ def fetch_fred_series(
     end_str = end_date.strftime("%Y-%m-%d")
 
     # FRED API endpoint
-    url = f"https://api.stlouisfed.org/fred/series/observations"
+    url = "https://api.stlouisfed.org/fred/series/observations"
     params = {
         "series_id": series_id,
         "api_key": api_key,
@@ -610,7 +610,7 @@ def fetch_mof_japan_yield() -> pd.DataFrame:
             try:
                 # Read CSV, skipping the first row (header title)
                 # The actual header is on the second row (index 1)
-                response = requests.get(url)
+                response = requests.get(url, timeout=30)
                 response.raise_for_status()
 
                 # Use io.StringIO to parse the text content
@@ -746,7 +746,7 @@ def fetch_yield_data(
         # Keep only needed columns
         result = merged[["date", "us_2y", "jp_2y", "spread"]].copy()
 
-        print(f"\n✓ Successfully fetched yield data")
+        print("\n✓ Successfully fetched yield data")
         print(f"  Source: {data_source_str}")
         print(
             f"  Date range: {result['date'].min().date()} to {result['date'].max().date()}"
@@ -808,7 +808,7 @@ def fetch_yield_data_yahoo_fallback(
 
         # For Japan, use estimated value
         print(
-            f"Using estimated Japan 2Y yield (typically 0.0-0.3% due to BOJ policy)..."
+            "Using estimated Japan 2Y yield (typically 0.0-0.3% due to BOJ policy)..."
         )
         jp_2y_estimate = (
             JAPAN_2Y_ESTIMATE  # Approximate Japan 2Y yield (Updated Nov 2025)
@@ -820,7 +820,7 @@ def fetch_yield_data_yahoo_fallback(
 
         result = result[["date", "us_2y", "jp_2y", "spread"]].copy()
 
-        print(f"✓ Fetched yield data from Yahoo Finance (fallback)")
+        print("✓ Fetched yield data from Yahoo Finance (fallback)")
         print(
             f"  Date range: {result['date'].min().date()} to {result['date'].max().date()}"
         )

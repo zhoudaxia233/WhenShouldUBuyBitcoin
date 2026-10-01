@@ -48,7 +48,6 @@ def get_fernet() -> Fernet:
         # Auto-generate and save key on first use
         key = _generate_and_save_key()
         # Reload settings to get the new key
-        from dca_service.config import Settings
         settings.BINANCE_CRED_ENC_KEY = key
     
     try:

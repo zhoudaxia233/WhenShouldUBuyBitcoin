@@ -281,7 +281,7 @@ def merge_with_existing(
         print("  Existing data had no usable rows after sanitization; using new data only")
         return new_df
 
-    print(f"\nMerging data:")
+    print("\nMerging data:")
     print(f"  Existing: {len(existing_df)} rows ({existing_df['date'].min().date()} to {existing_df['date'].max().date()})")
     print(f"  New:      {len(new_df)} rows ({new_df['date'].min().date()} to {new_df['date'].max().date()})")
     

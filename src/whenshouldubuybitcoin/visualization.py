@@ -8,7 +8,7 @@ This module provides interactive charts using Plotly to visualize:
 """
 
 from pathlib import Path
-from typing import Optional, Tuple
+from typing import Tuple
 import json
 import tempfile
 import webbrowser
@@ -1123,25 +1123,18 @@ def plot_usdjpy(
     # Determine current level status
     if current_rate < 110:
         status = "Very Weak USD (Below 110)"
-        status_color = "rgb(40, 167, 69)"
     elif current_rate < 120:
         status = "Weak USD (110-120)"
-        status_color = "rgb(100, 200, 100)"
     elif current_rate < 130:
         status = "Moderate (120-130)"
-        status_color = "rgb(150, 150, 150)"
     elif current_rate < 140:
         status = "Moderate-Strong (130-140)"
-        status_color = "rgb(200, 150, 100)"
     elif current_rate < 150:
         status = "Strong USD (140-150)"
-        status_color = "rgb(255, 149, 0)"
     elif current_rate < 160:
         status = "Very Strong USD (150-160)"
-        status_color = "rgb(255, 100, 100)"
     else:
         status = "Extreme USD (>160)"
-        status_color = "rgb(139, 0, 0)"
 
     # Update layout
     fig.update_layout(
@@ -2557,74 +2550,6 @@ def generate_all_charts(df: pd.DataFrame, auto_open: bool = True) -> dict:
 
     return charts
 
-    fig.add_trace(
-        go.Scatter(
-            x=history_df["date"],
-            y=history_df["regime_score_est"],
-            mode="lines",
-            name="Regime Score (Est)",
-            line=dict(color="blue", width=2),
-            fill="tozeroy",
-            fillcolor="rgba(0, 0, 255, 0.1)",
-        ),
-        row=3,
-        col=1,
-    )
-
-    # Add reference lines for Regime
-    for y_val, color, label in [(65, "green", "Bull"), (35, "red", "Bear")]:
-        fig.add_shape(
-            type="line",
-            x0=min_date,
-            x1=max_date,
-            y0=y_val,
-            y1=y_val,
-            line=dict(color=color, width=2, dash="dot"),
-            row=3,
-            col=1,
-        )
-        fig.add_annotation(
-            x=max_date,
-            y=y_val,
-            text=label,
-            showarrow=False,
-            xanchor="left",
-            font=dict(color=color, size=10),
-            row=3,
-            col=1,
-        )
-
-    # --- Layout ---
-
-    fig.update_layout(
-        title={
-            "text": f"Market Health Dashboard (Total Score: {snapshot['total_score']} - Signal: {snapshot['signal_label']})",
-            "x": 0.5,
-            "xanchor": "center",
-        },
-        height=1000,
-        template="plotly_white",
-        showlegend=False,
-    )
-
-    # Update axes
-    fig.update_yaxes(range=[0, 100], title="Score", row=2, col=1)
-    fig.update_yaxes(range=[0, 100], title="Score", row=3, col=1)
-
-    # Save
-    output_dir = get_output_dir()
-    output_path = output_dir / output_filename
-    _write_figure_html_atomic(fig, output_path, auto_open=auto_open)
-
-    # Add auto-scale script
-    add_yaxis_autoscale_script(output_path)
-
-    print(f"✓ Saved Market Health Dashboard to: {output_path}")
-    if auto_open:
-        print("  Opening in browser...")
-
-    return str(output_path)
-
 
 if __name__ == "__main__":
     # Quick test
@@ -3092,8 +3017,8 @@ def create_oi_quadrant_chart(
             name="Current",
             marker=dict(size=16, color=mode_color, line=dict(width=2, color="white")),
             hovertemplate=f"<b>{today.name.strftime('%Y-%m-%d')}</b><br>"
-            + f"Price: %{{x:.1f}}%<br>"
-            + f"OI: %{{y:.1f}}%<br>"
+            + "Price: %{x:.1f}%<br>"
+            + "OI: %{y:.1f}%<br>"
             + f"{mode_label}<extra></extra>",
             showlegend=False,
         )

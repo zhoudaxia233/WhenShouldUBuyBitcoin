@@ -269,3 +269,64 @@ class TestPathResolution:
         
         # CWD should contain main.py
         assert (cwd / 'main.py').exists()
+
+
+class TestBackgroundOverlapGuard:
+    """Background generation must not pile up hung main.py processes."""
+
+    @pytest.fixture(autouse=True)
+    def reset_guard_state(self, monkeypatch):
+        import dca_service.services.static_generator as sg
+        monkeypatch.setattr(sg, "_background_process", None)
+        monkeypatch.setattr(sg, "_background_started_at", None)
+        yield sg
+
+    @patch('subprocess.Popen')
+    def test_does_not_start_second_process_while_first_is_running(self, mock_popen):
+        running = MagicMock()
+        running.pid = 111
+        running.poll.return_value = None
+        mock_popen.return_value = running
+
+        first = trigger_static_generation(background=True)
+        second = trigger_static_generation(background=True)
+
+        assert first is running
+        assert second is running
+        assert mock_popen.call_count == 1
+
+    @patch('subprocess.Popen')
+    def test_starts_new_process_after_previous_finished(self, mock_popen):
+        finished = MagicMock()
+        finished.pid = 111
+        finished.poll.return_value = 0
+        fresh = MagicMock()
+        fresh.pid = 222
+        mock_popen.side_effect = [finished, fresh]
+
+        trigger_static_generation(background=True)
+        result = trigger_static_generation(background=True)
+
+        assert result is fresh
+        assert mock_popen.call_count == 2
+
+    @patch('subprocess.Popen')
+    def test_terminates_process_running_past_max_runtime(self, mock_popen, reset_guard_state):
+        sg = reset_guard_state
+        hung = MagicMock()
+        hung.pid = 111
+        hung.poll.return_value = None
+        fresh = MagicMock()
+        fresh.pid = 222
+        mock_popen.side_effect = [hung, fresh]
+
+        with patch.object(sg.time, "monotonic", return_value=1000.0):
+            trigger_static_generation(background=True)
+        later = 1000.0 + sg.STATIC_GENERATION_MAX_RUNTIME_SECONDS + 1
+        with patch.object(sg.time, "monotonic", return_value=later):
+            result = trigger_static_generation(background=True)
+
+        hung.terminate.assert_called_once()
+        hung.wait.assert_called()
+        assert result is fresh
+        assert mock_popen.call_count == 2

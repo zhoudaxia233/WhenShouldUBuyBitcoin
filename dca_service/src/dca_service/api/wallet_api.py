@@ -3,7 +3,7 @@ Wallet management API endpoints.
 Handles cold wallet balance tracking and Binance hot wallet information.
 """
 from datetime import datetime, timezone
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 from sqlmodel import Session
 from typing import Optional
 

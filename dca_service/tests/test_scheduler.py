@@ -27,6 +27,28 @@ def scheduler():
 
 
 @pytest.fixture
+def executable_decision():
+    """Make the scheduler see a buy decision without reading real metrics files."""
+    decision = DCADecision(
+        can_execute=True,
+        reason="Test decision allows execution",
+        ahr999_value=0.5,
+        ahr_band="low",
+        multiplier=2.0,
+        base_amount_usd=100.0,
+        suggested_amount_usd=200.0,
+        price_usd=50000.0,
+        timestamp=datetime(2024, 1, 15, 14, 30, tzinfo=timezone.utc),
+        metrics_source={"backend": "test", "label": "Mock data"},
+        remaining_budget=800.0,
+        budget_resets=False,
+        time_until_reset=None,
+    )
+    with patch("dca_service.scheduler.calculate_dca_decision", return_value=decision):
+        yield decision
+
+
+@pytest.fixture
 def daily_strategy(session: Session):
     """Create a daily DCA strategy for testing"""
     strategy = DCAStrategy(
@@ -293,7 +315,7 @@ class TestExecutionModes:
     """Tests for execution modes (DRY_RUN vs LIVE)"""
     
     @freeze_time("2024-01-15 14:30:00")
-    def test_dry_run_creates_simulated_transaction(self, scheduler, daily_strategy, session):
+    def test_dry_run_creates_simulated_transaction(self, scheduler, daily_strategy, session, executable_decision):
         """Test that DRY_RUN mode creates SIMULATED transactions"""
         # Execute DCA
         scheduler._execute_dca(daily_strategy, session)
@@ -307,7 +329,7 @@ class TestExecutionModes:
     @freeze_time("2024-01-15 14:30:00")
     @patch("dca_service.services.binance_client.BinanceClient")
     @patch("dca_service.services.security.decrypt_text")
-    def test_live_mode_creates_binance_transaction(self, mock_decrypt, mock_client_class, scheduler, daily_strategy, session):
+    def test_live_mode_creates_binance_transaction(self, mock_decrypt, mock_client_class, scheduler, daily_strategy, session, executable_decision):
         """Test that LIVE mode creates DCA transactions (source changed from BINANCE to DCA)"""
         from unittest.mock import AsyncMock
         
@@ -440,7 +462,7 @@ class TestStaticGenerationIntegration:
     @freeze_time("2024-01-15 14:30:00")
     @patch("dca_service.services.static_generator.trigger_static_generation")
     def test_scheduler_continues_on_static_generation_error(
-        self, mock_trigger, scheduler, daily_strategy, session
+        self, mock_trigger, scheduler, daily_strategy, session, executable_decision
     ):
         """Test that scheduler continues even if static generation fails"""
         # Make static generation raise an error

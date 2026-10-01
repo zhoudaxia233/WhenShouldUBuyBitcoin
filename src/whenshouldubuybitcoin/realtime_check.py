@@ -7,7 +7,6 @@ using real-time BTC prices, without waiting for daily close.
 
 import numpy as np
 import pandas as pd
-from datetime import datetime
 from zoneinfo import ZoneInfo
 from typing import Optional, Dict
 
@@ -152,7 +151,7 @@ def check_realtime_status(verbose: bool = True) -> Optional[Dict]:
             utc_time = price_time.replace(tzinfo=ZoneInfo("UTC"))
             berlin_time = utc_time.astimezone(ZoneInfo("Europe/Berlin"))
             
-            print(f"   ✓ Success")
+            print("   ✓ Success")
             print(f"      UTC:    {utc_time.strftime('%Y-%m-%d %H:%M:%S')}")
             print(f"      Berlin: {berlin_time.strftime('%Y-%m-%d %H:%M:%S %Z')}")
     except Exception as e:
@@ -165,7 +164,7 @@ def check_realtime_status(verbose: bool = True) -> Optional[Dict]:
     last_199_days = df.tail(199)
     if len(last_199_days) < 199:
         if verbose:
-            print(f"\n❌ Error: Need at least 199 days of historical data.")
+            print("\n❌ Error: Need at least 199 days of historical data.")
             print(f"   Currently have {len(last_199_days)} days.")
         return None
     
@@ -194,7 +193,7 @@ def check_realtime_status(verbose: bool = True) -> Optional[Dict]:
                 print("\n⚠ Trend parameters missing from metadata; derived fallback from trend_value history.")
         else:
             if verbose:
-                print(f"\n❌ Error: Trend parameters not found in historical data.")
+                print("\n❌ Error: Trend parameters not found in historical data.")
                 print("   Please run 'python main.py' to calculate trend.")
             return None
     
@@ -269,7 +268,7 @@ def check_realtime_status(verbose: bool = True) -> Optional[Dict]:
         if dca_distance["in_zone"]:
             print(f"     Status:             ✅ IN BUY ZONE (below by {dca_distance['percentage']:.2f}%)")
         else:
-            print(f"     Status:             ❌ Above threshold")
+            print("     Status:             ❌ Above threshold")
             print(f"     Distance:           Need {dca_distance['percentage']:.2f}% drop to enter zone")
         
         # Trend Analysis
@@ -279,7 +278,7 @@ def check_realtime_status(verbose: bool = True) -> Optional[Dict]:
         if trend_distance["in_zone"]:
             print(f"     Status:             ✅ IN BUY ZONE (below by {trend_distance['percentage']:.2f}%)")
         else:
-            print(f"     Status:             ❌ Above threshold")
+            print("     Status:             ❌ Above threshold")
             print(f"     Distance:           Need {trend_distance['percentage']:.2f}% drop to enter zone")
         
         # Overall Status
@@ -302,14 +301,14 @@ def check_realtime_status(verbose: bool = True) -> Optional[Dict]:
                 # Both need to drop
                 max_drop_needed = max(dca_distance["percentage"], trend_distance["percentage"])
                 print(f"\n  📉 To enter buy zone, BTC needs to drop ~{max_drop_needed:.2f}%")
-                print(f"     (This assumes both conditions need to be met)")
+                print("     (This assumes both conditions need to be met)")
             elif dca_distance["in_zone"] and not trend_distance["in_zone"]:
                 # Only trend needs to drop
-                print(f"\n  ✓ DCA condition already met")
+                print("\n  ✓ DCA condition already met")
                 print(f"  📉 Need {trend_distance['percentage']:.2f}% more drop for trend condition")
             elif not dca_distance["in_zone"] and trend_distance["in_zone"]:
                 # Only DCA needs to drop
-                print(f"\n  ✓ Trend condition already met")
+                print("\n  ✓ Trend condition already met")
                 print(f"  📉 Need {dca_distance['percentage']:.2f}% more drop for DCA condition")
         
         # ahr999 Index Analysis
@@ -323,7 +322,7 @@ def check_realtime_status(verbose: bool = True) -> Optional[Dict]:
         print(f"     Description:        {ahr999_zone['description']}")
         
         if ahr999_percentile is not None:
-            print(f"\n  📈 Historical Position:")
+            print("\n  📈 Historical Position:")
             print(f"     Overall Percentile:         {ahr999_percentile:.1f}th percentile (among all history)")
             
             # Interpret the overall percentile
@@ -356,12 +355,12 @@ def check_realtime_status(verbose: bool = True) -> Optional[Dict]:
                 
                 print(f"     Buy Zone Quality:           {bz_interpretation}")
             else:
-                print(f"\n     Buy Zone Percentile:        N/A (ahr999 >= 1.0, not in buy zone)")
+                print("\n     Buy Zone Percentile:        N/A (ahr999 >= 1.0, not in buy zone)")
         
-        print(f"\n  📚 Zone Thresholds:")
-        print(f"     < 0.45  = 🔥 Bottom Zone (exceptional opportunity)")
-        print(f"     < 1.2   = 💎 DCA Zone (good for accumulation)")
-        print(f"     ≥ 1.2   = ⚠️  Watch Zone (potentially overheated)")
+        print("\n  📚 Zone Thresholds:")
+        print("     < 0.45  = 🔥 Bottom Zone (exceptional opportunity)")
+        print("     < 1.2   = 💎 DCA Zone (good for accumulation)")
+        print("     ≥ 1.2   = ⚠️  Watch Zone (potentially overheated)")
         
         print("\n" + "=" * 80)
     

@@ -350,16 +350,9 @@ def calculate_dca_decision(session: Session) -> DCADecision:
         multiplier = (
             result.multiplier
         )  # Final multiplier (includes boost, may be clipped)
-        base_multiplier = result.base_multiplier  # Base multiplier (before boost)
-        multiplier_before_clip = (
-            result.multiplier_before_clip
-        )  # Multiplier before max_multiplier clipping
         suggested_amount = result.buy
         base_amount = base_amount_calc
         band = "DYNAMIC"  # Placeholder for dynamic strategy
-
-        # Calculate expected uncapped amount (before monthly cap)
-        uncapped_amount = base_amount * multiplier
 
         # Logic moved to end of function to support all strategies
         

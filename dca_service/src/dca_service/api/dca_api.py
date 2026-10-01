@@ -1,10 +1,9 @@
-from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
+from fastapi import APIRouter, Depends, BackgroundTasks
 from sqlmodel import Session
 
 from dca_service.database import get_session
 from dca_service.services.dca_engine import calculate_dca_decision, DCADecision
 from dca_service.models import DCATransaction, User
-from dca_service.api.schemas import TransactionRead
 from dca_service.auth.dependencies import get_current_user
 from dca_service.core.logging import logger
 
