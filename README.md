@@ -29,7 +29,11 @@ Using two independent metrics reduces false signals and identifies stronger buyi
 
 ### Data Updates
 
-- Historical data update workflow is currently **manual trigger only** (`workflow_dispatch`); cron schedule is intentionally commented out
+- The daily update is run by the DCA service scheduler, which runs `main.py` every day at **00:30 UTC** to refresh `docs/data/` and the charts
+- The same regeneration also runs after a successful DCA transaction and from the admin-only regenerate button on the stats page; only one run is active at a time, and a run exceeding 30 minutes is terminated
+- Output of each run is appended to `data/static_generation.log`
+- Scheduler settings (environment or `.env`): `STATIC_GENERATION_SCHEDULE_ENABLED` (default `true`), `STATIC_GENERATION_SCHEDULE_HOUR_UTC` (default `0`), `STATIC_GENERATION_SCHEDULE_MINUTE_UTC` (default `30`); set `STATIC_GENERATION_STRICT_UPDATE=true` to fail the run if any chart or report update step fails
+- The GitHub Actions workflow `update-data.yml` is **manual trigger only** (`workflow_dispatch`); its cron schedule is intentionally commented out
 - Real-time check fetches **live BTC price** from Binance first, then falls back to Coinbase
 - Historical charts and daily summaries use the generated files in `docs/data/`; check each page's displayed update timestamp before treating non-price metrics as current.
 
