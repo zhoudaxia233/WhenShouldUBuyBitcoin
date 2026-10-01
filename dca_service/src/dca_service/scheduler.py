@@ -5,8 +5,6 @@ Uses APScheduler to check every minute if a DCA transaction should be executed
 based on the strategy configuration (execution_time_utc, execution_frequency).
 """
 from datetime import datetime, timezone, timedelta
-from typing import Optional
-import sys
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from apscheduler.schedulers.background import BackgroundScheduler

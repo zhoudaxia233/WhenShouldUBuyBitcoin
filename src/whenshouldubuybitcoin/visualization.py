@@ -8,7 +8,7 @@ This module provides interactive charts using Plotly to visualize:
 """
 
 from pathlib import Path
-from typing import Optional, Tuple
+from typing import Tuple
 import json
 import tempfile
 import webbrowser
@@ -1123,25 +1123,18 @@ def plot_usdjpy(
     # Determine current level status
     if current_rate < 110:
         status = "Very Weak USD (Below 110)"
-        status_color = "rgb(40, 167, 69)"
     elif current_rate < 120:
         status = "Weak USD (110-120)"
-        status_color = "rgb(100, 200, 100)"
     elif current_rate < 130:
         status = "Moderate (120-130)"
-        status_color = "rgb(150, 150, 150)"
     elif current_rate < 140:
         status = "Moderate-Strong (130-140)"
-        status_color = "rgb(200, 150, 100)"
     elif current_rate < 150:
         status = "Strong USD (140-150)"
-        status_color = "rgb(255, 149, 0)"
     elif current_rate < 160:
         status = "Very Strong USD (150-160)"
-        status_color = "rgb(255, 100, 100)"
     else:
         status = "Extreme USD (>160)"
-        status_color = "rgb(139, 0, 0)"
 
     # Update layout
     fig.update_layout(
@@ -3024,8 +3017,8 @@ def create_oi_quadrant_chart(
             name="Current",
             marker=dict(size=16, color=mode_color, line=dict(width=2, color="white")),
             hovertemplate=f"<b>{today.name.strftime('%Y-%m-%d')}</b><br>"
-            + f"Price: %{{x:.1f}}%<br>"
-            + f"OI: %{{y:.1f}}%<br>"
+            + "Price: %{x:.1f}%<br>"
+            + "OI: %{y:.1f}%<br>"
             + f"{mode_label}<extra></extra>",
             showlegend=False,
         )

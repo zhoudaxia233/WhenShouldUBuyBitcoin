@@ -1,7 +1,6 @@
 from datetime import datetime, timezone
-from typing import List, Optional
+from typing import Optional
 from sqlmodel import Session, select, col
-from sqlalchemy.exc import IntegrityError
 
 from dca_service.models import DCATransaction, BinanceCredentials
 from dca_service.services.binance_client import BinanceClient
@@ -103,7 +102,7 @@ class TradeSyncService:
             # Add 1ms to avoid fetching the same trade again
             start_time = last_ts + 1 if last_ts > 0 else None
             
-            logger.info(f"📅 Sync parameters:")
+            logger.info("📅 Sync parameters:")
             logger.info(f"   - Symbol: {symbol}")
             logger.info(f"   - Start timestamp: {start_time}ms" + 
                        (f" ({datetime.fromtimestamp(start_time/1000, tz=timezone.utc).isoformat()})" if start_time else " (all history)"))
@@ -127,7 +126,7 @@ class TradeSyncService:
             if trades:
                 first_trade = trades[0]
                 last_trade = trades[-1]
-                logger.info(f"📊 Trade range:")
+                logger.info("📊 Trade range:")
                 logger.info(f"   - First: ID={first_trade['id']}, Time={datetime.fromtimestamp(first_trade['time']/1000, tz=timezone.utc).isoformat()}")
                 logger.info(f"   - Last:  ID={last_trade['id']}, Time={datetime.fromtimestamp(last_trade['time']/1000, tz=timezone.utc).isoformat()}")
             
@@ -165,7 +164,7 @@ class TradeSyncService:
                 price = float(trade["price"])
                 quote_qty = float(trade["quoteQty"])
                 
-                logger.info(f"")
+                logger.info("")
                 logger.info(f"📝 Trade {idx}/{len(trades)}:")
                 logger.info(f"   - Trade ID: {trade_id}")
                 logger.info(f"   - Order ID: {order_id}")
@@ -182,7 +181,7 @@ class TradeSyncService:
                 ).first()
                 
                 if exists:
-                    logger.info(f"   ⏭️  SKIP: Trade already exists in database")
+                    logger.info("   ⏭️  SKIP: Trade already exists in database")
                     skipped_count += 1
                     skip_reasons["already_exists"] += 1
                     continue
@@ -190,7 +189,7 @@ class TradeSyncService:
                 # Check if this order belongs to our DCA bot
                 # If so, update the existing DCA record or skip if already linked
                 if order_id in existing_dca_orders:
-                    logger.info(f"   🤖 Order belongs to DCA bot")
+                    logger.info("   🤖 Order belongs to DCA bot")
                     # This is a trade from our own bot
                     # Try to link trade_id to existing DCA record if not yet linked
                     dca_tx = self.session.exec(
@@ -211,7 +210,7 @@ class TradeSyncService:
                     else:
                         # Already linked, or this is a subsequent fill
                         # To avoid duplicates in the UI, we skip additional fills for now
-                        logger.info(f"   ⏭️  SKIP: DCA order already linked or duplicate fill")
+                        logger.info("   ⏭️  SKIP: DCA order already linked or duplicate fill")
                         skipped_count += 1
                         skip_reasons["dca_order"] += 1
                         continue
@@ -236,7 +235,7 @@ class TradeSyncService:
                 
                 # Only import BUY trades for now (DCA context)
                 if not trade["isBuyer"]:
-                    logger.info(f"   ⏭️  SKIP: SELL order (only BUY trades are synced)")
+                    logger.info("   ⏭️  SKIP: SELL order (only BUY trades are synced)")
                     skipped_count += 1
                     skip_reasons["sell_order"] += 1
                     continue
@@ -245,7 +244,7 @@ class TradeSyncService:
                 commission = float(trade["commission"])
                 commission_asset = trade["commissionAsset"]
                 
-                logger.info(f"   ✅ IMPORTING as MANUAL trade")
+                logger.info("   ✅ IMPORTING as MANUAL trade")
                 logger.info(f"      - Fee: {commission} {commission_asset}")
                 
                 # Normalize fee to USD if possible (approximate)
@@ -278,11 +277,11 @@ class TradeSyncService:
             
             self.session.commit()
             
-            logger.info(f"")
+            logger.info("")
             logger.info(f"{'='*80}")
-            logger.info(f"✅ Sync completed successfully")
+            logger.info("✅ Sync completed successfully")
             logger.info(f"{'='*80}")
-            logger.info(f"📊 Summary:")
+            logger.info("📊 Summary:")
             logger.info(f"   - Total trades from API: {len(trades)}")
             logger.info(f"   - Added to database: {added_count}")
             logger.info(f"   - Skipped: {skipped_count}")
@@ -295,7 +294,7 @@ class TradeSyncService:
             
         except Exception as e:
             logger.error(f"{'='*80}")
-            logger.error(f"❌ ERROR during sync")
+            logger.error("❌ ERROR during sync")
             logger.error(f"{'='*80}")
             logger.error(f"Exception type: {type(e).__name__}")
             logger.error(f"Exception message: {str(e)}")

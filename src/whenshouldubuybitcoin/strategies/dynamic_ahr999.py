@@ -11,7 +11,6 @@ buy amounts based on:
 Pure deterministic logic, no side effects.
 """
 from dataclasses import dataclass
-from typing import Optional, Dict, Any
 
 @dataclass
 class DynamicAhr999Config:

@@ -27,7 +27,6 @@ from whenshouldubuybitcoin.data_fetcher import (
     fetch_usdjpy_history,
     fetch_yield_data,
     fetch_macro_liquidity_indicators,
-    get_latest_btc_price,
 )
 from whenshouldubuybitcoin.metrics import (
     compute_valuation_metrics,
@@ -41,7 +40,7 @@ from whenshouldubuybitcoin.persistence import (
     merge_with_existing,
     get_days_to_fetch,
 )
-from whenshouldubuybitcoin.providers.binance_api import fetch_btc_funding_rate, fetch_open_interest_history
+from whenshouldubuybitcoin.providers.binance_api import fetch_open_interest_history
 from whenshouldubuybitcoin.providers.alternative_me import fetch_fear_and_greed_index
 from whenshouldubuybitcoin.providers.blockchain_data import fetch_hashrate_trend
 from whenshouldubuybitcoin.onchain_data import update_onchain_metrics
@@ -214,7 +213,7 @@ def main(strict_update: bool = False):
         print("=" * 80)
         print(f"\nTotal days: {len(df)}")
         print(f"Date range: {df['date'].min().date()} to {df['date'].max().date()}")
-        print(f"\nPrice statistics:")
+        print("\nPrice statistics:")
         print(f"  Current: ${df['close_price'].iloc[-1]:,.2f}")
         print(f"  Min:     ${df['close_price'].min():,.2f}")
         print(f"  Max:     ${df['close_price'].max():,.2f}")
@@ -229,13 +228,13 @@ def main(strict_update: bool = False):
         print(
             f"\nDays analyzed (with 200+ days history): {dca_summary['total_days_analyzed']}"
         )
-        print(f"\nCurrent Status:")
+        print("\nCurrent Status:")
         print(f"  Price:           ${dca_summary['latest_price']:,.2f}")
         print(f"  200-day DCA:     ${dca_summary['latest_dca_cost']:,.2f}")
         print(f"  Price/DCA Ratio:  {dca_summary['latest_ratio']:.3f}")
         print(f"  Status:          {dca_summary['latest_status']}")
 
-        print(f"\nHistorical DCA Metrics:")
+        print("\nHistorical DCA Metrics:")
         print(
             f"  Days below DCA:      {dca_summary['days_below_dca']} ({dca_summary['pct_days_below_dca']:.1f}%)"
         )
@@ -249,10 +248,10 @@ def main(strict_update: bool = False):
         print("\n" + "=" * 80)
         print("POWER LAW TREND ANALYSIS")
         print("=" * 80)
-        print(f"\nModel: price(t) = a × t^n")
-        print(f"  where t = Bitcoin age (days since genesis: 2009-01-03)")
+        print("\nModel: price(t) = a × t^n")
+        print("  where t = Bitcoin age (days since genesis: 2009-01-03)")
         print(f"  Data available from: {df['date'].iloc[0].date()}")
-        print(f"\nFitted Parameters:")
+        print("\nFitted Parameters:")
         print(
             f"  a (coefficient):      {_fmt_num(trend_summary.get('trend_coefficient_a'), ',.2f')}"
         )
@@ -262,15 +261,15 @@ def main(strict_update: bool = False):
         growth_rate = _fmt_num(trend_summary.get("daily_growth_rate_pct"), ".4f")
         growth_rate_suffix = "% per day" if growth_rate != "N/A" else ""
         print(f"  Current growth rate:  {growth_rate}{growth_rate_suffix}")
-        print(f"  Note: Growth rate decreases over time in power law model")
+        print("  Note: Growth rate decreases over time in power law model")
 
-        print(f"\nCurrent Status:")
+        print("\nCurrent Status:")
         print(f"  Price:             ${trend_summary['latest_price']:,.2f}")
         print(f"  Trend (Fair Value): ${trend_summary['latest_trend']:,.2f}")
         print(f"  Price/Trend Ratio:  {trend_summary['latest_ratio']:.3f}")
         print(f"  Status:            {trend_summary['latest_status']}")
 
-        print(f"\nHistorical Trend Metrics:")
+        print("\nHistorical Trend Metrics:")
         print(
             f"  Days below trend:       {trend_summary['days_below_trend']} ({trend_summary['pct_days_below_trend']:.1f}%)"
         )
@@ -286,7 +285,7 @@ def main(strict_update: bool = False):
         print("=" * 80)
         print("\nBuy Zone = Price < DCA Cost AND Price < Trend (BOTH conditions)")
 
-        print(f"\n📊 Current Status:")
+        print("\n📊 Current Status:")
         print(f"  Price:              ${double_uv_summary['current_price']:,.2f}")
         print(
             f"  200-day DCA:        ${double_uv_summary['current_dca']:,.2f} (ratio: {double_uv_summary['current_ratio_dca']:.3f})"
@@ -333,13 +332,13 @@ def main(strict_update: bool = False):
             f"  Days DOUBLE undervalued:     {double_uv_summary['days_double_undervalued']:>5} ({double_uv_summary['pct_double_undervalued']:>5.1f}%) ⭐"
         )
 
-        print(f"\n🔍 Double Undervaluation Periods:")
+        print("\n🔍 Double Undervaluation Periods:")
         print(
             f"  Total number of periods:     {double_uv_summary['num_double_uv_periods']}"
         )
 
         if double_uv_summary["num_double_uv_periods"] > 0:
-            print(f"\n  Recent periods (last 5):")
+            print("\n  Recent periods (last 5):")
             for i, period in enumerate(double_uv_summary["double_uv_periods"][-5:], 1):
                 print(
                     f"    {i}. {period['start'].strftime('%Y-%m-%d')} to {period['end'].strftime('%Y-%m-%d')} ({period['days']} days)"

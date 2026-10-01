@@ -172,7 +172,7 @@ def _get_order_trades(
     Raises:
         TimeoutError: If trades not found within max attempts
     """
-    print(f"\n⏳ Waiting for trade confirmation...")
+    print("\n⏳ Waiting for trade confirmation...")
     
     for attempt in range(1, max_attempts + 1):
         print(f"   Attempt {attempt}/{max_attempts}...", end="", flush=True)
@@ -286,7 +286,7 @@ def execute_dca_purchase(
     base_url = TESTNET_URL if testnet else BASE_URL
     
     print("\n" + "=" * 70)
-    print(f"🚀 STARTING DCA PURCHASE")
+    print("🚀 STARTING DCA PURCHASE")
     print("=" * 70)
     print(f"  Symbol:        {symbol}")
     print(f"  Quote Amount:  ${quote_quantity:.2f}")

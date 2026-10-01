@@ -2,7 +2,6 @@
 Provider for Blockchain.com data.
 """
 import requests
-import pandas as pd
 from typing import Optional
 
 def fetch_hashrate_trend() -> Optional[float]:

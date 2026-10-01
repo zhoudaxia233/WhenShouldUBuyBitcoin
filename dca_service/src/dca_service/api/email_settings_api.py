@@ -10,7 +10,7 @@ from datetime import datetime, timezone
 
 from dca_service.database import get_session
 from dca_service.models import EmailSettings, User
-from dca_service.services.security import encrypt_text, decrypt_text
+from dca_service.services.security import encrypt_text
 from dca_service.auth.dependencies import get_current_user
 
 router = APIRouter()

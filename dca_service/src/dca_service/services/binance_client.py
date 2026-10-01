@@ -232,7 +232,6 @@ class BinanceClient:
         
         for trade in trades:
             qty = float(trade.get("qty", 0))
-            price = float(trade.get("price", 0))
             quote_qty = float(trade.get("quoteQty", 0))
             commission = float(trade.get("commission", 0))
             commission_asset = trade.get("commissionAsset", "")
@@ -312,7 +311,6 @@ class BinanceClient:
                 if trade.get("isBuyer", False):
                     qty = float(trade.get("qty", 0))
                     price = float(trade.get("price", 0))
-                    commission = float(trade.get("commission", 0))
                     
                     # Add to totals
                     total_quantity += qty

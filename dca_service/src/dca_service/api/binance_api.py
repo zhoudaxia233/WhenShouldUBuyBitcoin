@@ -162,7 +162,7 @@ async def get_holdings(
     try:
         api_key = decrypt_text(creds.api_key_encrypted)
         api_secret = decrypt_text(creds.api_secret_encrypted)
-    except Exception as e:
+    except Exception:
         return HoldingsSummary(
             connected=False, 
             reason="auth_error", 
