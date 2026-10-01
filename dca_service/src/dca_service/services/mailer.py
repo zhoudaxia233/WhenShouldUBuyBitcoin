@@ -162,8 +162,8 @@ Common issues:
 ===== NEXT STEPS =====
 1. Review the error message above
 2. Check your Binance settings at: http://localhost:8000/settings/binance
-3. The system will retry on the next scheduled run
-4. No funds were spent in this failed attempt
+3. The system will not retry until the next scheduled day (or week)
+4. If the error says the order status is unknown, check your Binance order history: the order may have been filled
 
 ---
 {settings.PROJECT_NAME}

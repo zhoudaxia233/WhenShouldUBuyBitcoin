@@ -1,9 +1,19 @@
 import time
 import hmac
+import uuid
 import hashlib
 import httpx
 from typing import Dict, Any, Optional
 from dca_service.core.logging import logger
+
+
+class OrderStatusUnknownError(Exception):
+    """An order may have been executed, but its outcome could not be confirmed."""
+
+    def __init__(self, message: str, order_id: Optional[int] = None, client_order_id: Optional[str] = None):
+        super().__init__(message)
+        self.order_id = order_id
+        self.client_order_id = client_order_id
 
 
 class BinanceClient:
@@ -103,13 +113,16 @@ class BinanceClient:
             logger.error(f"Failed to fetch Binance holdings: {e}")
             raise e
 
-    async def create_market_buy_order(self, symbol: str, quantity_usd: float) -> Dict[str, Any]:
+    async def create_market_buy_order(
+        self, symbol: str, quantity_usd: float, client_order_id: Optional[str] = None
+    ) -> Dict[str, Any]:
         """
         Places a market buy order for the specified amount in USD (quote asset).
         
         Args:
             symbol: Trading pair (e.g., "BTCUSDC")
             quantity_usd: Amount of quote asset to spend
+            client_order_id: Our own order ID, used to look the order up if the response is lost
             
         Returns:
             Binance API response dict
@@ -129,6 +142,8 @@ class BinanceClient:
                 "type": "MARKET",
                 "quoteOrderQty": qty_str
             }
+            if client_order_id:
+                params["newClientOrderId"] = client_order_id
             
             logger.info(f"Placing LIVE MARKET BUY order: {symbol} for {qty_str} USD")
             
@@ -151,7 +166,8 @@ class BinanceClient:
         symbol: str,
         quote_quantity: float,
         max_wait_seconds: int = 10,
-        poll_interval: float = 1.0
+        poll_interval: float = 1.0,
+        client_order_id: Optional[str] = None,
     ) -> Dict[str, Any]:
         """
         Execute market order and wait for trade confirmation.
@@ -166,6 +182,7 @@ class BinanceClient:
             quote_quantity: Amount in quote currency to spend
             max_wait_seconds: Maximum time to wait for trade confirmation
             poll_interval: Seconds between polling attempts
+            client_order_id: Our own order ID; generated when not given
             
         Returns:
             Dictionary containing:
@@ -177,14 +194,23 @@ class BinanceClient:
                 - fee_asset: Fee currency
                 
         Raises:
-            TimeoutError: If trades not confirmed within max_wait_seconds
+            OrderStatusUnknownError: If the order may have executed but could not be confirmed
             ValueError: On API errors or invalid parameters
         """
         import asyncio
         
         # Step 1: Place the market order
-        logger.info(f"🚀 Executing market order: {symbol} for ${quote_quantity:.2f}")
-        order_response = await self.create_market_buy_order(symbol, quote_quantity)
+        client_order_id = client_order_id or f"dca-{uuid.uuid4().hex[:24]}"
+        logger.info(f"🚀 Executing market order: {symbol} for ${quote_quantity:.2f} ({client_order_id})")
+        try:
+            order_response = await self.create_market_buy_order(
+                symbol, quote_quantity, client_order_id=client_order_id
+            )
+        except Exception as place_error:
+            # The order may have reached Binance even though we got an error back
+            order_response = await self._find_order_after_failed_placement(
+                symbol, client_order_id, place_error
+            )
         order_id = order_response.get("orderId")
         
         if not order_id:
@@ -219,9 +245,11 @@ class BinanceClient:
                 await asyncio.sleep(poll_interval)
         else:
             # Exhausted all attempts without finding trades
-            raise TimeoutError(
+            raise OrderStatusUnknownError(
                 f"Failed to retrieve trades for order {order_id} after {max_wait_seconds}s. "
-                f"Order may still be processing on Binance."
+                f"Order may still be processing on Binance.",
+                order_id=order_id,
+                client_order_id=client_order_id,
             )
         
         # Step 3: Aggregate trade data
@@ -258,6 +286,37 @@ class BinanceClient:
             "fee_asset": fee_asset,
             "quote_spent": total_quote
         }
+
+    async def _find_order_after_failed_placement(
+        self, symbol: str, client_order_id: str, place_error: Exception
+    ) -> Dict[str, Any]:
+        """
+        Look up an order whose placement returned an error.
+
+        Returns the order if Binance has it, re-raises the placement error if
+        Binance confirms the order does not exist, and raises
+        OrderStatusUnknownError if neither can be confirmed.
+        """
+        try:
+            order = await self._request(
+                "GET",
+                "/api/v3/order",
+                params={"symbol": symbol, "origClientOrderId": client_order_id},
+                signed=True,
+            )
+        except Exception as lookup_error:
+            if "-2013" in str(lookup_error):  # Order does not exist
+                raise place_error
+            raise OrderStatusUnknownError(
+                f"Order placement failed ({place_error}) and its status could not be verified",
+                client_order_id=client_order_id,
+            ) from lookup_error
+
+        logger.warning(
+            f"Order placement returned an error, but Binance has order {order.get('orderId')} "
+            f"({client_order_id}, status {order.get('status')})"
+        )
+        return order
 
     async def get_current_price(self, symbol: str) -> float:
         """
