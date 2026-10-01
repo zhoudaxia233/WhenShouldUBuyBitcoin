@@ -546,3 +546,102 @@ class TestStaticGenerationSchedule:
 
         assert scheduler.scheduler.get_job("static_generation") is None
         scheduler.stop()
+
+
+class TestFailedLiveAttemptIsNotRetried:
+    """A failed LIVE attempt must not be retried within the same period.
+
+    The exchange may have filled an order whose confirmation failed, so a
+    retry could buy a second time.
+    """
+
+    @pytest.fixture
+    def failing_live_client(self, session, daily_strategy):
+        from unittest.mock import AsyncMock
+        from dca_service.models import BinanceCredentials
+
+        session.add(BinanceCredentials(
+            api_key_encrypted="encrypted_key",
+            api_secret_encrypted="encrypted_secret",
+            credential_type="TRADING",
+        ))
+        daily_strategy.execution_mode = "LIVE"
+        session.add(daily_strategy)
+        session.commit()
+
+        with patch("dca_service.services.security.decrypt_text", return_value="secret"), \
+                patch("dca_service.services.binance_client.BinanceClient") as mock_client_class, \
+                patch("dca_service.services.mailer.send_trade_failure_notification") as mock_mail:
+            client = mock_client_class.return_value
+            client.execute_market_order_with_confirmation = AsyncMock(
+                side_effect=TimeoutError("Failed to retrieve trades for order 123 after 10s.")
+            )
+            client.close = AsyncMock()
+            yield client, mock_mail
+
+    def _run_every_minute_of_window(self, scheduler, strategy, session, hour, first_minute):
+        for minute in range(first_minute, first_minute + 10):
+            with freeze_time(f"2024-01-15 {hour:02d}:{minute:02d}:00"):
+                if scheduler._should_execute_now(strategy, session):
+                    scheduler._execute_dca(strategy, session)
+
+    def test_daily_failure_places_only_one_order(
+        self, scheduler, daily_strategy, session, executable_decision, failing_live_client
+    ):
+        client, mock_mail = failing_live_client
+
+        self._run_every_minute_of_window(scheduler, daily_strategy, session, 14, 30)
+
+        assert client.execute_market_order_with_confirmation.await_count == 1
+        failed = session.exec(select(DCATransaction).where(DCATransaction.status == "FAILED")).all()
+        assert len(failed) == 1
+        assert mock_mail.call_count == 1
+
+    def test_weekly_failure_places_only_one_order(
+        self, scheduler, daily_strategy, session, executable_decision, failing_live_client
+    ):
+        client, _ = failing_live_client
+        daily_strategy.execution_frequency = "weekly"
+        daily_strategy.execution_day_of_week = "monday"  # 2024-01-15 is a Monday
+        session.add(daily_strategy)
+        session.commit()
+
+        self._run_every_minute_of_window(scheduler, daily_strategy, session, 14, 30)
+
+        assert client.execute_market_order_with_confirmation.await_count == 1
+
+    @freeze_time("2024-01-16 14:30:00")
+    def test_failure_yesterday_does_not_block_today(self, scheduler, daily_strategy, session):
+        session.add(DCATransaction(
+            timestamp=datetime(2024, 1, 15, 14, 30, tzinfo=timezone.utc),
+            status="FAILED",
+            fiat_amount=200.0,
+            btc_amount=0.0,
+            price=50000.0,
+            ahr999=0.5,
+            source="BINANCE_FAILED",
+        ))
+        session.commit()
+
+        assert scheduler._should_execute_now(daily_strategy, session) is True
+
+    @freeze_time("2024-01-15 14:30:00")
+    def test_unknown_order_status_is_recorded_with_order_id(
+        self, scheduler, daily_strategy, session, executable_decision, failing_live_client
+    ):
+        from dca_service.services.binance_client import OrderStatusUnknownError
+
+        client, mock_mail = failing_live_client
+        client.execute_market_order_with_confirmation.side_effect = OrderStatusUnknownError(
+            "Order 123 was placed but its fills could not be confirmed",
+            order_id=123,
+        )
+
+        scheduler._execute_dca(daily_strategy, session)
+
+        tx = session.exec(select(DCATransaction)).one()
+        assert tx.status == "FAILED"
+        assert tx.binance_order_id == 123
+        assert "check Binance" in tx.notes
+        error_msg = mock_mail.call_args.args[2]
+        assert "may have been filled" in error_msg

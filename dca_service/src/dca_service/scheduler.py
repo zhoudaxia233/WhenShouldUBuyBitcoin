@@ -13,9 +13,14 @@ from sqlmodel import Session, select
 
 from dca_service.database import engine
 from dca_service.models import DCAStrategy, DCATransaction
+from dca_service.services.binance_client import OrderStatusUnknownError
 from dca_service.services.dca_engine import calculate_dca_decision
 from dca_service.config import settings
 from dca_service.core.logging import logger
+
+# A failed attempt also blocks the rest of the period: a LIVE order can fill on
+# Binance even when we record a failure, so retrying could buy twice.
+ATTEMPTED_STATUSES = ("SUCCESS", "FAILED")
 
 
 class DCAScheduler:
@@ -26,7 +31,7 @@ class DCAScheduler:
     - Strategy is active
     - Current time matches execution_time_utc (with a short grace window)
     - Frequency matches (daily or correct day of week for weekly)
-    - No transaction already executed today (for daily) or this week (for weekly)
+    - No transaction already attempted today (for daily) or this week (for weekly)
     """
 
     EXECUTION_GRACE_MINUTES = 5
@@ -192,7 +197,7 @@ class DCAScheduler:
             now: Current UTC datetime
             
         Returns:
-            True if no transaction executed today, False otherwise
+            True if no transaction attempted today, False otherwise
         """
         # Start/end of "today" in strategy timezone, converted to UTC for DB query.
         # End bound prevents future-dated transactions from incorrectly blocking today.
@@ -205,12 +210,12 @@ class DCAScheduler:
             select(DCATransaction)
             .where(DCATransaction.timestamp >= today_start)
             .where(DCATransaction.timestamp < tomorrow_start)
-            .where(DCATransaction.status == "SUCCESS")
+            .where(DCATransaction.status.in_(ATTEMPTED_STATUSES))
             .where(DCATransaction.is_manual == False)
         ).first()
         
         if existing_tx:
-            logger.debug("DCA already executed today, skipping")
+            logger.debug(f"DCA already attempted today ({existing_tx.status}), skipping")
             return False
         
         return True
@@ -230,7 +235,7 @@ class DCAScheduler:
             now: Current UTC datetime
             
         Returns:
-            True if correct day and no transaction this week, False otherwise
+            True if correct day and no transaction attempted this week, False otherwise
         """
         # Check if today is the configured day of week in strategy timezone.
         current_day = now.strftime('%A').lower()
@@ -250,12 +255,12 @@ class DCAScheduler:
         existing_tx = session.exec(
             select(DCATransaction)
             .where(DCATransaction.timestamp >= week_start)
-            .where(DCATransaction.status == "SUCCESS")
+            .where(DCATransaction.status.in_(ATTEMPTED_STATUSES))
             .where(DCATransaction.is_manual == False)
         ).first()
         
         if existing_tx:
-            logger.debug("DCA already executed this week, skipping")
+            logger.debug(f"DCA already attempted this week ({existing_tx.status}), skipping")
             return False
         
         return True
@@ -349,6 +354,14 @@ class DCAScheduler:
                         f"(Fee: {fee_amount:.8f} {fee_asset})"
                     )
                     
+                except OrderStatusUnknownError as e:
+                    logger.error(f"LIVE trade status unknown: {e}")
+                    source = "BINANCE_FAILED"
+                    binance_order_id = e.order_id
+                    error_msg = (
+                        f"Order status unknown, check Binance: the order may have been filled. "
+                        f"{str(e)[:100]}"
+                    )
                 except Exception as e:
                     logger.error(f"LIVE Trading failed: {e}")
                     # Don't re-raise - we'll record as FAILED transaction instead
@@ -378,7 +391,7 @@ class DCAScheduler:
                     fee_amount=0.0,
                     fee_asset="USDC",
                     source=source,
-                    binance_order_id=None  # Failed trades have no order ID
+                    binance_order_id=binance_order_id  # Set only when the order status is unknown
                 )
             else:
                 transaction = DCATransaction(
