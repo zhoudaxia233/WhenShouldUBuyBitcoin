@@ -147,3 +147,37 @@ describe("logTickStep", () => {
         expect(runtime.logTickStep("log", "array", [0, 3])).toBeUndefined();
     });
 });
+
+describe("parseTheme", () => {
+    it("reads an explicit theme from the query string", () => {
+        expect(runtime.parseTheme("?mode=preview&theme=dark")).toBe("dark");
+        expect(runtime.parseTheme("?theme=light")).toBe("light");
+    });
+
+    it("defaults to light", () => {
+        expect(runtime.parseTheme("")).toBe("light");
+        expect(runtime.parseTheme("?theme=neon")).toBe("light");
+    });
+});
+
+describe("colour checks for dark mode", () => {
+    it("finds near-black colours that vanish on a dark background", () => {
+        for (const colour of ["black", "#000", "#000000", "#111827", "rgb(0, 0, 0)", "rgba(20, 20, 20, 0.9)"]) {
+            expect(runtime.isDarkColor(colour)).toBe(true);
+        }
+    });
+
+    it("leaves coloured, light and faint colours alone", () => {
+        for (const colour of ["#e8740c", "rgb(31, 119, 180)", "white", "#f0f0f0", "rgba(0, 0, 0, 0.1)", undefined, ""]) {
+            expect(runtime.isDarkColor(colour)).toBe(false);
+        }
+    });
+
+    it("finds light backgrounds of labels and legends", () => {
+        for (const colour of ["white", "#fff", "#ffffff", "rgba(255, 255, 255, 0.8)", "rgba(255,255,255,0.6)"]) {
+            expect(runtime.isLightColor(colour)).toBe(true);
+        }
+        expect(runtime.isLightColor("#fde8e8")).toBe(false);
+        expect(runtime.isLightColor("rgba(0, 0, 0, 0)")).toBe(false);
+    });
+});

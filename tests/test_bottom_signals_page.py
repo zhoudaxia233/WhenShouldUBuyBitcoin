@@ -43,16 +43,6 @@ def test_generated_script_block_has_no_unescaped_breakout(tmp_path):
     assert snapshot["composite"] >= 0
 
 
-def test_homepage_card_renders_advice_and_caveat():
-    # the homepage summary card is the real "first glance"; it must surface the
-    # advice + a sentiment-gauge caveat, not just a bare "81 / Extremely Undervalued"
-    html = Path(__file__).resolve().parent.parent / "docs" / "index.html"
-    text = html.read_text()
-    assert 'id="bscNote"' in text  # the note element exists
-    assert "data.advice" in text  # JS renders the advice line from info JSON
-    assert "Sentiment gauge, not a buy signal" in text
-
-
 def test_status_for_score_bands():
     assert page._status_for_score(None) == ("No data", "#71717a")
     assert page._status_for_score(17.0)[0] == "Bottom zone"
@@ -221,41 +211,6 @@ def test_page_does_not_mention_reference_dashboard(tmp_path):
     assert "bitcoin-data.com" in html and "alternative.me" in html
 
 
-def test_homepage_card_states_signal_scale():
-    # the S1..S5 chips on the homepage card are meaningless without the scale;
-    # the card must say each signal is 0-20 with equal weight
-    html = Path(__file__).resolve().parent.parent / "docs" / "index.html"
-    text = html.read_text()
-    assert "each 0–20 · equal weight" in text
-
-
-def test_homepage_bottom_signals_link_is_cache_busted_by_data_date():
-    # The card fetches fresh JSON, while the self-contained detail HTML can be
-    # cached separately. Carry the JSON date into the link so a click cannot
-    # reuse an older bottom_signals.html snapshot.
-    html = Path(__file__).resolve().parent.parent / "docs" / "index.html"
-    text = html.read_text()
-    assert (
-        "card.href = 'charts/bottom_signals.html?v=' + encodeURIComponent(data.date);"
-        in text
-    )
-
-
-def test_homepage_bottom_signals_info_fetch_bypasses_cache():
-    html = Path(__file__).resolve().parent.parent / "docs" / "index.html"
-    text = html.read_text()
-    assert "charts/bottom_signals_info.json?t=' + Date.now()" in text
-    assert 'cache: "no-store"' in text
-
-
-def test_homepage_bottom_signals_mobile_main_text_gets_full_width():
-    # On mobile the score pill sits beside the main copy; without a full-width
-    # main flex item, the title/meta wrap into a very narrow column.
-    html = Path(__file__).resolve().parent.parent / "docs" / "index.html"
-    text = html.read_text()
-    assert ".bsc-main{ flex-basis:100%;" in text
-
-
 def test_generate_page_snapshot_values_are_finite(tmp_path):
     scores_df, price_df, backtest = _synthetic_inputs()
     snapshot = page.generate_bottom_signals_page(
@@ -271,3 +226,12 @@ def test_generate_page_snapshot_values_are_finite(tmp_path):
     assert snapshot["ma200"] > 0
     for sig in snapshot["signals"]:
         assert 0 <= sig["score"] <= 20
+
+
+def test_homepage_onchain_row_carries_caveat_and_dated_link():
+    # The Today view's on-chain row is the first glance: it must say the score
+    # is a sentiment gauge, and its link carries the data date so a click
+    # cannot reuse an older cached bottom_signals.html snapshot.
+    today_js = (Path(__file__).resolve().parent.parent / "docs" / "today.js").read_text()
+    assert "Sentiment gauge, not a buy signal" in today_js
+    assert '"charts/bottom_signals.html?v=" + encodeURIComponent(onchain.date)' in today_js

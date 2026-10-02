@@ -27,7 +27,8 @@ describe("Chart area", () => {
     describe("core charts", () => {
         it("shows only the two valuation charts as tabs", () => {
             const tabs = [...html.matchAll(/<button class="chart-tab[^"]*"[^>]*data-chart="([^"]+)"/g)].map(m => m[1]);
-            expect(tabs).toEqual(["ratios", "prices"]);
+            // Price vs fair value leads; the ahr999 chart is secondary
+            expect(tabs).toEqual(["prices", "ratios"]);
         });
 
         it("marks the tabs up as a tab list", () => {
@@ -88,7 +89,7 @@ describe("Chart area", () => {
         });
 
         it("loads charts in full mode", () => {
-            expect(html).toContain("'?mode=full'");
+            expect(html).toContain("chartFrameSrc(src, 'full')");
         });
     });
 
@@ -97,6 +98,10 @@ describe("Chart area", () => {
             expect(html).not.toMatch(/<iframe[^>]*class="chart-iframe"[^>]*style=/);
             expect(html).toContain("--frame-h:");
             expect(html).toContain("--frame-h-mobile:");
+        });
+
+        it("passes the page theme to every chart", () => {
+            expect(html).toContain("`${src}${src.includes('?') ? '&' : '?'}mode=${mode}&theme=${currentTheme()}`");
         });
 
         it("picks preview mode on touch devices and interactive mode otherwise", () => {

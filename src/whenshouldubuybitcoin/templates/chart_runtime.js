@@ -41,6 +41,41 @@
         return isCoarsePointer ? "preview" : "interactive";
     }
 
+    function parseTheme(search) {
+        var match = /[?&]theme=([a-z]+)/.exec(search || "");
+        return match && match[1] === "dark" ? "dark" : "light";
+    }
+
+    function parseColor(color) {
+        if (!color || typeof color !== "string") return null;
+        var value = color.trim().toLowerCase();
+        if (value === "black") return [0, 0, 0, 1];
+        if (value === "white") return [255, 255, 255, 1];
+        var hex = /^#([0-9a-f]{3}|[0-9a-f]{6})$/.exec(value);
+        if (hex) {
+            var digits = hex[1].length === 3 ? hex[1].replace(/(.)/g, "$1$1") : hex[1];
+            return [0, 2, 4].map(function (i) { return parseInt(digits.slice(i, i + 2), 16); }).concat([1]);
+        }
+        var rgb = /^rgba?\(([^)]+)\)$/.exec(value);
+        if (rgb) {
+            var parts = rgb[1].split(",").map(function (part) { return parseFloat(part); });
+            if (parts.length >= 3) return [parts[0], parts[1], parts[2], parts.length > 3 ? parts[3] : 1];
+        }
+        return null;
+    }
+
+    // Near-black strokes and text disappear on a dark background.
+    function isDarkColor(color) {
+        var c = parseColor(color);
+        return !!c && c[3] >= 0.3 && Math.max(c[0], c[1], c[2]) <= 60;
+    }
+
+    // Near-white fills (label and legend backgrounds) glare on a dark background.
+    function isLightColor(color) {
+        var c = parseColor(color);
+        return !!c && c[3] >= 0.3 && Math.min(c[0], c[1], c[2]) >= 240;
+    }
+
     function dataExtent(xs, ys, x0, x1, isLog) {
         var lo = Infinity;
         var hi = -Infinity;
@@ -148,12 +183,14 @@
     function start(win) {
         var doc = win.document;
         var mode = parseMode(win.location.search, isTopWindow(win), isCoarsePointer(win));
+        var theme = parseTheme(win.location.search);
         doc.documentElement.setAttribute("data-chart-mode", mode);
+        doc.documentElement.setAttribute("data-chart-theme", theme);
         if (/[?&]mode=/.test(win.location.search)) {
             doc.documentElement.setAttribute("data-embedded", "true");
         }
         waitForPlot(win, function (gd) {
-            setup(win, gd, mode);
+            setup(win, gd, mode, theme);
         });
     }
 
@@ -169,7 +206,7 @@
         })();
     }
 
-    function setup(win, gd, mode) {
+    function setup(win, gd, mode, theme) {
         var Plotly = win.Plotly;
         var doc = win.document;
         var touch = isCoarsePointer(win);
@@ -264,7 +301,7 @@
             syncPresets();
         });
 
-        applyMode(win, gd, mode, touch, dateAxes).then(syncPresets);
+        applyMode(win, gd, mode, touch, dateAxes, theme).then(syncPresets);
 
         if (mode === "full" && touch && dateAxes.length) {
             enablePinchZoom(win, gd, currentRange, setTimeRange, bounds);
@@ -306,7 +343,7 @@
         });
     }
 
-    function applyMode(win, gd, mode, touch, dateAxes) {
+    function applyMode(win, gd, mode, touch, dateAxes, theme) {
         var Plotly = win.Plotly;
         var fullLayout = gd._fullLayout;
         var update = {};
@@ -348,6 +385,10 @@
             if (dtick !== undefined) update[name + ".dtick"] = dtick;
         });
 
+        if (theme === "dark") {
+            applyDarkTheme(gd, update, allAxes, dateAxes);
+        }
+
         var config = {
             responsive: true,
             displaylogo: false,
@@ -360,6 +401,57 @@
             setPath(gd.layout, key, update[key]);
         });
         return Plotly.react(gd, gd.data, gd.layout, config);
+    }
+
+    var DARK = {
+        surface: "#131c2e",
+        text: "#c9d3e3",
+        strong: "#e8edf5",
+        grid: "rgba(255, 255, 255, 0.08)",
+        line: "rgba(255, 255, 255, 0.2)",
+        label: "rgba(19, 28, 46, 0.85)",
+        slider: "#0f1726",
+    };
+
+    function lightenDark(color) {
+        return isDarkColor(color) ? DARK.strong : color;
+    }
+
+    // Recolour the chart for the dark page; series colours stay as designed
+    // except near-black ones, which would vanish.
+    function applyDarkTheme(gd, update, allAxes, dateAxes) {
+        update.paper_bgcolor = DARK.surface;
+        update.plot_bgcolor = DARK.surface;
+        update["font.color"] = DARK.text;
+        update["legend.bgcolor"] = "rgba(0,0,0,0)";
+        update["hoverlabel.bgcolor"] = "#1c2740";
+        update["hoverlabel.bordercolor"] = DARK.line;
+        update["hoverlabel.font.color"] = DARK.strong;
+        allAxes.forEach(function (name) {
+            update[name + ".gridcolor"] = DARK.grid;
+            update[name + ".linecolor"] = DARK.line;
+            update[name + ".zerolinecolor"] = DARK.line;
+        });
+        dateAxes.forEach(function (name) {
+            update[name + ".rangeslider.bgcolor"] = DARK.slider;
+        });
+
+        gd.data.forEach(function (trace) {
+            if (trace.line && trace.line.color) trace.line.color = lightenDark(trace.line.color);
+            if (trace.marker) {
+                if (typeof trace.marker.color === "string") trace.marker.color = lightenDark(trace.marker.color);
+                if (trace.marker.line && trace.marker.line.color) trace.marker.line.color = lightenDark(trace.marker.line.color);
+            }
+        });
+        (gd.layout.annotations || []).forEach(function (annotation) {
+            if (isLightColor(annotation.bgcolor)) annotation.bgcolor = DARK.label;
+            if (annotation.font && isDarkColor(annotation.font.color)) annotation.font.color = DARK.strong;
+            if (isDarkColor(annotation.arrowcolor)) annotation.arrowcolor = DARK.strong;
+        });
+        (gd.layout.shapes || []).forEach(function (shape) {
+            if (shape.line && isDarkColor(shape.line.color)) shape.line.color = DARK.line;
+            if (isLightColor(shape.fillcolor)) shape.fillcolor = "rgba(255, 255, 255, 0.04)";
+        });
     }
 
     function setPath(target, path, value) {
@@ -428,6 +520,9 @@
         availablePresets: availablePresets,
         zoomRange: zoomRange,
         logTickStep: logTickStep,
+        parseTheme: parseTheme,
+        isDarkColor: isDarkColor,
+        isLightColor: isLightColor,
         start: start,
     };
 });

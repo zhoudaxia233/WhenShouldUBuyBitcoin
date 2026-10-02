@@ -1,3 +1,22 @@
+html {
+    --chart-bg: #ffffff;
+    --chart-ink: #1d1d1f;
+    --chart-muted: #6e6e73;
+    --chart-soft: #f5f5f7;
+    --chart-active: #ffffff;
+    --chart-accent: #0071e3;
+}
+
+html[data-chart-theme="dark"] {
+    --chart-bg: #131c2e;
+    --chart-ink: #e8edf5;
+    --chart-muted: #9aa7bd;
+    --chart-soft: #1c2740;
+    --chart-active: #2a3a5c;
+    --chart-accent: #8fb0ff;
+    color-scheme: dark;
+}
+
 html,
 body {
     height: 100%;
@@ -7,8 +26,8 @@ body {
 body {
     display: flex;
     flex-direction: column;
-    background: #ffffff;
-    color: #1d1d1f;
+    background: var(--chart-bg);
+    color: var(--chart-ink);
     font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif;
     -webkit-text-size-adjust: 100%;
 }
@@ -41,7 +60,7 @@ html[data-embedded] .chart-title {
     margin: 0;
     font-size: 12px;
     line-height: 1.5;
-    color: #6e6e73;
+    color: var(--chart-muted);
 }
 
 .chart-sub-item {
@@ -60,7 +79,7 @@ html[data-embedded] .chart-title {
     display: inline-flex;
     padding: 2px;
     border-radius: 8px;
-    background: #f5f5f7;
+    background: var(--chart-soft);
 }
 
 .chart-presets:empty {
@@ -74,7 +93,7 @@ html[data-embedded] .chart-title {
     border: none;
     border-radius: 6px;
     background: transparent;
-    color: #424245;
+    color: var(--chart-muted);
     font: inherit;
     font-size: 12px;
     font-weight: 600;
@@ -82,14 +101,14 @@ html[data-embedded] .chart-title {
 }
 
 .chart-preset[aria-pressed="true"] {
-    background: #ffffff;
-    color: #0071e3;
+    background: var(--chart-active);
+    color: var(--chart-accent);
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
 }
 
 .chart-preset:focus-visible,
 .chart-header .chart-info-button:focus-visible {
-    outline: 2px solid #0071e3;
+    outline: 2px solid var(--chart-accent);
     outline-offset: 2px;
 }
 
