@@ -70,28 +70,11 @@ Simply open `docs/index.html` in your browser. Note: Some features may not work 
 
 The browser tries Binance first and Coinbase second. No API key or proxy is required. If both exchange APIs fail, the page shows an error instead of using a stale price.
 
-## Deploying to GitHub Pages
+## Where the Site Is Published
 
-### Step 1: Enable GitHub Pages
+The maintained site is **https://btc.daxia.io/analysis/**. The `dca_service` app serves this `docs/` folder at `/analysis`.
 
-1. Go to your repository on GitHub
-2. Click **Settings**
-3. Scroll to **Pages** section
-4. Under **Source**, select:
-   - Branch: `main`
-   - Folder: `/docs`
-5. Click **Save**
-
-### Step 2: Wait for Deployment
-
-GitHub will build and deploy your site. It will be available at:
-```
-https://<username>.github.io/<repository-name>/
-```
-
-### Step 3: Test the Live Site
-
-Visit your GitHub Pages URL and click the "Check Real-Time Status" button.
+GitHub Pages still publishes `docs/` from `main`, at `https://daxia.io/WhenShouldUBuyBitcoin/` and `https://zhoudaxia233.github.io/WhenShouldUBuyBitcoin/`. That copy is not maintained: a script at the top of `docs/index.html` sends visitors on those hosts to the maintained site, keeping the view in the address (for example `#backtest`).
 
 ## Data Updates
 
