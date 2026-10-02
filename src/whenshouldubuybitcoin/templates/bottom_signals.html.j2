@@ -6,6 +6,12 @@
 <title>On-Chain Bottom Signals · When Should You Buy Bitcoin</title>
 <link rel="icon" type="image/svg+xml" href="../bitcoin.svg">
 <link rel="shortcut icon" href="../bitcoin.svg">
+<script>
+  // Inside the homepage's chart frame the frame has its own close button;
+  // a "Dashboard" link there would load the homepage into the frame.
+  try { if (window.top !== window) document.documentElement.setAttribute("data-embedded", "true"); }
+  catch (err) { document.documentElement.setAttribute("data-embedded", "true"); }
+</script>
 <script src="{{ plotly_cdn }}"></script>
 <style>
   :root {
@@ -25,6 +31,7 @@
     box-shadow:0 1px 3px rgba(0,0,0,0.04); transition:all .18s ease; }
   .back-link:hover { color:#0066cc; border-color:#bfdbfe; box-shadow:0 3px 10px rgba(0,0,0,0.07);
     transform:translateY(-1px); }
+  html[data-embedded] .back-link { display:none; }
   .page-meta { display:flex; align-items:center; gap:8px; flex-wrap:wrap;
     font-size:13px; color:var(--muted); }
   .page-meta b { color:var(--text); font-size:15px; }
@@ -257,7 +264,7 @@
       <b>S4</b> 30-day realized-cap net change (historical percentile),
       <b>S5</b> the Fear &amp; Greed Index. Zones: &lt;60 Watch, 60-70 Mildly Undervalued, 70-80 Undervalued, ≥80 Extremely Undervalued. <span style="font-style:italic;">(σ = how far a value sits from its historical average in standard deviations; "Nth percentile" = lower than that share of history — both just measure how extreme today is.)</span></p>
       <p><b>Honest caveats:</b> on-chain history comes from a free API limited to the most recent ~4 years, so the backtest spans only two cycle lows ({{ cycle_bottoms_label }}) — far fewer cycles than ideal. Each day is scored only with data known that day (expanding windows), so the earliest scores rank against a short history and scoring starts only in {{ first_score_label }}, after the 2022 low. On the remaining sample the composite largely <b>missed the 2024 cycle low</b>, which stayed in the "Watch" zone (below 60), so the accuracy cells above are illustrative, not proof it can time bottoms. Signals S2-S4 are <b>highly correlated</b> (~0.9 on this sample): they largely restate the same "price fell hard" fact, so a high composite is closer to one factor counted three times than to five independent signals confirming each other. S3 uses supply-weighted loss share rather than the value-weighted "relative unrealized loss" used by some paid dashboards; because S3 and S4 lean on these free-tier proxies, the composite tends to read <b>warmer (higher)</b> than value-weighted dashboards, so treat the zone as a sentiment gauge rather than a buy signal. None of this is investment advice.</p>
-      <p>Data sources: <a href="https://bitcoin-data.com" style="color:#0066cc;">bitcoin-data.com (BGeometrics)</a> on-chain series · <a href="https://alternative.me/crypto/fear-and-greed-index/" style="color:#0066cc;">alternative.me</a> Fear &amp; Greed.</p>
+      <p>Data sources: <a href="https://bitcoin-data.com" target="_blank" rel="noopener" style="color:#0066cc;">bitcoin-data.com (BGeometrics)</a> on-chain series · <a href="https://alternative.me/crypto/fear-and-greed-index/" target="_blank" rel="noopener" style="color:#0066cc;">alternative.me</a> Fear &amp; Greed.</p>
     </div>
   </div>
 </div>

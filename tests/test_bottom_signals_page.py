@@ -1,5 +1,6 @@
 """Tests for the prerendered bottom-signals dashboard page."""
 import json
+import re
 from pathlib import Path
 
 import numpy as np
@@ -236,3 +237,23 @@ def test_homepage_onchain_row_carries_caveat_and_dated_link():
     today_js = (Path(__file__).resolve().parent.parent / "docs" / "today.js").read_text()
     assert "Sentiment gauge, not a buy signal" in today_js
     assert '"charts/bottom_signals.html?v=" + encodeURIComponent(onchain.date)' in today_js
+
+
+def test_links_never_navigate_the_homepage_chart_frame(tmp_path):
+    # The homepage opens this page inside a full-screen iframe. Clicking a link
+    # there used to load the target into the frame: "Dashboard" put the whole
+    # homepage under the "On-chain bottom signals" bar.
+    scores_df, price_df, backtest = _synthetic_inputs()
+    html_path = tmp_path / "bottom_signals.html"
+    page.generate_bottom_signals_page(
+        scores_df, price_df, backtest, output_path=html_path, info_path=tmp_path / "info.json"
+    )
+    html = html_path.read_text()
+
+    assert "window.top !== window" in html
+    assert 'setAttribute("data-embedded", "true")' in html
+    assert "html[data-embedded] .back-link { display:none; }" in html
+    external = re.findall(r'<a href="https?://[^"]*"[^>]*>', html)
+    assert len(external) == 2
+    for tag in external:
+        assert 'target="_blank"' in tag and 'rel="noopener"' in tag
