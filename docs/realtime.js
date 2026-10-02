@@ -61,6 +61,34 @@ async function loadCSVData() {
 }
 
 /**
+ * Latest MVRV reading from the on-chain dataset, or null when unavailable.
+ * Used only as a cross-check, so a failure must not break the page.
+ * @returns {Promise<{value: number, date: string}|null>}
+ */
+async function loadLatestMvrv() {
+    try {
+        const response = await fetch(`data/onchain_metrics.csv?t=${Date.now()}`, { cache: "no-store" });
+        if (!response.ok) return null;
+        const lines = (await response.text()).trim().split("\n");
+        const headers = lines[0].split(",");
+        const dateIndex = headers.indexOf("date");
+        const mvrvIndex = headers.indexOf("mvrv");
+        if (dateIndex < 0 || mvrvIndex < 0) return null;
+        for (let i = lines.length - 1; i > 0; i--) {
+            const values = lines[i].split(",");
+            const value = parseFloat(values[mvrvIndex]);
+            if (Number.isFinite(value)) {
+                return { value, date: values[dateIndex] };
+            }
+        }
+        return null;
+    } catch (error) {
+        console.warn("MVRV cross-check unavailable:", error);
+        return null;
+    }
+}
+
+/**
  * Load metadata (trend parameters) from JSON
  * @returns {Promise<Object>} Metadata object with trend_a and trend_b
  */
@@ -712,31 +740,27 @@ function isDaylightSavingTime(date) {
  * This is the main function that orchestrates all calculations
  */
 async function checkRealtimeStatus() {
-    const loadingEl = document.getElementById("loading");
     const resultsEl = document.getElementById("results");
-    const buttonEl = document.getElementById("checkButton");
-    const placeholderEl = document.getElementById("results-placeholder");
+    const refreshEl = document.getElementById("todayRefresh");
+    const todayEl = document.getElementById("today-tab");
 
     try {
-        // Switch to Analysis tab
-        if (typeof switchMainTab === "function") {
-            switchMainTab("analysis");
-        }
-
         // Show loading state
-        loadingEl.style.display = "block";
         resultsEl.classList.remove("show");
-        if (placeholderEl) {
-            placeholderEl.classList.add("hidden");
+        if (todayEl) {
+            todayEl.setAttribute("data-state", "loading");
         }
-        buttonEl.disabled = true;
+        if (refreshEl) {
+            refreshEl.disabled = true;
+        }
 
         // 1. Load historical data
         console.log("Loading historical data...");
-        const [csvData, metadata, dailyReportSnapshot] = await Promise.all([
+        const [csvData, metadata, dailyReportSnapshot, latestMvrv] = await Promise.all([
             loadCSVData(),
             loadMetadata(),
             loadDailyReportSnapshot(),
+            loadLatestMvrv(),
         ]);
 
         // Extract close prices from CSV
@@ -795,8 +819,9 @@ async function checkRealtimeStatus() {
         const timestamps = formatTimestamps(timestamp);
 
         // 8. Display results
-        displayResults({
+        const statusData = {
             price: realtimePrice,
+            fetchedAt: timestamp,
             priceSource: priceSource,
             timestamps,
             dcaCost,
@@ -814,31 +839,36 @@ async function checkRealtimeStatus() {
             rsiContext,
             freeBottomingSignals,
             lastDataDate: csvData[csvData.length - 1].date,
-        });
-    } catch (error) {
-        // Hide placeholder on error
-        const placeholderEl = document.getElementById("results-placeholder");
-        if (placeholderEl) {
-            placeholderEl.classList.add("hidden");
+        };
+        displayResults(statusData);
+        if (window.TodayView) {
+            window.TodayView.renderStatus(
+                statusData,
+                window.TodayView.onchainFromReport(dailyReportSnapshot)
+            );
+            // 200-week average: last 1,399 daily closes plus today's live price
+            const last1399 = historicalPrices.slice(-1399).filter(Number.isFinite);
+            const ma200w = last1399.length === 1399
+                ? (last1399.reduce((sum, price) => sum + price, 0) + realtimePrice) / 1400
+                : null;
+            window.TodayView.renderCrossChecks({ price: realtimePrice, ma200w, mvrv: latestMvrv });
         }
-
-        // Display error
+    } catch (error) {
+        // Public page: log the details, show a plain message
+        console.error("Real-time check failed:", error);
+        if (window.TodayView) {
+            window.TodayView.renderStatusError();
+        }
         resultsEl.innerHTML = `
             <div class="error">
-                <strong>Error:</strong> ${error.message}
-                <br><br>
-                ${
-                    error.message.includes("CORS")
-                        ? "Try enabling CORS proxy in the code (CONFIG.USE_CORS_PROXY = true) or contact the developer."
-                        : "Please try again later."
-                }
+                The live price could not be loaded. Please try again in a moment.
             </div>
         `;
         resultsEl.classList.add("show");
     } finally {
-        // Hide loading state
-        loadingEl.style.display = "none";
-        buttonEl.disabled = false;
+        if (refreshEl) {
+            refreshEl.disabled = false;
+        }
     }
 }
 
@@ -1174,6 +1204,9 @@ function getBuyZoneAnalysis(data) {
 
 // Add event listener when DOM is ready
 document.addEventListener("DOMContentLoaded", () => {
-    const buttonEl = document.getElementById("checkButton");
-    buttonEl.addEventListener("click", checkRealtimeStatus);
+    const refreshEl = document.getElementById("todayRefresh");
+    if (refreshEl) {
+        refreshEl.addEventListener("click", checkRealtimeStatus);
+    }
+    checkRealtimeStatus();
 });

@@ -7,6 +7,18 @@
     <link rel="icon" type="image/svg+xml" href="./bitcoin.svg">
     <link rel="shortcut icon" href="./bitcoin.svg">
     <script>
+        try {
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme === 'dark' || savedTheme === 'light') {
+                document.documentElement.setAttribute('data-theme', savedTheme);
+            }
+        } catch (error) {
+            // Storage blocked: follow the system theme.
+        }
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@500&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap">
+    <script>
         const SATSFLOW_ANALYSIS_URL = "https://btc.daxia.io/analysis/";
         const GITHUB_PAGES_HOST = "zhoudaxia233.github.io";
         if (
@@ -23,92 +35,791 @@
             box-sizing: border-box;
         }
 
+        /* Theme tokens: light by default, dark from the system or the toggle */
+        :root {
+            --bg: #f3f5f8;
+            --surface: #ffffff;
+            --bg-soft: #f5f6f9;
+            --ink: #0f1b2d;
+            --muted: #4f5b70;
+            --line: #e3e7ee;
+            --line-strong: #c4cad6;
+            --blue: #1f4fd1;
+            --blue-soft: #e3efff;
+            --button: #1f4fd1;
+            --button-hover: #183fa8;
+            --good: #1f4fd1;
+            --good-soft: #e3efff;
+            --warn: #e8933c;
+            --warn-soft: #fdf0e1;
+            --warn-ink: #9a4a06;
+            --accent: #e8740c;
+            --feature: #0f1b2d;
+            --feature-ink: #ffffff;
+            --feature-muted: #c9d2e3;
+            --feature-accent: #ffb36b;
+            --meter-1: #e4e8ef;
+            --meter-2: #bcd9ee;
+            --meter-3: #5fa8d3;
+            --meter-4: #1f4fd1;
+            --shadow: 0 1px 2px rgba(15, 27, 45, 0.05);
+            --font-body: "DM Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            --font-mono: "DM Mono", ui-monospace, "SF Mono", monospace;
+            color-scheme: light;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root:not([data-theme="light"]) {
+                --bg: #0b1220;
+                --surface: #131c2e;
+                --bg-soft: #18233a;
+                --ink: #e8edf5;
+                --muted: #9aa7bd;
+                --line: #24324a;
+                --line-strong: #34445f;
+                --blue: #8fb0ff;
+                --blue-soft: #1c2c4d;
+                --button: #2f5fe0;
+                --button-hover: #4772ea;
+                --good: #8fb0ff;
+                --good-soft: #1c2c4d;
+                --warn: #f0a050;
+                --warn-soft: #3a2a17;
+                --warn-ink: #f3b26b;
+                --accent: #f0943f;
+                --feature: #1c2c4d;
+                --feature-ink: #ffffff;
+                --feature-muted: #c4d0e6;
+                --feature-accent: #ffb36b;
+                --meter-1: #24324a;
+                --meter-2: #2d4f7a;
+                --meter-3: #4d86c4;
+                --meter-4: #8fb0ff;
+                --shadow: none;
+                color-scheme: dark;
+            }
+        }
+
+        :root[data-theme="dark"] {
+            --bg: #0b1220;
+            --surface: #131c2e;
+            --bg-soft: #18233a;
+            --ink: #e8edf5;
+            --muted: #9aa7bd;
+            --line: #24324a;
+            --line-strong: #34445f;
+            --blue: #8fb0ff;
+            --blue-soft: #1c2c4d;
+            --button: #2f5fe0;
+            --button-hover: #4772ea;
+            --good: #8fb0ff;
+            --good-soft: #1c2c4d;
+            --warn: #f0a050;
+            --warn-soft: #3a2a17;
+            --warn-ink: #f3b26b;
+            --accent: #f0943f;
+            --feature: #1c2c4d;
+            --feature-ink: #ffffff;
+            --feature-muted: #c4d0e6;
+            --feature-accent: #ffb36b;
+            --meter-1: #24324a;
+            --meter-2: #2d4f7a;
+            --meter-3: #4d86c4;
+            --meter-4: #8fb0ff;
+            --shadow: none;
+            color-scheme: dark;
+        }
+
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, sans-serif;
-            background: #f5f5f7;
-            color: #1d1d1f;
+            font-family: var(--font-body);
+            background: var(--bg);
+            color: var(--ink);
             line-height: 1.6;
         }
 
+        .mono {
+            font-family: var(--font-mono);
+            font-variant-numeric: tabular-nums;
+        }
+
         .container {
-            max-width: 1200px;
+            max-width: 1160px;
             margin: 0 auto;
-            padding: 40px 20px;
+            padding: 20px 20px 48px;
         }
 
-        .header {
-            text-align: center;
-            margin-bottom: 60px;
-        }
-
-        .header h1 {
-            font-size: 3em;
-            font-weight: 600;
-            letter-spacing: -0.02em;
-            margin-bottom: 12px;
-        }
-
-        .bitcoin-icon {
-            width: 1.5em;
-            height: 1.5em;
-            vertical-align: middle;
-            margin-left: 0.25em;
-            transform: translateY(-0.08em);
-        }
-
-        .header-actions {
-            margin-top: 24px;
+        /* Header and navigation */
+        .site-header {
             display: flex;
-            flex-direction: column;
             align-items: center;
-            gap: 12px;
+            justify-content: space-between;
+            gap: 16px;
+            margin-bottom: 24px;
         }
 
-        .header .check-button {
-            margin: 0;
-        }
-
-        .header .loading {
-            margin: 0;
-        }
-
-        /* Main Tab Navigation */
-        .main-tabs {
+        .brand {
             display: flex;
-            justify-content: center;
-            gap: 0;
-            margin: 40px 0 30px;
-            background: white;
-            border-radius: 12px;
-            padding: 8px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-            max-width: 600px;
+            align-items: center;
+            gap: 10px;
+            color: var(--ink);
+            font-size: 18px;
+            font-weight: 700;
+            text-decoration: none;
+            white-space: nowrap;
+        }
+
+        .brand-coin {
+            width: 30px;
+            height: 30px;
+        }
+
+        .site-nav {
+            display: flex;
+            gap: 4px;
+            padding: 4px;
             margin-left: auto;
-            margin-right: auto;
+            background: var(--surface);
+            border-radius: 999px;
+            box-shadow: var(--shadow);
         }
 
         .main-tab {
-            flex: 1;
-            padding: 12px 20px;
-            font-size: 15px;
-            font-weight: 500;
-            color: #86868b;
-            background: transparent;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            min-height: 36px;
+            padding: 0 16px;
             border: none;
-            border-radius: 8px;
+            border-radius: 999px;
+            background: transparent;
+            color: var(--muted);
+            font: inherit;
+            font-size: 14px;
+            font-weight: 500;
             cursor: pointer;
-            transition: all 0.2s ease;
-            text-align: center;
+            transition: background 0.2s ease, color 0.2s ease;
+        }
+
+        .main-tab svg {
+            display: none;
         }
 
         .main-tab:hover {
-            color: #1d1d1f;
-            background: #f5f5f7;
+            color: var(--ink);
         }
 
         .main-tab.active {
-            color: #0071e3;
-            background: #e8f4fd;
+            background: var(--ink);
+            color: var(--surface);
+        }
+
+        .theme-toggle {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 44px;
+            height: 44px;
+            flex-shrink: 0;
+            border: none;
+            border-radius: 50%;
+            background: var(--surface);
+            color: var(--ink);
+            box-shadow: var(--shadow);
+            cursor: pointer;
+        }
+
+        .theme-icon-sun,
+        :root[data-theme="dark"] .theme-icon-moon {
+            display: none;
+        }
+
+        :root[data-theme="dark"] .theme-icon-sun {
+            display: block;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root:not([data-theme="light"]) .theme-icon-moon { display: none; }
+            :root:not([data-theme="light"]) .theme-icon-sun { display: block; }
+        }
+
+        .main-tab:focus-visible,
+        .theme-toggle:focus-visible,
+        .brand:focus-visible,
+        .text-button:focus-visible,
+        .explore-card:focus-visible,
+        .disclosure > summary:focus-visible {
+            outline: 2px solid var(--blue);
+            outline-offset: 2px;
+        }
+
+        /* Shared building blocks */
+        .card {
+            background: var(--surface);
+            border-radius: 22px;
+            box-shadow: var(--shadow);
+        }
+
+        .eyebrow {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--muted);
+        }
+
+        .chip {
+            flex-shrink: 0;
+            padding: 3px 10px;
+            border-radius: 999px;
+            background: var(--bg-soft);
+            color: var(--muted);
+            font-size: 12px;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .chip--good {
+            background: var(--good-soft);
+            color: var(--good);
+        }
+
+        .chip--warn {
+            background: var(--warn-soft);
+            color: var(--warn-ink);
+        }
+
+        .text-button {
+            border: none;
+            background: none;
+            padding: 4px 2px;
+            color: var(--blue);
+            font: inherit;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .text-button:disabled {
+            color: var(--muted);
+            cursor: default;
+        }
+
+        .section-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            flex-wrap: wrap;
+            gap: 4px 16px;
+            margin-bottom: 12px;
+        }
+
+        .section-title {
+            font-size: 20px;
+            font-weight: 700;
+        }
+
+        .section-note {
+            font-size: 14px;
+            color: var(--muted);
+        }
+
+        /* Today view */
+        #today-tab.active {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .today-hero {
+            padding: 30px 34px;
+        }
+
+        .today-hero-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 32px;
+        }
+
+        .today-headline {
+            margin-top: 8px;
+            font-size: 44px;
+            line-height: 1.1;
+            font-weight: 700;
+            letter-spacing: -0.01em;
+            text-wrap: balance;
+        }
+
+        .today-headline-line {
+            display: block;
+        }
+
+        #today-tab[data-state="loading"] .today-headline {
+            color: var(--muted);
+        }
+
+        .today-price {
+            flex-shrink: 0;
+            text-align: right;
+        }
+
+        .today-price-value {
+            margin-top: 4px;
+            font-size: 32px;
+            line-height: 1.2;
+        }
+
+        .today-price-meta {
+            font-size: 13px;
+            color: var(--muted);
+        }
+
+        .today-actions {
+            list-style: none;
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 24px;
+            margin-top: 26px;
+            padding-top: 22px;
+            border-top: 1px solid var(--line);
+        }
+
+        .today-actions:empty {
+            display: none;
+        }
+
+        .today-action {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            width: 100%;
+            min-width: 0;
+            padding: 10px;
+            margin: -10px;
+            border: none;
+            border-radius: 14px;
+            background: none;
+            color: inherit;
+            font: inherit;
+            text-align: left;
+        }
+
+        .today-action--link {
+            cursor: pointer;
+            transition: background 0.15s ease;
+        }
+
+        .today-action--link:hover,
+        .backdrop-card--link:hover {
+            background: var(--bg-soft);
+        }
+
+        .today-action--link:focus-visible,
+        .backdrop-card--link:focus-visible,
+        .measure-link:focus-visible {
+            outline: 2px solid var(--blue);
+            outline-offset: 2px;
+        }
+
+        .today-action-text {
+            flex: 1 1 auto;
+            min-width: 0;
+        }
+
+        .today-action-title,
+        .today-action-detail {
+            display: block;
+        }
+
+        .link-chevron {
+            flex-shrink: 0;
+            align-self: center;
+            color: var(--muted);
+            transition: transform 0.15s ease, color 0.15s ease;
+        }
+
+        .today-action--link:hover .link-chevron,
+        .backdrop-card--link:hover .link-chevron,
+        .measure-link:hover .link-chevron {
+            color: var(--blue);
+            transform: translateX(2px);
+        }
+
+        .today-action-dot--stale {
+            background: var(--bg-soft);
+            color: var(--muted);
+        }
+
+        .today-action--stale .today-action-detail {
+            color: var(--warn-ink);
+        }
+
+        .today-action-dot {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 30px;
+            height: 30px;
+            flex-shrink: 0;
+            border-radius: 50%;
+        }
+
+        .today-action-dot--good {
+            background: var(--good-soft);
+            color: var(--good);
+        }
+
+        .today-action-dot--warn {
+            background: var(--warn-soft);
+            color: var(--warn-ink);
+        }
+
+        .today-action-title {
+            font-weight: 700;
+        }
+
+        .today-action-detail {
+            margin-top: 2px;
+            font-size: 14px;
+            color: var(--muted);
+        }
+
+        .today-measures {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 16px;
+        }
+
+        .measure-card {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            padding: 20px 22px;
+            min-width: 0;
+        }
+
+        .measure-card--meter {
+            align-items: center;
+        }
+
+        .measure-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 8px;
+            align-self: stretch;
+        }
+
+        .measure-title {
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .measure-value {
+            font-size: 30px;
+            line-height: 1.2;
+        }
+
+        .measure-detail {
+            font-size: 14px;
+            color: var(--muted);
+        }
+
+        .measure-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 2px;
+            align-self: flex-start;
+            min-height: 32px;
+            margin-top: auto;
+            padding: 4px 0;
+            border: none;
+            background: none;
+            color: var(--blue);
+            font: inherit;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .measure-card--meter .measure-link {
+            align-self: center;
+        }
+
+        .measure-note {
+            font-size: 13px;
+            line-height: 1.45;
+            color: var(--muted);
+            text-align: center;
+        }
+
+        .measure-number {
+            font-size: 20px;
+            color: var(--ink);
+        }
+
+        .meter {
+            width: 230px;
+            max-width: 100%;
+            height: auto;
+        }
+
+        .meter-arc {
+            fill: none;
+            stroke-width: 30;
+        }
+
+        .meter-arc--1 { stroke: var(--meter-1); }
+        .meter-arc--2 { stroke: var(--meter-2); }
+        .meter-arc--3 { stroke: var(--meter-3); }
+        .meter-arc--4 { stroke: var(--meter-4); }
+
+        .meter-needle {
+            stroke: var(--ink);
+            stroke-width: 7;
+            stroke-linecap: round;
+            transition: x2 0.6s ease, y2 0.6s ease;
+        }
+
+        .meter-hub {
+            fill: var(--ink);
+        }
+
+        .meter-caption {
+            font-size: 14px;
+            color: var(--muted);
+            text-align: center;
+        }
+
+        .meter-bar {
+            height: 8px;
+            border-radius: 4px;
+            background: var(--bg-soft);
+            overflow: hidden;
+        }
+
+        .meter-bar-fill {
+            width: 0;
+            height: 100%;
+            border-radius: 4px;
+            background: var(--line-strong);
+            transition: width 0.6s ease;
+        }
+
+        .meter-bar-fill--good { background: var(--good); }
+        .meter-bar-fill--warn { background: var(--warn); }
+
+        .crosscheck-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 12px;
+        }
+
+        .crosscheck-card {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 6px;
+            width: 100%;
+            padding: 18px 22px;
+            border: none;
+            color: var(--ink);
+            font: inherit;
+            text-align: left;
+            cursor: pointer;
+            transition: background 0.15s ease;
+        }
+
+        .crosscheck-card:hover {
+            background: var(--bg-soft);
+        }
+
+        .crosscheck-card:focus-visible {
+            outline: 2px solid var(--blue);
+            outline-offset: 2px;
+        }
+
+        .crosscheck-card .link-chevron {
+            position: absolute;
+            top: 20px;
+            right: 18px;
+        }
+
+        .crosscheck-card:hover .link-chevron {
+            color: var(--blue);
+            transform: translateX(2px);
+        }
+
+        .crosscheck-label {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--muted);
+        }
+
+        .crosscheck-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .crosscheck-value {
+            font-size: 26px;
+            line-height: 1.2;
+        }
+
+        .crosscheck-detail {
+            font-size: 14px;
+            color: var(--muted);
+        }
+
+        .crosscheck-card--stale .crosscheck-detail {
+            color: var(--warn-ink);
+        }
+
+        .backdrop-grid {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 12px;
+        }
+
+        .backdrop-card {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            width: 100%;
+            padding: 16px 18px;
+            border: none;
+            border-radius: 18px;
+            background: var(--surface);
+            box-shadow: var(--shadow);
+            color: var(--ink);
+            font: inherit;
+            text-align: left;
+        }
+
+        .backdrop-card--link {
+            cursor: pointer;
+            transition: background 0.15s ease;
+        }
+
+        .backdrop-card .link-chevron {
+            position: absolute;
+            top: 18px;
+            right: 16px;
+        }
+
+        .backdrop-label,
+        .backdrop-detail {
+            font-size: 13px;
+            color: var(--muted);
+        }
+
+        .backdrop-value {
+            margin: 6px 0 4px;
+            font-size: 20px;
+            font-weight: 700;
+        }
+
+        .disclosure > summary {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            min-height: 56px;
+            padding: 0 24px;
+            font-weight: 600;
+            cursor: pointer;
+            list-style: none;
+        }
+
+        .disclosure > summary::-webkit-details-marker {
+            display: none;
+        }
+
+        .disclosure > summary::before {
+            content: "";
+            width: 8px;
+            height: 8px;
+            border-right: 2px solid var(--muted);
+            border-bottom: 2px solid var(--muted);
+            transform: rotate(-45deg);
+            transition: transform 0.2s ease;
+        }
+
+        .disclosure[open] > summary::before {
+            transform: rotate(45deg);
+        }
+
+        .summary-note {
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--muted);
+        }
+
+        .disclosure > .daily-report-card,
+        .disclosure > .result-section {
+            margin: 0 24px 24px;
+        }
+
+        .explore-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 12px;
+        }
+
+        .explore-card {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 8px;
+            min-height: 140px;
+            padding: 22px 24px;
+            border: none;
+            border-radius: 22px;
+            background: var(--surface);
+            box-shadow: var(--shadow);
+            color: var(--ink);
+            font: inherit;
+            text-align: left;
+            cursor: pointer;
+        }
+
+        .explore-card--feature {
+            background: var(--feature);
+            color: var(--feature-ink);
+        }
+
+        .explore-title {
+            font-size: 18px;
+            font-weight: 700;
+        }
+
+        .explore-desc {
+            font-size: 14px;
+            color: var(--muted);
+        }
+
+        .explore-card--feature .explore-desc {
+            color: var(--feature-muted);
+        }
+
+        .explore-link {
+            margin-top: auto;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--blue);
+        }
+
+        .explore-card--feature .explore-link {
+            color: var(--feature-accent);
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .meter-needle,
+            .meter-bar-fill,
+            .tab-content.active {
+                transition: none;
+                animation: none;
+            }
         }
 
         /* Tab Content */
@@ -128,33 +839,21 @@
 
         /* Chart Container */
         .chart-container {
-            background: white;
+            background: var(--surface);
             border-radius: 18px;
             padding: 30px;
             margin-bottom: 30px;
             box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
         }
 
-        .bottom-signals-card { display:flex; align-items:center; gap:16px; background:white; border-radius:18px; padding:18px 24px; margin-bottom:20px; box-shadow:0 2px 8px rgba(0,0,0,0.06); text-decoration:none; color:#1d1d1f; transition:box-shadow .2s; }
-        .bottom-signals-card:hover { box-shadow:0 4px 16px rgba(0,0,0,0.10); }
-        .bsc-main { flex:1; min-width:0; }
-        .bsc-title { font-weight:600; font-size:1.05em; }
-        .bsc-meta { color:#86868b; font-size:0.85em; margin-top:2px; }
-        .bsc-note { color:#86868b; font-size:0.8em; margin-top:6px; line-height:1.4; max-width:640px; }
-        .bsc-score-wrap { display:flex; align-items:baseline; gap:6px; white-space:nowrap; }
-        .bsc-score { font-size:1.9em; font-weight:700; }
-        .bsc-score-max { color:#86868b; font-size:0.9em; }
-        .bsc-zone { font-size:0.8em; font-weight:600; padding:4px 10px; border-radius:999px; background:rgba(0,0,0,0.05); }
-        .bsc-arrow { color:#86868b; font-size:1.4em; }
-        @media (max-width:600px){ .bottom-signals-card{ padding:14px 16px; gap:10px; flex-wrap:wrap; } .bsc-main{ flex-basis:100%; } .bsc-score-wrap{ margin-left:auto; } .bsc-score{ font-size:1.5em; } }
 
         .daily-report-card {
-            background: white;
+            background: var(--surface);
             border-radius: 18px;
             padding: 24px 28px;
             margin-bottom: 22px;
             box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
-            border: 1px solid #ececf1;
+            border: 1px solid var(--line);
         }
 
         .daily-report-header {
@@ -169,7 +868,7 @@
         .daily-report-title {
             font-size: 1.2em;
             font-weight: 600;
-            color: #1d1d1f;
+            color: var(--ink);
         }
 
         .daily-report-title-row {
@@ -185,14 +884,14 @@
             gap: 4px;
             padding: 3px;
             border-radius: 999px;
-            border: 1px solid #d2d2d7;
-            background: #f5f5f7;
+            border: 1px solid var(--line);
+            background: var(--bg-soft);
         }
 
         .daily-report-lang-btn {
             border: none;
             background: transparent;
-            color: #6e6e73;
+            color: var(--muted);
             font-size: 12px;
             font-weight: 600;
             padding: 5px 10px;
@@ -201,19 +900,19 @@
         }
 
         .daily-report-lang-btn.active {
-            background: #0071e3;
+            background: var(--button);
             color: #ffffff;
         }
 
         .daily-report-meta {
             font-size: 13px;
-            color: #6e6e73;
+            color: var(--muted);
         }
 
         .daily-report-hint {
             margin-top: 4px;
             font-size: 12px;
-            color: #6e6e73;
+            color: var(--muted);
         }
 
         .daily-report-list {
@@ -223,7 +922,7 @@
 
         .daily-report-list li {
             margin: 8px 0;
-            color: #1d1d1f;
+            color: var(--ink);
             font-size: 14px;
             line-height: 1.5;
         }
@@ -231,14 +930,14 @@
         .daily-report-overall {
             padding: 12px 14px;
             border-radius: 10px;
-            background: #f8f8fb;
-            border: 1px solid #e7e7ec;
+            background: var(--bg-soft);
+            border: 1px solid var(--line);
             font-size: 14px;
-            color: #1d1d1f;
+            color: var(--ink);
         }
 
         .daily-report-empty {
-            color: #6e6e73;
+            color: var(--muted);
             font-size: 14px;
         }
 
@@ -249,7 +948,7 @@
             justify-content: space-between;
             gap: 12px;
             margin-bottom: 16px;
-            border-bottom: 1px solid #d2d2d7;
+            border-bottom: 1px solid var(--line);
         }
 
         .chart-tabs {
@@ -262,7 +961,7 @@
             padding: 12px 20px;
             font-size: 15px;
             font-weight: 500;
-            color: #86868b;
+            color: var(--muted);
             background: none;
             border: none;
             border-bottom: 2px solid transparent;
@@ -272,12 +971,12 @@
         }
 
         .chart-tab:hover {
-            color: #1d1d1f;
+            color: var(--ink);
         }
 
         .chart-tab.active {
-            color: #0071e3;
-            border-bottom-color: #0071e3;
+            color: var(--blue);
+            border-bottom-color: var(--blue);
         }
 
         .chart-tab:focus-visible,
@@ -286,7 +985,7 @@
         .reference-card:focus-visible,
         .reference-viewer-close:focus-visible,
         .chart-fullscreen-close:focus-visible {
-            outline: 2px solid #0071e3;
+            outline: 2px solid var(--blue);
             outline-offset: 2px;
         }
 
@@ -298,10 +997,10 @@
             min-height: 32px;
             margin-bottom: 8px;
             padding: 6px 12px;
-            border: 1px solid #d2d2d7;
+            border: 1px solid var(--line);
             border-radius: 8px;
-            background: #ffffff;
-            color: #1d1d1f;
+            background: var(--surface);
+            color: var(--ink);
             font-size: 13px;
             font-weight: 500;
             cursor: pointer;
@@ -309,8 +1008,8 @@
         }
 
         .chart-fullscreen-btn:hover {
-            background: #f5f5f7;
-            border-color: #b9b9be;
+            background: var(--bg-soft);
+            border-color: var(--line-strong);
         }
 
         .chart-content {
@@ -327,7 +1026,7 @@
             height: var(--frame-h, 600px);
             border-radius: 12px;
             overflow: hidden;
-            background: #ffffff;
+            background: var(--surface);
         }
 
         .chart-frame--square {
@@ -355,7 +1054,7 @@
             display: none;
             margin: 10px 0 0;
             font-size: 12px;
-            color: #86868b;
+            color: var(--muted);
             text-align: center;
         }
 
@@ -368,7 +1067,7 @@
         /* Reference charts */
         .reference-charts {
             margin-top: 24px;
-            border-top: 1px solid #e5e5ea;
+            border-top: 1px solid var(--line);
             padding-top: 8px;
         }
 
@@ -382,14 +1081,14 @@
             padding: 10px 4px;
             border: none;
             background: none;
-            color: #1d1d1f;
+            color: var(--ink);
             font: inherit;
             text-align: left;
             cursor: pointer;
         }
 
         .reference-toggle-chevron {
-            color: #86868b;
+            color: var(--muted);
             transition: transform 0.2s ease;
         }
 
@@ -406,8 +1105,8 @@
             min-width: 22px;
             padding: 1px 7px;
             border-radius: 999px;
-            background: #f5f5f7;
-            color: #6e6e73;
+            background: var(--bg-soft);
+            color: var(--muted);
             font-size: 12px;
             font-weight: 600;
             text-align: center;
@@ -416,7 +1115,7 @@
         .reference-toggle-note {
             margin-left: auto;
             font-size: 12px;
-            color: #86868b;
+            color: var(--muted);
         }
 
         .reference-panel {
@@ -426,9 +1125,9 @@
         .reference-viewer {
             margin-bottom: 16px;
             padding: 16px;
-            border: 1px solid #e5e5ea;
+            border: 1px solid var(--line);
             border-radius: 14px;
-            background: #fbfbfd;
+            background: var(--bg-soft);
             scroll-margin-top: 16px;
         }
 
@@ -444,13 +1143,13 @@
             margin: 0;
             font-size: 17px;
             font-weight: 600;
-            color: #1d1d1f;
+            color: var(--ink);
         }
 
         .reference-viewer-desc {
             margin: 4px 0 0;
             font-size: 13px;
-            color: #6e6e73;
+            color: var(--muted);
         }
 
         .reference-viewer-actions {
@@ -473,13 +1172,13 @@
             border: none;
             border-radius: 8px;
             background: transparent;
-            color: #6e6e73;
+            color: var(--muted);
             cursor: pointer;
         }
 
         .reference-viewer-close:hover {
-            background: #ececf0;
-            color: #1d1d1f;
+            background: var(--bg-soft);
+            color: var(--ink);
         }
 
         .futures-oi-layout {
@@ -492,9 +1191,9 @@
         .oi-quadrant-legend {
             margin-top: 8px;
             padding: 8px 10px;
-            border: 1px solid #e5e5ea;
+            border: 1px solid var(--line);
             border-radius: 10px;
-            background: #ffffff;
+            background: var(--surface);
             font-size: 13px;
             line-height: 1.6;
         }
@@ -511,10 +1210,10 @@
             align-items: flex-start;
             gap: 6px;
             padding: 14px 16px;
-            border: 1px solid #e5e5ea;
+            border: 1px solid var(--line);
             border-radius: 14px;
-            background: #ffffff;
-            color: #1d1d1f;
+            background: var(--surface);
+            color: var(--ink);
             font: inherit;
             text-align: left;
             cursor: pointer;
@@ -522,13 +1221,13 @@
         }
 
         .reference-card:hover {
-            border-color: #b9b9be;
+            border-color: var(--line-strong);
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
         }
 
         .reference-card[aria-pressed="true"] {
-            border-color: #0071e3;
-            box-shadow: 0 0 0 1px #0071e3;
+            border-color: var(--blue);
+            box-shadow: 0 0 0 1px var(--blue);
         }
 
         .reference-card-title {
@@ -539,22 +1238,22 @@
         .reference-card-desc {
             font-size: 13px;
             line-height: 1.45;
-            color: #6e6e73;
+            color: var(--muted);
         }
 
         .reference-tag {
             margin-top: auto;
             padding: 2px 8px;
             border-radius: 999px;
-            background: #f5f5f7;
-            color: #6e6e73;
+            background: var(--bg-soft);
+            color: var(--muted);
             font-size: 11px;
             font-weight: 600;
         }
 
         .reference-tag--warn {
-            background: #fff4e5;
-            color: #a35200;
+            background: var(--warn-soft);
+            color: var(--warn-ink);
         }
 
         /* Full-screen chart viewer */
@@ -566,7 +1265,7 @@
             flex-direction: column;
             height: 100vh;
             height: 100dvh;
-            background: #ffffff;
+            background: var(--surface);
         }
 
         .chart-fullscreen[hidden] {
@@ -580,14 +1279,14 @@
             gap: 12px;
             padding: 10px 12px 10px 20px;
             padding-top: max(10px, env(safe-area-inset-top));
-            border-bottom: 1px solid #e5e5ea;
+            border-bottom: 1px solid var(--line);
         }
 
         .chart-fullscreen-title {
             margin: 0;
             font-size: 16px;
             font-weight: 600;
-            color: #1d1d1f;
+            color: var(--ink);
         }
 
         .chart-fullscreen-close {
@@ -598,8 +1297,8 @@
             height: 40px;
             border: none;
             border-radius: 10px;
-            background: #f5f5f7;
-            color: #1d1d1f;
+            background: var(--bg-soft);
+            color: var(--ink);
             cursor: pointer;
         }
 
@@ -617,7 +1316,7 @@
 
         /* Check Section (Results Only) */
         .check-section {
-            background: white;
+            background: var(--surface);
             border-radius: 18px;
             padding: 40px;
             margin-bottom: 30px;
@@ -632,7 +1331,7 @@
         .results-placeholder {
             text-align: center;
             padding: 60px 20px;
-            color: #86868b;
+            color: var(--muted);
         }
 
         .results-placeholder.hidden {
@@ -648,7 +1347,7 @@
         .results-placeholder h3 {
             font-size: 1.5em;
             font-weight: 600;
-            color: #1d1d1f;
+            color: var(--ink);
             margin-bottom: 12px;
         }
 
@@ -664,7 +1363,7 @@
             font-size: 17px;
             font-weight: 500;
             color: white;
-            background: #0071e3;
+            background: var(--button);
             border: none;
             border-radius: 980px;
             cursor: pointer;
@@ -672,7 +1371,7 @@
         }
 
         .check-button:hover {
-            background: #0077ed;
+            background: var(--button-hover);
             transform: scale(1.02);
         }
 
@@ -687,7 +1386,7 @@
 
         .loading {
             margin-top: 20px;
-            color: #86868b;
+            color: var(--muted);
             font-size: 15px;
         }
 
@@ -747,7 +1446,7 @@
         }
 
         .metric-card {
-            background: #f5f5f7;
+            background: var(--bg-soft);
             border-radius: 12px;
             padding: 24px;
             box-sizing: border-box;
@@ -760,7 +1459,7 @@
             font-size: 13px;
             font-weight: 600;
             text-transform: uppercase;
-            color: #86868b;
+            color: var(--muted);
             letter-spacing: 0.5px;
             margin-bottom: 12px;
             word-wrap: break-word;
@@ -777,7 +1476,7 @@
 
         .metric-detail {
             font-size: 15px;
-            color: #1d1d1f;
+            color: var(--ink);
             margin: 6px 0;
             word-wrap: break-word;
             overflow-wrap: break-word;
@@ -794,12 +1493,12 @@
         }
 
         .metric-status.in-zone {
-            background: #e5f5e9;
+            background: var(--good-soft);
             color: #28a745;
         }
 
         .metric-status.out-zone {
-            background: #fff3e0;
+            background: var(--warn-soft);
             color: #ff9500;
         }
 
@@ -814,7 +1513,7 @@
             font-weight: 600;
             text-transform: uppercase;
             letter-spacing: 0.5px;
-            color: #86868b;
+            color: var(--muted);
             margin-bottom: 12px;
         }
 
@@ -822,7 +1521,7 @@
             display: inline-block;
             font-size: 2.2em;
             font-weight: 700;
-            color: #1d1d1f;
+            color: var(--ink);
             background: linear-gradient(135deg, #f7931a 0%, #ffa726 100%);
             color: white;
             padding: 16px 32px;
@@ -834,23 +1533,23 @@
         .price-timestamp {
             margin-top: 12px;
             font-size: 14px;
-            color: #86868b;
+            color: var(--muted);
             font-weight: 400;
         }
 
         .timestamp {
             text-align: center;
             font-size: 13px;
-            color: #86868b;
+            color: var(--muted);
             margin: 20px 0;
         }
 
         .distance-info {
-            background: white;
+            background: var(--surface);
             border-radius: 12px;
             padding: 20px;
             margin-top: 16px;
-            border: 1px solid #d2d2d7;
+            border: 1px solid var(--line);
         }
 
         .distance-info h4 {
@@ -861,7 +1560,7 @@
 
         .distance-info p {
             font-size: 14px;
-            color: #1d1d1f;
+            color: var(--ink);
             margin: 6px 0;
         }
 
@@ -875,7 +1574,7 @@
 
         /* Forecast Calculator */
         .forecast-section {
-            background: white;
+            background: var(--surface);
             border-radius: 18px;
             padding: 40px;
             margin-bottom: 30px;
@@ -891,7 +1590,7 @@
 
         .forecast-section p {
             text-align: center;
-            color: #86868b;
+            color: var(--muted);
             font-size: 15px;
             margin-bottom: 30px;
         }
@@ -912,7 +1611,7 @@
         .forecast-input-group label {
             font-size: 15px;
             font-weight: 500;
-            color: #1d1d1f;
+            color: var(--ink);
         }
 
         .forecast-input-group input[type="date"] {
@@ -921,10 +1620,10 @@
             max-width: 220px;
             padding: 12px 16px;
             font-size: 15px;
-            border: 1px solid #d2d2d7;
+            border: 1px solid var(--line);
             border-radius: 8px;
-            background: #f5f5f7;
-            color: #1d1d1f;
+            background: var(--bg-soft);
+            color: var(--ink);
             font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, sans-serif;
             transition: all 0.2s ease;
             box-sizing: border-box;
@@ -932,8 +1631,8 @@
 
         .forecast-input-group input[type="date"]:focus {
             outline: none;
-            border-color: #0071e3;
-            background: white;
+            border-color: var(--blue);
+            background: var(--surface);
         }
 
         .forecast-button {
@@ -941,7 +1640,7 @@
             font-size: 15px;
             font-weight: 500;
             color: white;
-            background: #0071e3;
+            background: var(--button);
             border: none;
             border-radius: 980px;
             cursor: pointer;
@@ -949,7 +1648,7 @@
         }
 
         .forecast-button:hover {
-            background: #0077ed;
+            background: var(--button-hover);
             transform: scale(1.02);
         }
 
@@ -961,7 +1660,7 @@
             display: none;
             text-align: center;
             padding: 30px;
-            background: linear-gradient(135deg, #f5f5f7 0%, #e8e8ed 100%);
+            background: linear-gradient(135deg, var(--bg-soft) 0%, var(--bg-soft) 100%);
             border-radius: 12px;
             animation: fadeIn 0.4s ease-in-out;
         }
@@ -973,7 +1672,7 @@
         .forecast-price {
             font-size: 3em;
             font-weight: 700;
-            color: #1d1d1f;
+            color: var(--ink);
             margin-bottom: 12px;
             background: linear-gradient(135deg, #f7931a 0%, #ffa726 100%);
             -webkit-background-clip: text;
@@ -983,7 +1682,7 @@
 
         .forecast-date {
             font-size: 1.2em;
-            color: #1d1d1f;
+            color: var(--ink);
             margin-bottom: 20px;
             font-weight: 500;
         }
@@ -996,7 +1695,7 @@
         }
 
         .forecast-detail-item {
-            background: white;
+            background: var(--surface);
             padding: 16px;
             border-radius: 8px;
         }
@@ -1005,14 +1704,14 @@
             font-size: 12px;
             text-transform: uppercase;
             letter-spacing: 0.5px;
-            color: #86868b;
+            color: var(--muted);
             margin-bottom: 8px;
             font-weight: 600;
         }
 
         .forecast-detail-item p {
             font-size: 1.1em;
-            color: #1d1d1f;
+            color: var(--ink);
             font-weight: 600;
             margin: 0;
         }
@@ -1020,16 +1719,16 @@
         .forecast-disclaimer {
             margin-top: 20px;
             padding: 16px;
-            background: #fff3cd;
+            background: var(--warn-soft);
             border-radius: 8px;
             font-size: 13px;
-            color: #856404;
+            color: var(--warn-ink);
             text-align: left;
         }
 
         /* Backtest Section */
         .backtest-section {
-            background: white;
+            background: var(--surface);
             border-radius: 18px;
             padding: 40px;
             margin-bottom: 30px;
@@ -1045,7 +1744,7 @@
 
         .backtest-section > p {
             text-align: center;
-            color: #86868b;
+            color: var(--muted);
             font-size: 15px;
             margin-bottom: 30px;
         }
@@ -1063,7 +1762,7 @@
             display: block;
             font-size: 14px;
             font-weight: 600;
-            color: #1d1d1f;
+            color: var(--ink);
             margin-bottom: 8px;
         }
 
@@ -1072,10 +1771,10 @@
             width: 100%;
             padding: 12px 16px;
             font-size: 15px;
-            border: 1px solid #d2d2d7;
+            border: 1px solid var(--line);
             border-radius: 8px;
-            background: #f5f5f7;
-            color: #1d1d1f;
+            background: var(--bg-soft);
+            color: var(--ink);
             font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, sans-serif;
             transition: all 0.2s ease;
             box-sizing: border-box;
@@ -1083,8 +1782,8 @@
 
         .form-group input:focus {
             outline: none;
-            border-color: #0071e3;
-            background: white;
+            border-color: var(--blue);
+            background: var(--surface);
         }
 
         .strategy-options {
@@ -1106,8 +1805,8 @@
         .strategy-option label {
             display: block;
             padding: 16px;
-            background: #f5f5f7;
-            border: 2px solid #d2d2d7;
+            background: var(--bg-soft);
+            border: 2px solid var(--line);
             border-radius: 12px;
             cursor: pointer;
             transition: all 0.2s ease;
@@ -1116,13 +1815,13 @@
         }
 
         .strategy-option input[type="radio"]:checked + label {
-            background: #dbeafe;
-            border-color: #0071e3;
-            color: #0071e3;
+            background: var(--blue-soft);
+            border-color: var(--blue);
+            color: var(--blue);
         }
 
         .strategy-option label:hover {
-            border-color: #0071e3;
+            border-color: var(--blue);
         }
 
         .strategy-info-btn {
@@ -1132,7 +1831,7 @@
             width: 20px;
             height: 20px;
             border-radius: 50%;
-            background: #0071e3;
+            background: var(--button);
             color: white;
             border: none;
             cursor: pointer;
@@ -1144,7 +1843,7 @@
         }
 
         .strategy-info-btn:hover {
-            background: #0077ed;
+            background: var(--button-hover);
             transform: scale(1.1);
         }
 
@@ -1167,7 +1866,7 @@
         }
 
         .strategy-info-content {
-            background: white;
+            background: var(--surface);
             border-radius: 18px;
             padding: 30px;
             max-width: 600px;
@@ -1184,7 +1883,7 @@
             width: 30px;
             height: 30px;
             border-radius: 50%;
-            background: #f5f5f7;
+            background: var(--bg-soft);
             border: none;
             cursor: pointer;
             font-size: 18px;
@@ -1194,31 +1893,31 @@
         }
 
         .strategy-info-close:hover {
-            background: #e5e5e7;
+            background: var(--bg-soft);
         }
 
         .strategy-info-content h3 {
             font-size: 1.5em;
             margin-bottom: 16px;
-            color: #1d1d1f;
+            color: var(--ink);
         }
 
         .strategy-info-content h4 {
             font-size: 1.1em;
             margin-top: 20px;
             margin-bottom: 10px;
-            color: #1d1d1f;
+            color: var(--ink);
         }
 
         .strategy-info-content p {
             margin: 10px 0;
-            color: #1d1d1f;
+            color: var(--ink);
             line-height: 1.6;
         }
 
         .strategy-info-content ul {
             margin: 10px 0 10px 20px;
-            color: #1d1d1f;
+            color: var(--ink);
         }
 
         .strategy-info-content li {
@@ -1228,7 +1927,7 @@
         .strategy-config {
             margin-top: 16px;
             padding: 16px;
-            background: #f5f5f7;
+            background: var(--bg-soft);
             border-radius: 8px;
             display: none;
         }
@@ -1244,7 +1943,7 @@
 
         /* Useful Links Section */
         .links-section {
-            background: white;
+            background: var(--surface);
             border-radius: 18px;
             padding: 40px;
             margin-bottom: 30px;
@@ -1256,12 +1955,12 @@
             font-weight: 600;
             margin-bottom: 8px;
             text-align: center;
-            color: #1d1d1f;
+            color: var(--ink);
         }
 
         .links-section p {
             text-align: center;
-            color: #86868b;
+            color: var(--muted);
             font-size: 15px;
             margin-bottom: 32px;
         }
@@ -1274,7 +1973,7 @@
         }
 
         .link-card {
-            background: #f5f5f7;
+            background: var(--bg-soft);
             border-radius: 12px;
             padding: 20px;
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -1285,10 +1984,10 @@
         }
 
         .link-card:hover {
-            background: #e8e8ed;
+            background: var(--bg-soft);
             transform: translateY(-2px);
             box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
-            border-color: #d2d2d7;
+            border-color: var(--line);
         }
 
         .link-card:active {
@@ -1304,20 +2003,20 @@
         .link-title {
             font-size: 16px;
             font-weight: 600;
-            color: #1d1d1f;
+            color: var(--ink);
             margin-bottom: 6px;
             line-height: 1.3;
         }
 
         .link-description {
             font-size: 13px;
-            color: #86868b;
+            color: var(--muted);
             line-height: 1.4;
         }
 
         .link-url {
             font-size: 12px;
-            color: #0071e3;
+            color: var(--blue);
             margin-top: 8px;
             display: block;
             word-break: break-all;
@@ -1327,17 +2026,6 @@
         @media (max-width: 768px) {
             .links-grid {
                 grid-template-columns: 1fr;
-            }
-
-            .main-tabs {
-                max-width: 100%;
-                margin: 30px 0 20px;
-                padding: 6px;
-            }
-
-            .main-tab {
-                padding: 10px 12px;
-                font-size: 14px;
             }
 
             .chart-container,
@@ -1362,21 +2050,21 @@
             gap: 12px;
             padding: 10px;
             align-items: center;
-            border-bottom: 1px solid #e5e5e5;
+            border-bottom: 1px solid var(--line);
         }
 
         .tier-row.tier-header {
             font-weight: 600;
             font-size: 12px;
             text-transform: uppercase;
-            color: #86868b;
-            background: #f5f5f7;
+            color: var(--muted);
+            background: var(--bg-soft);
             border-radius: 6px 6px 0 0;
         }
 
         .tier-row.tier-header .tier-daily {
             /* Override tier-daily styles in header to match other header columns */
-            color: #86868b;
+            color: var(--muted);
             font-size: 12px;
             font-weight: 600;
         }
@@ -1388,7 +2076,7 @@
         .ahr999-range {
             display: block;
             font-size: 11px;
-            color: #86868b;
+            color: var(--muted);
             font-weight: 400;
             margin-top: 4px;
         }
@@ -1402,7 +2090,7 @@
         .tier-input {
             width: 60px;
             padding: 6px 8px;
-            border: 1px solid #d2d2d7;
+            border: 1px solid var(--line);
             border-radius: 6px;
             font-size: 14px;
             text-align: center;
@@ -1410,11 +2098,11 @@
 
         .tier-input:focus {
             outline: none;
-            border-color: #0071e3;
+            border-color: var(--blue);
         }
 
         .tier-daily {
-            color: #1d1d1f;
+            color: var(--ink);
             font-size: 14px;
             text-align: center;
         }
@@ -1425,7 +2113,7 @@
             font-size: 17px;
             font-weight: 500;
             color: white;
-            background: #0071e3;
+            background: var(--button);
             border: none;
             border-radius: 980px;
             cursor: pointer;
@@ -1434,7 +2122,7 @@
         }
 
         .backtest-button:hover {
-            background: #0077ed;
+            background: var(--button-hover);
             transform: scale(1.02);
         }
 
@@ -1457,20 +2145,20 @@
             font-size: 1.3em;
             font-weight: 600;
             margin-bottom: 8px;
-            color: #1d1d1f;
+            color: var(--ink);
         }
 
         .backtest-period {
             font-size: 14px;
-            color: #86868b;
+            color: var(--muted);
             margin-bottom: 24px;
         }
 
         .simulation-badge {
             display: inline-block;
             padding: 4px 10px;
-            background: #fff3cd;
-            color: #856404;
+            background: var(--warn-soft);
+            color: var(--warn-ink);
             border-radius: 6px;
             font-size: 12px;
             font-weight: 600;
@@ -1480,7 +2168,7 @@
         .historical-badge {
             display: inline-block;
             padding: 4px 10px;
-            background: #e5f5e9;
+            background: var(--good-soft);
             color: #28a745;
             border-radius: 6px;
             font-size: 12px;
@@ -1491,7 +2179,7 @@
         .chart-wrapper {
             margin-top: 32px;
             padding: 24px;
-            background: #f5f5f7;
+            background: var(--bg-soft);
             border-radius: 12px;
         }
 
@@ -1499,7 +2187,7 @@
             font-size: 1.1em;
             font-weight: 600;
             margin-bottom: 20px;
-            color: #1d1d1f;
+            color: var(--ink);
         }
 
         .chart-wrapper canvas {
@@ -1510,7 +2198,7 @@
         .transactions-table {
             margin-top: 32px;
             padding: 24px;
-            background: #f5f5f7;
+            background: var(--bg-soft);
             border-radius: 12px;
         }
 
@@ -1518,14 +2206,14 @@
             font-size: 1.1em;
             font-weight: 600;
             margin-bottom: 16px;
-            color: #1d1d1f;
+            color: var(--ink);
         }
 
         .transactions-table-wrapper {
             max-height: 400px;
             overflow-y: auto;
             border-radius: 8px;
-            background: white;
+            background: var(--surface);
             padding-right: 20px; /* Add padding to prevent scrollbar from covering last column */
             box-sizing: border-box;
         }
@@ -1536,25 +2224,25 @@
         }
 
         .transactions-table-wrapper::-webkit-scrollbar-track {
-            background: #f5f5f7;
+            background: var(--bg-soft);
             border-radius: 10px;
             margin: 4px 0;
         }
 
         .transactions-table-wrapper::-webkit-scrollbar-thumb {
-            background: #c7c7cc;
+            background: var(--line-strong);
             border-radius: 10px;
-            border: 3px solid #f5f5f7; /* Thicker border for better visual separation */
+            border: 3px solid var(--bg-soft); /* Thicker border for better visual separation */
         }
 
         .transactions-table-wrapper::-webkit-scrollbar-thumb:hover {
-            background: #a8a8ae;
+            background: var(--muted);
         }
 
         /* For Firefox */
         .transactions-table-wrapper {
             scrollbar-width: auto;
-            scrollbar-color: #c7c7cc #f5f5f7;
+            scrollbar-color: var(--line-strong) var(--bg-soft);
         }
 
         /* Mobile-friendly: ensure scrollbar doesn't cause layout issues */
@@ -1577,7 +2265,7 @@
         .transactions-table thead {
             position: sticky;
             top: 0;
-            background: #f5f5f7;
+            background: var(--bg-soft);
             z-index: 1;
         }
 
@@ -1585,17 +2273,17 @@
             padding: 12px;
             text-align: left;
             font-weight: 600;
-            color: #1d1d1f;
-            border-bottom: 2px solid #d2d2d7;
+            color: var(--ink);
+            border-bottom: 2px solid var(--line);
         }
 
         .transactions-table td {
             padding: 10px 12px;
-            border-bottom: 1px solid #e5e5e5;
+            border-bottom: 1px solid var(--line);
         }
 
         .transactions-table tr:hover {
-            background: #f9f9f9;
+            background: var(--bg-soft);
         }
 
         .transactions-table .text-right {
@@ -1605,16 +2293,16 @@
         .transactions-table-summary {
             margin-top: 12px;
             padding: 12px;
-            background: white;
+            background: var(--surface);
             border-radius: 8px;
             font-size: 13px;
-            color: #86868b;
+            color: var(--muted);
         }
 
         .loading {
             text-align: center;
             padding: 40px;
-            color: #86868b;
+            color: var(--muted);
             font-size: 15px;
         }
 
@@ -1629,18 +2317,46 @@
         .footer {
             text-align: center;
             margin-top: 60px;
-            color: #86868b;
+            color: var(--muted);
             font-size: 13px;
         }
 
         /* Responsive tweaks */
         @media (max-width: 900px) {
             .container {
-                padding: 30px 16px;
+                padding: 16px 16px 40px;
             }
 
-            .header h1 {
-                font-size: 2.4em;
+            .today-headline {
+                font-size: 36px;
+            }
+
+            .today-actions,
+            .today-measures,
+            .explore-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .today-actions {
+                gap: 14px;
+            }
+
+            .backdrop-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+
+            .crosscheck-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .measure-card--meter {
+                flex-direction: row;
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+
+            .explore-card {
+                min-height: 0;
             }
 
             .chart-container {
@@ -1660,15 +2376,104 @@
 
         @media (max-width: 600px) {
             .container {
-                padding: 24px 14px;
+                padding: 12px 16px calc(96px + env(safe-area-inset-bottom, 0px));
             }
 
-            .header {
-                margin-bottom: 40px;
+            .site-header {
+                margin-bottom: 12px;
             }
 
-            .header h1 {
-                font-size: 2em;
+            .brand {
+                font-size: 16px;
+            }
+
+            /* Sections move to a bottom tab bar on phones */
+            .site-nav {
+                position: fixed;
+                left: 12px;
+                right: 12px;
+                bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+                z-index: 1000;
+                display: grid;
+                grid-template-columns: repeat(5, minmax(0, 1fr));
+                gap: 0;
+                padding: 6px;
+                margin: 0;
+                border-radius: 20px;
+                background: var(--feature);
+                box-shadow: 0 8px 24px rgba(15, 27, 45, 0.25);
+            }
+
+            .main-tab {
+                flex-direction: column;
+                gap: 2px;
+                min-height: 52px;
+                padding: 0;
+                border-radius: 14px;
+                color: var(--feature-muted);
+                font-size: 11px;
+                font-weight: 600;
+            }
+
+            .main-tab svg {
+                display: block;
+            }
+
+            .main-tab:hover {
+                color: var(--feature-ink);
+            }
+
+            .main-tab.active {
+                background: rgba(255, 255, 255, 0.14);
+                color: var(--feature-ink);
+            }
+
+            .theme-toggle {
+                margin-left: auto;
+            }
+
+            .today-hero {
+                padding: 20px 18px;
+            }
+
+            .today-hero-top {
+                flex-direction: column;
+                gap: 12px;
+            }
+
+            .today-price {
+                text-align: left;
+            }
+
+            .today-price-value {
+                font-size: 26px;
+            }
+
+            .today-headline {
+                font-size: 28px;
+                line-height: 1.15;
+            }
+
+            .measure-card {
+                padding: 18px;
+            }
+
+            .backdrop-card {
+                padding: 14px;
+                border-radius: 16px;
+            }
+
+            .backdrop-value {
+                font-size: 17px;
+            }
+
+            .disclosure > summary {
+                padding: 0 18px;
+            }
+
+            .disclosure > .daily-report-card,
+            .disclosure > .result-section {
+                margin: 0 12px 16px;
             }
 
             .chart-tabs {
@@ -1679,16 +2484,16 @@
             .chart-tab {
                 flex: 1 1 45%;
                 padding: 10px 12px;
-                background: #f5f5f7;
+                background: var(--bg-soft);
                 border-radius: 12px;
                 margin-bottom: 8px;
                 border: none;
             }
 
             .chart-tab.active {
-                background: #dbeafe;
+                background: var(--blue-soft);
                 border-bottom: none;
-                color: #0071e3;
+                color: var(--blue);
             }
 
             .chart-tabs-row {
@@ -1852,72 +2657,160 @@
 </head>
 <body>
     <div class="container">
-        <div class="header">
-            <h1>When Should You Buy <img src="bitcoin.svg" alt="Bitcoin" class="bitcoin-icon"></h1>
-            <div class="header-actions">
-                <button id="checkButton" class="check-button">
-                    Check Real-Time Status
+        <header class="site-header">
+            <a class="brand" href="#today" onclick="switchMainTab('today'); return false;">
+                <img src="bitcoin.svg" alt="" class="brand-coin" width="30" height="30">
+                <span>When Should You Buy</span>
+            </a>
+            <nav class="site-nav" aria-label="Sections">
+                <button class="main-tab active" type="button" data-tab="today" aria-current="page" onclick="switchMainTab('today')">
+                    <svg viewBox="0 0 20 20" width="20" height="20" aria-hidden="true"><circle cx="10" cy="10" r="7" fill="none" stroke="currentColor" stroke-width="1.6"></circle><path d="M10 6v4l3 2" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"></path></svg>
+                    <span>Today</span>
                 </button>
-                <div id="loading" class="loading" style="display: none;">
-                    Loading...
-                </div>
-            </div>
-        </div>
+                <button class="main-tab" type="button" data-tab="charts" onclick="switchMainTab('charts')">
+                    <svg viewBox="0 0 20 20" width="20" height="20" aria-hidden="true"><path d="M3 15l4-5 3 3 6-8" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                    <span>Charts</span>
+                </button>
+                <button class="main-tab" type="button" data-tab="backtest" onclick="switchMainTab('backtest')">
+                    <svg viewBox="0 0 20 20" width="20" height="20" aria-hidden="true"><path d="M4 16V9M10 16V4M16 16v-5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"></path></svg>
+                    <span>Backtest</span>
+                </button>
+                <button class="main-tab" type="button" data-tab="forecast" onclick="switchMainTab('forecast')">
+                    <svg viewBox="0 0 20 20" width="20" height="20" aria-hidden="true"><path d="M3 16c4-1 6-4 8-8l2-4 4 2" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                    <span>Forecast</span>
+                </button>
+                <button class="main-tab" type="button" data-tab="resources" onclick="switchMainTab('resources')">
+                    <svg viewBox="0 0 20 20" width="20" height="20" aria-hidden="true"><path d="M8.5 11.5l3-3M7 9.5l-2 2a2.8 2.8 0 004 4l2-2M13 10.5l2-2a2.8 2.8 0 00-4-4l-2 2" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"></path></svg>
+                    <span>Links</span>
+                </button>
+            </nav>
+            <button id="themeToggle" class="theme-toggle" type="button" aria-label="Switch to dark mode" onclick="toggleTheme()">
+                <svg class="theme-icon-moon" viewBox="0 0 20 20" width="18" height="18" aria-hidden="true"><path d="M16 12.5A6.5 6.5 0 017.5 4a6.5 6.5 0 108.5 8.5z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"></path></svg>
+                <svg class="theme-icon-sun" viewBox="0 0 20 20" width="18" height="18" aria-hidden="true"><circle cx="10" cy="10" r="3.5" fill="none" stroke="currentColor" stroke-width="1.6"></circle><path d="M10 2v2M10 16v2M2 10h2M16 10h2M4.3 4.3l1.4 1.4M14.3 14.3l1.4 1.4M4.3 15.7l1.4-1.4M14.3 5.7l1.4-1.4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"></path></svg>
+            </button>
+        </header>
 
-        <!-- Main Tab Navigation -->
-        <div class="main-tabs">
-            <button class="main-tab active" onclick="switchMainTab('charts', this)">
-                Charts
-            </button>
-            <button class="main-tab" onclick="switchMainTab('analysis', this)">
-                Analysis
-            </button>
-            <button class="main-tab" onclick="switchMainTab('tools', this)">
-                Tools
-            </button>
-            <button class="main-tab" onclick="switchMainTab('resources', this)">
-                Resources
-            </button>
+        <!-- Today Tab Content -->
+        <div id="today-tab" class="tab-content active" data-state="loading">
+            <section class="card today-hero" aria-labelledby="todayHeadline">
+                <div class="today-hero-top">
+                    <div class="today-hero-text">
+                        <div class="eyebrow" id="todayDate">Today</div>
+                        <h1 id="todayHeadline" class="today-headline">Checking today's valuation…</h1>
+                    </div>
+                    <div class="today-price">
+                        <div class="eyebrow">BTC / USD</div>
+                        <div id="todayPrice" class="today-price-value mono">—</div>
+                        <div class="today-price-meta">
+                            <span id="todayPriceMeta">Live price</span>
+                            <button id="todayRefresh" class="text-button" type="button">Refresh</button>
+                        </div>
+                    </div>
+                </div>
+                <ul id="todayActions" class="today-actions" aria-live="polite"></ul>
+            </section>
+
+            <section class="today-measures" aria-label="The valuation measures">
+                <div class="card measure-card">
+                    <div class="measure-head"><h2 class="measure-title">200-day DCA cost</h2><span id="todayDcaChip" class="chip">…</span></div>
+                    <div id="todayDcaCost" class="mono measure-value">—</div>
+                    <div class="meter-bar"><div id="todayDcaBar" class="meter-bar-fill"></div></div>
+                    <p id="todayDcaDetail" class="measure-detail"></p>
+                    <button class="measure-link" type="button" onclick="openChartFullscreen('charts/price_comparison.html', 'Price Comparison', this)">View chart <svg class="link-chevron" viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M6 3l5 5-5 5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg></button>
+                </div>
+                <div class="card measure-card">
+                    <div class="measure-head"><h2 class="measure-title">Power-law trend</h2><span id="todayTrendChip" class="chip">…</span></div>
+                    <div id="todayTrend" class="mono measure-value">—</div>
+                    <div class="meter-bar"><div id="todayTrendBar" class="meter-bar-fill"></div></div>
+                    <p id="todayTrendDetail" class="measure-detail"></p>
+                    <button class="measure-link" type="button" onclick="openChartFullscreen('charts/price_comparison.html', 'Price Comparison', this)">View chart <svg class="link-chevron" viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M6 3l5 5-5 5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg></button>
+                </div>
+                <div class="card measure-card measure-card--meter">
+                    <div class="measure-head"><h2 class="measure-title">ahr999 · how cheap</h2><span id="todayAhrChip" class="chip">…</span></div>
+                    <svg id="todayMeter" class="meter" viewBox="0 0 400 230" role="img" aria-label="ahr999 meter">
+                        <path class="meter-arc meter-arc--1" d="M 40 200 A 160 160 0 0 1 150.6 47.8"></path>
+                        <path class="meter-arc meter-arc--2" d="M 150.6 47.8 A 160 160 0 0 1 294.1 70.6"></path>
+                        <path class="meter-arc meter-arc--3" d="M 294.1 70.6 A 160 160 0 0 1 352.2 150.6"></path>
+                        <path class="meter-arc meter-arc--4" d="M 352.2 150.6 A 160 160 0 0 1 360 200"></path>
+                        <line id="todayNeedle" class="meter-needle" x1="200" y1="200" x2="200" y2="70"></line>
+                        <circle class="meter-hub" cx="200" cy="200" r="13"></circle>
+                    </svg>
+                    <div class="meter-caption"><span id="todayAhr999" class="mono measure-number">—</span> <span id="todayCheaper"></span></div>
+                    <p class="measure-note">A weak signal: in a backtest without look-ahead (2017–2026), buying more when ahr999 was low beat plain DCA by only about 3%.</p>
+                    <button class="measure-link" type="button" onclick="openChartFullscreen('charts/valuation_ratios.html', 'Valuation Ratios', this)">View chart <svg class="link-chevron" viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M6 3l5 5-5 5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg></button>
+                </div>
+            </section>
+
+            <section id="todayCrossSection" class="today-crosschecks" aria-labelledby="crossTitle" hidden>
+                <div class="section-head">
+                    <h2 id="crossTitle" class="section-title">Cross-checks</h2>
+                    <span id="todayCrossSummary" class="section-note"></span>
+                </div>
+                <div id="todayCrossChecks" class="crosscheck-grid"></div>
+            </section>
+
+            <section class="today-backdrop" aria-labelledby="backdropTitle">
+                <div class="section-head">
+                    <h2 id="backdropTitle" class="section-title">Market backdrop</h2>
+                    <span class="section-note">Context, not buy triggers</span>
+                </div>
+                <div id="todayBackdrop" class="backdrop-grid"></div>
+            </section>
+
+
+            <details class="card disclosure">
+                <summary>Full daily summary <span class="summary-note">English · 中文</span></summary>
+                <div class="daily-report-card">
+                    <div class="daily-report-header">
+                        <div class="daily-report-title-row">
+                            <div class="daily-report-title">Daily Summary</div>
+                            <div class="daily-report-lang-toggle" role="group" aria-label="Daily summary language">
+                                <button id="dailyReportLangEn" class="daily-report-lang-btn active" type="button" onclick="setDailyReportLanguage('en')">EN</button>
+                                <button id="dailyReportLangZh" class="daily-report-lang-btn" type="button" onclick="setDailyReportLanguage('zh')">中文</button>
+                            </div>
+                        </div>
+                        <div id="dailyReportMeta" class="daily-report-meta">Loading...</div>
+                        <div id="dailyReportHint" class="daily-report-hint" style="display:none;"></div>
+                    </div>
+                    <ul id="dailyReportItems" class="daily-report-list"></ul>
+                    <div id="dailyReportOverall" class="daily-report-overall"></div>
+                    <div id="dailyReportEmpty" class="daily-report-empty" style="display:none;">
+                        Today's summary is unavailable. Please run the data update first.
+                    </div>
+                </div>
+            </details>
+
+            <details class="card disclosure">
+                <summary>Detailed valuation numbers</summary>
+                <div id="results" class="result-section"></div>
+            </details>
+
+            <nav class="explore-grid" aria-label="Explore">
+                <button class="explore-card explore-card--feature" type="button" onclick="switchMainTab('charts')">
+                    <span class="explore-title">Charts</span>
+                    <span class="explore-desc">Valuation ratios and price vs fair value, plus 6 reference charts</span>
+                    <span class="explore-link">Open charts →</span>
+                </button>
+                <button class="explore-card" type="button" onclick="switchMainTab('backtest')">
+                    <span class="explore-title">Backtest a strategy</span>
+                    <span class="explore-desc">Daily, monthly or ahr999-weighted DCA on real history</span>
+                    <span class="explore-link">Run a backtest →</span>
+                </button>
+                <button class="explore-card" type="button" onclick="switchMainTab('forecast')">
+                    <span class="explore-title">Price forecast</span>
+                    <span class="explore-desc">Power-law trend value on any future date</span>
+                    <span class="explore-link">Pick a date →</span>
+                </button>
+            </nav>
         </div>
 
         <!-- Charts Tab Content -->
-        <div id="charts-tab" class="tab-content active">
-            <div class="daily-report-card">
-                <div class="daily-report-header">
-                    <div class="daily-report-title-row">
-                        <div class="daily-report-title">Daily Summary</div>
-                        <div class="daily-report-lang-toggle" role="group" aria-label="Daily summary language">
-                            <button id="dailyReportLangEn" class="daily-report-lang-btn active" type="button" onclick="setDailyReportLanguage('en')">EN</button>
-                            <button id="dailyReportLangZh" class="daily-report-lang-btn" type="button" onclick="setDailyReportLanguage('zh')">中文</button>
-                        </div>
-                    </div>
-                    <div id="dailyReportMeta" class="daily-report-meta">Loading...</div>
-                    <div id="dailyReportHint" class="daily-report-hint" style="display:none;"></div>
-                </div>
-                <ul id="dailyReportItems" class="daily-report-list"></ul>
-                <div id="dailyReportOverall" class="daily-report-overall"></div>
-                <div id="dailyReportEmpty" class="daily-report-empty" style="display:none;">
-                    Today's summary is unavailable. Please run the data update first.
-                </div>
-            </div>
-            <a id="bottomSignalsCard" class="bottom-signals-card" href="charts/bottom_signals.html" style="display:none;">
-                <div class="bsc-main">
-                    <div class="bsc-title">⛓️ On-Chain Bottom Signals</div>
-                    <div class="bsc-meta" id="bscMeta">—</div>
-                    <div class="bsc-note" id="bscNote"></div>
-                </div>
-                <div class="bsc-score-wrap">
-                    <span class="bsc-score" id="bscScore">–</span>
-                    <span class="bsc-score-max">/100</span>
-                    <span class="bsc-zone" id="bscZone">–</span>
-                </div>
-                <div class="bsc-arrow">›</div>
-            </a>
+        <div id="charts-tab" class="tab-content">
             <section class="chart-container" aria-label="Charts">
                 <div class="chart-tabs-row">
                     <div class="chart-tabs" role="tablist" aria-label="Valuation charts">
-                        <button class="chart-tab active" type="button" role="tab" aria-selected="true" aria-controls="ratios-chart" data-chart="ratios" onclick="switchChart('ratios', this)">Valuation Ratios</button>
-                        <button class="chart-tab" type="button" role="tab" aria-selected="false" aria-controls="prices-chart" data-chart="prices" onclick="switchChart('prices', this)">Price Comparison</button>
+                        <button class="chart-tab active" type="button" role="tab" aria-selected="true" aria-controls="prices-chart" data-chart="prices" onclick="switchChart('prices', this)">Price Comparison</button>
+                        <button class="chart-tab" type="button" role="tab" aria-selected="false" aria-controls="ratios-chart" data-chart="ratios" onclick="switchChart('ratios', this)">Valuation Ratios</button>
                     </div>
                     <button class="chart-fullscreen-btn" type="button" onclick="openActiveCoreChartFullscreen(this)" aria-label="Open the selected chart full screen">
                         <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M2 6V2h4M10 2h4v4M14 10v4h-4M6 14H2v-4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -1926,14 +2819,14 @@
                 </div>
 
                 <div class="chart-display">
-                    <div id="ratios-chart" class="chart-content active" role="tabpanel" data-title="Valuation Ratios">
-                        <div class="chart-frame" style="--frame-h: 620px; --frame-h-mobile: 440px;">
-                            <iframe class="chart-iframe" title="Valuation Ratios chart" data-src="charts/valuation_ratios.html"></iframe>
-                        </div>
-                    </div>
-                    <div id="prices-chart" class="chart-content" role="tabpanel" data-title="Price Comparison">
+                    <div id="prices-chart" class="chart-content active" role="tabpanel" data-title="Price Comparison">
                         <div class="chart-frame" style="--frame-h: 620px; --frame-h-mobile: 440px;">
                             <iframe class="chart-iframe" title="Price Comparison chart" data-src="charts/price_comparison.html"></iframe>
+                        </div>
+                    </div>
+                    <div id="ratios-chart" class="chart-content" role="tabpanel" data-title="Valuation Ratios">
+                        <div class="chart-frame" style="--frame-h: 620px; --frame-h-mobile: 440px;">
+                            <iframe class="chart-iframe" title="Valuation Ratios chart" data-src="charts/valuation_ratios.html"></iframe>
                         </div>
                     </div>
                 </div>
@@ -2058,24 +2951,11 @@
         </div>
 
 
-        <!-- Analysis Tab Content -->
-        <div id="analysis-tab" class="tab-content">
-            <!-- Real-time Check Results Section -->
-            <div class="check-section">
-                <!-- Placeholder when no results -->
-                <div id="results-placeholder" class="results-placeholder">
-                    <div class="placeholder-icon">📊</div>
-                    <h3>Real-Time Analysis</h3>
-                    <p>Click "Check Real-Time Status" in the header to analyze current Bitcoin valuation metrics and determine if it's a good time to buy.</p>
-                </div>
-                <div id="results" class="result-section">
-                    <!-- Results will be inserted here -->
-                </div>
-            </div>
-
+        <!-- Forecast Tab Content -->
+        <div id="forecast-tab" class="tab-content">
             <!-- Future Price Forecast Calculator -->
             <div class="forecast-section">
-                <h2>🔮 Future Price Forecast</h2>
+                <h2>Price forecast</h2>
                 <p>Calculate Bitcoin's predicted price on any future date based on the Power Law model</p>
                 
                 <div class="forecast-input-group">
@@ -2092,11 +2972,11 @@
             </div>
         </div>
 
-        <!-- Tools Tab Content -->
-        <div id="tools-tab" class="tab-content">
+        <!-- Backtest Tab Content -->
+        <div id="backtest-tab" class="tab-content">
             <!-- Backtest / Strategy Simulator -->
             <div class="backtest-section">
-            <h2>📊 Backtest / Strategy Simulator</h2>
+            <h2>Backtest a strategy</h2>
             <p>Test different Bitcoin investment strategies using historical data and power law projections</p>
             
             <div class="backtest-form">
@@ -2113,7 +2993,7 @@
                 <div class="form-group">
                     <label for="backtestBudget">Monthly Investment Budget (USD)</label>
                     <input type="number" id="backtestBudget" value="500" min="1" step="1" required oninput="updateDailyAmount()" />
-                    <div id="dailyAmountDisplay" style="font-size: 13px; color: #86868b; margin-top: 8px;"></div>
+                    <div id="dailyAmountDisplay" style="font-size: 13px; color: var(--muted); margin-top: 8px;"></div>
                 </div>
 
                 <div class="form-group">
@@ -2164,22 +3044,22 @@
 
                     <div id="ahr999ThresholdConfig" class="strategy-config">
                         <label style="display: block; margin-bottom: 12px;">AHR999 Historical Percentile Tiers</label>
-                        <p style="font-size: 12px; color: #86868b; margin-bottom: 12px;">
+                        <p style="font-size: 12px; color: var(--muted); margin-bottom: 12px;">
                             Configure investment multipliers based on where current AHR999 ranks historically.
                             Lower percentiles = cheaper Bitcoin.
                         </p>
                         
-                        <div class="budget-control" style="margin-bottom: 16px; padding: 12px; background: #f5f5f7; border-radius: 8px;">
+                        <div class="budget-control" style="margin-bottom: 16px; padding: 12px; background: var(--bg-soft); border-radius: 8px;">
                             <label style="display: flex; align-items: center; gap: 8px; font-size: 14px; cursor: pointer;">
                                 <input type="checkbox" id="unlimitedBudget" style="width: 18px; height: 18px; cursor: pointer;" />
                                 <span><strong>Unlimited Budget Mode</strong> - Ignore total budget constraint (invest as much as multipliers dictate)</span>
                             </label>
-                            <p style="font-size: 11px; color: #86868b; margin: 8px 0 0 26px;">
+                            <p style="font-size: 11px; color: var(--muted); margin: 8px 0 0 26px;">
                                 When checked, the strategy can invest without budget limits. When unchecked, total investment is limited to monthly budget × number of months.
                             </p>
                         </div>
                         
-                        <p style="font-size: 12px; color: #ff9500; background: #fff3e0; padding: 8px 12px; border-radius: 6px; margin-bottom: 12px; border-left: 3px solid #ff9500;">
+                        <p style="font-size: 12px; color: #ff9500; background: var(--warn-soft); padding: 8px 12px; border-radius: 6px; margin-bottom: 12px; border-left: 3px solid #ff9500;">
                             <strong>⚠️ Note:</strong> This strategy can invest more than your monthly budget in a single month if multipliers are high and Bitcoin is undervalued.
                         </p>
                         
@@ -2260,12 +3140,12 @@
 
                     <div id="ahr999FixedRangeConfig" class="strategy-config">
                         <label style="display: block; margin-bottom: 12px;">AHR999 Fixed Range Strategy</label>
-                        <p style="font-size: 12px; color: #86868b; margin-bottom: 12px;">
+                        <p style="font-size: 12px; color: var(--muted); margin-bottom: 12px;">
                             Configure investment multipliers based on fixed AHR999 value thresholds.
                             This provides deterministic behavior regardless of historical data.
                         </p>
                         
-                        <p style="font-size: 12px; color: #ff9500; background: #fff3e0; padding: 8px 12px; border-radius: 6px; margin-bottom: 12px; border-left: 3px solid #ff9500;">
+                        <p style="font-size: 12px; color: #ff9500; background: var(--warn-soft); padding: 8px 12px; border-radius: 6px; margin-bottom: 12px; border-left: 3px solid #ff9500;">
                             <strong>⚠️ Note:</strong> Uses absolute AHR999 values, not historical percentiles.
                         </p>
                         
@@ -2356,12 +3236,12 @@
                                 <div class="tier-daily" id="tier-r999-amount">$0.00/day</div>
                             </div>
                             
-                            <div class="unlimited-budget-option" style="margin-top: 16px; padding-top: 16px; border-top: 1px solid #d2d2d7;">
+                            <div class="unlimited-budget-option" style="margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--line);">
                                 <label style="display: flex; align-items: center; justify-content: space-between; cursor: pointer;">
                                     <span style="font-weight: 500;">Unlimited Monthly Budget</span>
                                     <input type="checkbox" id="unlimitedBudgetFixed" style="width: 20px; height: 20px;" />
                                 </label>
-                                <p style="font-size: 12px; color: #86868b; margin-top: 4px;">
+                                <p style="font-size: 12px; color: var(--muted); margin-top: 4px;">
                                     Invest full multiplier amount even if it exceeds monthly budget. 
                                     (e.g., 5x multiplier = invest 5 days of budget in 1 day)
                                 </p>
@@ -2371,27 +3251,27 @@
 
                     <div id="dynamicAhr999Config" class="strategy-config">
                         <label style="display: block; margin-bottom: 12px;">Dynamic AHR999 Strategy Configuration</label>
-                        <p style="font-size: 12px; color: #86868b; margin-bottom: 12px;">
+                        <p style="font-size: 12px; color: var(--muted); margin-bottom: 12px;">
                             Configure the continuous curve strategy with power law multiplier and optional drawdown boost.
                         </p>
 
                         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
                             <div>
                                 <label for="dynamic-min-multiplier" style="display: block; margin-bottom: 4px; font-size: 13px;">Min Multiplier</label>
-                                <input type="number" id="dynamic-min-multiplier" value="0.0" min="0" max="10" step="0.1" style="width: 100%; padding: 8px; border: 1px solid #d2d2d7; border-radius: 6px;" />
-                                <p style="font-size: 11px; color: #86868b; margin-top: 4px;">Floor multiplier when Bitcoin is expensive</p>
+                                <input type="number" id="dynamic-min-multiplier" value="0.0" min="0" max="10" step="0.1" style="width: 100%; padding: 8px; border: 1px solid var(--line); border-radius: 6px;" />
+                                <p style="font-size: 11px; color: var(--muted); margin-top: 4px;">Floor multiplier when Bitcoin is expensive</p>
                             </div>
                             <div>
                                 <label for="dynamic-max-multiplier" style="display: block; margin-bottom: 4px; font-size: 13px;">Max Multiplier</label>
-                                <input type="number" id="dynamic-max-multiplier" value="10.0" min="0" max="20" step="0.1" style="width: 100%; padding: 8px; border: 1px solid #d2d2d7; border-radius: 6px;" />
-                                <p style="font-size: 11px; color: #86868b; margin-top: 4px;">Ceiling multiplier when Bitcoin is cheap</p>
+                                <input type="number" id="dynamic-max-multiplier" value="10.0" min="0" max="20" step="0.1" style="width: 100%; padding: 8px; border: 1px solid var(--line); border-radius: 6px;" />
+                                <p style="font-size: 11px; color: var(--muted); margin-top: 4px;">Ceiling multiplier when Bitcoin is cheap</p>
                             </div>
                         </div>
 
                         <div style="margin-bottom: 16px;">
                             <label for="dynamic-gamma" style="display: block; margin-bottom: 4px; font-size: 13px;">Gamma (Curve Shape)</label>
-                            <input type="number" id="dynamic-gamma" value="2.0" min="0.5" max="10" step="0.1" style="width: 100%; padding: 8px; border: 1px solid #d2d2d7; border-radius: 6px;" />
-                            <p style="font-size: 11px; color: #86868b; margin-top: 4px;">
+                            <input type="number" id="dynamic-gamma" value="2.0" min="0.5" max="10" step="0.1" style="width: 100%; padding: 8px; border: 1px solid var(--line); border-radius: 6px;" />
+                            <p style="font-size: 11px; color: var(--muted); margin-top: 4px;">
                                 Controls curve shape. Recommended: 1.0-3.0 (2.0 is balanced). Higher values = more aggressive (only invest heavily when extremely cheap).
                             </p>
                         </div>
@@ -2399,32 +3279,32 @@
                         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
                             <div>
                                 <label for="dynamic-a-low" style="display: block; margin-bottom: 4px; font-size: 13px;">Low AHR (Max Buy)</label>
-                                <input type="number" id="dynamic-a-low" value="0.45" min="0" max="2" step="0.01" style="width: 100%; padding: 8px; border: 1px solid #d2d2d7; border-radius: 6px;" />
-                                <p style="font-size: 11px; color: #86868b; margin-top: 4px;">AHR999 value where buying is maximized</p>
+                                <input type="number" id="dynamic-a-low" value="0.45" min="0" max="2" step="0.01" style="width: 100%; padding: 8px; border: 1px solid var(--line); border-radius: 6px;" />
+                                <p style="font-size: 11px; color: var(--muted); margin-top: 4px;">AHR999 value where buying is maximized</p>
                             </div>
                             <div>
                                 <label for="dynamic-a-high" style="display: block; margin-bottom: 4px; font-size: 13px;">High AHR (Min Buy)</label>
-                                <input type="number" id="dynamic-a-high" value="1.0" min="0" max="5" step="0.01" style="width: 100%; padding: 8px; border: 1px solid #d2d2d7; border-radius: 6px;" />
-                                <p style="font-size: 11px; color: #86868b; margin-top: 4px;">AHR999 value where buying stops (or hits min)</p>
+                                <input type="number" id="dynamic-a-high" value="1.0" min="0" max="5" step="0.01" style="width: 100%; padding: 8px; border: 1px solid var(--line); border-radius: 6px;" />
+                                <p style="font-size: 11px; color: var(--muted); margin-top: 4px;">AHR999 value where buying stops (or hits min)</p>
                             </div>
                         </div>
 
-                        <div style="margin-bottom: 16px; padding: 12px; background: #f5f5f7; border-radius: 8px;">
+                        <div style="margin-bottom: 16px; padding: 12px; background: var(--bg-soft); border-radius: 8px;">
                             <label style="display: flex; align-items: center; gap: 8px; font-size: 14px; cursor: pointer;">
                                 <input type="checkbox" id="dynamic-enable-drawdown-boost" checked style="width: 18px; height: 18px; cursor: pointer;" />
                                 <span><strong>Enable Drawdown Boost</strong></span>
                             </label>
-                            <p style="font-size: 11px; color: #86868b; margin: 8px 0 0 26px;">
+                            <p style="font-size: 11px; color: var(--muted); margin: 8px 0 0 26px;">
                                 Boosts multiplier up to 2x if price is far below 180-day peak. Helps catch major dips.
                             </p>
                         </div>
 
-                        <div style="margin-bottom: 16px; padding: 12px; background: #f5f5f7; border-radius: 8px;">
+                        <div style="margin-bottom: 16px; padding: 12px; background: var(--bg-soft); border-radius: 8px;">
                             <label style="display: flex; align-items: center; gap: 8px; font-size: 14px; cursor: pointer;">
                                 <input type="checkbox" id="dynamic-enable-monthly-cap" checked style="width: 18px; height: 18px; cursor: pointer;" />
                                 <span><strong>Enforce Monthly Cap</strong></span>
                             </label>
-                            <p style="font-size: 11px; color: #86868b; margin: 8px 0 0 26px;">
+                            <p style="font-size: 11px; color: var(--muted); margin: 8px 0 0 26px;">
                                 Budget resets at the start of each calendar month. Uncheck to allow unlimited spending.
                             </p>
                         </div>
@@ -2446,59 +3326,50 @@
         <div id="resources-tab" class="tab-content">
             <!-- Useful Links Section -->
             <div class="links-section">
-                <h2>🔗 Useful Links</h2>
+                <h2>Useful links</h2>
                 <p>Quick access to essential Bitcoin resources and analytics</p>
                 <div class="links-grid">
                     <a href="https://www.tradingview.com/symbols/BTCUSD/?timeframe=YTD" target="_blank" rel="noopener noreferrer" class="link-card">
-                        <span class="link-icon">📈</span>
                         <div class="link-title">BTC/USD Chart</div>
                         <div class="link-description">Advanced Bitcoin price charts and technical analysis</div>
                         <span class="link-url">tradingview.com</span>
                     </a>
                     <a href="https://www.coinglass.com/bitcoin-etf" target="_blank" rel="noopener noreferrer" class="link-card">
-                        <span class="link-icon">💼</span>
                         <div class="link-title">Bitcoin Spot ETF</div>
                         <div class="link-description">Monitor Bitcoin ETF flows, assets, trading volume, and net inflows</div>
                         <span class="link-url">coinglass.com</span>
                     </a>
                     <a href="https://www.coinglass.com/pro/i/bitcoin-mvrv-zscore" target="_blank" rel="noopener noreferrer" class="link-card">
-                        <span class="link-icon">📈</span>
                         <div class="link-title">Bitcoin MVRV Z-Score</div>
                         <div class="link-description">Measure Bitcoin market value vs realized value to identify overvaluation or undervaluation</div>
                         <span class="link-url">coinglass.com</span>
                     </a>
                     <a href="https://www.coinglass.com/pro/i/long-term-holder-supply" target="_blank" rel="noopener noreferrer" class="link-card">
-                        <span class="link-icon">📊</span>
                         <div class="link-title">Long-term Holder Supply</div>
                         <div class="link-description">Analyze Bitcoin long-term holder supply trends</div>
                         <span class="link-url">coinglass.com</span>
                     </a>
                     <a href="https://www.coinglass.com/pro/i/short-term-holder-mvrv" target="_blank" rel="noopener noreferrer" class="link-card">
-                        <span class="link-icon">📊</span>
                         <div class="link-title">Bitcoin Short Term Holder MVRV</div>
                         <div class="link-description">Track short-term holder market value to realized value ratio for Bitcoin</div>
                         <span class="link-url">coinglass.com</span>
                     </a>
                     <a href="https://www.coinglass.com/pro/i/bitcoin-m2-supply-growth" target="_blank" rel="noopener noreferrer" class="link-card">
-                        <span class="link-icon">📊</span>
                         <div class="link-title">Bitcoin Price and Global M2 Supply & Growth</div>
                         <div class="link-description">Track Bitcoin price correlation with global M2 money supply growth</div>
                         <span class="link-url">coinglass.com</span>
                     </a>
                     <a href="https://mempool.space/" target="_blank" rel="noopener noreferrer" class="link-card">
-                        <span class="link-icon">⛓️</span>
                         <div class="link-title">Mempool.space</div>
                         <div class="link-description">Bitcoin blockchain explorer, mempool visualization, and network statistics</div>
                         <span class="link-url">mempool.space</span>
                     </a>
                     <a href="https://bitinfocharts.com/top-100-richest-bitcoin-addresses.html" target="_blank" rel="noopener noreferrer" class="link-card">
-                        <span class="link-icon">💰</span>
                         <div class="link-title">Bitcoin Rich List</div>
                         <div class="link-description">Top 100 richest Bitcoin addresses and distribution statistics</div>
                         <span class="link-url">bitinfocharts.com</span>
                     </a>
                     <a href="https://intel.arkm.com/explorer/entity/blackrock" target="_blank" rel="noopener noreferrer" class="link-card">
-                        <span class="link-icon">🏛️</span>
                         <div class="link-title">BlackRock on Arkham</div>
                         <div class="link-description">Monitor BlackRock's Bitcoin ETF and institutional activity</div>
                         <span class="link-url">intel.arkm.com</span>
@@ -2523,39 +3394,86 @@
     <!-- Chart.js for backtest charts -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     
-    <!-- Real-time checker -->
+    <!-- Today view and real-time checker -->
+    <script src="today.js"></script>
     <script src="realtime.js"></script>
     
     <!-- Backtest engine -->
     <script type="module" src="backtest.js"></script>
     <script>
         // Main tab switching function
-        function switchMainTab(tabName, sourceElement) {
-            // Update main tabs
-            const mainTabs = document.querySelectorAll('.main-tab');
-            mainTabs.forEach(tab => tab.classList.remove('active'));
-            
-            // Find the clicked tab button
-            if (sourceElement) {
-                sourceElement.classList.add('active');
-            } else {
-                // If called programmatically, find the tab by data attribute or text
-                mainTabs.forEach(tab => {
-                    if (tab.textContent.trim().toLowerCase() === tabName.toLowerCase() || 
-                        tab.getAttribute('data-tab') === tabName) {
-                        tab.classList.add('active');
-                    }
-                });
+        const MAIN_TABS = ['today', 'charts', 'backtest', 'forecast', 'resources'];
+
+        function switchMainTab(tabName) {
+            if (!MAIN_TABS.includes(tabName)) return;
+            document.querySelectorAll('.main-tab').forEach(tab => {
+                const isActive = tab.dataset.tab === tabName;
+                tab.classList.toggle('active', isActive);
+                if (isActive) {
+                    tab.setAttribute('aria-current', 'page');
+                } else {
+                    tab.removeAttribute('aria-current');
+                }
+            });
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.toggle('active', content.id === `${tabName}-tab`);
+            });
+            if (tabName === 'charts') {
+                // Charts load only once visible, so Plotly measures a real frame
+                const activeChartTab = document.querySelector('.chart-tab.active');
+                setActiveChart(activeChartTab ? activeChartTab.dataset.chart : 'prices');
             }
-            
-            // Update tab content
-            const tabContents = document.querySelectorAll('.tab-content');
-            tabContents.forEach(content => content.classList.remove('active'));
-            
-            const activeTab = document.getElementById(tabName + '-tab');
-            if (activeTab) {
-                activeTab.classList.add('active');
+            if (location.hash.slice(1) !== tabName) {
+                history.replaceState(history.state, '', tabName === 'today' ? location.pathname + location.search : `#${tabName}`);
             }
+            window.scrollTo(0, 0);
+        }
+
+        const THEME_STORAGE_KEY = 'theme';
+
+        function currentTheme() {
+            const explicit = document.documentElement.getAttribute('data-theme');
+            if (explicit === 'dark' || explicit === 'light') return explicit;
+            return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        }
+
+        function applyThemeToPage() {
+            const theme = currentTheme();
+            const toggle = document.getElementById('themeToggle');
+            if (toggle) {
+                toggle.setAttribute('aria-label', theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode');
+            }
+            // Reload charts that are already showing so they pick up the theme
+            document.querySelectorAll('iframe.chart-iframe[src]').forEach(iframe => {
+                iframe.src = chartFrameSrc(iframe.dataset.src, chartFrameMode());
+            });
+            const fullscreenFrame = document.getElementById('chartFullscreenFrame');
+            if (fullscreenFrame && fullscreenFrame.dataset.src) {
+                fullscreenFrame.src = chartFrameSrc(fullscreenFrame.dataset.src, 'full');
+            }
+            if (window.Chart) {
+                const styles = getComputedStyle(document.documentElement);
+                window.Chart.defaults.color = styles.getPropertyValue('--muted').trim();
+                window.Chart.defaults.borderColor = styles.getPropertyValue('--line').trim();
+                Object.values(window.Chart.instances || {}).forEach(chart => chart.update());
+            }
+        }
+
+        function toggleTheme() {
+            const next = currentTheme() === 'dark' ? 'light' : 'dark';
+            document.documentElement.setAttribute('data-theme', next);
+            try {
+                localStorage.setItem(THEME_STORAGE_KEY, next);
+            } catch (error) {
+                // Storage can be unavailable; the choice then lasts for this visit.
+            }
+            applyThemeToPage();
+        }
+
+        if (window.matchMedia) {
+            window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+                if (!document.documentElement.hasAttribute('data-theme')) applyThemeToPage();
+            });
         }
 
         const REFERENCE_CHARTS_STORAGE_KEY = 'referenceChartsOpen';
@@ -2563,6 +3481,10 @@
 
         // Touch devices get a look-only chart in the page so a swipe scrolls
         // the page; dragging and pinch-zoom live in the full-screen viewer.
+        function chartFrameSrc(src, mode) {
+            return `${src}${src.includes('?') ? '&' : '?'}mode=${mode}&theme=${currentTheme()}`;
+        }
+
         function chartFrameMode() {
             return window.matchMedia && window.matchMedia('(pointer: coarse)').matches ? 'preview' : 'interactive';
         }
@@ -2574,7 +3496,7 @@
                     iframe.addEventListener('load', () => {
                         iframe.classList.add('is-loaded');
                     }, { once: true });
-                    iframe.src = iframe.dataset.src + '?mode=' + chartFrameMode();
+                    iframe.src = chartFrameSrc(iframe.dataset.src, chartFrameMode());
                 }
             });
         }
@@ -2673,7 +3595,8 @@
             chartFullscreenOpener = opener || document.activeElement;
             document.getElementById('chartFullscreenTitle').textContent = title;
             frame.title = `${title} chart, full screen`;
-            frame.src = src + '?mode=full';
+            frame.dataset.src = src;
+            frame.src = chartFrameSrc(src, 'full');
             dialog.hidden = false;
             document.body.classList.add('chart-fullscreen-open');
             history.pushState({ chartFullscreen: true }, '');
@@ -2684,7 +3607,9 @@
             const dialog = document.getElementById('chartFullscreen');
             if (dialog.hidden) return;
             dialog.hidden = true;
-            document.getElementById('chartFullscreenFrame').src = 'about:blank';
+            const fullscreenFrame = document.getElementById('chartFullscreenFrame');
+            fullscreenFrame.src = 'about:blank';
+            delete fullscreenFrame.dataset.src;
             document.body.classList.remove('chart-fullscreen-open');
             if (!fromHistory && history.state && history.state.chartFullscreen) {
                 history.back();
@@ -2869,6 +3794,7 @@
 
                 dailyReportData = await response.json();
                 renderDailyReport();
+                window.TodayView.renderBackdrop(dailyReportData);
             } catch (error) {
                 dailyReportData = null;
                 renderDailyReport();
@@ -2877,8 +3803,13 @@
         }
 
         document.addEventListener('DOMContentLoaded', () => {
-            setActiveChart('ratios');
+            document.getElementById('todayDate').textContent = 'Today · ' + new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
             setReferenceChartsOpen(readReferenceChartsOpen());
+            applyThemeToPage();
+            const linkedTab = location.hash.slice(1);
+            if (MAIN_TABS.includes(linkedTab) && linkedTab !== 'today') {
+                switchMainTab(linkedTab);
+            }
             loadDailyReport();
         });
 
@@ -3587,39 +4518,6 @@
             dateInput.max = fiveYearsFromNow.toISOString().split('T')[0];
         });
         
-        // Populate the On-Chain Bottom Signals summary card from the generated info JSON
-        function updateBottomSignalsCard() {
-            fetch('charts/bottom_signals_info.json?t=' + Date.now(), { cache: "no-store" })
-                .then(r => r.ok ? r.json() : null)
-                .then(data => {
-                    if (!data || typeof data.composite !== 'number') return;
-                    const card = document.getElementById('bottomSignalsCard');
-                    if (!card) return;
-                    if (data.date) {
-                        card.href = 'charts/bottom_signals.html?v=' + encodeURIComponent(data.date);
-                    }
-                    const scoreEl = document.getElementById('bscScore');
-                    scoreEl.textContent = Math.round(data.composite);
-                    scoreEl.style.color = data.zone_color || '#1d1d1f';
-                    const zoneEl = document.getElementById('bscZone');
-                    zoneEl.textContent = data.zone || '';
-                    zoneEl.style.color = data.zone_color || '#1d1d1f';
-                    const parts = (data.signals || []).map(
-                        s => s.key.toUpperCase() + ' ' + Math.round(s.score)
-                    );
-                    document.getElementById('bscMeta').textContent =
-                        (data.date ? 'Data ' + data.date + ' · ' : '') + parts.join(' · ') +
-                        ' · each 0–20 · equal weight';
-                    const noteEl = document.getElementById('bscNote');
-                    if (noteEl) {
-                        const advice = data.advice ? data.advice + ' ' : '';
-                        noteEl.textContent = advice + 'Sentiment gauge, not a buy signal.';
-                    }
-                    card.style.display = 'flex';
-                })
-                .catch(() => {});
-        }
-
         // Load and update OI quadrant legend with current quadrant info
         function updateOIQuadrantLegend() {
             fetch('charts/oi_quadrant_info.json')
@@ -3700,7 +4598,6 @@
                 document.getElementById('lastUpdate').textContent = 'Unknown';
             });
         
-        updateBottomSignalsCard();
     </script>
 </body>
 </html>
