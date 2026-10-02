@@ -1063,6 +1063,81 @@
             }
         }
 
+        /* Trend outlook */
+        .trend-outlook {
+            margin-top: 24px;
+            border-top: 1px solid var(--line);
+            padding-top: 20px;
+        }
+
+        .trend-outlook-title {
+            margin: 0 0 6px;
+            font-size: 1.15rem;
+            text-wrap: balance;
+        }
+
+        .trend-outlook-lede,
+        .outlook-note,
+        .outlook-empty {
+            margin: 0;
+            max-width: 68ch;
+            color: var(--muted);
+            font-size: 14px;
+        }
+
+        .outlook-today {
+            margin: 14px 0 0;
+            font-size: 14px;
+        }
+
+        .outlook-rows {
+            list-style: none;
+            margin: 12px 0;
+            padding: 0;
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 12px;
+        }
+
+        .outlook-row {
+            display: grid;
+            gap: 4px;
+            align-content: start;
+            padding: 14px 16px;
+            border: 1px solid var(--line);
+            border-radius: 12px;
+            background: var(--bg-soft);
+        }
+
+        .outlook-when {
+            display: flex;
+            justify-content: space-between;
+            gap: 8px;
+            font-size: 13px;
+        }
+
+        .outlook-label {
+            font-weight: 600;
+        }
+
+        .outlook-date,
+        .outlook-drift {
+            color: var(--muted);
+            font-size: 13px;
+        }
+
+        .outlook-value {
+            font-size: 1.5rem;
+            font-weight: 600;
+            font-variant-numeric: tabular-nums;
+        }
+
+        @media (max-width: 640px) {
+            .outlook-rows {
+                grid-template-columns: minmax(0, 1fr);
+            }
+        }
+
         /* Reference charts */
         .reference-charts {
             margin-top: 24px;
@@ -1571,160 +1646,6 @@
             margin: 20px 0;
         }
 
-        /* Forecast Calculator */
-        .forecast-section {
-            background: var(--surface);
-            border-radius: 18px;
-            padding: 40px;
-            margin-bottom: 30px;
-            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
-        }
-
-        .forecast-section h2 {
-            font-size: 1.5em;
-            font-weight: 600;
-            margin-bottom: 8px;
-            text-align: center;
-        }
-
-        .forecast-section p {
-            text-align: center;
-            color: var(--muted);
-            font-size: 15px;
-            margin-bottom: 30px;
-        }
-
-        .forecast-input-group {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 12px;
-            margin-bottom: 30px;
-            flex-wrap: wrap;
-        }
-
-        .forecast-input-group > * {
-            flex: 0 1 auto;
-        }
-
-        .forecast-input-group label {
-            font-size: 15px;
-            font-weight: 500;
-            color: var(--ink);
-        }
-
-        .forecast-input-group input[type="date"] {
-            flex: 0 1 auto;
-            min-width: 180px;
-            max-width: 220px;
-            padding: 12px 16px;
-            font-size: 15px;
-            border: 1px solid var(--line);
-            border-radius: 8px;
-            background: var(--bg-soft);
-            color: var(--ink);
-            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, sans-serif;
-            transition: all 0.2s ease;
-            box-sizing: border-box;
-        }
-
-        .forecast-input-group input[type="date"]:focus {
-            outline: none;
-            border-color: var(--blue);
-            background: var(--surface);
-        }
-
-        .forecast-button {
-            padding: 12px 32px;
-            font-size: 15px;
-            font-weight: 500;
-            color: white;
-            background: var(--button);
-            border: none;
-            border-radius: 980px;
-            cursor: pointer;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-
-        .forecast-button:hover {
-            background: var(--button-hover);
-            transform: scale(1.02);
-        }
-
-        .forecast-button:active {
-            transform: scale(0.98);
-        }
-
-        .forecast-result {
-            display: none;
-            text-align: center;
-            padding: 30px;
-            background: linear-gradient(135deg, var(--bg-soft) 0%, var(--bg-soft) 100%);
-            border-radius: 12px;
-            animation: fadeIn 0.4s ease-in-out;
-        }
-
-        .forecast-result.show {
-            display: block;
-        }
-
-        .forecast-price {
-            font-size: 3em;
-            font-weight: 700;
-            color: var(--ink);
-            margin-bottom: 12px;
-            background: linear-gradient(135deg, #f7931a 0%, #ffa726 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-
-        .forecast-date {
-            font-size: 1.2em;
-            color: var(--ink);
-            margin-bottom: 20px;
-            font-weight: 500;
-        }
-
-        .forecast-details {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 16px;
-            margin-top: 20px;
-        }
-
-        .forecast-detail-item {
-            background: var(--surface);
-            padding: 16px;
-            border-radius: 8px;
-        }
-
-        .forecast-detail-item h4 {
-            font-size: 12px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            color: var(--muted);
-            margin-bottom: 8px;
-            font-weight: 600;
-        }
-
-        .forecast-detail-item p {
-            font-size: 1.1em;
-            color: var(--ink);
-            font-weight: 600;
-            margin: 0;
-        }
-
-        .forecast-disclaimer {
-            margin-top: 20px;
-            padding: 16px;
-            background: var(--warn-soft);
-            border-radius: 8px;
-            font-size: 13px;
-            color: var(--warn-ink);
-            text-align: left;
-        }
-
         /* Backtest Section */
         .backtest-section {
             background: var(--surface);
@@ -2029,7 +1950,6 @@
 
             .chart-container,
             .check-section,
-            .forecast-section,
             .backtest-section {
                 padding: 20px;
             }
@@ -2503,7 +2423,6 @@
             }
 
             .check-section,
-            .forecast-section,
             .backtest-section {
                 padding: 32px 24px;
             }
@@ -2697,7 +2616,6 @@
             }
 
             .check-section,
-            .forecast-section,
             .backtest-section {
                 padding: 28px 20px;
             }
@@ -2765,32 +2683,6 @@
             .distance-info {
                 padding: 16px;
             }
-
-            .forecast-input-group {
-                flex-direction: column;
-                align-items: stretch;
-                gap: 16px;
-            }
-
-            .forecast-input-group label {
-                text-align: left;
-            }
-
-            .forecast-input-group input[type="date"],
-            .forecast-button {
-                width: 100%;
-                flex: 1 1 100%;
-                min-width: 0;
-                max-width: 100%;
-            }
-
-            .forecast-details {
-                grid-template-columns: 1fr;
-            }
-
-            .forecast-price {
-                font-size: 2.4em;
-            }
         }
     </style>
 </head>
@@ -2813,10 +2705,6 @@
                 <button class="main-tab" type="button" data-tab="backtest" onclick="switchMainTab('backtest')">
                     <svg viewBox="0 0 20 20" width="20" height="20" aria-hidden="true"><path d="M4 16V9M10 16V4M16 16v-5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"></path></svg>
                     <span>Backtest</span>
-                </button>
-                <button class="main-tab" type="button" data-tab="forecast" onclick="switchMainTab('forecast')">
-                    <svg viewBox="0 0 20 20" width="20" height="20" aria-hidden="true"><path d="M3 16c4-1 6-4 8-8l2-4 4 2" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path></svg>
-                    <span>Forecast</span>
                 </button>
                 <button class="main-tab" type="button" data-tab="resources" onclick="switchMainTab('resources')">
                     <svg viewBox="0 0 20 20" width="20" height="20" aria-hidden="true"><path d="M8.5 11.5l3-3M7 9.5l-2 2a2.8 2.8 0 004 4l2-2M13 10.5l2-2a2.8 2.8 0 00-4-4l-2 2" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"></path></svg>
@@ -2935,10 +2823,10 @@
                     <span class="explore-desc">Daily, monthly or ahr999-weighted DCA on real history</span>
                     <span class="explore-link">Run a backtest →</span>
                 </button>
-                <button class="explore-card" type="button" onclick="switchMainTab('forecast')">
-                    <span class="explore-title">Price forecast</span>
-                    <span class="explore-desc">Power-law trend value on any future date</span>
-                    <span class="explore-link">Pick a date →</span>
+                <button class="explore-card" type="button" onclick="showTrendOutlook()">
+                    <span class="explore-title">Where the trend points</span>
+                    <span class="explore-desc">Power-law trend value 1, 2 and 4 years out, and how much that moved in a year</span>
+                    <span class="explore-link">See the outlook →</span>
                 </button>
             </nav>
         </div>
@@ -2970,6 +2858,14 @@
                     </div>
                 </div>
                 <p class="chart-touch-hint">Tap a chart to read values. Use Full screen to drag and pinch-zoom.</p>
+
+                <section id="trendOutlook" class="trend-outlook" aria-labelledby="trendOutlookTitle">
+                    <h2 id="trendOutlookTitle" class="trend-outlook-title">Where the trend points</h2>
+                    <p class="trend-outlook-lede">The power-law trend line from Price Comparison, carried forward. It is a long-run average that price has spent years above and below, not a price target.</p>
+                    <div id="trendOutlookBody" class="trend-outlook-body" aria-live="polite">
+                        <p class="outlook-empty">Loading projections…</p>
+                    </div>
+                </section>
 
                 <div class="reference-charts">
                     <button id="referenceToggle" class="reference-toggle" type="button" aria-expanded="false" aria-controls="referencePanel" onclick="toggleReferenceCharts()">
@@ -3079,27 +2975,6 @@
             </section>
         </div>
 
-
-        <!-- Forecast Tab Content -->
-        <div id="forecast-tab" class="tab-content">
-            <!-- Future Price Forecast Calculator -->
-            <div class="forecast-section">
-                <h2>Price forecast</h2>
-                <p>Calculate Bitcoin's predicted price on any future date based on the Power Law model</p>
-                
-                <div class="forecast-input-group">
-                    <label for="forecastDate">Select Date:</label>
-                    <input type="date" id="forecastDate" />
-                    <button class="forecast-button" onclick="calculateForecast()">
-                        Calculate Forecast
-                    </button>
-                </div>
-
-                <div id="forecastResult" class="forecast-result">
-                    <!-- Forecast results will be inserted here -->
-                </div>
-            </div>
-        </div>
 
         <!-- Backtest Tab Content -->
         <div id="backtest-tab" class="tab-content">
@@ -3565,13 +3440,14 @@
     
     <!-- Today view and real-time checker -->
     <script src="today.js"></script>
+    <script src="trend_outlook.js"></script>
     <script src="realtime.js"></script>
     
     <!-- Backtest engine -->
     <script type="module" src="backtest.js"></script>
     <script>
         // Main tab switching function
-        const MAIN_TABS = ['today', 'charts', 'backtest', 'forecast', 'resources'];
+        const MAIN_TABS = ['today', 'charts', 'backtest', 'resources'];
 
         function switchMainTab(tabName) {
             if (!MAIN_TABS.includes(tabName)) return;
@@ -3591,11 +3467,35 @@
                 // Charts load only once visible, so Plotly measures a real frame
                 const activeChartTab = document.querySelector('.chart-tab.active');
                 setActiveChart(activeChartTab ? activeChartTab.dataset.chart : 'prices');
+                loadTrendOutlook();
             }
             if (location.hash.slice(1) !== tabName) {
                 history.replaceState(history.state, '', tabName === 'today' ? location.pathname + location.search : `#${tabName}`);
             }
             window.scrollTo(0, 0);
+        }
+
+        let trendOutlookLoaded = false;
+
+        async function loadTrendOutlook() {
+            if (trendOutlookLoaded) return;
+            trendOutlookLoaded = true;
+            const body = document.getElementById('trendOutlookBody');
+            try {
+                const response = await fetch('data/btc_metadata.json', { cache: 'no-cache' });
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                const meta = await response.json();
+                body.innerHTML = window.TrendOutlook.renderOutlook(window.TrendOutlook.buildOutlook(meta, new Date()));
+            } catch (error) {
+                console.warn('Failed to load trend outlook:', error);
+                body.innerHTML = window.TrendOutlook.renderOutlook(null);
+                trendOutlookLoaded = false;
+            }
+        }
+
+        function showTrendOutlook() {
+            switchMainTab('charts');
+            document.getElementById('trendOutlook').scrollIntoView({ block: 'start' });
         }
 
         const THEME_STORAGE_KEY = 'theme';
@@ -3976,7 +3876,9 @@
             setReferenceChartsOpen(readReferenceChartsOpen());
             applyThemeToPage();
             const linkedTab = location.hash.slice(1);
-            if (MAIN_TABS.includes(linkedTab) && linkedTab !== 'today') {
+            if (linkedTab === 'forecast') {
+                showTrendOutlook();
+            } else if (MAIN_TABS.includes(linkedTab) && linkedTab !== 'today') {
                 switchMainTab(linkedTab);
             }
             loadDailyReport();
@@ -4573,119 +4475,6 @@
             // DOM already loaded, initialize immediately
             initializeBacktestUI();
         }
-        
-        // Future price forecast calculator
-        async function calculateForecast() {
-            const dateInput = document.getElementById('forecastDate');
-            const resultDiv = document.getElementById('forecastResult');
-            
-            if (!dateInput.value) {
-                alert('Please select a date');
-                return;
-            }
-            
-            const selectedDate = new Date(dateInput.value);
-            const today = new Date();
-            today.setHours(0, 0, 0, 0);
-            
-            // Validate date is in the future
-            if (selectedDate <= today) {
-                alert('Please select a future date');
-                return;
-            }
-            
-            // Validate date is not too far (max 5 years)
-            const maxDate = new Date();
-            maxDate.setFullYear(maxDate.getFullYear() + 5);
-            if (selectedDate > maxDate) {
-                alert('Please select a date within the next 5 years');
-                return;
-            }
-            
-            try {
-                // Load metadata to get power law parameters
-                const response = await fetch('data/btc_metadata.json');
-                const metadata = await response.json();
-                
-                // Calculate Bitcoin age for selected date (days since genesis: 2009-01-03)
-                const genesisDate = new Date('2009-01-03');
-                const bitcoinAgeDays = Math.floor((selectedDate - genesisDate) / (1000 * 60 * 60 * 24));
-                
-                // Calculate power law trend: price = a * t^n
-                const forecastPrice = metadata.trend_a * Math.pow(bitcoinAgeDays, metadata.trend_b);
-                
-                // Calculate days from now
-                const daysFromNow = Math.floor((selectedDate - today) / (1000 * 60 * 60 * 24));
-                const monthsFromNow = (daysFromNow / 30.44).toFixed(1);
-                const yearsFromNow = (daysFromNow / 365.25).toFixed(1);
-                
-                // Format display
-                let timeDisplay;
-                if (daysFromNow < 60) {
-                    timeDisplay = `${daysFromNow} days from now`;
-                } else if (daysFromNow < 365) {
-                    timeDisplay = `${monthsFromNow} months from now`;
-                } else {
-                    timeDisplay = `${yearsFromNow} years from now`;
-                }
-                
-                // Display result
-                resultDiv.innerHTML = `
-                    <div class="forecast-price">
-                        $${forecastPrice.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                    </div>
-                    <div class="forecast-date">
-                        ${selectedDate.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
-                    </div>
-                    
-                    <div class="forecast-details">
-                        <div class="forecast-detail-item">
-                            <h4>Time From Now</h4>
-                            <p>${timeDisplay}</p>
-                        </div>
-                        <div class="forecast-detail-item">
-                            <h4>Bitcoin Age</h4>
-                            <p>${bitcoinAgeDays.toLocaleString()} days</p>
-                        </div>
-                        <div class="forecast-detail-item">
-                            <h4>Model Exponent</h4>
-                            <p>${metadata.trend_b.toFixed(2)}</p>
-                        </div>
-                    </div>
-                    
-                    <div class="forecast-disclaimer">
-                        <strong>⚠️ Disclaimer:</strong> This forecast is based on a mathematical power law model fitted to historical data. 
-                        It is <strong>not financial advice</strong> and actual prices may differ significantly due to market conditions, 
-                        regulatory changes, technological developments, and other unpredictable factors. 
-                        Past performance does not guarantee future results.
-                    </div>
-                `;
-                
-                resultDiv.classList.add('show');
-                
-            } catch (error) {
-                alert('Error calculating forecast: ' + error.message);
-                console.error(error);
-            }
-        }
-        
-        // Set minimum date to tomorrow and default to 1 year from now
-        document.addEventListener('DOMContentLoaded', () => {
-            const dateInput = document.getElementById('forecastDate');
-            const tomorrow = new Date();
-            tomorrow.setDate(tomorrow.getDate() + 1);
-            dateInput.min = tomorrow.toISOString().split('T')[0];
-            
-            // Set default to 1 year from now
-            const oneYearFromNow = new Date();
-            oneYearFromNow.setFullYear(oneYearFromNow.getFullYear() + 1);
-            dateInput.value = oneYearFromNow.toISOString().split('T')[0];
-            
-            // Set max date to 5 years from now
-            const fiveYearsFromNow = new Date();
-            fiveYearsFromNow.setFullYear(fiveYearsFromNow.getFullYear() + 5);
-            dateInput.max = fiveYearsFromNow.toISOString().split('T')[0];
-        });
         
         // Load and update OI quadrant legend with current quadrant info
         function updateOIQuadrantLegend() {

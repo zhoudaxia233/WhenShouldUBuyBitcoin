@@ -20,14 +20,15 @@ describe("Site layout", () => {
     describe("navigation", () => {
         it("has one section button per view, Today first and active", () => {
             const tabs = [...html.matchAll(/<button class="main-tab[^"]*" type="button" data-tab="([a-z]+)"/g)].map(m => m[1]);
-            expect(tabs).toEqual(["today", "charts", "backtest", "forecast", "resources"]);
+            expect(tabs).toEqual(["today", "charts", "backtest", "resources"]);
             expect(html).toMatch(/class="main-tab active" type="button" data-tab="today" aria-current="page"/);
         });
 
         it("has a panel for every view", () => {
-            for (const tab of ["today", "charts", "backtest", "forecast", "resources"]) {
+            for (const tab of ["today", "charts", "backtest", "resources"]) {
                 expect(html).toContain(`id="${tab}-tab"`);
             }
+            expect(html).not.toContain('id="forecast-tab"');
             expect(html).not.toContain('id="analysis-tab"');
             expect(html).not.toContain('id="tools-tab"');
         });
@@ -166,5 +167,42 @@ describe("Cross-checks", () => {
         const realtime = readFileSync(join(process.cwd(), "docs", "realtime.js"), "utf-8");
         expect(realtime).toContain("async function loadLatestMvrv()");
         expect(realtime).toContain("window.TodayView.renderCrossChecks({ price: realtimePrice, ma200w, mvrv: latestMvrv });");
+    });
+});
+
+describe("Trend outlook", () => {
+    let html;
+    let doc;
+
+    beforeAll(() => {
+        html = readFileSync(join(process.cwd(), "docs", "index.html"), "utf-8");
+        doc = new Window().document;
+        doc.write(html);
+    });
+
+    it("sits in the Charts view below the core charts", () => {
+        const block = doc.getElementById("trendOutlook");
+        expect(block).not.toBeNull();
+        expect(block.closest(".tab-content").id).toBe("charts-tab");
+        const order = [...doc.querySelectorAll("#charts-tab .chart-container, #trendOutlook, #charts-tab .reference-charts")].map(el => el.id || el.className);
+        expect(order).toEqual(["chart-container", "trendOutlook", "reference-charts"]);
+        expect(doc.getElementById("trendOutlookBody")).not.toBeNull();
+    });
+
+    it("replaces the forecast page everywhere", () => {
+        expect(html).not.toContain("switchMainTab('forecast')");
+        expect(html).not.toContain("calculateForecast");
+        expect(html).not.toContain('id="forecastDate"');
+        expect(html).toContain('<script src="trend_outlook.js"></script>');
+    });
+
+    it("points the Today explore card at the outlook", () => {
+        const card = [...doc.querySelectorAll(".explore-card")].find(el => el.textContent.includes("Where the trend points"));
+        expect(card).toBeTruthy();
+        expect(card.getAttribute("onclick")).toBe("showTrendOutlook()");
+    });
+
+    it("sends old forecast links to the outlook", () => {
+        expect(html).toMatch(/linkedTab === 'forecast'\) \{\s*showTrendOutlook\(\);/);
     });
 });
