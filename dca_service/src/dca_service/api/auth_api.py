@@ -18,10 +18,12 @@ from dca_service.auth.password import verify_password
 from dca_service.auth.csrf import get_csrf_token, validate_csrf
 from dca_service.core.logging import logger
 from dca_service.config import settings
+from dca_service.static_files import asset_url
 
 # Setup templates
 BASE_DIR = Path(__file__).resolve().parent.parent
 templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
+templates.env.globals["asset_url"] = asset_url
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 

@@ -19,7 +19,7 @@ TEMPLATE_NAMES = [
 def test_shared_satsflow_design_system_is_loaded_by_all_templates():
     for template_name in TEMPLATE_NAMES:
         html = (TEMPLATE_DIR / template_name).read_text(encoding="utf-8")
-        assert 'href="/static/app.css"' in html, template_name
+        assert "href=\"{{ asset_url('app.css') }}\"" in html, template_name
 
 
 def test_shared_satsflow_design_system_file_exists():

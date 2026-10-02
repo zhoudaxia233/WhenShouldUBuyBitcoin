@@ -218,6 +218,14 @@
         var state = { series: null, current: {}, range: "1y", hover: null, view: [], geom: null, signature: "" };
         var frame = 0;
 
+        // Without app.css (an old cached copy) the canvas would take its CSS size
+        // from its own bitmap, and every redraw would grow it by devicePixelRatio.
+        if (!token(document.documentElement, "--reserve-price", "")) {
+            canvas.style.display = "block";
+            canvas.style.width = "100%";
+            canvas.style.height = "320px";
+        }
+
         function schedule() {
             cancelAnimationFrame(frame);
             frame = requestAnimationFrame(draw);
