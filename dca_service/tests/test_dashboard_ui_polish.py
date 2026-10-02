@@ -27,7 +27,7 @@ def test_dashboard_uses_orange_bitcoin_visual_system():
     html = _dashboard_html()
     css = STATIC_CSS_PATH.read_text(encoding="utf-8")
 
-    assert 'href="/static/app.css"' in html
+    assert "href=\"{{ asset_url('app.css') }}\"" in html
     assert "--dashboard-accent: #ff8a00;" in css
     assert "--dashboard-accent-strong: #f97316;" in css
     assert "{% include \"_shared_header.html\" %}" in html

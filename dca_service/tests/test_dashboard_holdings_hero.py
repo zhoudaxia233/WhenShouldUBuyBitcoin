@@ -48,7 +48,7 @@ def test_holdings_hero_shows_where_the_btc_sits_and_cash_to_spend():
 
 def test_home_loads_the_chart_cache_first_from_the_pnl_api():
     html = _html("index.html")
-    assert '<script src="/static/reserve_chart.js"></script>' in html
+    assert "<script src=\"{{ asset_url('reserve_chart.js') }}\"></script>" in html
     loader = html[html.index("async function loadReserveChart()") :]
     loader = loader[: loader.index("\n        }\n") ]
     assert "loadFromCache('stats_pnl')" in loader

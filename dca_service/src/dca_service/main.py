@@ -1,10 +1,10 @@
 from fastapi import FastAPI, Request, Depends, HTTPException, Response
 from fastapi.templating import Jinja2Templates
-from fastapi.staticfiles import StaticFiles
 from pathlib import Path
 from contextlib import asynccontextmanager
 
 from dca_service.config import settings
+from dca_service.static_files import RevalidatedStaticFiles, asset_url
 from dca_service.database import create_db_and_tables, get_session
 from dca_service.api import (
     routes,
@@ -102,17 +102,18 @@ app.add_middleware(
 # Setup templates
 BASE_DIR = Path(__file__).resolve().parent
 templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
+templates.env.globals["asset_url"] = asset_url
 
 # Mount static folder for favicon and other static assets
 STATIC_DIR = BASE_DIR / "static"
 if STATIC_DIR.exists():
-    app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
+    app.mount("/static", RevalidatedStaticFiles(directory=str(STATIC_DIR)), name="static")
 
 # Mount docs folder for analysis charts and data
 # This serves the btc_metrics.csv analysis HTML files
 DOCS_DIR = Path(__file__).resolve().parent.parent.parent.parent / "docs"
 if DOCS_DIR.exists():
-    app.mount("/analysis", StaticFiles(directory=str(DOCS_DIR), html=True), name="analysis")
+    app.mount("/analysis", RevalidatedStaticFiles(directory=str(DOCS_DIR), html=True), name="analysis")
 
 # Include API routers
 app.include_router(routes.router, prefix=settings.API_V1_STR)
