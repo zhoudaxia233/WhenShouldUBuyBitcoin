@@ -92,8 +92,8 @@ def test_update_fetches_merges_saves(monkeypatch, tmp_path):
     monkeypatch.setattr(od, "load_onchain_metrics", lambda: stale)
     captured = {}
 
-    def fake_fetch_all(startday=None):
-        captured["startday"] = startday
+    def fake_fetch_all(plan=None, **kwargs):
+        captured["plan"] = dict(plan)
         return {
             "mvrv": [("2026-06-09", 1.3)],
             "supply_loss_btc": [("2026-06-09", 9.0e6)],
@@ -106,8 +106,10 @@ def test_update_fetches_merges_saves(monkeypatch, tmp_path):
         lambda: [{"date": "2026-06-09", "value": 10}],
     )
     out = od.update_onchain_metrics()
-    # overlap: startday = last cached date minus 7 days
-    assert captured["startday"] == "2025-12-25"
+    # overlap: each series restarts 7 days before its own last cached date;
+    # series with no cached values are fetched in full
+    assert captured["plan"]["mvrv"] == "2025-12-25"
+    assert captured["plan"]["supply_loss_btc"] is None
     assert out["date"].tolist() == ["2026-01-01", "2026-06-09"]
     # derived: 9.0 / (9.0 + 11.0) = 45%
     assert out.loc[1, "supply_loss_pct"] == pytest.approx(45.0)
@@ -119,7 +121,7 @@ def test_update_fetches_merges_saves(monkeypatch, tmp_path):
 def test_update_returns_cache_when_all_fetches_fail(monkeypatch):
     stale = _frame({"date": ["2026-01-01"], "mvrv": [1.0]})
     monkeypatch.setattr(od, "load_onchain_metrics", lambda: stale)
-    monkeypatch.setattr(od, "fetch_all_onchain_series", lambda startday=None: {})
+    monkeypatch.setattr(od, "fetch_all_onchain_series", lambda **kwargs: {})
     monkeypatch.setattr(od, "fetch_fear_and_greed_history", lambda: None)
     assert od.update_onchain_metrics() is stale
 
@@ -128,7 +130,7 @@ def test_update_returns_cache_when_onchain_fetch_fails_but_fng_succeeds(monkeypa
     stale = _complete_frame("2026-01-01")
     saved = []
     monkeypatch.setattr(od, "load_onchain_metrics", lambda: stale)
-    monkeypatch.setattr(od, "fetch_all_onchain_series", lambda startday=None: {})
+    monkeypatch.setattr(od, "fetch_all_onchain_series", lambda **kwargs: {})
     monkeypatch.setattr(
         od,
         "fetch_fear_and_greed_history",
@@ -179,7 +181,7 @@ def test_update_returns_merged_even_when_save_fails(monkeypatch):
     monkeypatch.setattr(od, "load_onchain_metrics", lambda: stale)
     monkeypatch.setattr(
         od, "fetch_all_onchain_series",
-        lambda startday=None: {"mvrv": [("2026-06-09", 1.3)]},
+        lambda **kwargs: {"mvrv": [("2026-06-09", 1.3)]},
     )
     monkeypatch.setattr(od, "fetch_fear_and_greed_history", lambda: None)
     monkeypatch.setattr(od, "save_onchain_metrics", lambda df: False)
@@ -203,7 +205,7 @@ def test_save_dedupes_duplicate_dates(tmp_path, monkeypatch):
 def test_update_raises_in_strict_mode_when_fetch_fails(monkeypatch):
     stale = _frame({"date": ["2026-01-01"], "mvrv": [1.0]})
     monkeypatch.setattr(od, "load_onchain_metrics", lambda: stale)
-    monkeypatch.setattr(od, "fetch_all_onchain_series", lambda startday=None: {})
+    monkeypatch.setattr(od, "fetch_all_onchain_series", lambda **kwargs: {})
     monkeypatch.setattr(od, "fetch_fear_and_greed_history", lambda: None)
     with pytest.raises(RuntimeError):
         od.update_onchain_metrics(strict=True)
@@ -232,7 +234,7 @@ def test_update_strict_raises_when_partial_fetch_still_stale(monkeypatch, tmp_pa
     stale = _frame({"date": ["2026-01-01"], "mvrv": [1.0]})
     monkeypatch.setattr(od, "load_onchain_metrics", lambda: stale)
     monkeypatch.setattr(
-        od, "fetch_all_onchain_series", lambda startday=None: {"mvrv": [("2025-01-02", 2.0)]}
+        od, "fetch_all_onchain_series", lambda **kwargs: {"mvrv": [("2025-01-02", 2.0)]}
     )
     monkeypatch.setattr(od, "fetch_fear_and_greed_history", lambda: None)
     with pytest.raises(RuntimeError):
@@ -252,7 +254,7 @@ def test_update_strict_succeeds_when_fetch_brings_fresh_data(monkeypatch, tmp_pa
     monkeypatch.setattr(
         od,
         "fetch_all_onchain_series",
-        lambda startday=None: {
+        lambda **kwargs: {
             "lth_realized_price": [(today, 48_000.0)],
             "realized_price": [(today, 52_000.0)],
             "sth_realized_price": [(today, 65_000.0)],
@@ -274,12 +276,65 @@ def test_update_with_garbage_dates_falls_back_to_full_fetch(monkeypatch):
     monkeypatch.setattr(od, "load_onchain_metrics", lambda: bad)
     captured = {}
 
-    def fake_fetch_all(startday=None):
-        captured["startday"] = startday
+    def fake_fetch_all(plan=None, **kwargs):
+        captured["plan"] = dict(plan)
         return {"mvrv": [("2026-06-09", 1.3)]}
 
     monkeypatch.setattr(od, "fetch_all_onchain_series", fake_fetch_all)
     monkeypatch.setattr(od, "fetch_fear_and_greed_history", lambda: None)
     monkeypatch.setattr(od, "save_onchain_metrics", lambda df: True)
     od.update_onchain_metrics()
-    assert captured["startday"] is None
+    assert captured["plan"]["mvrv"] is None
+
+
+def _history(last_by_column: dict, start: str = "2026-06-20", end: str = "2026-10-01") -> pd.DataFrame:
+    """Daily rows; each column is filled up to its own last date."""
+    days = pd.date_range(start, end, freq="D").strftime("%Y-%m-%d")
+    rows = {"date": list(days)}
+    for col in od.REQUIRED_SIGNAL_COLUMNS:
+        last = last_by_column.get(col, end)
+        rows[col] = [1.0 if d <= last else None for d in days]
+    return _frame(rows)
+
+
+def test_plan_fetches_only_stale_metrics_oldest_first():
+    existing = _history(
+        {
+            "supply_loss_pct": "2026-07-02",
+            "realized_cap_change_30d_usd": "2026-07-02",
+            "mvrv": "2026-09-24",
+        }
+    )
+    plan = od.plan_onchain_fetches(existing, today=date(2026, 10, 2))
+    assert plan == [
+        ("supply_loss_btc", "2026-06-25"),
+        ("supply_profit_btc", "2026-06-25"),
+        ("realized_cap_change_30d_usd", "2026-06-25"),
+        ("mvrv", "2026-09-17"),
+    ]
+
+
+def test_plan_fetches_everything_without_cache():
+    plan = od.plan_onchain_fetches(None, today=date(2026, 10, 2))
+    assert plan == [(key, None) for key in od.ONCHAIN_ENDPOINTS]
+
+
+def test_plan_is_empty_when_every_metric_is_fresh():
+    existing = _history({}, end="2026-10-01")
+    assert od.plan_onchain_fetches(existing, today=date(2026, 10, 2)) == []
+
+
+def test_update_fetches_the_stale_plan(monkeypatch):
+    stale = _history({"supply_loss_pct": "2026-07-02"})
+    monkeypatch.setattr(od, "load_onchain_metrics", lambda: stale)
+    monkeypatch.setattr(od, "save_onchain_metrics", lambda df: True)
+    monkeypatch.setattr(od, "fetch_fear_and_greed_history", lambda: [])
+    seen = {}
+
+    def fake_fetch_all(plan=None, **kwargs):
+        seen["plan"] = plan
+        return {}
+
+    monkeypatch.setattr(od, "fetch_all_onchain_series", fake_fetch_all)
+    od.update_onchain_metrics()
+    assert [metric for metric, _ in seen["plan"]] == ["supply_loss_btc", "supply_profit_btc"]
