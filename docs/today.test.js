@@ -76,7 +76,8 @@ describe("buildVerdict", () => {
 
     it("explains why regular buying continues and links to the backtest", () => {
         const first = today.buildVerdict(status(), onchain, TODAY).actions[0];
-        expect(first.detail).toBe("Steady buying is the baseline; signals only tilt it");
+        // The row leaves the Today view, so it says where it goes
+        expect(first.detail).toBe("Signals barely beat it in our backtest · See results");
         expect(first.target).toEqual({ tab: "backtest", title: "Backtest" });
     });
 
@@ -241,5 +242,31 @@ describe("buildCrossChecks", () => {
         const checks = today.buildCrossChecks({ price: 83553, ma200w: null, mvrv: null }, TODAY);
         expect(checks.cards).toEqual([]);
         expect(checks.summary).toBe("");
+    });
+});
+
+describe("action row clicks", () => {
+    // Regression: the second and third rows opened a viewer hidden inside
+    // the Charts panel. Each row must reach its own destination.
+    it("sends the DCA row to the backtest and the others to their charts", async () => {
+        const { Window } = await import("happy-dom");
+        const window = new Window();
+        window.document.body.innerHTML = '<div id="today-tab"><h1 id="todayHeadline"></h1><ul id="todayActions"></ul><div id="todayDcaBar"></div><div id="todayTrendBar"></div></div>';
+        const calls = [];
+        window.switchMainTab = (tab) => calls.push(["tab", tab]);
+        window.openChartFullscreen = (src, title) => calls.push(["chart", src, title]);
+
+        const source = readFileSync(join(process.cwd(), "docs", "today.js"), "utf-8");
+        new Function("window", "document", "self", source)(window, window.document, window);
+        window.TodayView.renderStatus(status(), { ...onchain, date: "2026-09-30" });
+
+        const rows = window.document.querySelectorAll("#todayActions .today-action");
+        expect(rows.length).toBe(3);
+        rows.forEach((row) => row.click());
+        expect(calls).toEqual([
+            ["tab", "backtest"],
+            ["chart", "charts/price_comparison.html", "Price Comparison"],
+            ["chart", "charts/bottom_signals.html?v=2026-09-30", "On-chain bottom signals"],
+        ]);
     });
 });

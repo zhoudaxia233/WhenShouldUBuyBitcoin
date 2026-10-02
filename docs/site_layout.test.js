@@ -6,6 +6,7 @@
 import { describe, it, expect, beforeAll } from "vitest";
 import { readFileSync } from "fs";
 import { join } from "path";
+import { Window } from "happy-dom";
 
 describe("Site layout", () => {
     let html;
@@ -44,6 +45,18 @@ describe("Site layout", () => {
     });
 
     describe("Today view", () => {
+        it("keeps the full-screen viewer outside every view, so Today links can open it", () => {
+            // Regression: the viewer sat inside the Charts panel, which is
+            // display:none on Today, so chart links there opened nothing visible
+            const doc = new Window().document;
+            doc.write(html);
+            for (const id of ["chartFullscreen", "chartFullscreenFrame", "chartFullscreenTitle", "chartFullscreenClose"]) {
+                const el = doc.getElementById(id);
+                expect(el, id).not.toBeNull();
+                expect(el.closest(".tab-content"), id).toBeNull();
+            }
+        });
+
         it("answers without a button press", () => {
             expect(html).not.toContain('id="checkButton"');
             expect(html).toContain('id="todayHeadline"');
@@ -93,6 +106,51 @@ describe("Site layout", () => {
             expect(html).toMatch(/id="themeToggle" class="theme-toggle" type="button" aria-label="Switch to dark mode"/);
             expect(html).toContain("function toggleTheme()");
         });
+    });
+});
+
+describe("Backtest findings", () => {
+    let doc;
+
+    beforeAll(() => {
+        doc = new Window().document;
+        doc.write(readFileSync(join(process.cwd(), "docs", "index.html"), "utf-8"));
+    });
+
+    it("leads the Backtest view, before the form", () => {
+        const tab = doc.getElementById("backtest-tab");
+        const findings = doc.getElementById("backtestFindings");
+        expect(findings.closest("#backtest-tab")).toBe(tab);
+        const form = tab.querySelector(".backtest-form");
+        expect(findings.compareDocumentPosition(form) & 4).toBeTruthy(); // form follows
+    });
+
+    it("compares the strategies on the same money", () => {
+        const rows = [...doc.querySelectorAll("#backtestFindings .finding-row")].map((row) => ({
+            label: row.querySelector(".finding-label").textContent.trim(),
+            value: row.querySelector(".finding-value").textContent.trim(),
+        }));
+        expect(rows.map((r) => r.value)).toEqual(["$533", "$556", "$460"]);
+        expect(rows[0].label).toMatch(/Plain daily DCA/);
+        expect(doc.getElementById("backtestFindings").textContent).toMatch(/only data known on each/);
+    });
+
+    it("offers to run your own backtest", () => {
+        const run = doc.querySelector("#backtestFindings .findings-run");
+        expect(run.getAttribute("href")).toBe("#backtestForm");
+        expect(doc.getElementById("backtestForm")).not.toBeNull();
+    });
+
+    it("is not repeated as small print inside the form", () => {
+        expect(doc.querySelector(".backtest-form .strategy-evidence")).toBeNull();
+    });
+
+    it("is what the ahr999 note on Today cites and links to", () => {
+        const note = doc.querySelector("#today-tab .measure-card--meter .measure-note");
+        expect(note.textContent).toMatch(/4%/);
+        expect(note.textContent).toMatch(/14%/);
+        const link = note.querySelector("button, a");
+        expect(link.getAttribute("onclick")).toContain("switchMainTab('backtest')");
     });
 });
 
