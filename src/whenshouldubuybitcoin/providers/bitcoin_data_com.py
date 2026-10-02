@@ -37,6 +37,10 @@ ONCHAIN_ENDPOINTS = {
 _META_FIELDS = {"d", "theDay", "day", "unixTs", "unixTimestamp"}
 
 
+class RateLimitedError(Exception):
+    """The API answered 429: the hourly or daily quota is used up."""
+
+
 def _auth_headers() -> dict:
     token = os.environ.get("BGEOMETRICS_TOKEN")
     return {"Authorization": f"Bearer {token}"} if token else {}
@@ -123,7 +127,8 @@ def fetch_series(
 
     Every HTTP request (including retries) is spaced and counted against
     ``budget`` so a retry storm cannot exceed the free-tier ceiling. Client
-    errors (4xx other than 429) are not retried — they will not fix themselves.
+    errors are not retried — they will not fix themselves — and a 429 raises
+    RateLimitedError so the caller stops the whole run.
     """
     budget = budget or RequestBudget()
     url = f"{BASE_URL}{ONCHAIN_ENDPOINTS[metric_key]}"
@@ -145,7 +150,12 @@ def fetch_series(
             return parse_series(response.json())
         except requests.exceptions.HTTPError as e:
             status = getattr(getattr(e, "response", None), "status_code", None)
-            if status is not None and 400 <= status < 500 and status != 429:
+            if status == 429:
+                # Retrying only burns more of the quota; later runs pick up
+                # where this one stopped
+                print(f"✗ bitcoin-data.com {metric_key}: rate limited (429); stopping this run")
+                raise RateLimitedError(metric_key) from e
+            if status is not None and 400 <= status < 500:
                 print(
                     f"✗ bitcoin-data.com {metric_key} client error {status}: "
                     f"{e}; not retrying"
@@ -158,26 +168,33 @@ def fetch_series(
 
 
 def fetch_all_onchain_series(
+    plan: Optional[list[tuple[str, Optional[str]]]] = None,
     startday: Optional[str] = None,
     budget: Optional["RequestBudget"] = None,
 ) -> dict[str, list[tuple[str, float]]]:
-    """Fetch every on-chain series sequentially under one shared request budget.
+    """Fetch on-chain series in ``plan`` order under one shared request budget.
 
-    Spacing and the per-run request cap are enforced by the shared ``budget``,
-    so the whole run (including retries) stays within the free-tier quota.
-    Returns only the series that succeeded (possibly none); callers degrade
-    gracefully on partial data.
+    ``plan`` lists ``(metric_key, startday)`` pairs; without it every endpoint
+    is fetched from ``startday``. Spacing and the per-run request cap are
+    enforced by the shared ``budget``, and a rate limit ends the run, so the
+    whole run stays within the free-tier quota. Returns only the series that
+    succeeded (possibly none); callers degrade gracefully on partial data.
     """
+    if plan is None:
+        plan = [(metric_key, startday) for metric_key in ONCHAIN_ENDPOINTS]
     budget = budget or RequestBudget()
     results: dict[str, list[tuple[str, float]]] = {}
-    for metric_key in ONCHAIN_ENDPOINTS:
+    for metric_key, metric_startday in plan:
         if not budget.can_request():
             print(
                 f"✗ bitcoin-data.com: per-run request budget exhausted before "
                 f"{metric_key}; returning {len(results)} series"
             )
             break
-        series = fetch_series(metric_key, startday=startday, budget=budget)
+        try:
+            series = fetch_series(metric_key, startday=metric_startday, budget=budget)
+        except RateLimitedError:
+            break
         if series is not None:
             results[metric_key] = series
             print(f"✓ bitcoin-data.com {metric_key}: {len(series)} rows")
