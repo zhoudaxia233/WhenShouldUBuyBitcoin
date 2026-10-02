@@ -24,218 +24,8 @@ def _load_shared_header_template() -> str:
     return template_path.read_text(encoding="utf-8")
 
 
-def test_saylor_btc_shows_8_decimals():
-    html = _load_stats_template()
-    # Keep BTC display precision consistent across summary fields.
-    assert "const totalBtcText = Number(totalBtc).toFixed(8);" in html
-    assert "setRequiredText('saylorTotalBtc', totalBtcText);" in html
-    assert "setTextIfPresent('saylorTotalBtcMobile', totalBtcText);" in html
-    assert "saylorRangeBtc').textContent = Number(totalBtc).toFixed(8);" in html
-
-
-def test_saylor_dates_use_english_short_month_format():
-    html = _load_stats_template()
-    # X-axis monthly ticks and "As of" date should use short English month names.
-    assert "toLocaleDateString('en-US', { month: 'short', year: 'numeric' })" in html
-    assert "toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })" in html
-
-
-def test_theme_toggle_rerenders_saylor_chart_for_dynamic_drag_box_colors():
-    html = _load_stats_template()
-    assert "const dragBorderColor = isDark" in html
-    assert "const dragFillColor = isDark" in html
-    assert "borderColor: dragBorderColor" in html
-    assert "backgroundColor: dragFillColor" in html
-    assert re.search(
-        r"themeBtn\.addEventListener\('click',[\s\S]*renderSaylorChart\(latestStatsPnlData\);",
-        html,
-    )
-
-
-def test_total_btc_value_is_forced_single_line():
-    html = _load_stats_template()
-    assert "#saylorRangeBtc {" in html
-    assert "white-space: nowrap;" in html
-
-
-def test_saylor_mobile_pan_is_enabled_and_desktop_drag_zoom_is_direct():
-    html = _load_stats_template()
-    assert "const mobileSaylorGestures = isMobileViewport;" in html
-    assert "const desktopSaylorPrecisionZoom = !isMobileViewport;" in html
-
-    pan_block = re.search(r"pan:\s*\{[\s\S]*?\}", html)
-    assert pan_block is not None
-    assert "enabled: mobileSaylorGestures" in pan_block.group(0)
-
-    pinch_block = re.search(r"pinch:\s*\{[\s\S]*?\}", html)
-    assert pinch_block is not None
-    assert "enabled: mobileSaylorGestures" in pinch_block.group(0)
-
-    # Drag-to-zoom should be direct (no modifier key).
-    drag_block = re.search(r"drag:\s*\{[\s\S]*?\}", html)
-    assert drag_block is not None
-    assert "enabled: desktopSaylorPrecisionZoom" in drag_block.group(0)
-    assert "modifierKey" not in drag_block.group(0)
-
-
-def test_summary_card_uses_two_equal_columns_with_metric_value_style():
-    html = _load_stats_template()
-    assert 'class="saylor-summary-metrics"' in html
-    assert 'class="saylor-summary-metric"' in html
-    assert '<span class="metric-number" id="saylorPurchaseEvents">' in html
-    assert '<span class="btc-symbol">₿</span><span class="metric-number" id="saylorRangeBtc">' in html
-
-
-def test_saylor_total_btc_prefers_wallet_summary_source():
-    html = _load_stats_template()
-    assert "let latestWalletSummary = null;" in html
-    assert "latestWalletSummary.total_btc" in html
-    assert "latestWalletSummary = walletData;" in html
-
-
-def test_saylor_reserve_value_uses_wallet_current_price_for_consistency():
-    html = _load_stats_template()
-    assert "latestWalletSummary.current_price" in html
-    assert "const reserveValue = totalBtc * walletPrice;" in html
-
-
-def test_saylor_summary_box_has_max_width_to_avoid_overflow():
-    html = _load_stats_template()
-    assert ".saylor-summary-box {" in html
-    assert "max-width: 420px;" in html
-    assert "margin-left: auto;" in html
-
-
-def test_light_mode_summary_box_uses_satsflow_palette():
-    html = _load_stats_template()
-    assert "html[data-bs-theme=\"light\"] .saylor-summary-box {" in html
-    assert (
-        "background: linear-gradient(180deg, rgba(255, 138, 0, 0.12) 0%, "
-        "rgba(255, 255, 255, 0.82) 100%);"
-    ) in html
-    assert "html[data-bs-theme=\"light\"] .saylor-summary-box .metric-value {" in html
-    assert "color: var(--dashboard-text);" in html
-
-
-def test_saylor_mobile_kpi_hierarchy_is_compact():
-    """Mobile reserve card shows a tight hierarchy: huge value with an inline
-    P&L pill, one BTC/avg stat row, and a single caption line. The desktop
-    summary card stays hidden on mobile."""
-    html = _load_stats_template()
-    mobile_css = html.split("@media (max-width: 767.98px)", 1)[1]
-
-    # Markup: the value line carries the inline P&L badge.
-    assert 'class="saylor-value-line"' in html
-    assert 'class="saylor-mobile-pnl-chip" id="saylorPnlMobileBadge"' in html
-    # Compact stat row + single caption.
-    assert 'class="saylor-mobile-statline"' in html
-    assert 'id="saylorTotalBtcMobile"' in html
-    assert 'id="saylorAvgCostMobile"' in html
-    assert 'class="saylor-mobile-caption"' in html
-    assert 'id="saylorPurchaseEventsMobile"' in html
-    assert 'id="saylorAsOfMobile"' in html
-
-    # P&L badge renders as a pill.
-    pnl_chip_block = mobile_css[
-        mobile_css.index(".saylor-mobile-pnl-chip {") : mobile_css.index(".saylor-mobile-pnl-chip.saylor-positive")
-    ]
-    assert "display: inline-flex;" in pnl_chip_block
-    assert "border-radius: 999px;" in pnl_chip_block
-
-    # Stat row is a flex line with tabular numerals.
-    statline_block = mobile_css[
-        mobile_css.index(".saylor-mobile-statline {") : mobile_css.index(".saylor-mobile-statline strong")
-    ]
-    assert "display: flex;" in statline_block
-    assert "font-variant-numeric: tabular-nums;" in statline_block
-
-    # Desktop summary card is hidden on mobile.
-    summary_block = mobile_css[
-        mobile_css.index(".saylor-summary-box {") : mobile_css.index(".saylor-range-pills {")
-    ]
-    assert "display: none;" in summary_block
-
-    # Big reserve value uses the tightened clamp so the badge can sit inline.
-    assert "font-size: clamp(2.95rem, 13vw, 3.7rem);" in mobile_css
-
-
-def test_saylor_mobile_range_pills_default_1y_and_wired_to_chart():
-    """Mobile chart has 3M/6M/1Y/All range pills (1Y active by default) that
-    drive the chart's x-axis, and the selection survives re-renders."""
-    html = _load_stats_template()
-    mobile_css = html.split("@media (max-width: 767.98px)", 1)[1]
-
-    assert 'id="saylorRangePills"' in html
-    assert 'data-range="3m"' in html
-    assert 'data-range="6m"' in html
-    assert 'data-range="all"' in html
-    # 1Y is the default active range, in both the markup and the JS state.
-    assert 'data-range="1y" class="active"' in html
-    assert "let saylorSelectedRange = '1y';" in html
-
-    # Wiring.
-    assert "function setSaylorRange(" in html
-    assert "function applySaylorSelectedRange(" in html
-    assert "saylorChartInstance.options.scales.x.min = " in html
-    assert "saylorRangePills.addEventListener('click'" in html
-    # Selected range is re-applied after every (re)render of the chart.
-    assert "applySaylorSelectedRange();" in html
-
-    pills_block = mobile_css[
-        mobile_css.index(".saylor-range-pills {") : mobile_css.index(".saylor-range-pills button {")
-    ]
-    assert "display: grid;" in pills_block
-    assert "order: 0;" in pills_block
-    assert ".saylor-range-pills button.active {" in mobile_css
-
-
-def test_saylor_mobile_chart_layout_and_subtle_reset():
-    """Mobile order is pills -> legend -> reset toolbar -> taller chart, and the
-    reset control is a subtle link revealed only after a manual zoom/pan."""
-    html = _load_stats_template()
-    mobile_css = html.split("@media (max-width: 767.98px)", 1)[1]
-
-    card_body_block = mobile_css[
-        mobile_css.index(".stats-saylor-panel .card-body {") : mobile_css.index(".saylor-desktop-meta {")
-    ]
-    assert "display: flex;" in card_body_block
-    assert "flex-direction: column;" in card_body_block
-
-    legend_block = mobile_css[
-        mobile_css.index(".saylor-mobile-chart-legend {") : mobile_css.index(".saylor-mobile-chart-legend .legend-line")
-    ]
-    assert "order: 1;" in legend_block
-
-    toolbar_block = mobile_css[
-        mobile_css.index(".saylor-chart-toolbar {") : mobile_css.index(".saylor-reset-btn {")
-    ]
-    assert "order: 2;" in toolbar_block
-
-    chart_block = mobile_css[
-        mobile_css.index(".saylor-chart-wrap {") : mobile_css.index("#saylorChart {")
-    ]
-    assert "order: 3;" in chart_block
-    assert "height: 430px;" in chart_block
-
-    # Reset is a hidden-by-default link, revealed on gesture.
-    reset_block = mobile_css[
-        mobile_css.index(".saylor-reset-link {") : mobile_css.index(".saylor-reset-link.is-visible")
-    ]
-    assert "opacity: 0;" in reset_block
-    assert "pointer-events: none;" in reset_block
-    # Removed from the tab order while hidden (not just transparent).
-    assert "visibility: hidden;" in reset_block
-    assert ".saylor-reset-link.is-visible {" in mobile_css
-    assert "function revealSaylorResetControl(" in html
-    assert "onPanComplete: revealSaylorResetControl" in html
-    assert "onZoomComplete: revealSaylorResetControl" in html
-    # Existing reset button id + click handler preserved.
-    assert 'id="resetSaylorZoomBtn"' in html
-    assert "resetSaylorZoomBtn.addEventListener('click', resetSaylorZoom)" in html
-
-
-def test_saylor_mobile_clears_floating_bottom_nav():
-    """The stats page reserves bottom space so the chart x-axis and controls
+def test_stats_mobile_clears_floating_bottom_nav():
+    """The stats page reserves bottom space so the chart and its range buttons
     clear the fixed mobile bottom nav."""
     html = _load_stats_template()
     mobile_css = html.split("@media (max-width: 767.98px)", 1)[1]
@@ -246,84 +36,6 @@ def test_saylor_mobile_clears_floating_bottom_nav():
     ]
     assert "padding-bottom:" in nav_clear_block
     assert "env(safe-area-inset-bottom)" in nav_clear_block
-
-
-def test_saylor_as_of_set_on_desktop_and_mobile():
-    """The 'As of' date populates both the desktop element and the mobile caption."""
-    html = _load_stats_template()
-    assert "document.getElementById('saylorAsOf').textContent" in html
-    assert "setTextIfPresent('saylorAsOfMobile'" in html
-
-
-def test_saylor_mobile_purchase_bubbles_stay_prominent_and_amount_scaled():
-    html = _load_stats_template()
-    assert "const radiusBase = isMobileViewport ? 5.6 : 5.5;" in html
-    assert "const radius = radiusBase * Math.sqrt(Math.max(ratio, 0.04));" in html
-    assert "r: Math.max(isMobileViewport ? 4.5 : 3, Math.min(isMobileViewport ? 13 : 11, radius))" in html
-    assert "borderWidth: isMobileViewport ? 4 : 2" in html
-
-
-def test_saylor_mobile_chart_uses_larger_axis_and_series_styling():
-    html = _load_stats_template()
-    assert "borderWidth: isMobileViewport ? 3.5 : 3" in html
-    assert "borderWidth: isMobileViewport ? 2.5 : 2" in html
-    assert "const mobileSaylorTickFont = isMobileViewport ? { size: 13, weight: '600' } : undefined;" in html
-    assert "font: mobileSaylorTickFont" in html
-    assert "padding: isMobileViewport ? 8 : 3" in html
-
-
-def test_saylor_mobile_aggregates_purchase_bubbles_to_avoid_overplotting():
-    html = _load_stats_template()
-    assert "const isMobileViewport = window.matchMedia('(max-width: 767.98px)').matches;" in html
-    assert "const purchaseBucketMs = isMobileViewport ? 1000 * 60 * 60 * 24 * 14 : 0;" in html
-    assert "const key = purchaseBucketMs ? String(Math.floor(ts / purchaseBucketMs) * purchaseBucketMs) : String(ts);" in html
-    assert "x: purchaseBucketMs ? Number(key) + (purchaseBucketMs / 2) : ts" in html
-    assert "pointHoverRadius: isMobileViewport ? 15 : 12" in html
-
-
-def test_saylor_mobile_aggregated_purchase_tooltip_shows_date_range():
-    html = _load_stats_template()
-    assert "function formatSaylorTooltipDate(ts)" in html
-    assert "rangeStart: ts" in html
-    assert "rangeEnd: ts" in html
-    assert "purchaseCount: 1" in html
-    assert "existing.rangeStart = Math.min(existing.rangeStart, ts);" in html
-    assert "existing.rangeEnd = Math.max(existing.rangeEnd, ts);" in html
-    assert "existing.purchaseCount += 1;" in html
-    assert "purchaseCount: item.purchaseCount" in html
-    assert "if (isMobileViewport && point.purchaseCount > 1 && point.rangeStart && point.rangeEnd)" in html
-    assert "return `${formatSaylorTooltipDate(point.rangeStart)} - ${formatSaylorTooltipDate(point.rangeEnd)}`;" in html
-
-
-def test_saylor_required_summary_fields_use_strict_setters():
-    html = _load_stats_template()
-    assert "function setRequiredText(id, value)" in html
-    assert "setRequiredText('saylorReserveValue', reserveValueText);" in html
-    assert "setRequiredText('saylorTotalBtc', totalBtcText);" in html
-    assert "setRequiredText('saylorAvgCost', avgCostText);" in html
-    assert "setTextIfPresent('saylorReserveValue', reserveValueText);" not in html
-    assert "setTextIfPresent('saylorTotalBtc', totalBtcText);" not in html
-    assert "setTextIfPresent('saylorAvgCost', avgCostText);" not in html
-
-
-def test_saylor_mobile_chart_enables_touch_gestures_and_has_reset_button():
-    html = _load_stats_template()
-    assert 'id="resetSaylorZoomBtn"' in html
-    assert "resetSaylorZoomBtn.addEventListener('click', resetSaylorZoom)" in html
-    assert "const isMobileViewport = window.matchMedia('(max-width: 767.98px)').matches;" in html
-    assert "display: !isMobileViewport" in html
-    assert "enabled: desktopSaylorPrecisionZoom" in html
-    assert "enabled: mobileSaylorGestures" in html
-    assert "mode: mobileSaylorGestures ? 'x' : 'xy'" in html
-    assert "#saylorChart {" in html
-    assert "touch-action: none;" in html
-    assert "min-width: 720px;" not in html
-
-
-def test_saylor_desktop_x_axis_does_not_get_mobile_tick_limit():
-    html = _load_stats_template()
-    assert "maxTicksLimit: isMobileViewport ? 4 : 8" not in html
-    assert "...(isMobileViewport ? { maxTicksLimit: 3 } : {})" in html
 
 
 def test_performance_chart_has_mobile_safe_wrapper_and_legend_config():
@@ -343,7 +55,7 @@ def test_performance_chart_uses_dedicated_performance_series():
     assert "data: performanceInvested" in html
     assert "data: performanceValue" in html
     assert "latestWalletSummary.current_price" in html
-    assert "latestWalletSummary.hot_wallet_avg_price" in html
+    assert "currentAvg: wallet.hot_wallet_avg_price" in html
     assert "renderChart(latestStatsPnlData);" in html
 
 
@@ -439,7 +151,7 @@ def test_stats_page_uses_reference_dashboard_layout_without_visible_title_block(
     assert 'class="stats-metrics-grid"' in html
     assert html.count('stats-metric-card dashboard-panel') == 5
     assert 'class="stats-analytics-grid"' in html
-    assert 'class="stats-saylor-panel dashboard-panel saylor-card"' in html
+    assert 'class="dashboard-panel reserve-panel"' in html
     assert 'class="trading-style-list"' in html
 
 
@@ -554,3 +266,42 @@ def test_distribution_current_row_highlight_is_reapplied_after_percentile_loads(
     assert "applyCurrentDistributionHighlight();" in html
     assert "tr.dataset.percentile = String(row.percentile || '').trim();" in html
     assert "row.classList.toggle('current-rank-row', row.dataset.percentile === currentPercentile);" in html
+
+
+def _load_static(name: str) -> str:
+    return (Path(__file__).resolve().parents[1] / "src" / "dca_service" / "static" / name).read_text(encoding="utf-8")
+
+
+def test_reserve_chart_replaces_the_zoomable_saylor_chart():
+    html = _load_stats_template()
+    assert '<script src="/static/reserve_chart.js"></script>' in html
+    # Zoom and pan fought page scrolling; the chart now has neither.
+    assert "chartjs-plugin-zoom" not in html
+    assert "hammerjs" not in html
+    assert "saylor" not in html.lower()
+
+
+def test_reserve_chart_markup_has_readout_canvas_and_range_buttons():
+    html = _load_stats_template()
+    assert '<section id="reserveChart" class="dashboard-panel reserve-panel"' in html
+    assert "data-reserve-readout" in html
+    assert '<canvas class="reserve-canvas" tabindex="0" role="img"' in html
+    ranges = re.findall(r'data-range="(\w+)" aria-pressed="(true|false)"', html)
+    assert ranges == [("3m", "false"), ("6m", "false"), ("1y", "true"), ("all", "false")]
+    assert 'class="reserve-empty"' in html
+
+
+def test_reserve_chart_shows_wallet_holdings_only_when_the_wallet_reports_some():
+    html = _load_stats_template()
+    assert "currentBtc: Number.isFinite(wallet.total_btc) && wallet.total_btc > 0 ? wallet.total_btc : undefined" in html
+    assert "currentPrice: wallet.current_price" in html
+    assert html.count("renderReserveChart(latestStatsPnlData);") == 3
+
+
+def test_reserve_chart_scrolls_vertically_on_touch_and_has_a_mobile_height():
+    css = _load_static("app.css")
+    canvas_rule = css[css.index(".reserve-canvas {"):]
+    assert "touch-action: pan-y;" in canvas_rule[:canvas_rule.index("}")]
+    mobile = css[css.rindex("@media (max-width: 767.98px)"):]
+    assert ".reserve-canvas {" in mobile
+    assert "--reserve-price" in css[css.index('html[data-bs-theme="dark"],\nhtml[data-theme="dark"] {\n    --reserve-price'):]

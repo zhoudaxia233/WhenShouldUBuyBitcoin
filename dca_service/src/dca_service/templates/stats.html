@@ -172,9 +172,10 @@
             gap: 28px;
             margin-bottom: 32px;
         }
+        
         .stats-chart-card,
         .stats-distribution-card,
-        .stats-saylor-panel,
+        .reserve-panel,
         .stats-trading-panel {
             border-radius: 10px;
         }
@@ -335,203 +336,7 @@
             color: #eef2f8;
             border-color: #3a4a5f;
         }
-        .saylor-card {
-            background: linear-gradient(180deg, var(--dashboard-card-bg-solid) 0%, var(--dashboard-accent-softer) 100%);
-            border: 1px solid var(--dashboard-border);
-            color: var(--dashboard-text);
-        }
-        .saylor-card .card-header {
-            background: transparent !important;
-            border-bottom: 1px solid var(--dashboard-border);
-        }
-        .saylor-header-kicker {
-            color: var(--dashboard-muted);
-            font-size: 0.78rem;
-            text-transform: uppercase;
-            letter-spacing: 0.08em;
-        }
-        .saylor-main-value {
-            font-size: clamp(2rem, 4.5vw, 3.2rem);
-            line-height: 1.1;
-            font-weight: 700;
-            color: var(--dashboard-text);
-        }
-        .saylor-meta {
-            color: var(--dashboard-muted);
-            font-size: 0.95rem;
-        }
-        .saylor-meta strong {
-            color: var(--dashboard-accent-strong);
-        }
-        .saylor-value-line {
-            display: flex;
-            align-items: baseline;
-            flex-wrap: wrap;
-            gap: 6px 12px;
-        }
-        .saylor-mobile-statline,
-        .saylor-mobile-caption,
-        .saylor-range-pills {
-            display: none;
-        }
-        .saylor-mobile-topline {
-            display: block;
-        }
-        .saylor-mobile-pnl-chip,
-        .saylor-mobile-chart-legend {
-            display: none;
-        }
-        .saylor-mobile-kpi {
-            min-width: 0;
-            border-top: 1px solid var(--dashboard-border);
-            padding-top: 10px;
-        }
-        .saylor-mobile-kpi .label {
-            display: block;
-            color: var(--dashboard-muted);
-            font-size: 0.68rem;
-            text-transform: uppercase;
-            letter-spacing: 0.08em;
-            font-weight: 700;
-            line-height: 1.2;
-        }
-        .saylor-mobile-kpi strong {
-            display: block;
-            margin-top: 4px;
-            color: var(--dashboard-text);
-            font-size: 1rem;
-            line-height: 1.2;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            font-variant-numeric: tabular-nums;
-        }
-        .saylor-mobile-chart-legend {
-            color: var(--dashboard-muted);
-            font-size: 0.72rem;
-            font-weight: 700;
-        }
-        .saylor-mobile-chart-legend span {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            white-space: nowrap;
-        }
-        .saylor-mobile-chart-legend .legend-line {
-            width: 22px;
-            height: 0;
-            border-top: 3px solid #f2a33a;
-        }
-        .saylor-mobile-chart-legend .legend-line.avg {
-            border-top-color: #56c79c;
-            border-top-style: dashed;
-        }
-        .saylor-mobile-chart-legend .legend-dot {
-            width: 13px;
-            height: 13px;
-            border-radius: 50%;
-            border: 3px solid #fff3e8;
-            background: rgba(241, 123, 65, 0.9);
-            box-shadow: 0 0 0 1px rgba(117, 74, 35, 0.16);
-        }
-        .saylor-negative {
-            color: var(--dashboard-danger);
-            font-weight: 600;
-        }
-        .saylor-positive {
-            color: var(--dashboard-success);
-            font-weight: 600;
-        }
-        .saylor-summary-box {
-            border: 1px solid var(--dashboard-border-strong);
-            border-radius: 15px;
-            background: linear-gradient(180deg, rgba(255, 138, 0, 0.13) 0%, rgba(255, 255, 255, 0.72) 100%);
-            box-shadow: inset 0 0 0 1px rgba(255, 138, 0, 0.08);
-            padding: 12px 14px 10px;
-            width: 100%;
-            max-width: 420px;
-            margin-left: auto;
-        }
-        .saylor-summary-metrics {
-            display: grid;
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-            column-gap: 16px;
-        }
-        .saylor-summary-metric {
-            display: grid;
-            grid-template-rows: auto auto auto;
-            row-gap: 4px;
-            align-items: start;
-        }
-        .saylor-summary-box .label {
-            color: var(--dashboard-muted);
-            font-size: 0.68rem;
-            text-transform: uppercase;
-            letter-spacing: 0.09em;
-            font-weight: 600;
-            line-height: 1.15;
-        }
-        .saylor-summary-box .metric-value {
-            margin-top: 0;
-            color: var(--dashboard-text);
-            line-height: 1;
-            font-weight: 700;
-            letter-spacing: 0;
-            display: inline-flex;
-            align-items: baseline;
-        }
-        .saylor-summary-box .metric-number {
-            font-size: clamp(1.22rem, 1.36vw, 1.46rem);
-            line-height: 1;
-            font-weight: 700;
-            letter-spacing: 0;
-            font-variant-numeric: tabular-nums;
-        }
-        .saylor-summary-box .metric-sub {
-            margin-top: 0;
-            color: var(--dashboard-muted);
-            font-size: 0.75rem;
-            font-weight: 600;
-            line-height: 1.18;
-        }
-        .saylor-summary-box .metric-value .btc-symbol {
-            color: var(--dashboard-accent-strong);
-            font-size: 1.22rem;
-            margin-right: 2px;
-            line-height: 1;
-            font-weight: 700;
-            transform: translateY(-0.02em);
-        }
-        #saylorRangeBtc {
-            white-space: nowrap;
-            letter-spacing: 0;
-        }
-        .saylor-chart-wrap {
-            height: 460px;
-            position: relative;
-        }
-        .saylor-chart-toolbar {
-            display: flex;
-            justify-content: flex-end;
-            margin-bottom: 8px;
-        }
-        .saylor-reset-btn {
-            border-radius: 999px;
-            min-height: 36px;
-        }
-        #saylorChart {
-            touch-action: none;
-        }
-        .stats-saylor-panel {
-            margin-bottom: 32px;
-        }
-        .stats-saylor-panel .card-header {
-            background: transparent !important;
-            border-bottom: 0;
-        }
-        .stats-saylor-panel .card-body {
-            padding: 0 1.45rem 1.6rem;
-        }
+
         .stats-trading-panel .dashboard-panel-header {
             background: transparent !important;
             padding-bottom: 0.75rem;
@@ -591,53 +396,7 @@
             justify-content: flex-end;
             margin-top: 1rem;
         }
-        html[data-bs-theme="dark"] .saylor-card {
-            background: linear-gradient(180deg, var(--dashboard-card-bg-solid) 0%, rgba(255, 138, 0, 0.08) 100%);
-            border-color: var(--dashboard-border);
-            color: var(--dashboard-text);
-        }
-        html[data-bs-theme="dark"] .saylor-card .card-header {
-            border-bottom-color: var(--dashboard-border);
-        }
-        html[data-bs-theme="dark"] .saylor-header-kicker {
-            color: var(--dashboard-muted);
-        }
-        html[data-bs-theme="dark"] .saylor-main-value {
-            color: var(--dashboard-text);
-        }
-        html[data-bs-theme="dark"] .saylor-meta {
-            color: var(--dashboard-muted);
-        }
-        html[data-bs-theme="dark"] .saylor-meta strong {
-            color: var(--dashboard-accent);
-        }
-        html[data-bs-theme="dark"] .saylor-summary-box {
-            border-color: var(--dashboard-border-strong);
-            background: linear-gradient(180deg, rgba(255, 138, 0, 0.16) 0%, rgba(24, 21, 18, 0.88) 100%);
-        }
-        html[data-bs-theme="dark"] .saylor-summary-box .label {
-            color: var(--dashboard-muted);
-        }
-        html[data-bs-theme="dark"] .saylor-summary-box .metric-sub {
-            color: var(--dashboard-muted);
-        }
-        html[data-bs-theme="light"] .saylor-summary-box {
-            border-color: var(--dashboard-border-strong);
-            background: linear-gradient(180deg, rgba(255, 138, 0, 0.12) 0%, rgba(255, 255, 255, 0.82) 100%);
-            box-shadow: inset 0 0 0 1px rgba(255, 138, 0, 0.08);
-        }
-        html[data-bs-theme="light"] .saylor-summary-box .label {
-            color: var(--dashboard-muted);
-        }
-        html[data-bs-theme="light"] .saylor-summary-box .metric-sub {
-            color: var(--dashboard-muted);
-        }
-        html[data-bs-theme="light"] .saylor-summary-box .metric-value {
-            color: var(--dashboard-text);
-        }
-        html[data-bs-theme="light"] .saylor-summary-box .metric-value .btc-symbol {
-            color: var(--dashboard-accent-strong);
-        }
+
         @media (max-width: 991px) {
             .stats-metrics-grid {
                 grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -645,9 +404,7 @@
             .stats-analytics-grid {
                 grid-template-columns: 1fr;
             }
-            .saylor-chart-wrap {
-                height: 400px;
-            }
+            
         }
         @media (max-width: 575px) {
             .stats-actions-row {
@@ -740,329 +497,13 @@
             .trading-style-row-content {
                 grid-column: 2;
             }
-            .stats-saylor-panel {
-                margin-bottom: 22px;
-            }
-            .stats-saylor-panel .card-header {
-                padding: 28px 26px 18px !important;
-            }
-            .stats-saylor-panel .card-header .row {
-                --bs-gutter-y: 0;
-            }
-            .stats-saylor-panel .card-body {
-                display: flex;
-                flex-direction: column;
-                padding: 0 26px 26px;
-            }
-            .saylor-desktop-meta {
-                display: none !important;
-            }
-            .saylor-mobile-kpis {
-                display: none;
-            }
-            .saylor-header-kicker {
-                font-size: 0.9rem;
-                letter-spacing: 0.14em;
-            }
-            .saylor-mobile-topline {
-                display: block;
-                margin-top: 14px;
-            }
-            .saylor-mobile-topline #saylorAsOf {
-                margin-top: 0 !important;
-                font-size: 1.18rem;
-                font-weight: 600;
-            }
-            .saylor-mobile-pnl-chip {
-                display: inline-flex;
-                align-items: center;
-                margin-top: 12px;
-                min-height: 0;
-                padding: 0;
-                border: 0;
-                background: transparent;
-                font-size: 1.28rem;
-                font-weight: 800;
-                white-space: nowrap;
-                font-variant-numeric: tabular-nums;
-            }
-            .saylor-main-value {
-                font-size: clamp(2.95rem, 13vw, 3.7rem);
-                line-height: 0.96;
-            }
-            .saylor-summary-box {
-                --saylor-mobile-metric-size: clamp(1.52rem, 7vw, 1.78rem);
-                max-width: none;
-                margin: 18px 0 0;
-                padding: 18px 14px 17px;
-                border-radius: 22px;
-            }
-            .saylor-summary-metrics {
-                grid-template-columns: minmax(0, 0.82fr) minmax(0, 1.18fr);
-                column-gap: 0;
-            }
-            .saylor-summary-metric + .saylor-summary-metric {
-                border-left: 1px solid rgba(210, 164, 112, 0.32);
-                padding-left: 14px;
-            }
-            .saylor-summary-box .label {
-                font-size: 0.62rem;
-                letter-spacing: 0.1em;
-                white-space: nowrap;
-            }
-            .saylor-summary-box .metric-number {
-                font-size: var(--saylor-mobile-metric-size);
-            }
-            .saylor-summary-box .metric-sub {
-                font-size: 1rem;
-            }
-            .saylor-summary-box .metric-value .btc-symbol {
-                font-size: 1.72rem;
-                margin-right: 5px;
-            }
-            .saylor-summary-box .metric-value-btc .metric-number {
-                font-size: var(--saylor-mobile-metric-size);
-            }
-            .saylor-summary-box .metric-value-btc .btc-symbol {
-                font-size: 1.34rem;
-            }
-            .saylor-mobile-chart-legend {
-                display: flex;
-                order: 0;
-                flex-wrap: wrap;
-                justify-content: center;
-                gap: 12px 22px;
-                padding: 0 2px;
-                margin: 28px 0 18px;
-                font-size: 0.95rem;
-            }
-            .saylor-mobile-chart-legend .legend-line {
-                width: 30px;
-            }
-            .saylor-mobile-chart-legend .legend-dot {
-                width: 18px;
-                height: 18px;
-                border-width: 4px;
-            }
-            .saylor-chart-toolbar {
-                order: 2;
-                justify-content: stretch;
-                margin: 18px 0 0;
-            }
-            .saylor-reset-btn {
-                width: 100%;
-                min-height: 48px;
-                font-size: 1rem;
-                font-weight: 800;
-            }
-            .saylor-chart-wrap {
-                order: 1;
-                height: 390px;
-                min-height: 390px;
-                border: 1px solid rgba(154, 117, 82, 0.35);
-                border-radius: 18px;
-                background: rgba(19, 16, 13, 0.28);
-                overflow: hidden;
-            }
-            #saylorChart {
-                touch-action: none;
-            }
+
         }
         @media (max-width: 767.98px) {
             body.stats-page {
                 padding-bottom: calc(82px + env(safe-area-inset-bottom));
             }
-            .stats-saylor-panel {
-                margin-bottom: 22px;
-            }
-            .stats-saylor-panel .card-header {
-                padding: 26px 22px 6px !important;
-            }
-            .stats-saylor-panel .card-header .row {
-                --bs-gutter-y: 0;
-            }
-            .stats-saylor-panel .card-body {
-                display: flex;
-                flex-direction: column;
-                padding: 0 22px calc(22px + env(safe-area-inset-bottom));
-            }
-            .saylor-desktop-meta {
-                display: none;
-            }
-            .saylor-mobile-topline {
-                display: none;
-            }
-            .saylor-header-kicker {
-                font-size: 0.78rem;
-                letter-spacing: 0.14em;
-            }
-            .saylor-value-line {
-                align-items: baseline;
-                gap: 6px 12px;
-                margin-top: 8px;
-            }
-            .saylor-main-value {
-                font-size: clamp(2.95rem, 13vw, 3.7rem);
-                line-height: 0.96;
-                letter-spacing: -0.01em;
-            }
-            .saylor-mobile-pnl-chip {
-                display: inline-flex;
-                align-items: center;
-                gap: 6px;
-                margin-top: 0;
-                padding: 5px 11px;
-                border: 1px solid var(--dashboard-border-strong);
-                border-radius: 999px;
-                background: var(--dashboard-accent-softer);
-                font-size: 0.92rem;
-                font-weight: 800;
-                white-space: nowrap;
-                font-variant-numeric: tabular-nums;
-            }
-            .saylor-mobile-pnl-chip.saylor-positive {
-                color: var(--dashboard-success);
-                background: rgba(63, 191, 127, 0.14);
-                border-color: rgba(63, 191, 127, 0.32);
-            }
-            .saylor-mobile-pnl-chip.saylor-negative {
-                color: var(--dashboard-danger);
-                background: rgba(229, 99, 99, 0.14);
-                border-color: rgba(229, 99, 99, 0.32);
-            }
-            .saylor-mobile-statline {
-                display: flex;
-                align-items: center;
-                gap: 14px;
-                margin-top: 14px;
-                font-size: 1.02rem;
-                font-weight: 700;
-                line-height: 1.2;
-                font-variant-numeric: tabular-nums;
-            }
-            .saylor-mobile-statline strong {
-                color: var(--dashboard-text);
-                font-weight: 800;
-            }
-            .saylor-mobile-statline .btc-symbol {
-                color: var(--dashboard-accent-strong);
-                margin-right: 3px;
-                font-weight: 800;
-            }
-            .saylor-mobile-stat-key {
-                color: var(--dashboard-muted);
-                font-weight: 600;
-                margin-right: 2px;
-            }
-            .saylor-mobile-statline-sep {
-                width: 1px;
-                height: 18px;
-                background: var(--dashboard-border-strong);
-            }
-            .saylor-mobile-caption {
-                display: block;
-                margin-top: 9px;
-                color: var(--dashboard-muted);
-                font-size: 0.86rem;
-                font-weight: 500;
-                font-variant-numeric: tabular-nums;
-            }
-            .saylor-mobile-caption strong {
-                color: var(--dashboard-text);
-                font-weight: 700;
-            }
-            .saylor-summary-box {
-                display: none;
-            }
-            .saylor-range-pills {
-                display: grid;
-                grid-template-columns: repeat(4, 1fr);
-                gap: 4px;
-                order: 0;
-                margin: 20px 0 0;
-                padding: 4px;
-                border: 1px solid var(--dashboard-border);
-                border-radius: 14px;
-                background: var(--dashboard-accent-softer);
-            }
-            .saylor-range-pills button {
-                appearance: none;
-                -webkit-appearance: none;
-                border: 0;
-                background: transparent;
-                color: var(--dashboard-muted);
-                font-family: inherit;
-                font-weight: 800;
-                font-size: 0.92rem;
-                padding: 10px 0;
-                border-radius: 10px;
-                cursor: pointer;
-                transition: background 0.15s ease, color 0.15s ease;
-            }
-            .saylor-range-pills button.active {
-                background: var(--dashboard-accent-strong);
-                color: #1c1206;
-                box-shadow: 0 2px 10px rgba(242, 133, 58, 0.32);
-            }
-            .saylor-mobile-chart-legend {
-                display: flex;
-                order: 1;
-                flex-wrap: wrap;
-                justify-content: center;
-                gap: 12px 22px;
-                padding: 0 2px;
-                margin: 20px 0 12px;
-                font-size: 0.95rem;
-            }
-            .saylor-mobile-chart-legend .legend-line {
-                width: 30px;
-            }
-            .saylor-mobile-chart-legend .legend-dot {
-                width: 18px;
-                height: 18px;
-                border-width: 4px;
-            }
-            .saylor-chart-toolbar {
-                order: 2;
-                justify-content: flex-end;
-                min-height: 22px;
-                margin: 0 0 4px;
-            }
-            .saylor-reset-btn {
-                min-height: 0;
-            }
-            .saylor-reset-link {
-                width: auto;
-                min-height: 0;
-                padding: 4px 6px;
-                border: 0;
-                background: transparent;
-                color: var(--dashboard-accent-strong);
-                font-size: 0.82rem;
-                font-weight: 700;
-                opacity: 0;
-                visibility: hidden;
-                pointer-events: none;
-                transition: opacity 0.2s ease, visibility 0.2s ease;
-            }
-            .saylor-reset-link.is-visible {
-                opacity: 1;
-                visibility: visible;
-                pointer-events: auto;
-            }
-            .saylor-chart-wrap {
-                order: 3;
-                height: 430px;
-                min-height: 430px;
-                border: 1px solid var(--dashboard-border);
-                border-radius: 18px;
-                background: transparent;
-                overflow: hidden;
-                padding: 6px 2px 2px;
-            }
-            #saylorChart {
-                touch-action: none;
-            }
+
         }
     </style>
 </head>
@@ -1180,71 +621,28 @@
             </div>
         </div>
 
-        <div class="stats-saylor-panel dashboard-panel saylor-card">
-            <div class="card-header px-4 pt-4 pb-3">
-                <div class="row g-3 align-items-start">
-                    <div class="col-lg-8">
-                        <div class="saylor-header-kicker">Bitcoin Reserve Value</div>
-                        <div class="saylor-value-line">
-                            <span class="saylor-main-value" id="saylorReserveValue">$--</span>
-                            <span class="saylor-mobile-pnl-chip" id="saylorPnlMobileBadge">--</span>
-                        </div>
-                        <div class="saylor-meta saylor-desktop-meta d-flex flex-wrap gap-3">
-                            <span><strong id="saylorTotalBtc">--</strong> BTC</span>
-                            <span>Avg Cost: <strong id="saylorAvgCost">$--</strong></span>
-                            <span id="saylorPnlPercent">--</span>
-                            <span id="saylorPnlUsd">--</span>
-                        </div>
-                        <div class="saylor-mobile-topline">
-                            <div class="small mt-2 text-secondary" id="saylorAsOf">As of --</div>
-                        </div>
-                        <div class="saylor-mobile-statline" aria-label="Bitcoin reserve quick stats">
-                            <span class="saylor-mobile-stat saylor-mobile-stat-btc"><span class="btc-symbol">₿</span><strong id="saylorTotalBtcMobile">--</strong></span>
-                            <span class="saylor-mobile-statline-sep" aria-hidden="true"></span>
-                            <span class="saylor-mobile-stat"><span class="saylor-mobile-stat-key">Avg</span> <strong id="saylorAvgCostMobile">$--</strong></span>
-                        </div>
-                        <div class="saylor-mobile-caption">
-                            <strong id="saylorPurchaseEventsMobile">0</strong> purchases &middot; <span id="saylorAsOfMobile">As of --</span>
-                        </div>
-                    </div>
-                    <div class="col-lg-4">
-                        <div class="saylor-summary-box">
-                            <div class="saylor-summary-metrics">
-                                <div class="saylor-summary-metric">
-                                    <div class="label">Purchase Events</div>
-                                    <div class="metric-value"><span class="metric-number" id="saylorPurchaseEvents">0</span></div>
-                                    <div class="metric-sub">in selected range</div>
-                                </div>
-                                <div class="saylor-summary-metric">
-                                    <div class="label">Total BTC</div>
-                                    <div class="metric-value metric-value-btc"><span class="btc-symbol">₿</span><span class="metric-number" id="saylorRangeBtc">0</span></div>
-                                    <div class="metric-sub">As of now</div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+        <section id="reserveChart" class="dashboard-panel reserve-panel" aria-labelledby="reserveChartTitle">
+            <h2 id="reserveChartTitle" class="visually-hidden">Bitcoin held and price history</h2>
+            <div class="reserve-readout" data-reserve-readout aria-live="polite">
+                <span class="reserve-readout-label">Bitcoin held</span>
+                <span class="reserve-readout-btc"><span class="reserve-btc-symbol">₿</span>--</span>
             </div>
-            <div class="card-body pt-2">
-                <div class="saylor-range-pills" id="saylorRangePills" role="group" aria-label="Chart time range">
+            <canvas class="reserve-canvas" tabindex="0" role="img" aria-label="BTC price, your average cost and weekly buys. Move the pointer or use the arrow keys to read a day."></canvas>
+            <p class="reserve-empty">Your chart appears after the first purchase.</p>
+            <div class="reserve-foot">
+                <div class="reserve-legend" aria-hidden="true">
+                    <span><i class="reserve-key reserve-key-price"></i>BTC price</span>
+                    <span><i class="reserve-key reserve-key-avg"></i>Your avg cost</span>
+                    <span><i class="reserve-key reserve-key-bar"></i>BTC bought per week</span>
+                </div>
+                <div class="reserve-range" data-reserve-range role="group" aria-label="Time range">
                     <button type="button" data-range="3m" aria-pressed="false">3M</button>
                     <button type="button" data-range="6m" aria-pressed="false">6M</button>
-                    <button type="button" data-range="1y" class="active" aria-pressed="true">1Y</button>
+                    <button type="button" data-range="1y" aria-pressed="true">1Y</button>
                     <button type="button" data-range="all" aria-pressed="false">All</button>
                 </div>
-                <div class="saylor-mobile-chart-legend" aria-label="Saylor chart legend">
-                    <span><i class="legend-line"></i>Price</span>
-                    <span><i class="legend-dot"></i>Buy</span>
-                    <span><i class="legend-line avg"></i><span id="saylorLegendAvgCost">Avg Cost</span></span>
-                </div>
-                <div class="saylor-chart-toolbar">
-                    <button id="resetSaylorZoomBtn" class="btn btn-sm btn-outline-secondary saylor-reset-btn saylor-reset-link" type="button"><i class="bi bi-arrow-counterclockwise" aria-hidden="true"></i> Reset zoom</button>
-                </div>
-                <div class="saylor-chart-wrap">
-                    <canvas id="saylorChart"></canvas>
-                </div>
             </div>
-        </div>
+        </section>
 
         <div class="dashboard-panel stats-trading-panel">
             <div class="card-header dashboard-panel-header d-flex flex-wrap justify-content-between align-items-start gap-3">
@@ -1294,24 +692,12 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/notyf@3.10.0/notyf.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/hammerjs@2.0.8/hammer.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.2.0/dist/chartjs-plugin-zoom.min.js"></script>
+    <script src="/static/reserve_chart.js"></script>
     <script>
         window.notyf = new Notyf({ duration: 3000, position: { x: 'right', y: 'top' } });
         const THEME_STORAGE_KEY = 'dca_theme';
         const THEME_ICON_SUN = '<svg class="theme-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"></circle><line x1="12" y1="2.5" x2="12" y2="5"></line><line x1="12" y1="19" x2="12" y2="21.5"></line><line x1="2.5" y1="12" x2="5" y2="12"></line><line x1="19" y1="12" x2="21.5" y2="12"></line><line x1="5.2" y1="5.2" x2="6.9" y2="6.9"></line><line x1="17.1" y1="17.1" x2="18.8" y2="18.8"></line><line x1="17.1" y1="6.9" x2="18.8" y2="5.2"></line><line x1="5.2" y1="18.8" x2="6.9" y2="17.1"></line></svg>';
         const THEME_ICON_MOON = '<svg class="theme-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M14.5 3.5a8.8 8.8 0 1 0 6 14.9 9.2 9.2 0 0 1-6.8-2.7 9.3 9.3 0 0 1-2.8-6.9 8.9 8.9 0 0 1 3.6-7.3Z"></path></svg>';
-        if (window.Chart) {
-            try {
-                const zoomPlugin = window['chartjs-plugin-zoom'] || window.ChartZoom;
-                const zoomRegistered = window.Chart.registry?.plugins?.get?.('zoom');
-                if (zoomPlugin && !zoomRegistered) {
-                    window.Chart.register(zoomPlugin);
-                }
-            } catch (e) {
-                console.warn('Zoom plugin registration skipped:', e);
-            }
-        }
 
         function updateThemeToggleButton(theme) {
             const btn = document.getElementById('themeToggleBtn');
@@ -1608,9 +994,6 @@
 
         // Load PnL Chart
         let pnlChartInstance = null;
-        let saylorChartInstance = null;
-        let saylorInitialXMin = null;
-        let saylorInitialXMax = null;
         let latestStatsPnlData = null;
         let latestWalletSummary = null;
         let latestTradingStyleData = null;
@@ -1831,385 +1214,18 @@
             });
         }
 
-        function updateSaylorSummary(data) {
-            const prices = Array.isArray(data.prices) ? data.prices : [];
-            const avgPrices = Array.isArray(data.avg_price) ? data.avg_price : [];
-            const btcBalances = Array.isArray(data.btc_balance) ? data.btc_balance : [];
-            const purchaseBtc = Array.isArray(data.purchase_btc) ? data.purchase_btc : [];
+        let reserveChart = null;
 
-            if (!data.dates || data.dates.length === 0 || prices.length === 0) return;
-
-            const lastIdx = prices.length - 1;
-            const lastDate = new Date(data.dates[lastIdx]);
-            const lastPrice = prices[lastIdx] || 0;
-            const walletPrice = (latestWalletSummary && Number.isFinite(latestWalletSummary.current_price))
-                ? latestWalletSummary.current_price
-                : lastPrice;
-            const lastAvg = avgPrices[lastIdx] || 0;
-            const walletAvg = (latestWalletSummary && Number.isFinite(latestWalletSummary.hot_wallet_avg_price) && latestWalletSummary.hot_wallet_avg_price > 0)
-                ? latestWalletSummary.hot_wallet_avg_price
-                : lastAvg;
-            const fallbackBtc = btcBalances[lastIdx] || purchaseBtc.reduce((sum, x) => sum + (x || 0), 0);
-            const totalBtc = (latestWalletSummary && Number.isFinite(latestWalletSummary.total_btc))
-                ? latestWalletSummary.total_btc
-                : fallbackBtc;
-            const reserveValue = totalBtc * walletPrice;
-            const pnlUsd = totalBtc * (walletPrice - walletAvg);
-            const pnlPct = walletAvg > 0 ? ((walletPrice - walletAvg) / walletAvg) * 100 : 0;
-            const reserveValueText = `$${reserveValue.toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
-            const totalBtcText = Number(totalBtc).toFixed(8);
-            const avgCostText = `$${walletAvg.toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
-
-            setRequiredText('saylorReserveValue', reserveValueText);
-            setRequiredText('saylorTotalBtc', totalBtcText);
-            setTextIfPresent('saylorTotalBtcMobile', totalBtcText);
-            setRequiredText('saylorAvgCost', avgCostText);
-            setTextIfPresent('saylorAvgCostMobile', avgCostText);
-            setTextIfPresent('saylorLegendAvgCost', `Avg ${avgCostText}`);
-
-            const pnlPctEl = document.getElementById('saylorPnlPercent');
-            const pnlUsdEl = document.getElementById('saylorPnlUsd');
-            const sign = pnlUsd >= 0 ? '+' : '-';
-            const cls = pnlUsd >= 0 ? 'saylor-positive' : 'saylor-negative';
-            const pnlPercentText = `${sign}${Math.abs(pnlPct).toFixed(2)}%`;
-            const pnlUsdText = `(${sign}$${Math.abs(pnlUsd).toLocaleString(undefined, { maximumFractionDigits: 0 })})`;
-            const pnlMobileText = `${pnlPercentText} ${pnlUsdText}`;
-
-            pnlPctEl.className = cls;
-            pnlUsdEl.className = cls;
-            pnlPctEl.textContent = pnlPercentText;
-            pnlUsdEl.textContent = pnlUsdText;
-            const pnlMobileBadgeEl = document.getElementById('saylorPnlMobileBadge');
-            if (pnlMobileBadgeEl) {
-                pnlMobileBadgeEl.textContent = pnlMobileText;
-                pnlMobileBadgeEl.classList.remove('saylor-positive', 'saylor-negative');
-                pnlMobileBadgeEl.classList.add(cls);
-            }
-
-            const asOfText = `As of ${lastDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`;
-            document.getElementById('saylorAsOf').textContent = asOfText;
-            setTextIfPresent('saylorAsOfMobile', asOfText);
-            const purchaseEvents = purchaseBtc.filter((v) => (v || 0) > 0).length;
-            document.getElementById('saylorPurchaseEvents').textContent = purchaseEvents.toLocaleString();
-            document.getElementById('saylorRangeBtc').textContent = Number(totalBtc).toFixed(8);
-            setTextIfPresent('saylorPurchaseEventsMobile', purchaseEvents.toLocaleString());
-        }
-
-        function renderSaylorChart(data) {
-            if (!data.dates || data.dates.length === 0) return;
-
-            const prices = Array.isArray(data.prices) ? data.prices : [];
-            const marketDates = Array.isArray(data.market_dates) && data.market_dates.length > 0 ? data.market_dates : data.dates;
-            const marketPrices = Array.isArray(data.market_prices) && data.market_prices.length > 0 ? data.market_prices : prices;
-            const avgTimeline = Array.isArray(data.avg_price_timeline) && data.avg_price_timeline.length > 0
-                ? data.avg_price_timeline
-                : (Array.isArray(data.avg_price) ? data.avg_price : []);
-            const purchaseBtc = Array.isArray(data.purchase_btc) ? data.purchase_btc : [];
-            const purchaseUsdRaw = Array.isArray(data.purchase_usd) ? data.purchase_usd : [];
-            if (marketPrices.length === 0 || marketDates.length === 0) return;
-
-            const marketTimestamps = marketDates.map((d) => new Date(d).getTime());
-            const txTimestamps = data.dates.map((d) => new Date(d).getTime());
-            const timestamps = marketTimestamps;
-            const firstTs = timestamps[0];
-            const nowTs = Date.now();
-            const monthMs = 1000 * 60 * 60 * 24 * 30;
-            const isDark = (document.documentElement.getAttribute('data-bs-theme') || 'light') === 'dark';
-            const isMobileViewport = window.matchMedia('(max-width: 767.98px)').matches;
-            const mobileSaylorGestures = isMobileViewport;
-            const desktopSaylorPrecisionZoom = !isMobileViewport;
-            const axisColor = isDark ? '#93a2b8' : '#4f6278';
-            const gridColor = isDark ? 'rgba(126, 150, 180, 0.16)' : 'rgba(69, 95, 123, 0.14)';
-            const legendColor = isDark ? '#b8c4d6' : '#42566d';
-            const dragBorderColor = isDark ? 'rgba(255,255,255,0.58)' : 'rgba(22, 45, 74, 0.62)';
-            const dragFillColor = isDark ? 'rgba(255,255,255,0.15)' : 'rgba(22, 45, 74, 0.20)';
-            const mobileSaylorTickFont = isMobileViewport ? { size: 13, weight: '600' } : undefined;
-            const purchaseBucketMs = isMobileViewport ? 1000 * 60 * 60 * 24 * 14 : 0;
-
-            // Bubble sizing strategy:
-            // - Baseline = average single purchase USD
-            // - Radius scales with sqrt(amount / avg) so bubble area ~ purchase amount
-            // - Clamp range keeps chart readable
-            const purchaseUsd = purchaseUsdRaw.map((usd, idx) => {
-                if ((usd || 0) > 0) return usd;
-                return (purchaseBtc[idx] || 0) * (prices[idx] || 0);
+        function renderReserveChart(data) {
+            const root = document.getElementById('reserveChart');
+            if (!root || !window.ReserveChart || !data) return;
+            if (!reserveChart) reserveChart = window.ReserveChart.mount(root);
+            const wallet = latestWalletSummary || {};
+            reserveChart.setData(data, {
+                currentBtc: Number.isFinite(wallet.total_btc) && wallet.total_btc > 0 ? wallet.total_btc : undefined,
+                currentPrice: wallet.current_price,
+                currentAvg: wallet.hot_wallet_avg_price
             });
-            const positiveUsd = purchaseUsd.filter((v) => (v || 0) > 0);
-            const avgPurchaseUsd = positiveUsd.length > 0
-                ? positiveUsd.reduce((sum, v) => sum + v, 0) / positiveUsd.length
-                : 1;
-
-            // Merge duplicated timestamps (e.g. split fills in same second) to avoid stacked circles.
-            const purchaseMap = new Map();
-            txTimestamps.forEach((ts, idx) => {
-                const amountUsd = purchaseUsd[idx] || 0;
-                if (amountUsd <= 0) return;
-                const amountBtc = purchaseBtc[idx] || 0;
-                const price = prices[idx] || 0;
-                const key = purchaseBucketMs ? String(Math.floor(ts / purchaseBucketMs) * purchaseBucketMs) : String(ts);
-                const existing = purchaseMap.get(key);
-                if (!existing) {
-                    purchaseMap.set(key, {
-                        x: purchaseBucketMs ? Number(key) + (purchaseBucketMs / 2) : ts,
-                        usd: amountUsd,
-                        btc: amountBtc,
-                        weightedPriceSum: price * amountUsd,
-                        rangeStart: ts,
-                        rangeEnd: ts,
-                        purchaseCount: 1
-                    });
-                } else {
-                    existing.usd += amountUsd;
-                    existing.btc += amountBtc;
-                    existing.weightedPriceSum += price * amountUsd;
-                    existing.rangeStart = Math.min(existing.rangeStart, ts);
-                    existing.rangeEnd = Math.max(existing.rangeEnd, ts);
-                    existing.purchaseCount += 1;
-                }
-            });
-
-            const priceData = marketPrices.map((price, idx) => ({ x: marketTimestamps[idx], y: price }));
-            const avgPriceData = avgTimeline.map((avg, idx) => ({ x: marketTimestamps[idx], y: avg }));
-            const bubbleData = Array.from(purchaseMap.values())
-                .sort((a, b) => a.x - b.x)
-                .map((item) => {
-                    const ratio = item.usd / Math.max(avgPurchaseUsd, 1e-6);
-                    const radiusBase = isMobileViewport ? 5.6 : 5.5;
-                    const radius = radiusBase * Math.sqrt(Math.max(ratio, 0.04));
-                    const y = item.usd > 0 ? (item.weightedPriceSum / item.usd) : 0;
-                    return {
-                        x: item.x,
-                        y: y,
-                        r: Math.max(isMobileViewport ? 4.5 : 3, Math.min(isMobileViewport ? 13 : 11, radius)),
-                        buySize: item.btc,
-                        buyUsd: item.usd,
-                        rangeStart: item.rangeStart,
-                        rangeEnd: item.rangeEnd,
-                        purchaseCount: item.purchaseCount
-                    };
-                });
-
-            const ctx = document.getElementById('saylorChart').getContext('2d');
-            if (saylorChartInstance) {
-                saylorChartInstance.destroy();
-            }
-
-            saylorChartInstance = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    datasets: [
-                        {
-                            label: 'Bitcoin Price',
-                            data: priceData,
-                            borderColor: '#f2a33a',
-                            backgroundColor: 'rgba(242, 163, 58, 0.12)',
-                            borderWidth: isMobileViewport ? 3.5 : 3,
-                            pointRadius: 0,
-                            tension: 0.16
-                        },
-                        {
-                            type: 'bubble',
-                            label: 'My Purchase',
-                            data: bubbleData,
-                            borderColor: '#fff3e8',
-                            borderWidth: isMobileViewport ? 4 : 2,
-                            backgroundColor: 'rgba(241, 123, 65, 0.9)',
-                            pointHoverBorderWidth: 3,
-                            pointHoverRadius: isMobileViewport ? 15 : 12,
-                            pointStyle: 'circle'
-                        },
-                        {
-                            label: 'Average Purchase Price',
-                            data: avgPriceData,
-                            borderColor: '#56c79c',
-                            borderDash: [7, 6],
-                            borderWidth: isMobileViewport ? 2.5 : 2,
-                            pointRadius: 0,
-                            tension: 0.05,
-                            pointStyle: 'line'
-                        }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    interaction: { mode: 'nearest', intersect: !isMobileViewport, axis: mobileSaylorGestures ? 'x' : 'xy' },
-                    plugins: {
-                        legend: {
-                            display: !isMobileViewport,
-                            position: 'top',
-                            labels: {
-                                color: legendColor,
-                                usePointStyle: true,
-                                boxWidth: 22,
-                                generateLabels(chart) {
-                                    const labels = Chart.defaults.plugins.legend.labels.generateLabels(chart);
-                                    return labels.map((label) => {
-                                        const ds = chart.data.datasets[label.datasetIndex] || {};
-                                        if (ds.type === 'bubble') {
-                                            return { ...label, pointStyle: 'circle' };
-                                        }
-                                        return { ...label, pointStyle: 'line' };
-                                    });
-                                }
-                            }
-                        },
-                        tooltip: {
-                            mode: 'nearest',
-                            intersect: true,
-                            callbacks: {
-                                title(items) {
-                                    const item = items?.[0];
-                                    const point = item?.raw || {};
-                                    if (isMobileViewport && point.purchaseCount > 1 && point.rangeStart && point.rangeEnd) {
-                                        return `${formatSaylorTooltipDate(point.rangeStart)} - ${formatSaylorTooltipDate(point.rangeEnd)}`;
-                                    }
-                                    const ts = item?.parsed?.x;
-                                    return ts ? formatSaylorTooltipDate(ts) : '';
-                                },
-                                label(context) {
-                                    const isBubble = context.dataset.type === 'bubble';
-                                    if (isBubble) {
-                                        const point = context.raw || {};
-                                        const buySize = point.buySize || 0;
-                                        const buyUsd = point.buyUsd || 0;
-                                        return `Buy: $${Number(buyUsd).toLocaleString(undefined, { maximumFractionDigits: 2 })} (${buySize.toFixed(8)} BTC) @ $${Number(point.y || 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
-                                    }
-                                    return `${context.dataset.label}: $${Number(context.parsed.y || 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
-                                }
-                            }
-                        },
-                        zoom: {
-                            limits: {
-                                x: { min: firstTs, max: nowTs },
-                                y: { min: 0 }
-                            },
-                            pan: {
-                                enabled: mobileSaylorGestures,
-                                mode: mobileSaylorGestures ? 'x' : 'xy',
-                                threshold: mobileSaylorGestures ? 6 : 10,
-                                onPanComplete: revealSaylorResetControl
-                            },
-                            zoom: {
-                                wheel: {
-                                    enabled: desktopSaylorPrecisionZoom,
-                                    speed: 0.04
-                                },
-                                pinch: {
-                                    enabled: mobileSaylorGestures
-                                },
-                                drag: {
-                                    enabled: desktopSaylorPrecisionZoom,
-                                    threshold: 12,
-                                    borderColor: dragBorderColor,
-                                    borderWidth: 1,
-                                    backgroundColor: dragFillColor
-                                },
-                                mode: mobileSaylorGestures ? 'x' : 'xy',
-                                onZoomComplete: revealSaylorResetControl
-                            }
-                        }
-                    },
-                    scales: {
-                        x: {
-                            type: 'linear',
-                            min: firstTs,
-                            max: nowTs,
-                            grid: { color: gridColor },
-                            ticks: {
-                                color: axisColor,
-                                stepSize: monthMs,
-                                autoSkip: isMobileViewport,
-                                ...(isMobileViewport ? { maxTicksLimit: 3 } : {}),
-                                font: mobileSaylorTickFont,
-                                padding: isMobileViewport ? 8 : 3,
-                                maxRotation: 0,
-                                callback(value) {
-                                    const d = new Date(value);
-                                    return d.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
-                                }
-                            }
-                        },
-                        y: {
-                            position: 'right',
-                            beginAtZero: true,
-                            grid: { color: gridColor },
-                            ticks: {
-                                color: axisColor,
-                                font: mobileSaylorTickFont,
-                                padding: isMobileViewport ? 8 : 3,
-                                callback(value) {
-                                    return `$${Number(value).toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
-                                }
-                            }
-                        }
-                    }
-                }
-            });
-
-            saylorInitialXMin = firstTs;
-            saylorInitialXMax = nowTs;
-            applySaylorSelectedRange();
-        }
-
-        // ---- Saylor chart time-range presets (mobile pills) ----
-        let saylorSelectedRange = '1y';
-
-        function saylorRangeStartMs(range) {
-            if (!saylorInitialXMin || !saylorInitialXMax) return saylorInitialXMin;
-            const dayMs = 1000 * 60 * 60 * 24;
-            const spans = { '3m': 91 * dayMs, '6m': 182 * dayMs, '1y': 365 * dayMs };
-            if (range === 'all' || !spans[range]) return saylorInitialXMin;
-            return Math.max(saylorInitialXMin, saylorInitialXMax - spans[range]);
-        }
-
-        function updateSaylorRangePillsUI() {
-            const pills = document.querySelectorAll('#saylorRangePills [data-range]');
-            pills.forEach((btn) => {
-                const isActive = btn.dataset.range === saylorSelectedRange;
-                btn.classList.toggle('active', isActive);
-                btn.setAttribute('aria-pressed', isActive ? 'true' : 'false');
-            });
-        }
-
-        function revealSaylorResetControl() {
-            const link = document.getElementById('resetSaylorZoomBtn');
-            if (link) link.classList.add('is-visible');
-        }
-
-        function hideSaylorResetControl() {
-            const link = document.getElementById('resetSaylorZoomBtn');
-            if (link) link.classList.remove('is-visible');
-        }
-
-        function applySaylorSelectedRange() {
-            if (!saylorChartInstance) return;
-            updateSaylorRangePillsUI();
-            saylorChartInstance.options.scales.x.min = saylorRangeStartMs(saylorSelectedRange);
-            saylorChartInstance.options.scales.x.max = saylorInitialXMax;
-            saylorChartInstance.update('none');
-        }
-
-        function setSaylorRange(range) {
-            saylorSelectedRange = range;
-            applySaylorSelectedRange();
-            hideSaylorResetControl();
-        }
-
-        function resetSaylorZoom() {
-            if (!saylorChartInstance) return;
-
-            if (typeof saylorChartInstance.resetZoom === 'function') {
-                saylorChartInstance.resetZoom();
-            }
-
-            // Restore the currently selected range preset and hide the reset link.
-            applySaylorSelectedRange();
-            hideSaylorResetControl();
-        }
-
-        function formatSaylorTooltipDate(ts) {
-            return new Date(ts).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' });
         }
 
         // Load PnL Chart (TTL: 5 mins)
@@ -2220,16 +1236,14 @@
                 if (!forceRefresh && isCacheValid(cached, 5)) {
                     latestStatsPnlData = cached.data;
                     renderChart(cached.data);
-                    updateSaylorSummary(cached.data);
-                    renderSaylorChart(cached.data);
+                    renderReserveChart(cached.data);
                     return;
                 }
 
                 if (cached) renderChart(cached.data);
                 if (cached) {
                     latestStatsPnlData = cached.data;
-                    updateSaylorSummary(cached.data);
-                    renderSaylorChart(cached.data);
+                    renderReserveChart(cached.data);
                 }
 
                 const response = await fetch('/api/stats/pnl');
@@ -2237,8 +1251,7 @@
                 latestStatsPnlData = data;
                 saveToCache('stats_pnl', data);
                 renderChart(data);
-                updateSaylorSummary(data);
-                renderSaylorChart(data);
+                renderReserveChart(data);
             } catch (error) {
                 console.error('Error loading chart:', error);
             }
@@ -2290,7 +1303,7 @@
                     updateWalletBalanceUI(cachedWallet.data);
                     if (latestStatsPnlData) {
                         renderChart(latestStatsPnlData);
-                        updateSaylorSummary(latestStatsPnlData);
+                        renderReserveChart(latestStatsPnlData);
                     }
                     return;
                 }
@@ -2300,7 +1313,7 @@
                     latestWalletSummary = cachedWallet.data;
                     if (latestStatsPnlData) {
                         renderChart(latestStatsPnlData);
-                        updateSaylorSummary(latestStatsPnlData);
+                        renderReserveChart(latestStatsPnlData);
                     }
                 }
 
@@ -2313,7 +1326,7 @@
                 updateWalletBalanceUI(walletData);
                 if (latestStatsPnlData) {
                     renderChart(latestStatsPnlData);
-                    updateSaylorSummary(latestStatsPnlData);
+                    renderReserveChart(latestStatsPnlData);
                 }
             } catch (error) {
                 console.error('Error loading wallet balance:', error);
@@ -2510,9 +1523,6 @@
                 themeBtn.addEventListener('click', () => {
                     const theme = document.documentElement.getAttribute('data-bs-theme') === 'dark' ? 'light' : 'dark';
                     applyTheme(theme);
-                    if (latestStatsPnlData) {
-                        renderSaylorChart(latestStatsPnlData);
-                    }
                 });
             }
 
@@ -2542,23 +1552,6 @@
                 });
             }
 
-            const saylorCanvas = document.getElementById('saylorChart');
-            if (saylorCanvas) {
-                saylorCanvas.addEventListener('dblclick', resetSaylorZoom);
-            }
-            const resetSaylorZoomBtn = document.getElementById('resetSaylorZoomBtn');
-            if (resetSaylorZoomBtn) {
-                resetSaylorZoomBtn.addEventListener('click', resetSaylorZoom);
-            }
-            const saylorRangePills = document.getElementById('saylorRangePills');
-            if (saylorRangePills) {
-                saylorRangePills.addEventListener('click', (event) => {
-                    const btn = event.target.closest('[data-range]');
-                    if (!btn) return;
-                    setSaylorRange(btn.dataset.range);
-                });
-            }
-            
             const refreshStatsBtn = document.getElementById('refreshStatsBtn');
             if (refreshStatsBtn) {
                 refreshStatsBtn.addEventListener('click', async () => {
