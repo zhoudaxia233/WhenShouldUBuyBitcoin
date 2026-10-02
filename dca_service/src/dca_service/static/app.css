@@ -101,7 +101,7 @@ body.login-body {
 
 .page-title-block h1 {
     color: var(--dashboard-text);
-    font-size: clamp(1.55rem, 2.4vw, 2.05rem);
+    font-size: 1.75rem;
     font-weight: 760;
     letter-spacing: -0.02em;
     margin-bottom: 0.3rem;
@@ -111,7 +111,7 @@ body.login-body {
     display: inline-flex;
     align-items: center;
     flex: 0 0 auto;
-    gap: 14px;
+    gap: 10px;
     color: var(--dashboard-text);
     text-decoration: none;
 }
@@ -121,22 +121,22 @@ body.login-body {
 }
 
 .brand-mark {
-    width: 44px;
-    height: 44px;
+    width: 34px;
+    height: 34px;
     border-radius: 50%;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     background: var(--dashboard-accent);
     color: #fff;
-    font-size: 1.55rem;
+    font-size: 1.2rem;
     font-weight: 800;
     line-height: 1;
-    box-shadow: 0 10px 26px rgba(255, 138, 0, 0.28);
+    box-shadow: 0 6px 16px rgba(255, 138, 0, 0.24);
 }
 
 .brand-title {
-    font-size: clamp(1.45rem, 2.2vw, 2rem);
+    font-size: 1.25rem;
     font-weight: 750;
     letter-spacing: -0.02em;
     white-space: nowrap;
@@ -166,7 +166,7 @@ body.login-body {
 
 .nav-actions > .btn,
 .nav-actions > .dropdown > .btn {
-    min-height: 42px;
+    min-height: 36px;
     display: inline-flex;
     align-items: center;
 }
@@ -181,9 +181,9 @@ body.login-body {
     border-radius: 10px;
     color: var(--dashboard-muted);
     background: transparent;
-    font-size: 0.94rem;
+    font-size: 0.875rem;
     font-weight: 650;
-    padding: 0.55rem 0.9rem;
+    padding: 0.4rem 0.75rem;
     transition: all 0.18s ease;
 }
 
@@ -223,8 +223,8 @@ body.login-body {
 .theme-toggle-btn,
 .satsflow-page .theme-toggle-btn,
 .dashboard-page .theme-toggle-btn {
-    width: 42px;
-    height: 42px;
+    width: 36px;
+    height: 36px;
     padding: 0;
     border: 1px solid var(--dashboard-border);
     border-radius: 50%;
@@ -245,10 +245,10 @@ body.login-body {
 }
 
 .dashboard-refresh-btn {
-    width: 42px;
-    min-width: 42px;
-    height: 42px;
-    flex: 0 0 42px;
+    width: 36px;
+    min-width: 36px;
+    height: 36px;
+    flex: 0 0 36px;
     padding: 0;
     border: 1px solid var(--dashboard-border);
     border-radius: 50%;
@@ -282,8 +282,8 @@ body.login-body {
 }
 
 .theme-toggle-btn .theme-icon {
-    width: 21px;
-    height: 21px;
+    width: 18px;
+    height: 18px;
     stroke: currentColor;
     fill: none;
     stroke-width: 2.2;
@@ -296,7 +296,7 @@ body.login-body {
 }
 
 .header-utility .user-chip {
-    min-height: 42px;
+    min-height: 36px;
     max-width: 260px;
     padding: 0.22rem 0.24rem 0.22rem 0.34rem;
     border: 1px solid var(--dashboard-border);
@@ -382,8 +382,9 @@ body.login-body {
     padding: 1.4rem 1.75rem;
 }
 
-.dashboard-panel-title {
-    font-size: 1.22rem;
+.dashboard-panel-title,
+.dashboard-panel-header h5 {
+    font-size: 1.125rem;
     font-weight: 760;
     letter-spacing: -0.01em;
     color: var(--dashboard-text);
@@ -695,14 +696,14 @@ html[data-bs-theme="dark"] .satsflow-page .card-footer {
     }
 
     .brand-mark {
-        width: 36px;
-        height: 36px;
-        font-size: 1.18rem;
-        box-shadow: 0 8px 20px rgba(255, 138, 0, 0.22);
+        width: 32px;
+        height: 32px;
+        font-size: 1.1rem;
+        box-shadow: 0 6px 14px rgba(255, 138, 0, 0.22);
     }
 
     .brand-title {
-        font-size: 1.34rem;
+        font-size: 1.125rem;
     }
 
     .shared-header-right {
@@ -845,12 +846,17 @@ html[data-bs-theme="dark"] .satsflow-page .card-footer {
     }
 
     .page-title-block h1 {
-        font-size: 1.48rem;
+        font-size: 1.5rem;
         margin-bottom: 0.18rem;
     }
 
     .page-title-block p {
         font-size: 0.86rem;
+    }
+
+    .dashboard-panel-title,
+    .dashboard-panel-header h5 {
+        font-size: 1rem;
     }
 
     .dashboard-panel-header,

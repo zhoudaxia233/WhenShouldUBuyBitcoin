@@ -23,47 +23,6 @@
             color: var(--bs-body-color);
             transition: background-color 0.2s ease, color 0.2s ease;
         }
-        .container {
-            max-width: 1200px;
-        }
-        .nav-actions {
-            align-items: center;
-        }
-        .nav-actions > .btn {
-            min-height: 44px;
-            display: inline-flex;
-            align-items: center;
-        }
-        .nav-actions > .btn .bi {
-            margin-right: 0.45rem;
-        }
-        .theme-toggle-btn {
-            width: 46px;
-            height: 46px;
-            padding: 0;
-            border: 1px solid var(--bs-border-color);
-            border-radius: 14px;
-            background: var(--bs-tertiary-bg);
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            color: var(--bs-secondary-color);
-            transition: all 0.2s ease;
-        }
-        .theme-toggle-btn:hover {
-            background: var(--bs-secondary-bg);
-            color: var(--bs-body-color);
-            border-color: var(--bs-border-color);
-        }
-        .theme-toggle-btn .theme-icon {
-            width: 22px;
-            height: 22px;
-            stroke: currentColor;
-            fill: none;
-            stroke-width: 2.2;
-            stroke-linecap: round;
-            stroke-linejoin: round;
-        }
         .diagnostics-grid {
             display: grid;
             grid-template-columns: minmax(190px, 0.42fr) minmax(0, 1fr);
@@ -100,17 +59,6 @@
             margin-bottom: 0.25rem;
         }
         @media (max-width: 576px) {
-            .nav-actions {
-                width: 100%;
-            }
-            .nav-actions > .btn {
-                min-height: 40px;
-            }
-            .theme-toggle-btn {
-                width: 44px;
-                height: 44px;
-                border-radius: 12px;
-            }
             .dashboard-panel-header .d-flex {
                 flex-wrap: wrap;
             }

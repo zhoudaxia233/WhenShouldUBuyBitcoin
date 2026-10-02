@@ -343,17 +343,16 @@ def test_authenticated_templates_share_satsflow_header_and_nav():
     assert 'class="brand-title">{{ project_name }}</span>' in header
     assert 'class="nav-actions dashboard-nav' in header
     assert 'class="mobile-bottom-nav"' in header
-    # Home / Buys / Insights / Settings, on desktop and in the phone tab bar
+    # Home / Insights / Settings, on desktop and in the phone tab bar; recent
+    # buys live on Home, so the bar lists only pages
     desktop = header[header.index('class="nav-actions dashboard-nav') : header.index('<div class="header-utility">')]
     mobile = header[header.index('class="mobile-bottom-nav"') :]
     labels = re.findall(r'<span class="btn-text">([^<]+)</span>', desktop)
-    assert labels == ["Home", "Buys", "Insights", "Settings", "WSUB₿"]
+    assert labels == ["Home", "Insights", "Settings", "WSUB₿"]
     tabs = re.findall(r'<span>([^<]+)</span>', mobile)
-    assert tabs == ["Home", "Buys", "Insights", "More"]
+    assert tabs == ["Home", "Insights", "More"]
     assert 'href="/" class="btn dashboard-nav-btn{% if active_page == \'dashboard\' %} active{% endif %}"' in header
     assert 'href="/" class="mobile-bottom-nav-item{% if active_page == \'dashboard\' %} active{% endif %}"' in header
-    assert 'href="/#buys" class="btn dashboard-nav-btn"' in header
-    assert 'href="/#buys" class="mobile-bottom-nav-item"' in header
     assert 'href="/stats" class="btn dashboard-nav-btn{% if active_page == \'stats\' %} active{% endif %}"' in header
     assert 'href="/stats" class="mobile-bottom-nav-item{% if active_page == \'stats\' %} active{% endif %}"' in header
     assert 'id="settingsDropdown"' in header
@@ -365,7 +364,7 @@ def test_authenticated_templates_share_satsflow_header_and_nav():
     assert 'href="/analysis/" class="btn dashboard-nav-btn"' in header
     assert 'class="dropdown-item" href="/analysis/" target="_blank"' in mobile
     assert 'class="mobile-bottom-nav-item mobile-bottom-nav-button' in header
-    for label in ["Home", "Buys", "Insights", "Settings", "More"]:
+    for label in ["Home", "Insights", "Settings", "More"]:
         assert f'aria-label="{label}"' in header
         assert f'title="{label}"' in header
 
@@ -417,9 +416,9 @@ def test_mobile_authenticated_pages_share_compact_header_and_panel_density():
     assert ".dashboard-header {" in mobile_css
     assert "margin-bottom: 10px;" in mobile_css
     assert ".brand-mark {" in mobile_css
-    assert "width: 36px;" in mobile_css
+    assert "width: 32px;" in mobile_css
     assert ".brand-title {" in mobile_css
-    assert "font-size: 1.34rem;" in mobile_css
+    assert "font-size: 1.125rem;" in mobile_css
     assert ".dashboard-nav {" in mobile_css
     assert "display: none !important;" in mobile_css
     assert ".header-utility .user-chip {" in mobile_css
@@ -488,21 +487,20 @@ def test_strategy_mobile_tiers_are_dense_not_full_height_cards():
     assert "width: 96px;" in mobile_css
 
 
-def test_dashboard_inline_mobile_styles_do_not_override_shared_compact_header():
-    html = _dashboard_html()
-    mobile_css = html[html.index("@media (max-width: 768px)") :]
+def test_compact_phone_header_comes_from_the_shared_stylesheet():
+    css = STATIC_CSS_PATH.read_text(encoding="utf-8")
+    mobile_css = css[css.index("@media (max-width: 768px)") :]
 
     assert ".brand-mark {" in mobile_css
-    assert "width: 36px;" in mobile_css
     assert ".brand-title {" in mobile_css
-    assert "font-size: 1.34rem;" in mobile_css
     assert ".dashboard-nav {" in mobile_css
-    assert "display: none !important;" in mobile_css
     assert ".header-utility .user-chip {" in mobile_css
-    assert "display: none !important;" in mobile_css
-    assert ".theme-toggle-btn {" in mobile_css
-    assert "width: 36px;" in mobile_css
-    assert "height: 36px;" in mobile_css
+    assert ".theme-toggle-btn," in mobile_css
+
+    html = _dashboard_html()
+    styles = "".join(re.findall(r"<style[^>]*>(.*?)</style>", html, re.S))
+    assert ".brand-mark" not in styles
+    assert ".dashboard-nav" not in styles
 
 
 def test_shared_version_badge_class_is_used_across_templates():
@@ -554,8 +552,6 @@ def test_mobile_navigation_uses_bottom_tab_bar_instead_of_top_icon_row():
     assert "grid-template-columns:" in mobile_css
 
     dashboard_mobile_css = dashboard[dashboard.find("@media (max-width: 768px)") :]
-    assert ".dashboard-nav {" in dashboard_mobile_css
-    assert "display: none !important;" in dashboard_mobile_css
     assert ".transactions-table-wrap {" in dashboard_mobile_css
     assert "display: none;" in dashboard_mobile_css
 

@@ -28,10 +28,6 @@
             min-height: 100vh;
             transition: background-color 0.2s ease, color 0.2s ease;
         }
-        .container { 
-            max-width: 1000px; 
-            margin-bottom: 20px;
-        }
         
         .percentile-tiers {
             margin-top: 12px;
@@ -154,61 +150,7 @@
             width: 20px;
             margin-right: 8px;
         }
-        .nav-actions {
-            align-items: center;
-        }
-        .nav-actions > .btn,
-        .nav-actions > .dropdown > .btn {
-            min-height: 44px;
-            display: inline-flex;
-            align-items: center;
-        }
-        .nav-actions > .btn .bi,
-        .nav-actions > .dropdown > .btn .bi {
-            margin-right: 0.45rem;
-        }
-        .theme-toggle-btn {
-            width: 46px;
-            height: 46px;
-            padding: 0;
-            border: 1px solid #d8dde6;
-            border-radius: 14px;
-            background: #eef1f5;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            color: #3f4857;
-            transition: all 0.2s ease;
-        }
-        .theme-toggle-btn:hover {
-            background: #e6eaf0;
-            color: #2f3745;
-            border-color: #cbd2dd;
-        }
-        .theme-toggle-btn .theme-icon {
-            width: 22px;
-            height: 22px;
-            stroke: currentColor;
-            fill: none;
-            stroke-width: 2.2;
-            stroke-linecap: round;
-            stroke-linejoin: round;
-        }
         /* Mobile optimization */
-        @media (max-width: 576px) {
-            .nav-actions {
-                width: 100%;
-            }
-            .nav-actions > .btn,
-            .nav-actions > .dropdown > .btn {
-                min-height: 40px;
-            }
-            .theme-toggle-btn {
-                width: 44px;
-                height: 44px;
-                border-radius: 12px;
-            }
-        }
 
         html[data-bs-theme="dark"] body {
             background-color: #121820;
@@ -239,16 +181,6 @@
         }
         html[data-bs-theme="dark"] .text-muted {
             color: #9ba7b7 !important;
-        }
-        html[data-bs-theme="dark"] .theme-toggle-btn {
-            border-color: #2f3a49;
-            background: #1b2430;
-            color: #d8deea;
-        }
-        html[data-bs-theme="dark"] .theme-toggle-btn:hover {
-            background: #233043;
-            color: #eef2f8;
-            border-color: #3a4a5f;
         }
     </style>
 </head>
