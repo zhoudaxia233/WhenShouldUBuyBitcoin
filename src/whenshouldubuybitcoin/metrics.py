@@ -219,6 +219,36 @@ def fit_exponential_trend(
     return trend_series, a, n
 
 
+# Days of prices needed before the power-law trend is fitted at all
+TREND_MIN_DAYS = 730
+BITCOIN_GENESIS = pd.Timestamp("2009-01-03")
+
+
+def causal_power_law_trend(dates, prices, min_points: int = TREND_MIN_DAYS) -> np.ndarray:
+    """Power-law trend where day t's value is fitted on prices up to day t only.
+
+    Same model as the site's fit (log price linear in log Bitcoin age), solved
+    with running sums so every day gets its own least-squares fit.
+    """
+    dates = pd.to_datetime(pd.Series(dates)).reset_index(drop=True)
+    prices = np.asarray(prices, dtype=float)
+    age = (dates - BITCOIN_GENESIS).dt.days.to_numpy(dtype=float)
+    valid = np.isfinite(prices) & (prices > 0) & (age > 0)
+    x = np.where(valid, np.log(np.where(age > 0, age, 1.0)), 0.0)
+    y = np.where(valid, np.log(np.where(prices > 0, prices, 1.0)), 0.0)
+
+    n = np.cumsum(valid.astype(float))
+    sx, sy = np.cumsum(x), np.cumsum(y)
+    sxx, sxy = np.cumsum(x * x), np.cumsum(x * y)
+    trend = np.full(len(prices), np.nan)
+    fitted = n >= max(min_points, 2)
+    denom = n[fitted] * sxx[fitted] - sx[fitted] ** 2
+    slope = (n[fitted] * sxy[fitted] - sx[fitted] * sy[fitted]) / denom
+    intercept = (sy[fitted] - slope * sx[fitted]) / n[fitted]
+    trend[fitted] = np.exp(intercept + slope * np.log(age[fitted]))
+    return trend
+
+
 def add_trend_metrics(df: pd.DataFrame) -> pd.DataFrame:
     """
     Add power law trend and related metrics to a DataFrame.
@@ -228,17 +258,20 @@ def add_trend_metrics(df: pd.DataFrame) -> pd.DataFrame:
         
     Returns:
         DataFrame with added columns:
-            - trend_value: The power law trend (fair value)
+            - trend_value: The power law trend (fair value) fitted on prices up
+              to each day; NaN for the first TREND_MIN_DAYS days
             - ratio_trend: Price / Trend ratio
             - trend_a: Scaling coefficient (as attribute)
             - trend_b: Power law exponent n (as attribute, name kept for compatibility)
     """
     df = df.copy()
-    
-    # Fit power law trend and get parameters
-    trend_series, a, n = fit_exponential_trend(df, price_col="close_price")
-    
-    df["trend_value"] = trend_series
+
+    # Today's fit: its parameters drive the live check and the forecast
+    _, a, n = fit_exponential_trend(df, price_col="close_price")
+
+    # History uses the trend as it could be fitted on each day, so past
+    # ratios, ahr999 and buy-zone flags never rely on later prices
+    df["trend_value"] = causal_power_law_trend(df["date"], df["close_price"].to_numpy(dtype=float))
     
     # Calculate ratio: price / trend
     # Values > 1 mean price is above trend (potentially overheated)

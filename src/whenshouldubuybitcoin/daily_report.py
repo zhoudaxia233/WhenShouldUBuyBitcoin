@@ -15,7 +15,7 @@ import httpx
 import pandas as pd
 
 from whenshouldubuybitcoin.visualization import (
-    MACRO_RISK_SCORE_WEIGHTS,
+    compute_macro_risk_frame,
     calculate_risk_level,
 )
 
@@ -123,33 +123,7 @@ def _calc_macro_score_df(
     btc_df: pd.DataFrame,
     macro_df: pd.DataFrame,
 ) -> pd.DataFrame:
-    price_df = btc_df[["date", "close_price"]].copy()
-    price_df["date"] = pd.to_datetime(price_df["date"]).dt.tz_localize(None)
-
-    macro = macro_df[["date", "net_liquidity_bil", "sofr", "move", "hy_oas"]].copy()
-    macro["date"] = pd.to_datetime(macro["date"]).dt.tz_localize(None)
-    macro = macro.sort_values("date")
-
-    merged = pd.merge(price_df, macro, on="date", how="left").sort_values("date")
-    for col in ["net_liquidity_bil", "sofr", "move", "hy_oas"]:
-        merged[col] = merged[col].ffill()
-
-    merged["net_liquidity_90d_change"] = merged["net_liquidity_bil"].diff(90)
-    merged["risk_net_liq"] = 1.0 - merged["net_liquidity_90d_change"].rank(pct=True)
-    merged["risk_sofr"] = merged["sofr"].rank(pct=True)
-    merged["risk_move"] = merged["move"].rank(pct=True)
-    merged["risk_hy_oas"] = merged["hy_oas"].rank(pct=True)
-
-    merged["macro_risk_score"] = 100.0 * (
-        MACRO_RISK_SCORE_WEIGHTS["net_liquidity_90d_change"] * merged["risk_net_liq"]
-        + MACRO_RISK_SCORE_WEIGHTS["sofr"] * merged["risk_sofr"]
-        + MACRO_RISK_SCORE_WEIGHTS["move"] * merged["risk_move"]
-        + MACRO_RISK_SCORE_WEIGHTS["hy_oas"] * merged["risk_hy_oas"]
-    )
-    merged["fwd_30d_return_pct"] = (
-        merged["close_price"].shift(-30) / merged["close_price"] - 1.0
-    ) * 100.0
-
+    merged = compute_macro_risk_frame(btc_df, macro_df)
     return merged.dropna(subset=["macro_risk_score", "close_price"]).copy()
 
 
@@ -427,8 +401,8 @@ def build_report_payload(
             ),
             "fear_greed": _safe_float(bottom_signals_snapshot.get("fear_greed")),
             "caveat": (
-                "Composite uses full-sample statistics (look-ahead) over a "
-                "~4-year, two-cycle backtest and a supply-weighted loss proxy "
+                "Composite ranks each day only against data known that day, on a "
+                "short (~4-year) history, and uses a supply-weighted loss proxy "
                 "that reads warmer than value-weighted dashboards. Treat as one "
                 "sentiment input, not investment advice."
             ),
@@ -910,7 +884,7 @@ def _deterministic_zh_summary(section: dict[str, Any]) -> str:
             f"五项信号得分（每项满分 20）：持有者成本 {_s('s1')}、MVRV {_s('s2')}、"
             f"亏损供应 {_s('s3')}、资金流向 {_s('s4')}、恐慌贪婪 {_s('s5')}。"
             + tail
-            + "（该综合分基于全样本统计含前视、~4年两周期回测、供给加权代理偏暖，"
+            + "（该综合分每天只与当时已知的数据比较，历史仅约 4 年，供给加权代理偏暖，"
             "仅作情绪参考之一，并非买入信号或投资建议。）"
         )
 
@@ -1098,12 +1072,12 @@ def enrich_with_human_summary(payload: dict[str, Any], *, source_signature: str 
         if _comp is not None:
             overall_en += (
                 f" The on-chain bottom composite{' through ' + str(_date) if _date else ''} reads {_comp:.0f}/100 ({_zone}), but on a"
-                " warm, two-cycle, look-ahead proxy that missed the 2024 cycle low —"
+                " warm, short-history proxy that missed the 2024 cycle low —"
                 " treat it as sentiment, not a buy trigger."
             )
             overall_zh += (
-                f"{'截至' + str(_date) + '，' if _date else ''}链上底部综合评分 {_comp:.0f}/100（{_zone}），但该指标基于偏暖的两周期、"
-                "含前视且漏判过 2024 周期底的代理，仅作情绪参考，并非买入信号。"
+                f"{'截至' + str(_date) + '，' if _date else ''}链上底部综合评分 {_comp:.0f}/100（{_zone}），但该指标基于偏暖、"
+                "历史较短且漏判过 2024 周期底的代理，仅作情绪参考，并非买入信号。"
             )
 
     overall_en = overall_en.strip() or "Available data is insufficient for an overall market assessment."

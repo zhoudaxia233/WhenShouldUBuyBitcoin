@@ -135,7 +135,8 @@ def test_generate_page_writes_html_and_info(tmp_path):
     assert "highly correlated" in html
     # quantified honesty + jargon gloss
     assert "39% of the time" in html  # random-baseline anchor for the matrix
-    assert "expanding-window calculation" in html  # look-ahead magnitude
+    assert "scored only with data known that day" in html  # no look-ahead
+    assert "full-sample" not in html
     assert "how far a value sits from its historical average" in html  # sigma gloss
     assert 'class="back-link"' in html
     assert "complete score through" in html

@@ -20,6 +20,11 @@ import pandas as pd
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 
+from .signal_backtest import known_rank
+
+# Days of history a macro component needs before it is ranked
+MACRO_RANK_MIN_HISTORY = 180
+
 MACRO_RISK_SCORE_WEIGHTS = {
     "net_liquidity_90d_change": 0.35,
     "sofr": 0.20,
@@ -2079,6 +2084,54 @@ def plot_funding_credit_stress(
     return str(output_path)
 
 
+MACRO_COMPONENTS = ["net_liquidity_bil", "sofr", "move", "hy_oas"]
+
+
+def compute_macro_risk_frame(btc_df: pd.DataFrame, macro_df: pd.DataFrame) -> pd.DataFrame:
+    """Daily macro risk score on BTC price dates, with forward BTC returns.
+
+    Components are ranked on a daily calendar covering all macro history (not
+    just the BTC price range), each day only among values known up to that day,
+    so the score history and its validation never use later data.
+    """
+    price = btc_df[["date", "close_price"]].copy()
+    price["date"] = pd.to_datetime(price["date"]).dt.tz_localize(None)
+    macro = macro_df.copy()
+    macro["date"] = pd.to_datetime(macro["date"]).dt.tz_localize(None)
+    missing_cols = [col for col in MACRO_COMPONENTS if col not in macro.columns]
+    if missing_cols:
+        raise ValueError(f"Missing macro columns for risk score chart: {missing_cols}")
+    macro = macro[["date", *MACRO_COMPONENTS]].sort_values("date")
+
+    start = min(price["date"].min(), macro["date"].min())
+    end = max(price["date"].max(), macro["date"].max())
+    frame = (
+        pd.DataFrame({"date": pd.date_range(start, end, freq="D")})
+        .merge(macro, on="date", how="left")
+        .merge(price, on="date", how="left")
+    )
+    for col in MACRO_COMPONENTS:
+        frame[col] = frame[col].ffill()
+
+    frame["net_liquidity_90d_change"] = frame["net_liquidity_bil"].diff(90)
+    # Higher rank = higher risk
+    frame["risk_net_liq"] = 1.0 - known_rank(frame["net_liquidity_90d_change"], MACRO_RANK_MIN_HISTORY)
+    frame["risk_sofr"] = known_rank(frame["sofr"], MACRO_RANK_MIN_HISTORY)
+    frame["risk_move"] = known_rank(frame["move"], MACRO_RANK_MIN_HISTORY)
+    frame["risk_hy_oas"] = known_rank(frame["hy_oas"], MACRO_RANK_MIN_HISTORY)
+    frame["macro_risk_score"] = 100.0 * (
+        MACRO_RISK_SCORE_WEIGHTS["net_liquidity_90d_change"] * frame["risk_net_liq"]
+        + MACRO_RISK_SCORE_WEIGHTS["sofr"] * frame["risk_sofr"]
+        + MACRO_RISK_SCORE_WEIGHTS["move"] * frame["risk_move"]
+        + MACRO_RISK_SCORE_WEIGHTS["hy_oas"] * frame["risk_hy_oas"]
+    )
+
+    merged = frame.dropna(subset=["close_price"]).reset_index(drop=True)
+    merged["fwd_7d_return_pct"] = (merged["close_price"].shift(-7) / merged["close_price"] - 1.0) * 100.0
+    merged["fwd_30d_return_pct"] = (merged["close_price"].shift(-30) / merged["close_price"] - 1.0) * 100.0
+    return merged
+
+
 def plot_macro_risk_score(
     btc_df: pd.DataFrame,
     macro_df: pd.DataFrame,
@@ -2094,46 +2147,7 @@ def plot_macro_risk_score(
         - MOVE level
         - HY OAS level
     """
-    price_df = btc_df.copy()
-    price_df["date"] = pd.to_datetime(price_df["date"]).dt.tz_localize(None)
-
-    macro_plot = macro_df.copy()
-    macro_plot["date"] = pd.to_datetime(macro_plot["date"]).dt.tz_localize(None)
-    macro_plot = macro_plot.sort_values("date")
-
-    required_cols = ["net_liquidity_bil", "sofr", "move", "hy_oas"]
-    missing_cols = [col for col in required_cols if col not in macro_plot.columns]
-    if missing_cols:
-        raise ValueError(f"Missing macro columns for risk score chart: {missing_cols}")
-
-    merged = pd.merge(
-        price_df[["date", "close_price"]],
-        macro_plot[["date", "net_liquidity_bil", "sofr", "move", "hy_oas"]],
-        on="date",
-        how="left",
-    ).sort_values("date")
-
-    for col in ["net_liquidity_bil", "sofr", "move", "hy_oas"]:
-        merged[col] = merged[col].ffill()
-
-    merged["net_liquidity_90d_change"] = merged["net_liquidity_bil"].diff(90)
-
-    # Convert each component into percentile rank [0, 1].
-    # Higher component = higher risk.
-    merged["risk_net_liq"] = 1.0 - merged["net_liquidity_90d_change"].rank(pct=True)
-    merged["risk_sofr"] = merged["sofr"].rank(pct=True)
-    merged["risk_move"] = merged["move"].rank(pct=True)
-    merged["risk_hy_oas"] = merged["hy_oas"].rank(pct=True)
-
-    merged["macro_risk_score"] = 100.0 * (
-        MACRO_RISK_SCORE_WEIGHTS["net_liquidity_90d_change"] * merged["risk_net_liq"]
-        + MACRO_RISK_SCORE_WEIGHTS["sofr"] * merged["risk_sofr"]
-        + MACRO_RISK_SCORE_WEIGHTS["move"] * merged["risk_move"]
-        + MACRO_RISK_SCORE_WEIGHTS["hy_oas"] * merged["risk_hy_oas"]
-    )
-
-    merged["fwd_7d_return_pct"] = (merged["close_price"].shift(-7) / merged["close_price"] - 1.0) * 100.0
-    merged["fwd_30d_return_pct"] = (merged["close_price"].shift(-30) / merged["close_price"] - 1.0) * 100.0
+    merged = compute_macro_risk_frame(btc_df, macro_df)
     merged = merged.dropna(subset=["macro_risk_score", "close_price", "fwd_30d_return_pct"])
 
     if merged.empty:

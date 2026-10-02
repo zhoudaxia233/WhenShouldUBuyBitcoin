@@ -72,6 +72,9 @@ class Transaction {
 class BacktestResult {
     constructor() {
         this.totalInvested = 0;
+        this.unspentBudget = 0; // Budget allocated but never invested
+        this.totalWealth = 0; // BTC value + unspent budget
+        this.returnOnBudget = 0; // Return on all budget allocated, in %
         this.finalBtcBalance = 0;
         this.finalPortfolioValue = 0;
         this.totalReturn = 0;
@@ -382,6 +385,21 @@ class DataLoader {
     }
 
     /**
+     * Dated AHR999 values, for percentiles that only use what was known
+     */
+    getAHR999History() {
+        return this.historicalData
+            .map((row) => {
+                const ratio_dca = parseFloat(row.ratio_dca);
+                const ratio_trend = parseFloat(row.ratio_trend);
+                const time = new Date(row.date).getTime();
+                if (isNaN(ratio_dca) || isNaN(ratio_trend) || isNaN(time)) return null;
+                return { time, value: ratio_dca * ratio_trend };
+            })
+            .filter((point) => point !== null);
+    }
+
+    /**
      * Get all historical AHR999 values for percentile calculations
      */
     getHistoricalAHR999Values() {
@@ -447,6 +465,53 @@ function getPercentileValue(arr, percentile) {
     const sorted = [...arr].sort((a, b) => a - b);
     const index = Math.floor((percentile / 100) * sorted.length);
     return sorted[Math.min(index, sorted.length - 1)];
+}
+
+/**
+ * Quantiles of dated values known up to a day.
+ *
+ * The backtest walks forward in time; ``advanceTo(date)`` adds every value
+ * dated on or before ``date``, so a simulated day never sees later values.
+ */
+class KnownHistoryQuantiles {
+    constructor(points, minCount = 365) {
+        this.points = points
+            .filter((point) => point && point.value !== null && Number.isFinite(point.value))
+            .sort((a, b) => a.time - b.time);
+        this.minCount = minCount;
+        this.sorted = [];
+        this.next = 0;
+    }
+
+    get count() {
+        return this.sorted.length;
+    }
+
+    advanceTo(date) {
+        const limit = date instanceof Date ? date.getTime() : date;
+        while (this.next < this.points.length && this.points[this.next].time <= limit) {
+            const value = this.points[this.next].value;
+            let lo = 0;
+            let hi = this.sorted.length;
+            while (lo < hi) {
+                const mid = (lo + hi) >> 1;
+                if (this.sorted[mid] <= value) lo = mid + 1;
+                else hi = mid;
+            }
+            this.sorted.splice(lo, 0, value);
+            this.next += 1;
+        }
+    }
+
+    ready() {
+        return this.sorted.length >= this.minCount;
+    }
+
+    // Same index rule as getPercentileValue
+    quantile(percentile) {
+        const index = Math.floor((percentile / 100) * this.sorted.length);
+        return this.sorted[Math.min(index, this.sorted.length - 1)];
+    }
 }
 
 /**
@@ -607,6 +672,12 @@ class Strategy {
      */
     getCurrentAHR999(date) {
         if (!this.dataLoader) return null;
+        // A missing value on a historical day stays missing: estimating it
+        // with today's trend fit would use prices from after that day
+        const lastHistorical = this.dataLoader.getLastHistoricalDate
+            ? this.dataLoader.getLastHistoricalDate()
+            : null;
+        if (lastHistorical && date <= lastHistorical) return null;
         return this.dataLoader.calculateAHR999(date, this.priceHistory);
     }
 }
@@ -707,6 +778,10 @@ class AHR999PercentileStrategy extends Strategy {
         // Budget control mode
         this.unlimitedBudget = config.unlimitedBudget || false;
 
+        // Days of known ahr999 history needed before tiers apply; no buys
+        // until then
+        this.minKnownHistory = config.minKnownHistory !== undefined ? config.minKnownHistory : 365;
+
         // User-configurable multipliers for each tier (use centralized defaults)
         this.multipliers = {
             p10:
@@ -751,35 +826,38 @@ class AHR999PercentileStrategy extends Strategy {
 
     initialize() {
         super.initialize();
-
-        // Calculate historical AHR999 percentiles for dynamic boundaries
-        const historicalAHR999 = this.dataLoader.getHistoricalAHR999Values();
-
-        this.ahr999Percentiles = {
-            p10: getPercentileValue(historicalAHR999, 10), // Bottom 10%
-            p25: getPercentileValue(historicalAHR999, 25), // 10-25%
-            p50: getPercentileValue(historicalAHR999, 50), // 25-50%
-            p75: getPercentileValue(historicalAHR999, 75), // 50-75%
-            p90: getPercentileValue(historicalAHR999, 90), // 75-90%
-        };
-
-        console.log("AHR999 Percentiles:", this.ahr999Percentiles);
-        console.log("Multipliers:", this.multipliers);
+        // Tiers come from ahr999 values known on each simulated day, never
+        // from the full history (that would use later prices)
+        this.knownAHR999 = new KnownHistoryQuantiles(
+            this.dataLoader ? this.dataLoader.getAHR999History() : [],
+            this.minKnownHistory
+        );
+        this.ahr999Percentiles = null;
     }
 
     shouldInvest(date, price, dayData) {
         // Get AHR999 value
         let ahr999;
-        if (dayData && dayData.ahr999 !== null) {
+        if (dayData && dayData.ahr999 !== null && dayData.ahr999 !== undefined) {
             ahr999 = dayData.ahr999;
         } else {
             ahr999 = this.getCurrentAHR999(date);
         }
 
-        // If we can't calculate AHR999 or invalid AHR999, don't invest
-        if (ahr999 === null || ahr999 === undefined || isNaN(ahr999)) {
+        this.knownAHR999.advanceTo(date);
+
+        // No value, or too little history to rank it: no signal, no buy
+        if (ahr999 === null || ahr999 === undefined || isNaN(ahr999) || !this.knownAHR999.ready()) {
             return 0;
         }
+
+        this.ahr999Percentiles = {
+            p10: this.knownAHR999.quantile(10), // Bottom 10%
+            p25: this.knownAHR999.quantile(25), // 10-25%
+            p50: this.knownAHR999.quantile(50), // 25-50%
+            p75: this.knownAHR999.quantile(75), // 50-75%
+            p90: this.knownAHR999.quantile(90), // 75-90%
+        };
 
         // Calculate investment multiplier based on AHR999 percentile tier
         let multiplier;
@@ -1343,6 +1421,16 @@ class BacktestEngine {
         const btcValue = btcBalance * finalPrice;
         result.btcValue = btcValue;
 
+        // Same money for every strategy: budget that was not invested stays
+        // with the investor, so it counts at face value. Comparing returns on
+        // invested money only would flatter strategies that skip buys.
+        result.unspentBudget = Math.max(0, totalBudgetAllocated - totalInvested);
+        result.totalWealth = btcValue + result.unspentBudget;
+        result.returnOnBudget =
+            totalBudgetAllocated > 0
+                ? (result.totalWealth / totalBudgetAllocated - 1) * 100
+                : 0;
+
         // Final Portfolio Value: 
         // - If investments were made (totalInvested > 0): Show only BTC value (ignore unspent cash)
         //   This is more intuitive - shows the performance of investments, not cash sitting around
@@ -1895,27 +1983,34 @@ class BacktestUI {
                     </div>
 
                     <div class="metric-card">
-                        <h3>Final Portfolio Value</h3>
-                        <div class="metric-value">$${result.finalPortfolioValue.toLocaleString(
+                        <h3>Final Wealth</h3>
+                        <div class="metric-value">$${result.totalWealth.toLocaleString(
                             "en-US",
                             {
                                 minimumFractionDigits: 2,
                                 maximumFractionDigits: 2,
                             }
                         )}</div>
+                        <div class="metric-detail">
+                            BTC $${result.btcValue.toLocaleString("en-US", { maximumFractionDigits: 0 })}
+                            + unspent budget $${result.unspentBudget.toLocaleString("en-US", { maximumFractionDigits: 0 })}
+                        </div>
                     </div>
 
                     <div class="metric-card">
-                        <h3>Total Return</h3>
+                        <h3>Return on Budget</h3>
                         <div class="metric-value" style="color: ${
-                            result.totalReturn >= 0 ? "#28a745" : "#ff3b30"
+                            result.returnOnBudget >= 0 ? "#28a745" : "#ff3b30"
                         }">
                             ${
-                                result.totalReturn >= 0 ? "+" : ""
-                            }${result.totalReturn.toFixed(2)}%
+                                result.returnOnBudget >= 0 ? "+" : ""
+                            }${result.returnOnBudget.toFixed(2)}%
                         </div>
                         <div class="metric-detail">
-                            Annualized: ${(() => {
+                            On invested money only: ${result.totalReturn >= 0 ? "+" : ""}${result.totalReturn.toFixed(2)}%
+                        </div>
+                        <div class="metric-detail">
+                            Annualized (invested money): ${(() => {
                                 const annualized = result.annualizedReturn;
                                 // Show N/A for periods less than 1 year or unreasonable values
                                 if (
@@ -2048,6 +2143,7 @@ export {
     BacktestUI,
     calculatePercentile,
     getPercentileValue,
+    KnownHistoryQuantiles,
     AHR999_DEFAULT_MULTIPLIERS,
     AHR999_FIXED_RANGE_DEFAULT_MULTIPLIERS,
     BacktestResult,

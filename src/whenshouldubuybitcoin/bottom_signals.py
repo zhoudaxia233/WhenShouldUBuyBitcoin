@@ -5,8 +5,8 @@ Five signals scored 0-20 each sum to a 0-100 composite:
   S1 price vs holder cost-basis lines, S2 MVRV sigma deviation,
   S3 supply-in-loss sigma deviation, S4 30d realized-cap flow percentile,
   S5 Fear & Greed.
-Sigma/percentile statistics are computed once over the full available sample
-(not expanding windows); the dashboard page states the look-ahead caveat.
+Sigma/percentile statistics use only data known up to each day (expanding
+windows), so a historical score never relies on later observations.
 """
 
 import math
@@ -14,6 +14,8 @@ from typing import Optional
 
 import numpy as np
 import pandas as pd
+
+from .signal_backtest import expanding_percentile
 
 MIN_OBSERVATIONS = 180
 
@@ -87,16 +89,15 @@ def score_s1_holder_cost(price, lth, avg, sth) -> Optional[float]:
     return _interp(np.log(price), log_xs, ys)
 
 
-def full_sample_deviation(series: pd.Series) -> pd.Series:
-    """Deviation from the full-sample mean in population-std units.
+def known_deviation(series: pd.Series) -> pd.Series:
+    """Deviation from the mean of values known so far, in population-std units.
 
-    All-NaN result when the sample is shorter than MIN_OBSERVATIONS or flat.
+    NaN until MIN_OBSERVATIONS values are known, and while they are all equal.
     """
     s = pd.to_numeric(series, errors="coerce")
-    valid = s.dropna()
-    if len(valid) < MIN_OBSERVATIONS or valid.std(ddof=0) == 0:
-        return pd.Series(np.nan, index=s.index)
-    return (s - valid.mean()) / valid.std(ddof=0)
+    known = s.expanding(min_periods=MIN_OBSERVATIONS)
+    std = known.std(ddof=0)
+    return (s - known.mean()) / std.where(std > 0)
 
 
 def _sigma_to_score(dev: pd.Series, anchors_sigma, anchors_score) -> pd.Series:
@@ -107,20 +108,24 @@ def _sigma_to_score(dev: pd.Series, anchors_sigma, anchors_score) -> pd.Series:
 
 def score_s2_mvrv(series: pd.Series) -> pd.Series:
     """MVRV deviation: +2 sigma -> 0, 0 -> 8, -1.5 sigma -> 20."""
-    return _sigma_to_score(full_sample_deviation(series), *S2_SIGMA_ANCHORS)
+    return _sigma_to_score(known_deviation(series), *S2_SIGMA_ANCHORS)
 
 
 def score_s3_supply_loss(series: pd.Series) -> pd.Series:
     """Supply-in-loss deviation: -1 sigma -> 0, 0 -> 6, +0.5 -> 10, +2 -> 20."""
-    return _sigma_to_score(full_sample_deviation(series), *S3_SIGMA_ANCHORS)
+    return _sigma_to_score(known_deviation(series), *S3_SIGMA_ANCHORS)
+
+
+def known_percentile(series: pd.Series) -> pd.Series:
+    """Share (0-1) of values known so far at or below each day's value."""
+    s = pd.to_numeric(series, errors="coerce")
+    pct = expanding_percentile(s.to_numpy(dtype=float), min_history=MIN_OBSERVATIONS)
+    return pd.Series(pct / 100.0, index=s.index)
 
 
 def score_s4_capital_flow(series: pd.Series) -> pd.Series:
-    """20 x (1 - full-sample percentile rank) of the 30d realized-cap change."""
-    s = pd.to_numeric(series, errors="coerce")
-    if s.notna().sum() < MIN_OBSERVATIONS:
-        return pd.Series(np.nan, index=s.index)
-    return 20.0 * (1.0 - s.rank(pct=True))
+    """20 x (1 - percentile rank among values known so far) of the 30d realized-cap change."""
+    return 20.0 * (1.0 - known_percentile(series))
 
 
 def score_s5_fear_greed(value) -> Optional[float]:
@@ -158,16 +163,11 @@ def compute_bottom_signal_scores(
             df["sth_realized_price"],
         )
     ]
-    df["s2_dev"] = full_sample_deviation(df["mvrv"])
+    df["s2_dev"] = known_deviation(df["mvrv"])
     df["s2"] = _sigma_to_score(df["s2_dev"], *S2_SIGMA_ANCHORS)
-    df["s3_dev"] = full_sample_deviation(df["supply_loss_pct"])
+    df["s3_dev"] = known_deviation(df["supply_loss_pct"])
     df["s3"] = _sigma_to_score(df["s3_dev"], *S3_SIGMA_ANCHORS)
-    s4_raw = pd.to_numeric(df["realized_cap_change_30d_usd"], errors="coerce")
-    df["s4_pctile"] = (
-        s4_raw.rank(pct=True)
-        if s4_raw.notna().sum() >= MIN_OBSERVATIONS
-        else pd.Series(np.nan, index=df.index)
-    )
+    df["s4_pctile"] = known_percentile(df["realized_cap_change_30d_usd"])
     df["s4"] = 20.0 * (1.0 - df["s4_pctile"])
     df["s5"] = [score_s5_fear_greed(v) for v in df["fear_greed"]]
 

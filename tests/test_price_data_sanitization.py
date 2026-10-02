@@ -88,8 +88,9 @@ def test_load_existing_metrics_drops_invalid_close_rows(tmp_path, monkeypatch):
 def test_metric_summaries_skip_trailing_nan_close_row():
     price_df = pd.DataFrame(
         {
-            "date": pd.date_range("2025-01-01", periods=260, freq="D"),
-            "close_price": np.linspace(40000.0, 80000.0, 260),
+            # Longer than the two years the power-law trend needs before it is fitted
+            "date": pd.date_range("2024-01-01", periods=800, freq="D"),
+            "close_price": np.linspace(40000.0, 80000.0, 800),
         }
     )
     expected_latest_price = float(price_df["close_price"].iloc[-2])

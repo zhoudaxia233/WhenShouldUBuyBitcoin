@@ -76,3 +76,48 @@ def test_macro_hit_rate_is_unknown_without_mature_high_risk_samples(
     assert metrics["high_risk_sample_count"] == 0
     assert metrics["validation_through"] == validation_through
     assert metrics["score"] == 95.0
+
+
+def test_macro_score_history_uses_only_data_known_each_day():
+    import numpy as np
+
+    days = 600
+    dates = pd.date_range("2024-01-01", periods=days, freq="D")
+    i = np.arange(days)
+    btc_df = pd.DataFrame({"date": dates, "close_price": 50_000.0 + 100.0 * i})
+    macro_df = pd.DataFrame(
+        {
+            "date": dates,
+            "net_liquidity_bil": 6_000.0 + 200.0 * np.sin(i / 40.0),
+            "sofr": 4.0 + np.sin(i / 50.0),
+            "move": 100.0 + 20.0 * np.sin(i / 30.0),
+            "hy_oas": 4.0 + np.sin(i / 60.0),
+        }
+    )
+    early = daily_report._calc_macro_score_df(btc_df.iloc[:400], macro_df.iloc[:400])
+    full = daily_report._calc_macro_score_df(btc_df, macro_df)
+    compare = early[["date", "macro_risk_score"]].merge(
+        full[["date", "macro_risk_score"]], on="date", suffixes=("_early", "_full")
+    )
+    assert len(compare) == len(early) > 0
+    np.testing.assert_allclose(compare["macro_risk_score_early"], compare["macro_risk_score_full"])
+
+
+def test_macro_score_ranks_use_macro_history_before_btc_prices_start():
+    import numpy as np
+
+    macro_dates = pd.date_range("2020-01-01", periods=900, freq="D")
+    i = np.arange(900)
+    macro_df = pd.DataFrame(
+        {
+            "date": macro_dates,
+            "net_liquidity_bil": 6_000.0 + 200.0 * np.sin(i / 40.0),
+            "sofr": 4.0 + np.sin(i / 50.0),
+            "move": 100.0 + 20.0 * np.sin(i / 30.0),
+            "hy_oas": 4.0 + np.sin(i / 60.0),
+        }
+    )
+    # BTC prices only cover the last 100 macro days
+    btc_df = pd.DataFrame({"date": macro_dates[-100:], "close_price": 60_000.0})
+    scored = daily_report._calc_macro_score_df(btc_df, macro_df)
+    assert len(scored) == 100
