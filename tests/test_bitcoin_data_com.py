@@ -137,9 +137,7 @@ def test_fetch_series_does_not_retry_client_error(monkeypatch):
     assert len(calls) == 1  # a 4xx (except 429) is not retried
 
 
-def test_fetch_series_retries_on_429(monkeypatch):
-    calls = []
-
+def _rate_limited_get(calls):
     def fake_get(url, **kwargs):
         calls.append(url)
         resp = MagicMock()
@@ -149,10 +147,51 @@ def test_fetch_series_retries_on_429(monkeypatch):
         resp.raise_for_status.side_effect = err
         return resp
 
-    monkeypatch.setattr(bdc.requests, "get", fake_get)
+    return fake_get
+
+
+def test_fetch_series_stops_on_429(monkeypatch):
+    calls = []
+    monkeypatch.setattr(bdc.requests, "get", _rate_limited_get(calls))
     monkeypatch.setattr(bdc.time, "sleep", lambda s: None)
-    assert bdc.fetch_series("mvrv", max_retries=2) is None
-    assert len(calls) == 2  # rate-limit IS retried (within budget)
+    # Retrying a rate limit only burns the daily quota; the run stops instead
+    with pytest.raises(bdc.RateLimitedError):
+        bdc.fetch_series("mvrv", max_retries=3)
+    assert len(calls) == 1
+
+
+def test_fetch_all_stops_the_run_when_rate_limited(monkeypatch):
+    monkeypatch.setattr(bdc.time, "sleep", lambda s: None)
+    calls = []
+
+    def fake_get(url, **kwargs):
+        if url.endswith("/v1/mvrv"):
+            return _rate_limited_get(calls)(url)
+        calls.append(url)
+        resp = MagicMock()
+        resp.raise_for_status.return_value = None
+        resp.json.return_value = [{"d": "2026-09-30", "value": "1.0"}]
+        return resp
+
+    monkeypatch.setattr(bdc.requests, "get", fake_get)
+    plan = [("lth_realized_price", None), ("mvrv", None), ("realized_price", None)]
+    out = bdc.fetch_all_onchain_series(plan=plan)
+    assert set(out) == {"lth_realized_price"}
+    assert not any(url.endswith("/v1/realized-price") for url in calls)
+
+
+def test_fetch_all_follows_the_plan(monkeypatch):
+    requested = []
+
+    def fake_fetch(metric_key, startday=None, budget=None):
+        requested.append((metric_key, startday))
+        return [("2026-09-30", 1.0)]
+
+    monkeypatch.setattr(bdc, "fetch_series", fake_fetch)
+    plan = [("supply_loss_btc", "2026-06-25"), ("supply_profit_btc", "2026-06-25")]
+    out = bdc.fetch_all_onchain_series(plan=plan)
+    assert requested == plan
+    assert set(out) == {"supply_loss_btc", "supply_profit_btc"}
 
 
 def test_fetch_all_respects_per_run_budget(monkeypatch):
