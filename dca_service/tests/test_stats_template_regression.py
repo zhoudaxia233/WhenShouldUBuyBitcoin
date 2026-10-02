@@ -55,7 +55,6 @@ def test_performance_chart_uses_dedicated_performance_series():
     assert "data: performanceInvested" in html
     assert "data: performanceValue" in html
     assert "latestWalletSummary.current_price" in html
-    assert "currentAvg: wallet.hot_wallet_avg_price" in html
     assert "renderChart(latestStatsPnlData);" in html
 
 
@@ -151,7 +150,6 @@ def test_stats_page_uses_reference_dashboard_layout_without_visible_title_block(
     assert 'class="stats-metrics-grid"' in html
     assert html.count('stats-metric-card dashboard-panel') == 5
     assert 'class="stats-analytics-grid"' in html
-    assert 'class="dashboard-panel reserve-panel"' in html
     assert 'class="trading-style-list"' in html
 
 
@@ -267,41 +265,3 @@ def test_distribution_current_row_highlight_is_reapplied_after_percentile_loads(
     assert "tr.dataset.percentile = String(row.percentile || '').trim();" in html
     assert "row.classList.toggle('current-rank-row', row.dataset.percentile === currentPercentile);" in html
 
-
-def _load_static(name: str) -> str:
-    return (Path(__file__).resolve().parents[1] / "src" / "dca_service" / "static" / name).read_text(encoding="utf-8")
-
-
-def test_reserve_chart_replaces_the_zoomable_saylor_chart():
-    html = _load_stats_template()
-    assert '<script src="/static/reserve_chart.js"></script>' in html
-    # Zoom and pan fought page scrolling; the chart now has neither.
-    assert "chartjs-plugin-zoom" not in html
-    assert "hammerjs" not in html
-    assert "saylor" not in html.lower()
-
-
-def test_reserve_chart_markup_has_readout_canvas_and_range_buttons():
-    html = _load_stats_template()
-    assert '<section id="reserveChart" class="dashboard-panel reserve-panel"' in html
-    assert "data-reserve-readout" in html
-    assert '<canvas class="reserve-canvas" tabindex="0" role="img"' in html
-    ranges = re.findall(r'data-range="(\w+)" aria-pressed="(true|false)"', html)
-    assert ranges == [("3m", "false"), ("6m", "false"), ("1y", "true"), ("all", "false")]
-    assert 'class="reserve-empty"' in html
-
-
-def test_reserve_chart_shows_wallet_holdings_only_when_the_wallet_reports_some():
-    html = _load_stats_template()
-    assert "currentBtc: Number.isFinite(wallet.total_btc) && wallet.total_btc > 0 ? wallet.total_btc : undefined" in html
-    assert "currentPrice: wallet.current_price" in html
-    assert html.count("renderReserveChart(latestStatsPnlData);") == 3
-
-
-def test_reserve_chart_scrolls_vertically_on_touch_and_has_a_mobile_height():
-    css = _load_static("app.css")
-    canvas_rule = css[css.index(".reserve-canvas {"):]
-    assert "touch-action: pan-y;" in canvas_rule[:canvas_rule.index("}")]
-    mobile = css[css.rindex("@media (max-width: 767.98px)"):]
-    assert ".reserve-canvas {" in mobile
-    assert "--reserve-price" in css[css.index('html[data-bs-theme="dark"],\nhtml[data-theme="dark"] {\n    --reserve-price'):]

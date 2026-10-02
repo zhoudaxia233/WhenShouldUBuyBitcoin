@@ -63,17 +63,6 @@ def test_product_name_is_satsflow_and_not_hardcoded_in_login():
     assert '"project_name": settings.PROJECT_NAME' in auth_api
 
 
-def test_dashboard_wallet_uses_metric_cards_and_progress_ring():
-    html = _dashboard_html()
-
-    assert 'class="wallet-card-grid"' in html
-    assert 'class="metric-card metric-card-primary"' in html
-    assert 'class="metric-card progress-metric-card"' in html
-    assert 'id="progressRing"' in html
-    assert "--progress-value" in html
-    assert "progressRingEl.style.setProperty('--progress-value'" in html
-
-
 def test_dashboard_refresh_control_lives_in_header_not_standalone_bar():
     html = _dashboard_html()
     header = (TEMPLATE_DIR / "_shared_header.html").read_text(encoding="utf-8")
@@ -90,7 +79,7 @@ def test_dashboard_refresh_control_lives_in_header_not_standalone_bar():
 def test_dashboard_mobile_reference_structure_prioritizes_wallet_hero():
     html = _dashboard_html()
 
-    wallet_index = html.index('class="wallet-overview-section')
+    wallet_index = html.index('id="reserveChart"')
     strategy_index = html.index('DCA Strategy')
     transactions_index = html.index('Transaction History')
     assert wallet_index < strategy_index < transactions_index
@@ -150,18 +139,8 @@ def test_dashboard_mobile_keeps_reference_density_and_card_shapes():
     html = _dashboard_html()
     mobile_css = html[html.index("@media (max-width: 768px)") :]
 
-    assert ".wallet-card-grid {" in mobile_css
     assert "grid-template-columns: repeat(2, minmax(0, 1fr));" in mobile_css
-    assert ".metric-card-primary {" in mobile_css
-    assert "background: linear-gradient(135deg, #ff9a16 0%, #ff7a00 100%);" in mobile_css
-    assert "grid-column: 1 / -1;" in mobile_css
-    assert "min-height: 128px;" in mobile_css
-    assert ".progress-metric-card {" in mobile_css
-    assert "min-height: 72px;" in mobile_css
-    assert ".wallet-card-grid .mobile-card-icon {" in mobile_css
-    assert ".progress-metric-card .progress-ring {" in mobile_css
     assert ".dca-budget-card {" not in mobile_css
-    assert ".wallet-card-grid .metric-card:not(.metric-card-primary) .metric-value {" in mobile_css
     assert "white-space: nowrap;" in mobile_css
     assert ".strategy-metric-grid {" in mobile_css
     assert "grid-template-columns: repeat(2, minmax(0, 1fr));" in mobile_css
@@ -351,7 +330,7 @@ def test_dashboard_mobile_layout_is_explicitly_scoped():
     css = STATIC_CSS_PATH.read_text(encoding="utf-8")
 
     assert "@media (max-width: 768px)" in css
-    assert ".wallet-card-grid" in html
+    assert ".holdings-top" in css
     assert ".strategy-metric-grid" in html
     assert ".dashboard-nav" in css
 

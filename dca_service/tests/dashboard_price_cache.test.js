@@ -247,6 +247,7 @@ describe("dashboard preview cache hydration", () => {
             "loadTransactions",
             "loadPreview",
             "loadWalletSummary",
+            "loadReserveChart",
             "fetchRealtimePriceForDashboard",
             "startDashboardPricePolling",
             "connectSSE",
@@ -262,6 +263,7 @@ describe("dashboard preview cache hydration", () => {
             },
             async () => calls.push("preview"),
             async () => calls.push("wallet"),
+            async () => calls.push("reserve-chart"),
             async () => calls.push("realtime-price"),
             () => calls.push("polling"),
             () => calls.push("sse"),
@@ -270,6 +272,7 @@ describe("dashboard preview cache hydration", () => {
 
         expect(calls).toContain("preview");
         expect(calls).toContain("wallet");
+        expect(calls).toContain("reserve-chart");
         expect(calls).toContain("realtime-price");
 
         resolveTransactions();

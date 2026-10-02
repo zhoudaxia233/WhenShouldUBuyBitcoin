@@ -205,8 +205,7 @@
             border-color: var(--dashboard-accent);
             color: #fff;
         }
-        .dashboard-panel,
-        .metric-card {
+        .dashboard-panel {
             border: 1px solid var(--dashboard-border);
             border-radius: 10px;
             background: var(--dashboard-card-bg);
@@ -1083,34 +1082,13 @@
                 line-height: 1.28;
             }
         }
-        .wallet-card-grid {
-            display: grid;
-            grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.85fr) minmax(0, 1.05fr);
-            gap: 1rem;
-        }
+
         .dashboard-mobile-only,
         .dashboard-mobile-only-card,
-        .mobile-card-icon,
         .mobile-transaction-card-list {
             display: none;
         }
-        .metric-card {
-            min-height: 190px;
-            position: relative;
-            overflow: hidden;
-            padding: 1.55rem 1.65rem;
-        }
-        .metric-card-primary::after {
-            content: "₿";
-            position: absolute;
-            right: 20px;
-            bottom: -34px;
-            color: var(--dashboard-accent-soft);
-            font-size: 8rem;
-            font-weight: 800;
-            line-height: 1;
-            pointer-events: none;
-        }
+
         .metric-label,
         .strategy-label,
         .quick-stat-label {
@@ -1130,29 +1108,7 @@
             color: var(--dashboard-muted);
             font-size: 0.94rem;
         }
-        .progress-metric-card {
-            display: grid;
-            grid-template-columns: minmax(0, 1fr) auto;
-            align-items: center;
-            gap: 1rem;
-        }
-        .progress-ring {
-            --progress-value: 0%;
-            width: 88px;
-            height: 88px;
-            border-radius: 50%;
-            background: conic-gradient(var(--dashboard-accent) var(--progress-value), var(--dashboard-ring-track) 0);
-            position: relative;
-            flex: none;
-        }
-        .progress-ring::after {
-            content: "";
-            position: absolute;
-            inset: 12px;
-            border-radius: 50%;
-            background: var(--dashboard-card-bg-solid);
-            box-shadow: inset 0 0 0 1px var(--dashboard-border);
-        }
+
         .dashboard-accent-progress {
             height: 7px;
             width: 100%;
@@ -1590,7 +1546,6 @@
             }
         }
         @media (max-width: 992px) {
-            .wallet-card-grid,
             .strategy-card-grid {
                 grid-template-columns: 1fr;
             }
@@ -1652,25 +1607,7 @@
             .header-utility .user-chip {
                 display: none !important;
             }
-            .wallet-card-grid {
-                grid-template-columns: repeat(2, minmax(0, 1fr));
-                gap: 0.5rem;
-            }
-            .wallet-overview-section {
-                margin-bottom: 0.6rem !important;
-            }
-            .metric-card-primary {
-                grid-column: 1 / -1;
-                min-height: 128px;
-                background: linear-gradient(135deg, #ff9a16 0%, #ff7a00 100%);
-                color: #fff;
-                border-color: rgba(255, 122, 0, 0.42);
-                box-shadow: 0 18px 40px rgba(255, 122, 0, 0.24);
-            }
-            .metric-card {
-                min-height: auto;
-                padding: 0.68rem 0.72rem;
-            }
+
             .dashboard-mobile-only,
             .dashboard-mobile-only-card {
                 display: block;
@@ -1684,80 +1621,11 @@
                 letter-spacing: 0;
                 margin-bottom: 0.42rem !important;
             }
-            .wallet-card-grid .metric-card:not(.metric-card-primary) .metric-value {
-                font-size: 1.18rem;
-                white-space: nowrap;
-            }
-            .metric-card-primary .metric-label,
-            .metric-card-primary .metric-value,
-            .metric-card-primary .metric-subtext {
-                color: #fff;
-            }
-            .metric-card-primary .metric-label {
-                opacity: 0.88;
-            }
-            .metric-card-primary .metric-value {
-                font-size: 1.58rem;
-            }
+
             .metric-subtext {
                 font-size: 0.8rem;
             }
-            .metric-card-primary::after {
-                right: 14px;
-                bottom: -14px;
-                color: rgba(255, 255, 255, 0.16);
-                font-size: 5.8rem;
-            }
-            .metric-card-primary .mt-4 {
-                margin-top: 0.34rem !important;
-            }
-            .metric-card .btn {
-                min-height: 32px;
-                padding: 0.28rem 0.44rem;
-            }
-            .metric-card-primary .btn {
-                border-color: rgba(255, 255, 255, 0.72);
-                background: rgba(255, 255, 255, 0.08);
-                color: #fff;
-            }
-            .metric-card-primary .btn:hover,
-            .metric-card-primary .btn:focus {
-                background: #fff;
-                color: var(--dashboard-accent-strong);
-            }
-            .mobile-card-icon {
-                width: 28px;
-                height: 28px;
-                border-radius: 9px;
-                background: var(--dashboard-accent-softer);
-                color: var(--dashboard-accent-strong);
-                display: inline-flex;
-                align-items: center;
-                justify-content: center;
-                margin-top: 0.36rem;
-            }
-            .wallet-card-grid .mobile-card-icon {
-                display: none;
-            }
-            .progress-metric-card {
-                display: flex;
-                min-height: 72px;
-                flex-direction: column;
-                align-items: flex-start;
-                justify-content: space-between;
-                gap: 0.42rem;
-            }
-            .progress-metric-card .progress-ring {
-                display: none;
-            }
-            .progress-ring {
-                width: 48px;
-                height: 48px;
-                align-self: center;
-            }
-            .progress-ring::after {
-                inset: 7px;
-            }
+
             .dashboard-accent-progress {
                 height: 5px;
                 margin-top: 0.48rem;
@@ -2372,52 +2240,49 @@
         {% set active_page = 'dashboard' %}
         {% include "_shared_header.html" %}
 
-        <!-- Wallet Overview Section -->
-        <section class="wallet-overview-section mb-4" aria-label="Wallet overview">
-                <div id="walletError" class="alert alert-warning d-none">
-                    Configure Binance API credentials to view hot wallet data.
+        <!-- Holdings: BTC held, target progress and the reserve chart -->
+        <section id="reserveChart" class="dashboard-panel reserve-panel holdings-hero" aria-labelledby="holdingsTitle">
+            <h1 id="holdingsTitle" class="visually-hidden">Your bitcoin</h1>
+            <div id="walletError" class="alert alert-warning d-none mb-0">
+                Binance is not connected, so hot wallet holdings are missing. <a class="alert-link" href="/settings/binance">Connect Binance</a>
+            </div>
+            <div class="holdings-top" id="walletContent">
+                <div class="reserve-readout" data-reserve-readout aria-live="polite">
+                    <span class="reserve-readout-label">Bitcoin held</span>
+                    <span class="reserve-readout-btc"><span class="reserve-btc-symbol">₿</span>--</span>
                 </div>
-                <div id="walletContent">
-                    <div class="wallet-card-grid">
-                        <!-- Total BTC - Main Display -->
-                        <article class="metric-card metric-card-primary">
-                            <div class="metric-label mb-3">Total BTC Balance</div>
-                            <div class="metric-value mb-3" id="totalBtc">--</div>
-                            <div class="metric-subtext">
-                                <span id="hotBalance" title="Binance (Hot)">Hot: --</span> | 
-                                <span id="coldBalance" title="Cold Storage">Cold: --</span>
-                            </div>
-                            <div class="mt-4">
-                                <button class="btn btn-sm btn-outline-info" data-bs-toggle="modal" data-bs-target="#setColdWalletModal" title="Set your total cold wallet BTC balance">
-                                    <i class="bi bi-wallet2"></i> Set Cold Wallet
-                                </button>
-                            </div>
-                        </article>
-                        
-                        <!-- Available USDC (Binance) -->
-                        <article class="metric-card">
-                            <div class="metric-label mb-4">Available USDC</div>
-                            <div class="metric-value mb-3" id="quoteBalance">--</div>
-                            <div class="metric-subtext">Binance Balance</div>
-                            <div class="mobile-card-icon" aria-hidden="true"><i class="bi bi-currency-dollar"></i></div>
-                        </article>
-                        
-                        <!-- Target Progress -->
-                        <article class="metric-card progress-metric-card">
-                            <div>
-                                <div class="metric-label mb-4">Target Progress</div>
-                                <div class="metric-value mb-3" id="progressPercent">--%</div>
-                                <div class="metric-subtext" id="targetAmount">Target: -- BTC</div>
-                            </div>
-                            <div id="progressRing" class="progress-ring" aria-hidden="true"></div>
-                        </article>
-
+                <div class="holdings-target">
+                    <div class="holdings-target-head">
+                        <span class="holdings-target-label">Target</span>
+                        <span class="holdings-target-percent" id="progressPercent">--%</span>
                     </div>
-
-                    <div class="progress dashboard-accent-progress">
-                        <div id="progressBar" class="progress-bar bg-success" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" style="width: 0%"></div>
+                    <div class="progress dashboard-accent-progress" aria-label="Progress to target">
+                        <div id="progressBar" class="progress-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" style="width: 0%"></div>
                     </div>
+                    <div class="holdings-target-meta">₿<span id="totalBtc">--</span> of ₿<span id="targetAmount">--</span></div>
+                    <div class="holdings-target-eta" id="targetEta"></div>
+                    <dl class="holdings-wallets">
+                        <div><dt>Binance</dt><dd>₿<span id="hotBalance">--</span></dd></div>
+                        <div><dt>Cold storage</dt><dd>₿<span id="coldBalance">--</span> <button class="holdings-edit" type="button" data-bs-toggle="modal" data-bs-target="#setColdWalletModal" aria-label="Edit cold storage balance">Edit</button></dd></div>
+                        <div><dt>USDC to spend</dt><dd id="quoteBalance">--</dd></div>
+                    </dl>
                 </div>
+            </div>
+            <canvas class="reserve-canvas" tabindex="0" role="img" aria-label="BTC price, your average cost and weekly buys. Move the pointer or use the arrow keys to read a day."></canvas>
+            <p class="reserve-empty">Your chart appears after the first purchase.</p>
+            <div class="reserve-foot">
+                <div class="reserve-legend" aria-hidden="true">
+                    <span><i class="reserve-key reserve-key-price"></i>BTC price</span>
+                    <span><i class="reserve-key reserve-key-avg"></i>Your avg cost</span>
+                    <span><i class="reserve-key reserve-key-bar"></i>BTC bought per week</span>
+                </div>
+                <div class="reserve-range" data-reserve-range role="group" aria-label="Time range">
+                    <button type="button" data-range="3m" aria-pressed="false">3M</button>
+                    <button type="button" data-range="6m" aria-pressed="false">6M</button>
+                    <button type="button" data-range="1y" aria-pressed="true">1Y</button>
+                    <button type="button" data-range="all" aria-pressed="false">All</button>
+                </div>
+            </div>
         </section>
 
         <!-- DCA Control Section -->
@@ -2794,15 +2659,14 @@
                 const progressEl = document.getElementById('progressPercent');
                 const targetEl = document.getElementById('targetAmount');
                 const progressBarEl = document.getElementById('progressBar');
-                const progressRingEl = document.getElementById('progressRing');
 
                 if (totalBtcEl && totalBtc !== null) {
-                    totalBtcEl.textContent = `${totalBtc.toFixed(8)} BTC`;
+                    totalBtcEl.textContent = totalBtc.toFixed(8);
                     window.__dashboardTotalBtc = totalBtc;
                     updateMobileFiatEstimate();
                 }
-                if (hotEl && hotBtc !== null) hotEl.textContent = `Hot: ${hotBtc.toFixed(8)}`;
-                if (coldEl && coldBtc !== null) coldEl.textContent = `Cold: ${coldBtc.toFixed(8)}`;
+                if (hotEl && hotBtc !== null) hotEl.textContent = hotBtc.toFixed(8);
+                if (coldEl && coldBtc !== null) coldEl.textContent = coldBtc.toFixed(8);
 
                 if (quoteEl && binance && binance.quote_balance !== null && binance.quote_balance !== undefined) {
                     const quoteBalance = toFiniteNumber(binance.quote_balance);
@@ -2814,14 +2678,15 @@
                 if (strategy && strategy.target_btc_amount) {
                     const target = toFiniteNumber(strategy.target_btc_amount);
                     if (target !== null && target > 0 && totalBtc !== null) {
-                        const progress = Math.min((totalBtc / target) * 100, 100).toFixed(4);
+                        const ratio = Math.min((totalBtc / target) * 100, 100);
+                        const progress = ratio.toFixed(ratio < 1 ? 2 : 1);
                         if (progressEl) progressEl.textContent = `${progress}%`;
-                        if (targetEl) targetEl.textContent = `Target: ${target} BTC`;
+                        if (targetEl) targetEl.textContent = String(target);
                         if (progressBarEl) {
                             progressBarEl.style.width = `${progress}%`;
                             progressBarEl.setAttribute('aria-valuenow', progress);
                         }
-                        if (progressRingEl) progressRingEl.style.setProperty('--progress-value', `${progress}%`);
+                        window.__dashboardTargetBtc = target;
                     }
                 }
             }
@@ -3063,6 +2928,7 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/notyf@3.10.0/notyf.min.js"></script>
+    <script src="/static/reserve_chart.js"></script>
     <script>
         window.notyf = new Notyf({
             duration: 3000,
@@ -4083,7 +3949,8 @@
                         await Promise.all([
                             loadTransactions(), // Reload list from DB (fast)
                             loadPreview(),
-                            loadWalletSummary()
+                            loadWalletSummary(),
+                            loadReserveChart()
                         ]);
                         notyf.success('Dashboard refreshed');
                     } catch (error) {
@@ -4946,7 +4813,8 @@
                 await Promise.all([
                     loadTransactions(),
                     loadPreview(),
-                    loadWalletSummary()
+                    loadWalletSummary(),
+                    loadReserveChart()
                 ]);
 
                 if (modalEl) {
@@ -5067,15 +4935,15 @@
             document.getElementById('walletContent').classList.remove('d-none');
             
             // Total BTC (main display)
-            document.getElementById('totalBtc').textContent = data.total_btc.toFixed(8) + ' BTC';
+            document.getElementById('totalBtc').textContent = data.total_btc.toFixed(8);
             window.__dashboardTotalBtc = data.total_btc;
             updateMobileFiatEstimate();
             
             // Breakdown - Hot and Cold
             const hotText = data.hot_wallet_balance.toFixed(8);
             const coldText = data.cold_wallet_balance.toFixed(8);
-            document.getElementById('hotBalance').textContent = `Hot: ${hotText}`;
-            document.getElementById('coldBalance').textContent = `Cold: ${coldText}`;
+            document.getElementById('hotBalance').textContent = hotText;
+            document.getElementById('coldBalance').textContent = coldText;
             
             // Pre-fill modal with current cold wallet balance
             document.getElementById('coldWalletInput').value = data.cold_wallet_balance;
@@ -5091,15 +4959,72 @@
             // Update target progress
             if (strategy) {
                 const target = strategy.target_btc_amount || 1.0;
-                const progress = Math.min((data.total_btc / target) * 100, 100).toFixed(4);
+                const ratio = Math.min((data.total_btc / target) * 100, 100);
+                const progress = ratio.toFixed(ratio < 1 ? 2 : 1);
                 document.getElementById('progressPercent').textContent = progress + '%';
-                document.getElementById('targetAmount').textContent = `Target: ${target} BTC`;
+                document.getElementById('targetAmount').textContent = String(target);
+                window.__dashboardTargetBtc = target;
                 document.getElementById('progressBar').style.width = progress + '%';
                 document.getElementById('progressBar').setAttribute('aria-valuenow', progress);
-                const progressRingEl = document.getElementById('progressRing');
-                if (progressRingEl) {
-                    progressRingEl.style.setProperty('--progress-value', progress + '%');
-                }
+            }
+
+            latestReserveWallet = data;
+            renderReserveChart();
+        }
+
+        // Reserve chart: BTC held over time, shared module in /static/reserve_chart.js
+        let reserveChart = null;
+        let latestReservePnl = null;
+        let latestReserveWallet = null;
+
+        function renderReserveChart() {
+            const root = document.getElementById('reserveChart');
+            if (!root || !window.ReserveChart || !latestReservePnl) return;
+            if (!reserveChart) reserveChart = window.ReserveChart.mount(root);
+            const wallet = latestReserveWallet || {};
+            reserveChart.setData(latestReservePnl, {
+                currentBtc: Number.isFinite(wallet.total_btc) && wallet.total_btc > 0 ? wallet.total_btc : undefined,
+                currentPrice: wallet.current_price,
+                currentAvg: wallet.hot_wallet_avg_price
+            });
+            updateTargetEta();
+        }
+
+        function updateTargetEta() {
+            const element = document.getElementById('targetEta');
+            if (!element || !reserveChart) return;
+            const eta = window.ReserveChart.targetEta(
+                reserveChart.series(),
+                Number(window.__dashboardTotalBtc),
+                Number(window.__dashboardTargetBtc)
+            );
+            if (!eta) {
+                element.textContent = '';
+            } else if (eta.reached) {
+                element.textContent = 'Target reached';
+            } else if (!eta.t) {
+                element.textContent = 'No buys in the last 30 days';
+            } else {
+                const when = new Date(eta.t).toLocaleDateString('en-US', { month: 'short', year: 'numeric', timeZone: 'UTC' });
+                element.textContent = `Around ${when} at the last 30 days' pace`;
+            }
+        }
+
+        async function loadReserveChart() {
+            const cached = loadFromCache('stats_pnl');
+            if (cached) {
+                latestReservePnl = cached;
+                renderReserveChart();
+            }
+            try {
+                const response = await fetch('/api/stats/pnl');
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                const data = await response.json();
+                saveToCache('stats_pnl', data);
+                latestReservePnl = data;
+                renderReserveChart();
+            } catch (error) {
+                console.error('Error loading reserve chart:', error);
             }
         }
 
@@ -5335,6 +5260,7 @@
                 loadTransactions();
                 loadPreview();
                 loadWalletSummary();
+                loadReserveChart();
             });
             
             eventSource.addEventListener('ping', () => {
@@ -5359,6 +5285,7 @@
                 loadTransactions(),
                 loadPreview(),
                 loadWalletSummary(),
+                loadReserveChart(),
                 fetchRealtimePriceForDashboard()
             ]);
             startDashboardPricePolling();
