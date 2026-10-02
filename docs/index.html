@@ -20,12 +20,11 @@
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@500&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap">
     <script>
         const SATSFLOW_ANALYSIS_URL = "https://btc.daxia.io/analysis/";
-        const GITHUB_PAGES_HOST = "zhoudaxia233.github.io";
-        if (
-            window.location.hostname === GITHUB_PAGES_HOST &&
-            window.location.href !== SATSFLOW_ANALYSIS_URL
-        ) {
-            window.location.replace(SATSFLOW_ANALYSIS_URL);
+        // GitHub Pages still publishes an unmaintained copy of this page, on
+        // github.io and on the custom domain daxia.io; send those visitors on
+        const GITHUB_PAGES_HOSTS = ["zhoudaxia233.github.io", "daxia.io", "www.daxia.io"];
+        if (GITHUB_PAGES_HOSTS.includes(window.location.hostname)) {
+            window.location.replace(SATSFLOW_ANALYSIS_URL + window.location.hash);
         }
     </script>
     <style>
