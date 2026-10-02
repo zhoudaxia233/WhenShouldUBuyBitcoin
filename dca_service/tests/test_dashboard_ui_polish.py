@@ -1,3 +1,4 @@
+import re
 from pathlib import Path
 
 
@@ -81,7 +82,7 @@ def test_dashboard_mobile_reference_structure_prioritizes_wallet_hero():
 
     wallet_index = html.index('id="reserveChart"')
     strategy_index = html.index('DCA Strategy')
-    transactions_index = html.index('Transaction History')
+    transactions_index = html.index('Recent buys')
     assert wallet_index < strategy_index < transactions_index
     assert 'class="dashboard-mobile-snapshot"' not in html
     assert 'id="totalBtcFiatValue"' not in html
@@ -342,20 +343,29 @@ def test_authenticated_templates_share_satsflow_header_and_nav():
     assert 'class="brand-title">{{ project_name }}</span>' in header
     assert 'class="nav-actions dashboard-nav' in header
     assert 'class="mobile-bottom-nav"' in header
+    # Home / Buys / Insights / Settings, on desktop and in the phone tab bar
+    desktop = header[header.index('class="nav-actions dashboard-nav') : header.index('<div class="header-utility">')]
+    mobile = header[header.index('class="mobile-bottom-nav"') :]
+    labels = re.findall(r'<span class="btn-text">([^<]+)</span>', desktop)
+    assert labels == ["Home", "Buys", "Insights", "Settings", "WSUB₿"]
+    tabs = re.findall(r'<span>([^<]+)</span>', mobile)
+    assert tabs == ["Home", "Buys", "Insights", "More"]
     assert 'href="/" class="btn dashboard-nav-btn{% if active_page == \'dashboard\' %} active{% endif %}"' in header
     assert 'href="/" class="mobile-bottom-nav-item{% if active_page == \'dashboard\' %} active{% endif %}"' in header
-    assert 'id="settingsDropdown"' in header
-    assert 'class="dropdown-item" href="/strategy"' in header
-    assert 'class="dropdown-item" href="/settings/binance"' in header
-    assert 'href="/settings/binance#email-settings"' not in header
+    assert 'href="/#buys" class="btn dashboard-nav-btn"' in header
+    assert 'href="/#buys" class="mobile-bottom-nav-item"' in header
     assert 'href="/stats" class="btn dashboard-nav-btn{% if active_page == \'stats\' %} active{% endif %}"' in header
     assert 'href="/stats" class="mobile-bottom-nav-item{% if active_page == \'stats\' %} active{% endif %}"' in header
-    assert 'href="/admin/data-sources" class="btn dashboard-nav-btn nav-accent admin-diagnostics-link{% if active_page == \'admin\' %} active{% endif %}"' in header
-    assert 'href="/admin/data-sources" class="mobile-bottom-nav-item' not in header
-    assert '<a class="dropdown-item" href="/admin/data-sources"><i class="bi bi-database-check"></i> Diagnostics</a>' in header
+    assert 'id="settingsDropdown"' in header
+    assert header.count('class="dropdown-item" href="/strategy"') == 2
+    assert header.count('class="dropdown-item" href="/settings/binance"') == 2
+    assert header.count('<a class="dropdown-item" href="/admin/data-sources"><i class="bi bi-database-check"></i> Diagnostics</a>') == 2
+    assert 'href="/settings/binance#email-settings"' not in header
+    assert "{% if active_page in ['strategy', 'settings', 'admin'] %} active{% endif %}" in header
     assert 'href="/analysis/" class="btn dashboard-nav-btn"' in header
+    assert 'class="dropdown-item" href="/analysis/" target="_blank"' in mobile
     assert 'class="mobile-bottom-nav-item mobile-bottom-nav-button' in header
-    for label in ["Dashboard", "Settings", "Diagnostics", "Analytics", "WSUB", "More"]:
+    for label in ["Home", "Buys", "Insights", "Settings", "More"]:
         assert f'aria-label="{label}"' in header
         assert f'title="{label}"' in header
 

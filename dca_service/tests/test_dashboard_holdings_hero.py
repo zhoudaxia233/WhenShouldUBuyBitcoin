@@ -19,7 +19,7 @@ def test_holdings_hero_comes_first_on_home():
     html = _html("index.html")
     body = html[html.index("<body") :]
     hero = body.index('<section id="reserveChart" class="dashboard-panel reserve-panel holdings-hero"')
-    assert hero < body.index("DCA Strategy") < body.index("Transaction History")
+    assert hero < body.index("DCA Strategy") < body.index("Recent buys")
     assert 'class="wallet-card-grid"' not in html
     assert 'id="progressRing"' not in html
 
@@ -88,3 +88,20 @@ def test_reserve_chart_scrolls_vertically_on_touch_and_has_a_mobile_height():
     assert "touch-action: pan-y;" in canvas_rule[: canvas_rule.index("}")]
     mobile = css[css.index(".reserve-canvas {", css.index("@media (max-width: 767.98px)", css.index("/* Reserve chart")) ) - 200 :]
     assert "height: 280px;" in mobile[:400]
+
+
+def test_home_shows_recent_buys_and_expands_to_all_on_request():
+    html = _html("index.html")
+    section = html[html.index('<section id="buys"') :]
+    section = section[: section.index("</section>")]
+    assert "Recent buys" in section
+    assert 'id="showAllBuysBtn"' in section
+    assert 'aria-controls="buys"' in section
+    assert "const RECENT_BUYS = 5;" in html
+    assert "let showAllBuys = location.hash === '#buys';" in html
+    assert "window.addEventListener('hashchange'" in html
+
+
+def test_analytics_is_called_insights():
+    stats = _html("stats.html")
+    assert '<h1 class="visually-hidden">Insights</h1>' in stats

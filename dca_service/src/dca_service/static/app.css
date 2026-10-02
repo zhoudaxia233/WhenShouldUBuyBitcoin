@@ -1359,3 +1359,14 @@ html[data-theme="dark"] {
         grid-template-columns: minmax(0, 1fr);
     }
 }
+
+/* Recent buys footer: the toggle sits above the pager when the full list is open */
+#buys .dashboard-panel-footer {
+    display: grid;
+    gap: 10px;
+    justify-items: start;
+}
+
+#buys .buys-pagination {
+    width: 100%;
+}

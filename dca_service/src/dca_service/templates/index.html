@@ -2469,9 +2469,9 @@
             </div>
         </section>
 
-        <section class="card dashboard-panel mb-5">
+        <section id="buys" class="card dashboard-panel mb-5" aria-labelledby="buysTitle">
             <div class="card-header dashboard-panel-header d-flex justify-content-between align-items-center">
-                <h5 class="dashboard-panel-title mb-0"><span class="text-warning me-2">₿</span>Transaction History</h5>
+                <h5 class="dashboard-panel-title mb-0" id="buysTitle"><span class="text-warning me-2">₿</span>Recent buys</h5>
                 <button id="clearSimulatedBtn" class="btn btn-sm btn-outline-danger">
                     <i class="bi bi-arrow-clockwise"></i> Re-sync
                 </button>
@@ -2499,7 +2499,8 @@
                 </div>
                 <div id="transactionsCards" class="mobile-transaction-card-list" aria-label="Mobile transaction list"></div>
                 <div class="card-footer dashboard-panel-footer">
-                    <div class="d-flex justify-content-between align-items-center">
+                    <button id="showAllBuysBtn" class="btn btn-sm btn-outline-secondary buys-toggle mb-0" type="button" aria-controls="buys" aria-expanded="false">Show all buys</button>
+                    <div class="d-flex justify-content-between align-items-center buys-pagination d-none" id="buysPagination">
                         <button id="prevPageBtn" class="btn btn-sm btn-outline-secondary" disabled>← Previous</button>
                         <span id="pageInfo" class="text-muted small">Page 1 of 1</span>
                         <button id="nextPageBtn" class="btn btn-sm btn-outline-secondary" disabled>Next →</button>
@@ -3097,6 +3098,10 @@
         let allTransactions = [];
         let currentPage = 1;
         const rowsPerPage = 20;
+        // Home shows the latest buys; "Buys" in the navigation (#buys) opens the full list
+        const RECENT_BUYS = 5;
+        let showAllBuys = location.hash === '#buys';
+        let buysLandingDone = false;
         let currentDrawdownMode = '180d';
         const ADD_POSITION_PRICE_POLL_INTERVAL_MS = 3000;
         const ADD_POSITION_DEFAULT_SIGNAL_COPY = 'Review the signal, choose your own amount, then preview before confirming.';
@@ -3261,6 +3266,11 @@
                 // Reset to page 1
                 currentPage = 1;
                 renderTransactionPage();
+                // Arriving from "Buys" in the navigation: land on the full list once it is drawn
+                if (showAllBuys && !buysLandingDone) {
+                    buysLandingDone = true;
+                    document.getElementById('buys').scrollIntoView({ block: 'start' });
+                }
             } catch (error) {
                 console.error('Error loading transactions:', error);
             }
@@ -3315,9 +3325,11 @@
             const tbody = document.getElementById('transactionsTable');
             tbody.innerHTML = '';
             
-            const totalPages = Math.ceil(allTransactions.length / rowsPerPage);
-            const startIdx = (currentPage - 1) * rowsPerPage;
-            const endIdx = startIdx + rowsPerPage;
+            const perPage = showAllBuys ? rowsPerPage : RECENT_BUYS;
+            if (!showAllBuys) currentPage = 1;
+            const totalPages = Math.ceil(allTransactions.length / perPage);
+            const startIdx = (currentPage - 1) * perPage;
+            const endIdx = startIdx + perPage;
             const pageTransactions = allTransactions.slice(startIdx, endIdx);
             renderMobileTransactionCards(pageTransactions);
             
@@ -3388,7 +3400,37 @@
             
             document.getElementById('prevPageBtn').disabled = currentPage <= 1;
             document.getElementById('nextPageBtn').disabled = currentPage >= totalPages || totalPages === 0;
+            updateBuysToggle();
         }
+
+        function updateBuysToggle() {
+            const toggle = document.getElementById('showAllBuysBtn');
+            const pagination = document.getElementById('buysPagination');
+            const title = document.getElementById('buysTitle');
+            const count = allTransactions.length;
+            if (pagination) pagination.classList.toggle('d-none', !showAllBuys);
+            if (title) title.lastChild.textContent = showAllBuys ? 'All buys' : 'Recent buys';
+            if (!toggle) return;
+            toggle.hidden = !showAllBuys && count <= RECENT_BUYS;
+            toggle.setAttribute('aria-expanded', showAllBuys ? 'true' : 'false');
+            toggle.textContent = showAllBuys ? 'Show recent only' : `Show all ${count.toLocaleString()} buys`;
+        }
+
+        function setShowAllBuys(value) {
+            showAllBuys = value;
+            currentPage = 1;
+            renderTransactionPage();
+            if (!value && location.hash === '#buys') {
+                history.replaceState(history.state, '', location.pathname + location.search);
+            }
+        }
+
+        window.addEventListener('hashchange', () => {
+            if (location.hash === '#buys') {
+                setShowAllBuys(true);
+                document.getElementById('buys').scrollIntoView({ block: 'start' });
+            }
+        });
         
         // Pagination button handlers
         document.addEventListener('DOMContentLoaded', function() {
@@ -3409,6 +3451,8 @@
                 }
             });
             
+            document.getElementById('showAllBuysBtn').addEventListener('click', () => setShowAllBuys(!showAllBuys));
+
             document.getElementById('nextPageBtn').addEventListener('click', () => {
                 const totalPages = Math.ceil(allTransactions.length / rowsPerPage);
                 if (currentPage < totalPages) {
