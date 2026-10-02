@@ -52,3 +52,32 @@ def test_double_undervaluation_history_uses_the_trend_known_then():
     np.testing.assert_allclose(
         early["ahr999"].to_numpy(), later["ahr999"].iloc[:1000].to_numpy(), equal_nan=True
     )
+
+
+def test_keeps_the_fit_from_a_year_ago_for_the_outlook():
+    df = _prices()
+    out = metrics.add_trend_metrics(df)
+    cutoff = df["date"].iloc[-1] - pd.Timedelta(days=365)
+    _, a, n = metrics.fit_exponential_trend(df[df["date"] <= cutoff])
+    year_ago = out.attrs["trend_year_ago"]
+    assert year_ago["as_of"] == str(cutoff.date())
+    assert year_ago["a"] == pytest.approx(a)
+    assert year_ago["b"] == pytest.approx(n)
+
+
+def test_no_year_ago_fit_without_enough_history():
+    df = _prices(days=metrics.TREND_MIN_DAYS + 100)
+    out = metrics.add_trend_metrics(df)
+    assert out.attrs["trend_year_ago"] is None
+
+
+def test_metadata_round_trips_the_year_ago_fit(tmp_path, monkeypatch):
+    from whenshouldubuybitcoin import persistence
+    monkeypatch.setattr("whenshouldubuybitcoin.persistence.get_data_dir", lambda: tmp_path)
+    out = metrics.add_trend_metrics(_prices())
+    assert persistence.save_metadata(out)
+    saved = persistence.load_metadata()
+    expected = out.attrs["trend_year_ago"]
+    assert saved["trend_year_ago"]["as_of"] == expected["as_of"]
+    assert saved["trend_year_ago"]["a"] == pytest.approx(expected["a"])
+    assert saved["trend_year_ago"]["b"] == pytest.approx(expected["b"])

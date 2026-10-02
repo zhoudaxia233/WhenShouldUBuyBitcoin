@@ -17,13 +17,13 @@ Using two independent metrics reduces false signals and identifies stronger buyi
 
 ## 📊 Website
 
-**[When Should U Buy Bitcoin](https://zhoudaxia233.github.io/WhenShouldUBuyBitcoin/)**
+**[When Should U Buy Bitcoin](https://btc.daxia.io/analysis/)**
 
 ### Features
 
 - **Historical Charts** - Visualize when Bitcoin has been in the buy zone
 - **Real-Time Check** - Get current valuation status
-- **Future Price Forecast** - Calculate predicted Bitcoin price on any future date
+- **Trend Outlook** - Power-law trend value 1, 2 and 4 years ahead, and how much it moved since the fit of a year ago (Charts view)
 - **Strategy Backtesting** - Test different investment strategies with historical data
 - **Distance to Buy Zone** - See how much Bitcoin needs to drop to enter the zone
 
