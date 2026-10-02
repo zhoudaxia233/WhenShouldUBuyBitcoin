@@ -16,7 +16,7 @@ import pandas as pd
 
 from .persistence import get_data_dir
 from .providers.alternative_me import fetch_fear_and_greed_history
-from .providers.bitcoin_data_com import fetch_all_onchain_series
+from .providers.bitcoin_data_com import ONCHAIN_ENDPOINTS, fetch_all_onchain_series
 
 ONCHAIN_CSV = "onchain_metrics.csv"
 
@@ -134,6 +134,51 @@ def is_fresh(df: Optional[pd.DataFrame], today: Optional[date] = None) -> bool:
     return last >= today - timedelta(days=1)
 
 
+# Dataset column each API series feeds; loss and profit together give the
+# supply-in-loss share.
+METRIC_COLUMNS = {
+    "lth_realized_price": "lth_realized_price",
+    "realized_price": "realized_price",
+    "sth_realized_price": "sth_realized_price",
+    "mvrv": "mvrv",
+    "supply_loss_btc": "supply_loss_pct",
+    "supply_profit_btc": "supply_loss_pct",
+    "realized_cap_change_30d_usd": "realized_cap_change_30d_usd",
+}
+
+
+def _last_date(df: Optional[pd.DataFrame], column: str) -> Optional[date]:
+    if df is None or df.empty or column not in df.columns:
+        return None
+    filled = df.loc[df[column].notna(), "date"]
+    if filled.empty:
+        return None
+    try:
+        return date.fromisoformat(str(filled.max())[:10])
+    except ValueError:
+        return None
+
+
+def plan_onchain_fetches(
+    existing: Optional[pd.DataFrame], today: Optional[date] = None
+) -> list[tuple[str, Optional[str]]]:
+    """Which series to fetch, stalest first, each from its own last date.
+
+    The free tier allows only a few requests a day. Fetching every series in a
+    fixed order let the first ones use up the quota so the last ones never
+    updated; skipping fresh series and starting with the stalest fixes that.
+    """
+    today = today or date.today()
+    stale = []
+    for position, metric_key in enumerate(ONCHAIN_ENDPOINTS):
+        last = _last_date(existing, METRIC_COLUMNS[metric_key])
+        if last is not None and last >= today - timedelta(days=1):
+            continue
+        startday = (last - timedelta(days=REFETCH_OVERLAP_DAYS)).isoformat() if last else None
+        stale.append((last or date.min, position, metric_key, startday))
+    return [(metric_key, startday) for _, _, metric_key, startday in sorted(stale)]
+
+
 def _series_dict_to_frame(series_by_metric: dict, fng_rows) -> pd.DataFrame:
     """Pivot fetched series into one wide normalized frame keyed by date."""
     frames = []
@@ -184,15 +229,7 @@ def update_onchain_metrics(
         print("✓ On-chain metrics are fresh; skipping API calls (free-tier budget guard)")
         return existing
 
-    startday = None
-    if existing is not None and not existing.empty:
-        try:
-            last = date.fromisoformat(str(existing["date"].max())[:10])
-            startday = (last - timedelta(days=REFETCH_OVERLAP_DAYS)).isoformat()
-        except ValueError:
-            startday = None
-
-    series_by_metric = fetch_all_onchain_series(startday=startday)
+    series_by_metric = fetch_all_onchain_series(plan=plan_onchain_fetches(existing))
     fng_rows = fetch_fear_and_greed_history()
     if not any(series_by_metric.values()):
         msg = "No bitcoin-data.com on-chain data fetched; using cached dataset"
