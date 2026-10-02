@@ -2,99 +2,99 @@
   {
     "tier": "(0 - 0.00001)",
     "balance": "(0 - 0.00001)",
-    "addresses": "7830889",
-    "coins": "46.39 BTC",
-    "usd": "$3,922,070",
+    "addresses": "7831806",
+    "coins": "46.40 BTC",
+    "usd": "$3,983,635",
     "percent_coins": "0% (100%)",
     "percentile": "Top 100%"
   },
   {
     "tier": "[0.00001 - 0.0001)",
     "balance": "[0.00001 - 0.0001)",
-    "addresses": "12700294",
-    "coins": "532.72 BTC",
-    "usd": "$45,034,235",
+    "addresses": "12700741",
+    "coins": "532.76 BTC",
+    "usd": "$45,740,718",
     "percent_coins": "0% (100%)",
-    "percentile": "Top 86.86%"
+    "percentile": "Top 86.85%"
   },
   {
     "tier": "[0.0001 - 0.001)",
     "balance": "[0.0001 - 0.001)",
-    "addresses": "14158286",
+    "addresses": "14161117",
     "coins": "5,297 BTC",
-    "usd": "$447,772,528",
+    "usd": "$454,755,324",
     "percent_coins": "0.03% (100%)",
-    "percentile": "Top 65.54%"
+    "percentile": "Top 65.53%"
   },
   {
     "tier": "[0.001 - 0.01)",
     "balance": "[0.001 - 0.01)",
-    "addresses": "12162424",
-    "coins": "44,890 BTC",
-    "usd": "$3,794,845,604",
+    "addresses": "12153403",
+    "coins": "44,866 BTC",
+    "usd": "$3,851,954,666",
     "percent_coins": "0.22% (99.97%)",
-    "percentile": "Top 41.78%"
+    "percentile": "Top 41.76%"
   },
   {
     "tier": "[0.01 - 0.1)",
     "balance": "[0.01 - 0.1)",
-    "addresses": "8258117",
-    "coins": "277,745 BTC",
-    "usd": "$23,479,770,101",
+    "addresses": "8257473",
+    "coins": "277,739 BTC",
+    "usd": "$23,845,393,562",
     "percent_coins": "1.38% (99.75%)",
     "percentile": "Top 21.36%"
   },
   {
     "tier": "[0.1 - 1)",
     "balance": "[0.1 - 1)",
-    "addresses": "3497058",
-    "coins": "1,067,917 BTC",
-    "usd": "$90,278,587,611",
-    "percent_coins": "5.32% (98.36%)",
+    "addresses": "3496781",
+    "coins": "1,067,754 BTC",
+    "usd": "$91,672,417,023",
+    "percent_coins": "5.31% (98.36%)",
     "percentile": "Top 7.5%"
   },
   {
     "tier": "[1 - 10)",
     "balance": "[1 - 10)",
-    "addresses": "821750",
-    "coins": "2,041,912 BTC",
-    "usd": "$172,617,331,347",
+    "addresses": "821516",
+    "coins": "2,041,366 BTC",
+    "usd": "$175,262,156,340",
     "percent_coins": "10.16% (93.05%)",
     "percentile": "Top 1.63%"
   },
   {
     "tier": "[10 - 100)",
     "balance": "[10 - 100)",
-    "addresses": "129646",
-    "coins": "4,221,426 BTC",
-    "usd": "$356,867,134,807",
-    "percent_coins": "21.01% (82.88%)",
+    "addresses": "129641",
+    "coins": "4,221,414 BTC",
+    "usd": "$362,430,923,233",
+    "percent_coins": "21.01% (82.89%)",
     "percentile": "Top 0.25%"
   },
   {
     "tier": "[100 - 1,000)",
     "balance": "[100 - 1,000)",
-    "addresses": "18264",
-    "coins": "5,232,912 BTC",
-    "usd": "$442,375,190,473",
-    "percent_coins": "26.05% (61.87%)",
+    "addresses": "18265",
+    "coins": "5,233,416 BTC",
+    "usd": "$449,316,768,260",
+    "percent_coins": "26.05% (61.88%)",
     "percentile": "Top 0.03%"
   },
   {
     "tier": "[1,000 - 10,000)",
     "balance": "[1,000 - 10,000)",
-    "addresses": "1944",
-    "coins": "4,195,431 BTC",
-    "usd": "$354,669,515,073",
-    "percent_coins": "20.88% (35.82%)",
+    "addresses": "1943",
+    "coins": "4,194,949 BTC",
+    "usd": "$360,158,757,694",
+    "percent_coins": "20.88% (35.83%)",
     "percentile": "Top 0%"
   },
   {
     "tier": "[10,000 - 100,000)",
     "balance": "[10,000 - 100,000)",
     "addresses": "84",
-    "coins": "2,271,969 BTC",
-    "usd": "$192,065,652,960",
+    "coins": "2,272,874 BTC",
+    "usd": "$195,138,352,810",
     "percent_coins": "11.31% (14.94%)",
     "percentile": "Top 0%"
   },
@@ -103,7 +103,7 @@
     "balance": "[100,000 - 1,000,000)",
     "addresses": "4",
     "coins": "729,349 BTC",
-    "usd": "$61,657,055,819",
+    "usd": "$62,618,520,255",
     "percent_coins": "3.63% (3.63%)",
     "percentile": "Top 0%"
   }
