@@ -282,8 +282,22 @@ def add_trend_metrics(df: pd.DataFrame) -> pd.DataFrame:
     # Note: 'trend_b' now represents the power law exponent 'n' (not growth rate)
     df.attrs["trend_a"] = a
     df.attrs["trend_b"] = n  # This is now the power law exponent
+    # The fit as it stood a year ago, so the site can show how far the
+    # trend's projections move as new prices arrive
+    df.attrs["trend_year_ago"] = _fit_as_of(df, pd.Timestamp(df["date"].iloc[-1]) - pd.Timedelta(days=365))
     
     return df
+
+
+def _fit_as_of(df: pd.DataFrame, cutoff: pd.Timestamp) -> Optional[dict]:
+    """Power-law parameters fitted on prices up to cutoff, or None if too short."""
+    past = df[pd.to_datetime(df["date"]) <= cutoff]
+    if len(past) < TREND_MIN_DAYS:
+        return None
+    _, a, n = fit_exponential_trend(past, price_col="close_price")
+    if a is None or n is None:
+        return None
+    return {"as_of": str(cutoff.date()), "a": float(a), "b": float(n)}
 
 
 def get_trend_summary(df: pd.DataFrame) -> dict:
