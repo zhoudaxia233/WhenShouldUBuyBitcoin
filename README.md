@@ -17,7 +17,7 @@ Using two independent metrics reduces false signals and identifies stronger buyi
 
 ## 📊 Website
 
-**[When Should U Buy Bitcoin](https://zhoudaxia233.github.io/WhenShouldUBuyBitcoin/)**
+**[When Should U Buy Bitcoin](https://btc.daxia.io/analysis/)**
 
 ### Features
 
