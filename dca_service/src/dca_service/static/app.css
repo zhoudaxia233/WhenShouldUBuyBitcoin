@@ -1247,3 +1247,115 @@ html[data-theme="dark"] {
         grid-template-columns: repeat(4, minmax(0, 1fr));
     }
 }
+
+/* Home holdings hero: reserve chart plus target progress */
+.holdings-top {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 340px);
+    gap: 20px 32px;
+    align-items: start;
+}
+
+.holdings-target {
+    display: grid;
+    gap: 8px;
+    padding: 16px 18px;
+    border: 1px solid var(--dashboard-border);
+    border-radius: 12px;
+    background: var(--dashboard-accent-softer);
+}
+
+.holdings-target-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 8px;
+}
+
+.holdings-target-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--dashboard-muted);
+}
+
+.holdings-target-percent {
+    font-size: 1.35rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    color: var(--dashboard-text);
+}
+
+.holdings-target .dashboard-accent-progress {
+    margin: 0;
+}
+
+.holdings-target-meta,
+.holdings-target-eta {
+    font-size: 0.85rem;
+    color: var(--dashboard-muted);
+    font-variant-numeric: tabular-nums;
+}
+
+.holdings-target-meta span {
+    color: var(--dashboard-text);
+    font-weight: 600;
+}
+
+.holdings-target-eta:empty {
+    display: none;
+}
+
+.holdings-wallets {
+    display: grid;
+    gap: 4px;
+    margin: 6px 0 0;
+    padding-top: 10px;
+    border-top: 1px solid var(--dashboard-border);
+    font-size: 0.85rem;
+}
+
+.holdings-wallets > div {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 8px;
+}
+
+.holdings-wallets dt {
+    font-weight: 400;
+    color: var(--dashboard-muted);
+}
+
+.holdings-wallets dd {
+    margin: 0;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    color: var(--dashboard-text);
+}
+
+.holdings-edit {
+    margin-left: 6px;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--dashboard-accent);
+    font: inherit;
+    font-weight: 600;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    cursor: pointer;
+}
+
+.holdings-edit:focus-visible {
+    outline: 2px solid var(--dashboard-accent);
+    outline-offset: 2px;
+    border-radius: 4px;
+}
+
+@media (max-width: 767.98px) {
+    .holdings-top {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}

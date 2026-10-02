@@ -175,7 +175,6 @@
         
         .stats-chart-card,
         .stats-distribution-card,
-        .reserve-panel,
         .stats-trading-panel {
             border-radius: 10px;
         }
@@ -621,29 +620,6 @@
             </div>
         </div>
 
-        <section id="reserveChart" class="dashboard-panel reserve-panel" aria-labelledby="reserveChartTitle">
-            <h2 id="reserveChartTitle" class="visually-hidden">Bitcoin held and price history</h2>
-            <div class="reserve-readout" data-reserve-readout aria-live="polite">
-                <span class="reserve-readout-label">Bitcoin held</span>
-                <span class="reserve-readout-btc"><span class="reserve-btc-symbol">₿</span>--</span>
-            </div>
-            <canvas class="reserve-canvas" tabindex="0" role="img" aria-label="BTC price, your average cost and weekly buys. Move the pointer or use the arrow keys to read a day."></canvas>
-            <p class="reserve-empty">Your chart appears after the first purchase.</p>
-            <div class="reserve-foot">
-                <div class="reserve-legend" aria-hidden="true">
-                    <span><i class="reserve-key reserve-key-price"></i>BTC price</span>
-                    <span><i class="reserve-key reserve-key-avg"></i>Your avg cost</span>
-                    <span><i class="reserve-key reserve-key-bar"></i>BTC bought per week</span>
-                </div>
-                <div class="reserve-range" data-reserve-range role="group" aria-label="Time range">
-                    <button type="button" data-range="3m" aria-pressed="false">3M</button>
-                    <button type="button" data-range="6m" aria-pressed="false">6M</button>
-                    <button type="button" data-range="1y" aria-pressed="true">1Y</button>
-                    <button type="button" data-range="all" aria-pressed="false">All</button>
-                </div>
-            </div>
-        </section>
-
         <div class="dashboard-panel stats-trading-panel">
             <div class="card-header dashboard-panel-header d-flex flex-wrap justify-content-between align-items-start gap-3">
                 <div class="trading-style-heading">
@@ -692,7 +668,6 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/notyf@3.10.0/notyf.min.js"></script>
-    <script src="/static/reserve_chart.js"></script>
     <script>
         window.notyf = new Notyf({ duration: 3000, position: { x: 'right', y: 'top' } });
         const THEME_STORAGE_KEY = 'dca_theme';
@@ -1214,20 +1189,6 @@
             });
         }
 
-        let reserveChart = null;
-
-        function renderReserveChart(data) {
-            const root = document.getElementById('reserveChart');
-            if (!root || !window.ReserveChart || !data) return;
-            if (!reserveChart) reserveChart = window.ReserveChart.mount(root);
-            const wallet = latestWalletSummary || {};
-            reserveChart.setData(data, {
-                currentBtc: Number.isFinite(wallet.total_btc) && wallet.total_btc > 0 ? wallet.total_btc : undefined,
-                currentPrice: wallet.current_price,
-                currentAvg: wallet.hot_wallet_avg_price
-            });
-        }
-
         // Load PnL Chart (TTL: 5 mins)
         async function loadChart(forceRefresh = false) {
             try {
@@ -1236,14 +1197,12 @@
                 if (!forceRefresh && isCacheValid(cached, 5)) {
                     latestStatsPnlData = cached.data;
                     renderChart(cached.data);
-                    renderReserveChart(cached.data);
                     return;
                 }
 
                 if (cached) renderChart(cached.data);
                 if (cached) {
                     latestStatsPnlData = cached.data;
-                    renderReserveChart(cached.data);
                 }
 
                 const response = await fetch('/api/stats/pnl');
@@ -1251,7 +1210,6 @@
                 latestStatsPnlData = data;
                 saveToCache('stats_pnl', data);
                 renderChart(data);
-                renderReserveChart(data);
             } catch (error) {
                 console.error('Error loading chart:', error);
             }
@@ -1303,7 +1261,6 @@
                     updateWalletBalanceUI(cachedWallet.data);
                     if (latestStatsPnlData) {
                         renderChart(latestStatsPnlData);
-                        renderReserveChart(latestStatsPnlData);
                     }
                     return;
                 }
@@ -1313,7 +1270,6 @@
                     latestWalletSummary = cachedWallet.data;
                     if (latestStatsPnlData) {
                         renderChart(latestStatsPnlData);
-                        renderReserveChart(latestStatsPnlData);
                     }
                 }
 
@@ -1326,7 +1282,6 @@
                 updateWalletBalanceUI(walletData);
                 if (latestStatsPnlData) {
                     renderChart(latestStatsPnlData);
-                    renderReserveChart(latestStatsPnlData);
                 }
             } catch (error) {
                 console.error('Error loading wallet balance:', error);

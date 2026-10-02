@@ -140,6 +140,22 @@
         };
     }
 
+    // When holdings reach target at the pace of the last 30 days of buying
+    function targetEta(series, heldBtc, targetBtc) {
+        if (!series || !series.days.length || !(targetBtc > 0)) return null;
+        if (heldBtc >= targetBtc) return { reached: true, t: null, btcPerDay: null };
+        var last = series.days[series.days.length - 1];
+        var from = last.t - 30 * DAY;
+        var base = series.days[0];
+        for (var i = series.days.length - 1; i >= 0; i--) {
+            if (series.days[i].t <= from) { base = series.days[i]; break; }
+        }
+        var spanDays = (last.t - base.t) / DAY;
+        var btcPerDay = spanDays > 0 ? (last.btc - base.btc) / spanDays : 0;
+        if (!(btcPerDay > 0)) return { reached: false, t: null, btcPerDay: 0 };
+        return { reached: false, t: last.t + Math.round((targetBtc - heldBtc) / btcPerDay) * DAY, btcPerDay: btcPerDay };
+    }
+
     function formatBtc(value) {
         return Number(value || 0).toFixed(Math.abs(value) >= 1 ? 4 : 8);
     }
@@ -414,7 +430,8 @@
                 schedule();
             },
             setRange: setRange,
-            redraw: schedule
+            redraw: schedule,
+            series: function () { return state.series; }
         };
     }
 
@@ -441,6 +458,7 @@
         visibleDays: visibleDays,
         yDomain: yDomain,
         readoutAt: readoutAt,
+        targetEta: targetEta,
         readoutHtml: readoutHtml,
         formatBtc: formatBtc,
         mount: mount

@@ -115,3 +115,31 @@ describe("formatBtc", () => {
         expect(formatBtc(1.234567)).toBe("1.2346");
     });
 });
+
+describe("targetEta", () => {
+    const { targetEta } = loadReserveChart();
+    const day = (iso, btc) => ({ t: Date.parse(iso + "T00:00:00Z"), btc, price: 1, avg: 1 });
+    const series = {
+        days: [day("2026-08-01", 0.1), day("2026-08-31", 0.13), day("2026-09-30", 0.16)],
+        weeks: [],
+    };
+
+    it("projects the date the target is reached at the last 30 days' pace", () => {
+        const eta = targetEta(series, 0.16, 0.25);
+        // 0.03 BTC in 30 days = 0.001 BTC a day; 0.09 BTC to go = 90 days
+        expect(eta.reached).toBe(false);
+        expect(eta.btcPerDay).toBeCloseTo(0.001, 10);
+        expect(eta.t).toBe(Date.parse("2026-09-30T00:00:00Z") + 90 * DAY);
+    });
+
+    it("says the target is reached once holdings cover it", () => {
+        expect(targetEta(series, 0.3, 0.25)).toEqual({ reached: true, t: null, btcPerDay: null });
+    });
+
+    it("gives no date without recent buys or a target", () => {
+        const flat = { days: [day("2026-08-01", 0.1), day("2026-09-30", 0.1)], weeks: [] };
+        expect(targetEta(flat, 0.1, 0.25).t).toBeNull();
+        expect(targetEta(series, 0.16, 0)).toBeNull();
+        expect(targetEta(null, 0.16, 0.25)).toBeNull();
+    });
+});
