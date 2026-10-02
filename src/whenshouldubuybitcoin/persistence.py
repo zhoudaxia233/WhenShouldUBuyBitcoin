@@ -100,6 +100,7 @@ def load_existing_metrics(filename: str = "btc_metrics.csv") -> Optional[pd.Data
         if metadata:
             df.attrs["trend_a"] = metadata.get("trend_a")
             df.attrs["trend_b"] = metadata.get("trend_b")
+            df.attrs["trend_year_ago"] = metadata.get("trend_year_ago")
         
         print(f"✓ Loaded {len(df)} rows from {filepath}")
         print(f"  Date range: {df['date'].min().date()} to {df['date'].max().date()}")
@@ -131,6 +132,7 @@ def save_metadata(df: pd.DataFrame, filename: str = "btc_metadata.json") -> bool
         metadata = {
             "trend_a": df.attrs.get("trend_a"),
             "trend_b": df.attrs.get("trend_b"),
+            "trend_year_ago": df.attrs.get("trend_year_ago"),
             "last_updated": pd.Timestamp.now().isoformat()
         }
         
