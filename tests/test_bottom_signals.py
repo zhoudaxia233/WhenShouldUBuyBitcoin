@@ -44,44 +44,59 @@ def test_s1_missing_inputs():
 
 # ---------- sigma helpers / S2 / S3 ----------
 
-def _bimodal_series() -> pd.Series:
-    # 100 ones and 100 threes: mean 2.0, population std 1.0
-    return pd.Series([1.0] * 100 + [3.0] * 100)
+def _step_series(first: float, second: float) -> pd.Series:
+    # 180 of one value then 180 of another: on the last day the history so far
+    # has mean 2.0 and population std 1.0
+    return pd.Series([first] * 180 + [second] * 180)
 
 
-def test_full_sample_deviation():
-    d = bs.full_sample_deviation(_bimodal_series())
-    assert d.iloc[0] == pytest.approx(-1.0)
+def test_known_deviation_uses_history_up_to_each_day():
+    d = bs.known_deviation(_step_series(1.0, 3.0))
     assert d.iloc[-1] == pytest.approx(1.0)
+    assert np.isnan(d.iloc[179])  # 180 identical values: no spread yet
 
 
-def test_full_sample_deviation_needs_min_observations():
-    short = pd.Series([1.0] * 50 + [3.0] * 50)  # 100 < MIN_OBSERVATIONS
-    assert bs.full_sample_deviation(short).isna().all()
+def test_known_deviation_ignores_future_values():
+    series = _step_series(1.0, 3.0)
+    early = bs.known_deviation(series.iloc[:250])
+    full = bs.known_deviation(series)
+    np.testing.assert_allclose(early.to_numpy(), full.iloc[:250].to_numpy(), equal_nan=True)
+
+
+def test_known_deviation_needs_min_observations():
+    d = bs.known_deviation(pd.Series(np.arange(400.0)))
+    assert d.iloc[: bs.MIN_OBSERVATIONS - 1].isna().all()
+    assert d.iloc[bs.MIN_OBSERVATIONS - 1:].notna().all()
 
 
 def test_s2_scores():
-    s = bs.score_s2_mvrv(_bimodal_series())
-    # d=-1: between -1.5 (20) and 0 (8) -> 8 + (1/1.5)*12 = 16
-    assert s.iloc[0] == pytest.approx(16.0)
     # d=+1: between 0 (8) and +2 (0) -> 8 - (1/2)*8 = 4
-    assert s.iloc[-1] == pytest.approx(4.0)
+    assert bs.score_s2_mvrv(_step_series(1.0, 3.0)).iloc[-1] == pytest.approx(4.0)
+    # d=-1: between -1.5 (20) and 0 (8) -> 8 + (1/1.5)*12 = 16
+    assert bs.score_s2_mvrv(_step_series(3.0, 1.0)).iloc[-1] == pytest.approx(16.0)
 
 
 def test_s3_scores():
-    s = bs.score_s3_supply_loss(_bimodal_series())
     # d=-1 -> 0
-    assert s.iloc[0] == pytest.approx(0.0)
+    assert bs.score_s3_supply_loss(_step_series(3.0, 1.0)).iloc[-1] == pytest.approx(0.0)
     # d=+1: between +0.5 (10) and +2 (20) -> 10 + (0.5/1.5)*10
-    assert s.iloc[-1] == pytest.approx(10.0 + 10.0 / 3.0)
+    assert bs.score_s3_supply_loss(_step_series(1.0, 3.0)).iloc[-1] == pytest.approx(10.0 + 10.0 / 3.0)
 
 
 # ---------- S4 ----------
 
 def test_s4_percentile_scores():
-    s = bs.score_s4_capital_flow(pd.Series(np.arange(1.0, 201.0)))
-    assert s.iloc[0] == pytest.approx(19.9)  # deepest outflow -> highest score
-    assert s.iloc[-1] == pytest.approx(0.0)  # biggest inflow -> 0
+    falling = bs.score_s4_capital_flow(pd.Series(np.arange(200.0, 0.0, -1.0)))
+    assert falling.iloc[-1] == pytest.approx(19.9)  # deepest outflow so far -> highest score
+    rising = bs.score_s4_capital_flow(pd.Series(np.arange(1.0, 201.0)))
+    assert rising.iloc[-1] == pytest.approx(0.0)  # biggest inflow so far -> 0
+
+
+def test_s4_ranks_against_past_values_only():
+    series = pd.Series(np.r_[np.arange(1.0, 201.0), np.zeros(50)])
+    early = bs.score_s4_capital_flow(series.iloc[:200])
+    full = bs.score_s4_capital_flow(series)
+    np.testing.assert_allclose(early.to_numpy(), full.iloc[:200].to_numpy(), equal_nan=True)
 
 
 def test_s4_needs_min_observations():

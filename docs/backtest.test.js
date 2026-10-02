@@ -384,13 +384,45 @@ describe("Strategy: AHR999 Percentile", () => {
         expect(result.transactions.length).toBe(0);
     });
 
-    it("should respect single non-zero multiplier", async () => {
-        // Only p75 (50-75% percentile) has 10x multiplier, rest are 0
+    it("keeps unspent budget in the final wealth so strategies compare on the same money", async () => {
         const strategy = new AHR999PercentileStrategy(500, {
             multiplier_p10: 0,
             multiplier_p25: 0,
             multiplier_p50: 0,
-            multiplier_p75: 10, // Only this tier invests
+            multiplier_p75: 0,
+            multiplier_p90: 0,
+            multiplier_p100: 0,
+        });
+        const result = await new BacktestEngine(strategy, dataLoader).run(
+            new Date("2020-01-01"),
+            new Date("2021-12-31"),
+            500
+        );
+        expect(result.unspentBudget).toBeCloseTo(result.totalBudgetAllocated, 6);
+        expect(result.totalWealth).toBeCloseTo(result.totalBudgetAllocated, 6);
+        expect(result.returnOnBudget).toBeCloseTo(0, 6);
+    });
+
+    it("reports wealth as BTC value plus the budget that was not invested", async () => {
+        const strategy = new DailyDCAStrategy(500);
+        const result = await new BacktestEngine(strategy, dataLoader).run(
+            new Date("2020-01-01"),
+            new Date("2021-12-31"),
+            500
+        );
+        expect(result.unspentBudget).toBeCloseTo(result.totalBudgetAllocated - result.totalInvested, 6);
+        expect(result.totalWealth).toBeCloseTo(result.btcValue + result.unspentBudget, 6);
+        expect(result.returnOnBudget).toBeCloseTo((result.totalWealth / result.totalBudgetAllocated - 1) * 100, 6);
+    });
+
+    it("should respect single non-zero multiplier", async () => {
+        // Only the cheapest tier invests. Ranked against the history known on
+        // each day, the fixture's cheap stretch falls in that bottom tier.
+        const strategy = new AHR999PercentileStrategy(500, {
+            multiplier_p10: 10, // Only this tier invests
+            multiplier_p25: 0,
+            multiplier_p50: 0,
+            multiplier_p75: 0,
             multiplier_p90: 0,
             multiplier_p100: 0,
         });
@@ -402,18 +434,18 @@ describe("Strategy: AHR999 Percentile", () => {
         const result = await engine.run(startDate, endDate, 500);
 
         console.log(
-            "Single multiplier (p75=10) invested:",
+            "Single multiplier (p10=10) invested:",
             result.totalInvested
         );
         console.log("Transactions:", result.transactions.length);
 
-        // Should only invest during 50-75% percentile periods
+        // Should only invest during bottom-tier periods
         expect(result.totalInvested).toBeGreaterThan(0);
         expect(result.transactions.length).toBeGreaterThan(0);
 
         // Verify multipliers were set correctly
-        expect(strategy.multipliers.p75).toBe(10);
-        expect(strategy.multipliers.p10).toBe(0);
+        expect(strategy.multipliers.p10).toBe(10);
+        expect(strategy.multipliers.p75).toBe(0);
     });
 
     it("should handle early dates without crashing", async () => {

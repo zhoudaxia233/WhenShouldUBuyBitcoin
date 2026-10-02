@@ -228,7 +228,7 @@ def _build_cards(latest: pd.Series, scores_df: pd.DataFrame) -> list[dict]:
             dev = latest.get("s2_dev")
             mvrv_txt = f"{float(mvrv):.2f}" if mvrv is not None and not pd.isna(mvrv) else "N/A"
             dev_txt = (
-                f"{float(dev):+.2f}σ vs full-sample mean"
+                f"{float(dev):+.2f}σ vs the average so far"
                 if dev is not None and not pd.isna(dev)
                 else "insufficient history"
             )
@@ -282,6 +282,13 @@ def _build_cards(latest: pd.Series, scores_df: pd.DataFrame) -> list[dict]:
             }
         )
     return cards
+
+
+def _first_score_label(scores_df: pd.DataFrame) -> str:
+    scored = scores_df.loc[scores_df["composite"].notna(), "date"]
+    if scored.empty:
+        return "n/a"
+    return pd.Timestamp(scored.iloc[0]).strftime("%b %Y")
 
 
 def generate_bottom_signals_page(
@@ -361,6 +368,8 @@ def generate_bottom_signals_page(
         "durations": list(DURATIONS),
         "matrix": backtest["matrix"],
         "cycle_bottoms_label": " and ".join(b[0][:7] for b in CYCLE_BOTTOMS),
+        # Scores need MIN_OBSERVATIONS days of known history, so they start late
+        "first_score_label": _first_score_label(scores_df),
         "dates_json": _json_for_script(scores_df["date"].tolist()),
         "prices_json": _json_for_script(
             [round(float(v), 2) for v in scores_df["close_price"]]

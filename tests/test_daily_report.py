@@ -35,14 +35,16 @@ def _sample_btc_df() -> pd.DataFrame:
 
 
 def _sample_macro_df() -> pd.DataFrame:
-    dates = pd.date_range("2025-01-01", periods=260, freq="D")
+    # Macro history starts well before the BTC sample, as it does in practice:
+    # the score needs a 90-day liquidity change plus 180 days of history to rank
+    dates = pd.date_range("2024-06-01", periods=474, freq="D")
     return pd.DataFrame(
         {
             "date": dates,
-            "net_liquidity_bil": 6000 + pd.Series(range(260)) * 2,
-            "walcl_bil": 7000 + pd.Series(range(260)) * 1,
-            "tga_bil": 800 + pd.Series(range(260)) * 0.2,
-            "rrp_bil": 200 - pd.Series(range(260)) * 0.1,
+            "net_liquidity_bil": 6000 + pd.Series(range(474)) * 2,
+            "walcl_bil": 7000 + pd.Series(range(474)) * 1,
+            "tga_bil": 800 + pd.Series(range(474)) * 0.2,
+            "rrp_bil": 200 - pd.Series(range(474)) * 0.1,
             "sofr": 5.0,
             "move": 110.0,
             "hy_oas": 4.2,
@@ -267,10 +269,10 @@ def test_report_includes_bottom_signals_section():
     assert metrics["composite_score"] == 55.0
     assert metrics["zone"] == "Watch"
     assert metrics["s5"] == 20.0
-    # the section carries an honest caveat (look-ahead / warmer proxy / not advice)
+    # the section carries an honest caveat (known data only / warmer proxy / not advice)
     assert "caveat" in metrics
     caveat = metrics["caveat"].lower()
-    assert "look-ahead" in caveat and "not investment advice" in caveat
+    assert "only against data known that day" in caveat and "not investment advice" in caveat
 
 
 def test_bottom_signals_deterministic_summaries():
@@ -320,15 +322,14 @@ def test_bottom_signals_section_summary_bakes_in_advice_and_caveat():
                 "gradually; not a signal to go all-in."
             ),
             "caveat": (
-                "Composite uses full-sample statistics (look-ahead) over a "
-                "two-cycle backtest. Treat as one sentiment input, not "
-                "investment advice."
+                "Composite ranks each day only against data known that day, on a "
+                "short history. Treat as one sentiment input, not investment advice."
             ),
         },
     }
     en = _deterministic_en_summary(section)
     assert "not a signal to go all-in" in en
-    assert "Caveat:" in en and "look-ahead" in en.lower()
+    assert "Caveat:" in en and "data known that day" in en
     zh = _deterministic_zh_summary(section)
     assert "情绪参考" in zh and "并非买入信号" in zh
 

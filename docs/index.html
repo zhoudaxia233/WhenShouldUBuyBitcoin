@@ -2036,6 +2036,13 @@
             }
         }
 
+        .strategy-evidence {
+            margin: 4px 0 12px;
+            font-size: 13px;
+            line-height: 1.5;
+            color: var(--muted);
+        }
+
         .strategy-config input {
             margin-top: 6px;
         }
@@ -2998,6 +3005,7 @@
 
                 <div class="form-group">
                     <label>Investment Strategy</label>
+                    <p class="strategy-evidence">Every backtest uses only data known on each simulated day, and counts budget that was not invested as cash, so every strategy is compared on the same money. On that basis the AHR999 strategies are a small tilt, not a timing tool: from 2017 to 2026, the AHR999 percentile strategy ended about 4% ahead of plain daily DCA when unspent money could be used later (Unlimited budget), and about 14% behind with the default monthly limit, where money skipped in a month is never invested.</p>
                     <div class="strategy-options">
                         <div class="strategy-option">
                             <input type="radio" id="strategy-daily" name="backtestStrategy" value="daily-dca" checked />
