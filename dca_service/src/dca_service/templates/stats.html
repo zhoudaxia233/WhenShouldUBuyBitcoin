@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Analytics</title>
+    <title>Insights</title>
     <script>
         (function () {
             const savedTheme = localStorage.getItem('dca_theme');
@@ -511,7 +511,7 @@
         {% set active_page = 'stats' %}
         {% include "_shared_header.html" %}
 
-        <h1 class="visually-hidden">Analytics</h1>
+        <h1 class="visually-hidden">Insights</h1>
         {% if user and user.is_admin %}
         <div class="stats-actions-row">
             <button id="regenerateStaticBtn" class="btn btn-outline-success text-nowrap" title="Regenerate static files (charts, data)">

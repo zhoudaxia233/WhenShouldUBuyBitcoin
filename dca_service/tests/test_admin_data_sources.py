@@ -97,7 +97,6 @@ def test_admin_dashboard_shows_data_sources_entry(client: TestClient):
 
     assert response.status_code == 200
     assert 'href="/admin/data-sources"' in response.text
-    assert 'admin-diagnostics-link' in response.text
 
 
 def test_non_admin_dashboard_hides_data_sources_entry(non_admin_client: TestClient):
@@ -107,7 +106,7 @@ def test_non_admin_dashboard_hides_data_sources_entry(non_admin_client: TestClie
     assert 'href="/admin/data-sources"' not in response.text
 
 
-def test_admin_entry_is_standalone_not_inside_settings_dropdown(client: TestClient):
+def test_admin_entry_lives_in_the_settings_menu(client: TestClient):
     response = client.get("/")
 
     assert response.status_code == 200
@@ -115,8 +114,7 @@ def test_admin_entry_is_standalone_not_inside_settings_dropdown(client: TestClie
         response.text.index('aria-labelledby="settingsDropdown"') :
         response.text.index("</ul>", response.text.index('aria-labelledby="settingsDropdown"'))
     ]
-    assert "/admin/data-sources" not in settings_menu
-    assert response.text.index('admin-diagnostics-link') > response.text.index("</ul>", response.text.index('aria-labelledby="settingsDropdown"'))
+    assert 'href="/admin/data-sources"' in settings_menu
 
 
 def test_admin_entry_is_available_on_authenticated_nav_pages(client: TestClient):
@@ -124,7 +122,6 @@ def test_admin_entry_is_available_on_authenticated_nav_pages(client: TestClient)
         response = client.get(path)
         assert response.status_code == 200
         assert 'href="/admin/data-sources"' in response.text
-        assert 'admin-diagnostics-link' in response.text
 
 
 def test_non_admin_nav_pages_hide_admin_entry(non_admin_client: TestClient):

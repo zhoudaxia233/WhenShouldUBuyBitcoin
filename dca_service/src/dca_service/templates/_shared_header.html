@@ -6,21 +6,22 @@
         </a>
         <div class="shared-header-right">
             <nav class="nav-actions dashboard-nav d-flex flex-wrap flex-md-nowrap justify-content-center gap-2" aria-label="Primary navigation">
-                <a href="/" class="btn dashboard-nav-btn{% if active_page == 'dashboard' %} active{% endif %}" aria-label="Dashboard" title="Dashboard"{% if active_page == 'dashboard' %} aria-current="page"{% endif %}><i class="bi bi-window-sidebar"></i> <span class="btn-text">Dashboard</span></a>
+                <a href="/" class="btn dashboard-nav-btn{% if active_page == 'dashboard' %} active{% endif %}" aria-label="Home" title="Home"{% if active_page == 'dashboard' %} aria-current="page"{% endif %}><i class="bi bi-house"></i> <span class="btn-text">Home</span></a>
+                <a href="/#buys" class="btn dashboard-nav-btn" aria-label="Buys" title="Buys"><i class="bi bi-list-ul"></i> <span class="btn-text">Buys</span></a>
+                <a href="/stats" class="btn dashboard-nav-btn{% if active_page == 'stats' %} active{% endif %}" aria-label="Insights" title="Insights"{% if active_page == 'stats' %} aria-current="page"{% endif %}><i class="bi bi-graph-up"></i> <span class="btn-text">Insights</span></a>
                 <div class="dropdown">
-                    <button class="btn dashboard-nav-btn dropdown-toggle{% if active_page in ['strategy', 'settings'] %} active{% endif %}" type="button" id="settingsDropdown" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Settings" title="Settings">
+                    <button class="btn dashboard-nav-btn dropdown-toggle{% if active_page in ['strategy', 'settings', 'admin'] %} active{% endif %}" type="button" id="settingsDropdown" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Settings" title="Settings">
                         <i class="bi bi-sliders"></i> <span class="btn-text">Settings</span>
                     </button>
                     <ul class="dropdown-menu" aria-labelledby="settingsDropdown">
                         <li><a class="dropdown-item" href="/strategy"><i class="bi bi-sliders"></i> Strategy</a></li>
                         <li><a class="dropdown-item" href="/settings/binance"><i class="bi bi-currency-bitcoin"></i> Binance</a></li>
+                        {% if user and user.is_admin %}
+                        <li><a class="dropdown-item" href="/admin/data-sources"><i class="bi bi-database-check"></i> Diagnostics</a></li>
+                        {% endif %}
                     </ul>
                 </div>
-                {% if user and user.is_admin %}
-                <a href="/admin/data-sources" class="btn dashboard-nav-btn nav-accent admin-diagnostics-link{% if active_page == 'admin' %} active{% endif %}" aria-label="Diagnostics" title="Diagnostics"{% if active_page == 'admin' %} aria-current="page"{% endif %}><i class="bi bi-database-check"></i> <span class="btn-text">Diagnostics</span></a>
-                {% endif %}
-                <a href="/stats" class="btn dashboard-nav-btn{% if active_page == 'stats' %} active{% endif %}" aria-label="Analytics" title="Analytics"{% if active_page == 'stats' %} aria-current="page"{% endif %}><i class="bi bi-graph-up"></i> <span class="btn-text">Analytics</span></a>
-                <a href="/analysis/" class="btn dashboard-nav-btn" target="_blank" aria-label="WSUB" title="WSUB"><i class="bi bi-journal-code"></i> <span class="btn-text">WSUB₿</span></a>
+                <a href="/analysis/" class="btn dashboard-nav-btn" target="_blank" aria-label="WSUB₿ public site, opens in a new tab" title="WSUB₿ public site"><i class="bi bi-box-arrow-up-right"></i> <span class="btn-text">WSUB₿</span></a>
             </nav>
             <div class="header-utility">
                 <button id="themeToggleBtn" type="button" class="btn text-nowrap theme-toggle-btn" aria-label="Toggle theme" title="Toggle theme"></button>
@@ -49,29 +50,30 @@
         </div>
     </div>
     <nav class="mobile-bottom-nav" aria-label="Mobile primary navigation">
-        <a href="/" class="mobile-bottom-nav-item{% if active_page == 'dashboard' %} active{% endif %}" aria-label="Dashboard" title="Dashboard"{% if active_page == 'dashboard' %} aria-current="page"{% endif %}>
+        <a href="/" class="mobile-bottom-nav-item{% if active_page == 'dashboard' %} active{% endif %}" aria-label="Home" title="Home"{% if active_page == 'dashboard' %} aria-current="page"{% endif %}>
             <i class="bi bi-house-fill" aria-hidden="true"></i>
-            <span>Dashboard</span>
+            <span>Home</span>
         </a>
-        <a href="/stats" class="mobile-bottom-nav-item{% if active_page == 'stats' %} active{% endif %}" aria-label="Analytics" title="Analytics"{% if active_page == 'stats' %} aria-current="page"{% endif %}>
+        <a href="/#buys" class="mobile-bottom-nav-item" aria-label="Buys" title="Buys">
+            <i class="bi bi-list-ul" aria-hidden="true"></i>
+            <span>Buys</span>
+        </a>
+        <a href="/stats" class="mobile-bottom-nav-item{% if active_page == 'stats' %} active{% endif %}" aria-label="Insights" title="Insights"{% if active_page == 'stats' %} aria-current="page"{% endif %}>
             <i class="bi bi-bar-chart-line-fill" aria-hidden="true"></i>
-            <span>Analytics</span>
-        </a>
-        <a href="/analysis/" class="mobile-bottom-nav-item" target="_blank" aria-label="WSUB" title="WSUB">
-            <i class="bi bi-journal-code" aria-hidden="true"></i>
-            <span>WSUB</span>
+            <span>Insights</span>
         </a>
         <div class="dropup mobile-bottom-more">
-            <button class="mobile-bottom-nav-item mobile-bottom-nav-button dropdown-toggle{% if active_page in ['strategy', 'settings'] %} active{% endif %}" type="button" id="mobileMoreDropdown" data-bs-toggle="dropdown" aria-expanded="false" aria-label="More" title="More">
+            <button class="mobile-bottom-nav-item mobile-bottom-nav-button dropdown-toggle{% if active_page in ['strategy', 'settings', 'admin'] %} active{% endif %}" type="button" id="mobileMoreDropdown" data-bs-toggle="dropdown" aria-expanded="false" aria-label="More" title="More">
                 <i class="bi bi-three-dots" aria-hidden="true"></i>
                 <span>More</span>
             </button>
             <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="mobileMoreDropdown">
+                <li><a class="dropdown-item" href="/strategy"><i class="bi bi-sliders"></i> Strategy</a></li>
+                <li><a class="dropdown-item" href="/settings/binance"><i class="bi bi-currency-bitcoin"></i> Binance</a></li>
                 {% if user and user.is_admin %}
                 <li><a class="dropdown-item" href="/admin/data-sources"><i class="bi bi-database-check"></i> Diagnostics</a></li>
                 {% endif %}
-                <li><a class="dropdown-item" href="/strategy"><i class="bi bi-sliders"></i> Strategy</a></li>
-                <li><a class="dropdown-item" href="/settings/binance"><i class="bi bi-currency-bitcoin"></i> Binance</a></li>
+                <li><a class="dropdown-item" href="/analysis/" target="_blank"><i class="bi bi-box-arrow-up-right"></i> WSUB₿ public site</a></li>
                 {% if user %}
                 <li><hr class="dropdown-divider"></li>
                 <li>
