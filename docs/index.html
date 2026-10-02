@@ -2036,11 +2036,144 @@
             }
         }
 
-        .strategy-evidence {
-            margin: 4px 0 12px;
-            font-size: 13px;
+        .findings-card {
+            background: var(--surface);
+            border: 1px solid var(--line);
+            border-radius: 18px;
+            padding: 28px 32px;
+            margin-bottom: 24px;
+            box-shadow: var(--shadow);
+        }
+
+        .findings-kicker {
+            margin: 0 0 4px;
+            font-size: 12px;
+            font-weight: 600;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            color: var(--muted);
+        }
+
+        .findings-title {
+            margin: 0 0 6px;
+            font-size: 24px;
+            color: var(--ink);
+        }
+
+        .findings-lede,
+        .findings-method {
+            margin: 0;
+            font-size: 14px;
             line-height: 1.5;
             color: var(--muted);
+        }
+
+        .findings-rows {
+            list-style: none;
+            margin: 18px 0;
+            padding: 0;
+            display: grid;
+            gap: 12px;
+        }
+
+        .finding-row {
+            display: grid;
+            grid-template-columns: minmax(0, 15rem) minmax(0, 1fr) 3.5rem 4.5rem;
+            align-items: center;
+            gap: 12px;
+            font-size: 14px;
+            color: var(--ink);
+        }
+
+        .finding-bar {
+            height: 10px;
+            border-radius: 5px;
+            background: var(--bg-soft);
+            overflow: hidden;
+        }
+
+        .finding-bar span {
+            display: block;
+            height: 100%;
+            border-radius: 5px;
+            background: var(--line-strong);
+        }
+
+        .finding-row--good .finding-bar span { background: var(--good); }
+        .finding-row--warn .finding-bar span { background: var(--warn); }
+
+        .finding-value,
+        .finding-delta {
+            font-variant-numeric: tabular-nums;
+        }
+
+        .finding-value {
+            text-align: right;
+            font-weight: 600;
+        }
+
+        .finding-delta {
+            font-size: 13px;
+            color: var(--muted);
+        }
+
+        .finding-row--good .finding-delta { color: var(--good); font-weight: 600; }
+        .finding-row--warn .finding-delta { color: var(--warn-ink); font-weight: 600; }
+
+        .findings-takeaway {
+            margin: 0 0 8px;
+            font-size: 15px;
+            line-height: 1.5;
+            color: var(--ink);
+        }
+
+        .findings-run,
+        .inline-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            margin-top: 14px;
+            font: inherit;
+            font-weight: 600;
+            color: var(--blue);
+            text-decoration: none;
+        }
+
+        .inline-link {
+            margin: 0;
+            padding: 0;
+            border: 0;
+            background: none;
+            cursor: pointer;
+            text-decoration: underline;
+            text-underline-offset: 2px;
+        }
+
+        .findings-run:hover,
+        .inline-link:hover {
+            text-decoration: underline;
+        }
+
+        .findings-run:focus-visible,
+        .inline-link:focus-visible {
+            outline: 2px solid var(--blue);
+            outline-offset: 2px;
+            border-radius: 4px;
+        }
+
+        @media (max-width: 640px) {
+            .findings-card {
+                padding: 22px 20px;
+            }
+
+            .finding-row {
+                grid-template-columns: minmax(0, 1fr) auto auto;
+                row-gap: 6px;
+            }
+
+            .finding-label {
+                grid-column: 1 / -1;
+            }
         }
 
         .strategy-config input {
@@ -2743,7 +2876,7 @@
                         <circle class="meter-hub" cx="200" cy="200" r="13"></circle>
                     </svg>
                     <div class="meter-caption"><span id="todayAhr999" class="mono measure-number">—</span> <span id="todayCheaper"></span></div>
-                    <p class="measure-note">A weak signal: in a backtest without look-ahead (2017–2026), buying more when ahr999 was low beat plain DCA by only about 3%.</p>
+                    <p class="measure-note">A weak signal: buying more when ahr999 was low beat plain DCA by about 4% at best, and trailed it by 14% with a monthly budget. <button class="inline-link" type="button" onclick="switchMainTab('backtest')">See the backtest</button></p>
                     <button class="measure-link" type="button" onclick="openChartFullscreen('charts/valuation_ratios.html', 'Valuation Ratios', this)">View chart <svg class="link-chevron" viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M6 3l5 5-5 5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg></button>
                 </div>
             </section>
@@ -2945,16 +3078,6 @@
                     </div>
                 </div>
             </section>
-
-            <div id="chartFullscreen" class="chart-fullscreen" role="dialog" aria-modal="true" aria-labelledby="chartFullscreenTitle" hidden>
-                <div class="chart-fullscreen-bar">
-                    <h2 id="chartFullscreenTitle" class="chart-fullscreen-title"></h2>
-                    <button id="chartFullscreenClose" class="chart-fullscreen-close" type="button" onclick="closeChartFullscreen()" aria-label="Close full screen">
-                        <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
-                    </button>
-                </div>
-                <iframe id="chartFullscreenFrame" class="chart-fullscreen-frame" title="Full-screen chart"></iframe>
-            </div>
         </div>
 
 
@@ -2982,7 +3105,36 @@
         <!-- Backtest Tab Content -->
         <div id="backtest-tab" class="tab-content">
             <!-- Backtest / Strategy Simulator -->
-            <div class="backtest-section">
+            <section id="backtestFindings" class="findings-card" aria-labelledby="backtestFindingsTitle">
+                <p class="findings-kicker">What the backtest found</p>
+                <h2 id="backtestFindingsTitle" class="findings-title">Plain DCA is hard to beat</h2>
+                <p class="findings-lede">$500 a month from Sep 2017 to Sep 2026. What each $100 of budget grew to:</p>
+                <ul class="findings-rows">
+                    <li class="finding-row finding-row--base">
+                        <span class="finding-label">Plain daily DCA</span>
+                        <span class="finding-bar"><span style="width: 95.9%"></span></span>
+                        <span class="finding-value">$533</span>
+                        <span class="finding-delta">baseline</span>
+                    </li>
+                    <li class="finding-row finding-row--good">
+                        <span class="finding-label">AHR999 tilt, unspent money saved for later</span>
+                        <span class="finding-bar"><span style="width: 100%"></span></span>
+                        <span class="finding-value">$556</span>
+                        <span class="finding-delta">+4%</span>
+                    </li>
+                    <li class="finding-row finding-row--warn">
+                        <span class="finding-label">AHR999 tilt, monthly limit (the default below)</span>
+                        <span class="finding-bar"><span style="width: 82.7%"></span></span>
+                        <span class="finding-value">$460</span>
+                        <span class="finding-delta">&minus;14%</span>
+                    </li>
+                </ul>
+                <p class="findings-takeaway">Buying more when AHR999 is low is a small tilt, not a timing tool. It only helped when the money it skipped could be spent later, and it lost when that money expired each month.</p>
+                <p class="findings-method">Every strategy uses only data known on each simulated day. Budget left unspent counts as cash, so all strategies are compared on the same money.</p>
+                <a class="findings-run" href="#backtestForm" onclick="document.getElementById('backtestForm').scrollIntoView({ behavior: 'smooth' }); return false;">Run your own backtest <svg class="link-chevron" viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M3 6l5 5 5-5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg></a>
+            </section>
+
+            <div id="backtestForm" class="backtest-section">
             <h2>Backtest a strategy</h2>
             <p>Test different Bitcoin investment strategies using historical data and power law projections</p>
             
@@ -3005,7 +3157,6 @@
 
                 <div class="form-group">
                     <label>Investment Strategy</label>
-                    <p class="strategy-evidence">Every backtest uses only data known on each simulated day, and counts budget that was not invested as cash, so every strategy is compared on the same money. On that basis the AHR999 strategies are a small tilt, not a timing tool: from 2017 to 2026, the AHR999 percentile strategy ended about 4% ahead of plain daily DCA when unspent money could be used later (Unlimited budget), and about 14% behind with the default monthly limit, where money skipped in a month is never invested.</p>
                     <div class="strategy-options">
                         <div class="strategy-option">
                             <input type="radio" id="strategy-daily" name="backtestStrategy" value="daily-dca" checked />
@@ -3389,6 +3540,17 @@
         <div class="footer">
             Last data update: <span id="lastUpdate">Loading...</span>
         </div>
+    </div>
+
+    <!-- Full-screen chart viewer: outside every view so any view can open it -->
+    <div id="chartFullscreen" class="chart-fullscreen" role="dialog" aria-modal="true" aria-labelledby="chartFullscreenTitle" hidden>
+        <div class="chart-fullscreen-bar">
+            <h2 id="chartFullscreenTitle" class="chart-fullscreen-title"></h2>
+            <button id="chartFullscreenClose" class="chart-fullscreen-close" type="button" onclick="closeChartFullscreen()" aria-label="Close full screen">
+                <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+            </button>
+        </div>
+        <iframe id="chartFullscreenFrame" class="chart-fullscreen-frame" title="Full-screen chart"></iframe>
     </div>
 
     <!-- Strategy Info Modal -->

@@ -84,7 +84,7 @@
         var actions = [{
             tone: "good",
             title: "Regular DCA: keep going",
-            detail: "Steady buying is the baseline; signals only tilt it",
+            detail: "Signals barely beat it in our backtest · See results",
             target: BACKTEST_VIEW,
         }];
 
