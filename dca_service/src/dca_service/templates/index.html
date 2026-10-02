@@ -88,123 +88,6 @@
             width: 20px;
             margin-right: 8px;
         }
-        .dashboard-header {
-            margin-bottom: 24px;
-        }
-        .brand-lockup {
-            display: inline-flex;
-            align-items: center;
-            flex: 0 0 auto;
-            gap: 14px;
-            color: var(--dashboard-text);
-            text-decoration: none;
-        }
-        .brand-mark {
-            width: 44px;
-            height: 44px;
-            border-radius: 50%;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            background: var(--dashboard-accent);
-            color: #fff;
-            font-size: 1.55rem;
-            font-weight: 800;
-            line-height: 1;
-            box-shadow: 0 10px 26px rgba(255, 138, 0, 0.28);
-        }
-        .brand-title {
-            font-size: clamp(1.45rem, 2.2vw, 2rem);
-            font-weight: 750;
-            letter-spacing: -0.02em;
-            white-space: nowrap;
-        }
-        .nav-actions {
-            align-items: center;
-        }
-        .dashboard-nav {
-            gap: 0.55rem;
-            flex-wrap: nowrap !important;
-        }
-        .nav-actions > .btn,
-        .nav-actions > .dropdown > .btn {
-            min-height: 42px;
-            display: inline-flex;
-            align-items: center;
-        }
-        .nav-actions > .btn .bi,
-        .nav-actions > .dropdown > .btn .bi {
-            margin-right: 0.45rem;
-        }
-        .dashboard-nav-btn {
-            border-color: transparent;
-            border-radius: 10px;
-            color: var(--dashboard-muted);
-            background: transparent;
-            font-size: 0.94rem;
-            font-weight: 650;
-            padding: 0.55rem 0.9rem;
-            transition: all 0.18s ease;
-        }
-        .dashboard-nav-btn:hover,
-        .dashboard-nav-btn:focus {
-            border-color: var(--dashboard-border);
-            background: var(--dashboard-card-bg);
-            color: var(--dashboard-text);
-        }
-        .dashboard-nav-btn.active,
-        .dashboard-nav-btn.nav-accent {
-            border-color: var(--dashboard-border-strong);
-            background: var(--dashboard-accent-softer);
-            color: var(--dashboard-accent-strong);
-        }
-        .dashboard-nav-btn.active {
-            box-shadow: inset 0 0 0 1px rgba(255, 138, 0, 0.08);
-        }
-        .theme-toggle-btn {
-            width: 42px;
-            height: 42px;
-            padding: 0;
-            border: 1px solid var(--dashboard-border);
-            border-radius: 50%;
-            background: var(--dashboard-card-bg);
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            color: var(--dashboard-muted);
-            transition: all 0.2s ease;
-        }
-        .theme-toggle-btn:hover {
-            background: var(--dashboard-accent-softer);
-            color: var(--dashboard-accent-strong);
-            border-color: var(--dashboard-border-strong);
-        }
-        .theme-toggle-btn .theme-icon {
-            width: 21px;
-            height: 21px;
-            stroke: currentColor;
-            fill: none;
-            stroke-width: 2.2;
-            stroke-linecap: round;
-            stroke-linejoin: round;
-        }
-        .user-chip {
-            min-height: 42px;
-            padding: 0 0 0 1rem;
-            flex: 0 0 auto;
-        }
-        .logout-btn {
-            border-color: var(--dashboard-border-strong);
-            border-radius: 10px;
-            color: var(--dashboard-accent-strong);
-            background: var(--dashboard-accent-softer);
-            font-weight: 650;
-        }
-        .logout-btn:hover {
-            background: var(--dashboard-accent);
-            border-color: var(--dashboard-accent);
-            color: #fff;
-        }
         .dashboard-panel {
             border: 1px solid var(--dashboard-border);
             border-radius: 10px;
@@ -1531,20 +1414,6 @@
             color: var(--dashboard-accent) !important;
         }
         /* Mobile optimization */
-        @media (max-width: 576px) {
-            .nav-actions {
-                width: 100%;
-            }
-            .nav-actions > .btn,
-            .nav-actions > .dropdown > .btn {
-                min-height: 40px;
-            }
-            .theme-toggle-btn {
-                width: 44px;
-                height: 44px;
-                border-radius: 12px;
-            }
-        }
         @media (max-width: 992px) {
             .strategy-card-grid {
                 grid-template-columns: 1fr;
@@ -1566,46 +1435,6 @@
             body {
                 padding-top: 14px;
                 padding-bottom: 92px;
-            }
-            .shared-header-layout {
-                flex-direction: row;
-                align-items: center;
-                justify-content: space-between;
-            }
-            .shared-header-right {
-                width: auto;
-                flex: 0 0 auto;
-                justify-content: flex-end;
-            }
-            .brand-mark {
-                width: 36px;
-                height: 36px;
-                font-size: 1.18rem;
-                box-shadow: 0 8px 20px rgba(255, 138, 0, 0.22);
-            }
-            .brand-title {
-                font-size: 1.34rem;
-            }
-            .dashboard-nav {
-                display: none !important;
-            }
-            .dashboard-nav-btn.dropdown-toggle::after {
-                display: none;
-            }
-            .nav-actions > .btn .bi,
-            .nav-actions > .dropdown > .btn .bi {
-                margin-right: 0;
-            }
-            .theme-toggle-btn {
-                width: 36px;
-                height: 36px;
-            }
-            .header-utility {
-                width: auto;
-                justify-content: flex-end;
-            }
-            .header-utility .user-chip {
-                display: none !important;
             }
 
             .dashboard-mobile-only,
