@@ -1478,3 +1478,39 @@ html[data-theme="dark"] {
         grid-template-columns: minmax(0, 1fr);
     }
 }
+
+.buys-edit-col {
+    width: 1%;
+    text-align: right;
+    white-space: nowrap;
+}
+
+.external-buy-edit {
+    padding: 2px 6px;
+    border: 0;
+    border-radius: 6px;
+    background: none;
+    color: var(--dashboard-muted);
+    line-height: 1;
+    cursor: pointer;
+}
+
+.external-buy-edit:hover,
+.external-buy-edit:focus-visible {
+    color: var(--dashboard-accent);
+    background: var(--dashboard-accent-softer);
+}
+
+.external-buy-edit:focus-visible {
+    outline: 2px solid var(--dashboard-accent);
+    outline-offset: 1px;
+}
+
+.external-buy-ref {
+    display: inline-block;
+    max-width: 11ch;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    vertical-align: bottom;
+    white-space: nowrap;
+}

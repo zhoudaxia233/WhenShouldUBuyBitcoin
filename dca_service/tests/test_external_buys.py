@@ -241,6 +241,7 @@ def test_transaction_list_mixes_external_buys_by_time(client, session):
     external = rows[1]
     assert external["venue"] == "Kraken Pro"
     assert external["external_id"] is not None
+    assert external["venue_trade_id"] == "TXQ4ZB-7KD2M-ERN5PA"
     assert external["fiat_amount"] == pytest.approx(580.60)
     assert external["quote_currency"] == "EUR"
     assert external["quote_amount"] == 500.0
