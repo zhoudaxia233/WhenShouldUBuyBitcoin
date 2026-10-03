@@ -340,18 +340,29 @@ class BinanceClient:
     async def calculate_avg_buy_price(self, symbol: str) -> float:
         """
         Calculate estimated average buy price (cost basis) from trade history.
-        
+
+        See calculate_buy_cost_basis for limitations.
+
+        Returns:
+            Average buy price as float, or 0.0 if no buy trades found
+        """
+        return (await self.calculate_buy_cost_basis(symbol))["avg_price"]
+
+    async def calculate_buy_cost_basis(self, symbol: str) -> Dict[str, float]:
+        """
+        Sum buy trades from trade history into a cost basis.
+
         IMPORTANT LIMITATIONS:
         - Only considers last 1000 trades (Binance API limit)
         - Does NOT account for deposits/withdrawals
         - Does NOT account for transfers between accounts
         - This is an ESTIMATION for portfolio tracking, not tax/accounting
-        
+
         Args:
             symbol: Trading pair (e.g., "BTCUSDC")
-            
+
         Returns:
-            Average buy price as float, or 0.0 if no buy trades found
+            {"avg_price", "total_btc", "total_cost"}; all 0.0 if no buy trades found
         """
         try:
             # Fetch recent trades (max 1000 per API limitations)
@@ -382,10 +393,10 @@ class BinanceClient:
                     f"Calculated avg buy price for {symbol}: ${avg_price:.2f} "
                     f"(based on {buy_count} buy trades, {total_quantity:.8f} BTC)"
                 )
-                return avg_price
             else:
                 logger.warning(f"No buy trades found for {symbol}")
-                return 0.0
+                avg_price = 0.0
+            return {"avg_price": avg_price, "total_btc": total_quantity, "total_cost": total_cost}
                 
         except Exception as e:
             logger.error(f"Failed to calculate average buy price for {symbol}: {e}")

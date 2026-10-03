@@ -17,6 +17,7 @@ from dca_service.api import (
     stats_api,
     auth_api,
     admin_api,
+    external_buys_api,
 )
 from starlette.middleware.sessions import SessionMiddleware
 from dca_service.scheduler import scheduler
@@ -126,6 +127,7 @@ app.include_router(summary_api_settings_api.router, prefix=settings.API_V1_STR)
 app.include_router(stats_api.router, prefix=settings.API_V1_STR)
 app.include_router(auth_api.router, prefix=settings.API_V1_STR)
 app.include_router(admin_api.router, prefix=settings.API_V1_STR)
+app.include_router(external_buys_api.router, prefix=settings.API_V1_STR)
 
 # SSE endpoint for real-time updates
 from dca_service.sse import sse_manager

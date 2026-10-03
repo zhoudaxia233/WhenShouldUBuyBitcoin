@@ -1376,3 +1376,105 @@ html[data-theme="dark"] {
 #buys .buys-pagination {
     width: 100%;
 }
+
+/* Buys from other exchanges (entered by hand, read-only history) */
+.venue-badge {
+    border: 1px solid var(--dashboard-border-strong);
+    background: transparent;
+    color: var(--dashboard-text);
+}
+
+.external-buy-sub {
+    display: block;
+    font-size: 0.78em;
+    font-weight: 400;
+    color: var(--dashboard-muted);
+    white-space: nowrap;
+}
+
+.external-buy-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 20px;
+    align-items: start;
+}
+
+.external-buy-fields {
+    display: grid;
+    gap: 14px;
+}
+
+.external-buy-fields .form-label {
+    margin-bottom: 4px;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.external-buy-currency {
+    flex: 0 0 96px;
+    max-width: 96px;
+}
+
+.external-buy-preview {
+    padding: 14px 16px;
+    border: 1px solid var(--dashboard-border);
+    border-radius: 12px;
+    background: var(--dashboard-accent-softer);
+    font-size: 0.88rem;
+}
+
+.external-buy-preview-title {
+    margin-bottom: 8px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--dashboard-muted);
+}
+
+.external-buy-preview dl {
+    display: grid;
+    gap: 6px;
+    margin: 0 0 12px;
+}
+
+.external-buy-preview dl > div {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.external-buy-preview dt {
+    font-weight: 400;
+    color: var(--dashboard-muted);
+}
+
+.external-buy-preview dd {
+    margin: 0;
+    font-weight: 600;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
+
+.external-buy-check {
+    padding: 8px 10px;
+    border-radius: 8px;
+    line-height: 1.45;
+    color: var(--dashboard-muted);
+}
+
+.external-buy-check.is-ok {
+    background: rgba(22, 163, 74, 0.1);
+    color: var(--dashboard-success);
+}
+
+.external-buy-check.is-warning {
+    background: rgba(220, 38, 38, 0.1);
+    color: var(--dashboard-danger);
+}
+
+@media (max-width: 767.98px) {
+    .external-buy-grid {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}

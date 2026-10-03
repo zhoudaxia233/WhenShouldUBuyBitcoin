@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Optional
+from typing import List, Optional
 from pydantic import BaseModel, Field
 
 class MetricsSourceSchema(BaseModel):
@@ -52,10 +52,22 @@ class UnifiedTransaction(BaseModel):
     ahr999: Optional[float] = None
     fee_amount: Optional[float] = None  # Trading fee amount
     fee_asset: Optional[str] = None  # Asset used for fee (BNB, USDC, BTC, etc.)
+    venue: str = "Binance"
+    external_id: Optional[int] = None  # Set for external buys, used to edit or delete them
+    quote_currency: Optional[str] = None  # Original currency of an external buy
+    quote_amount: Optional[float] = None
+    fx_rate_usd: Optional[float] = None
+    fx_date: Optional[str] = None
+    fee_usd: Optional[float] = None
 
 
 
 # Wallet Management Schemas
+class VenueBalanceRead(BaseModel):
+    venue: str
+    btc: float
+
+
 class WalletSummary(BaseModel):
     """Comprehensive wallet information including both hot and cold storage"""
     cold_wallet_balance: float
@@ -66,11 +78,18 @@ class WalletSummary(BaseModel):
     cold_wallet_value_usd: float
     hot_wallet_value_usd: float
     total_value_usd: float
+    venue_balances: List[VenueBalanceRead] = []  # BTC held on other exchanges, set by hand
+    avg_buy_price: float = 0.0  # Binance buys and external buys together
+    external_buy_count: int = 0
 
 
 class ColdWalletBalanceUpdate(BaseModel):
     """Request schema for updating cold wallet balance"""
     balance: float = Field(ge=0, description="Total BTC currently in cold storage")
+
+
+class VenueBalanceUpdate(BaseModel):
+    btc: float = Field(ge=0, description="BTC currently held on this exchange")
 
 
 # Strategy Schemas (Merged from schemas_strategy.py)

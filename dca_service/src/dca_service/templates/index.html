@@ -2093,7 +2093,7 @@
                     <dl class="holdings-wallets">
                         <div><dt>Binance</dt><dd>₿<span id="hotBalance">--</span></dd></div>
                         <div><dt>Cold storage</dt><dd>₿<span id="coldBalance">--</span> <button class="holdings-edit" type="button" data-bs-toggle="modal" data-bs-target="#setColdWalletModal" aria-label="Edit cold storage balance">Edit</button></dd></div>
-                        <div><dt>USDC to spend</dt><dd id="quoteBalance">--</dd></div>
+                        <div id="quoteBalanceRow"><dt>USDC to spend</dt><dd id="quoteBalance">--</dd></div>
                     </dl>
                 </div>
             </div>
@@ -2301,9 +2301,14 @@
         <section id="buys" class="card dashboard-panel mb-5" aria-labelledby="buysTitle">
             <div class="card-header dashboard-panel-header d-flex justify-content-between align-items-center">
                 <h5 class="dashboard-panel-title mb-0" id="buysTitle"><span class="text-warning me-2">₿</span>Recent buys</h5>
-                <button id="clearSimulatedBtn" class="btn btn-sm btn-outline-danger">
-                    <i class="bi bi-arrow-clockwise"></i> Re-sync
-                </button>
+                <div class="d-flex flex-wrap gap-2">
+                    <button id="addBuyBtn" class="btn btn-sm btn-primary" type="button" title="Record a buy from another exchange, such as Kraken Pro or Bitvavo">
+                        <i class="bi bi-plus-lg"></i> Add buy
+                    </button>
+                    <button id="clearSimulatedBtn" class="btn btn-sm btn-outline-danger" title="Downloads your Binance buys again. Buys you added from other exchanges are kept.">
+                        <i class="bi bi-arrow-clockwise"></i> Re-sync
+                    </button>
+                </div>
             </div>
             <div class="card-body p-0">
                 <div class="table-responsive transactions-table-wrap">
@@ -2618,9 +2623,117 @@
                             <input type="number" step="0.00000001" min="0" class="form-control" id="coldWalletInput" required>
                             <div class="form-text">This replaces the previous value.</div>
                         </div>
+                        <div id="coldWalletVenueHint" class="alert alert-warning small d-none" role="note"></div>
                         <button type="submit" class="btn btn-primary w-100">Update Balance</button>
                     </form>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Set balance on another exchange -->
+    <div class="modal fade" id="setVenueBalanceModal" tabindex="-1" aria-labelledby="setVenueBalanceTitle">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="setVenueBalanceTitle">Set balance</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="setVenueBalanceForm">
+                        <div class="alert alert-satsflow small" id="venueBalanceHelp"></div>
+                        <div class="mb-3">
+                            <label class="form-label" for="venueBalanceInput">BTC on this exchange</label>
+                            <input type="number" step="0.00000001" min="0" class="form-control" id="venueBalanceInput" required>
+                            <div class="form-text">This replaces the previous value. Your buy history is not changed.</div>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">Update Balance</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add or edit a buy from another exchange -->
+    <div class="modal fade" id="externalBuyModal" tabindex="-1" aria-labelledby="externalBuyTitle">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+            <div class="modal-content">
+                <form id="externalBuyForm" novalidate>
+                    <div class="modal-header">
+                        <div>
+                            <h5 class="modal-title" id="externalBuyTitle">Add a buy from another exchange</h5>
+                            <div class="small text-muted">Recorded for your history and stats only. No order is placed.</div>
+                        </div>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="external-buy-grid">
+                            <div class="external-buy-fields">
+                                <div>
+                                    <label class="form-label" for="externalBuyVenue">Exchange</label>
+                                    <select class="form-select" id="externalBuyVenue">
+                                        <option value="Kraken Pro">Kraken Pro</option>
+                                        <option value="Bitvavo">Bitvavo</option>
+                                        <option value="__other">Other…</option>
+                                    </select>
+                                    <input type="text" class="form-control mt-2 d-none" id="externalBuyVenueOther" maxlength="40" placeholder="Exchange name" aria-label="Exchange name">
+                                </div>
+                                <div>
+                                    <label class="form-label" for="externalBuyTime">Time of the buy (your local time)</label>
+                                    <input type="datetime-local" class="form-control" id="externalBuyTime" required>
+                                </div>
+                                <div>
+                                    <label class="form-label" for="externalBuyAmount">Amount paid, without fee</label>
+                                    <div class="input-group">
+                                        <input type="number" step="0.01" min="0" inputmode="decimal" class="form-control" id="externalBuyAmount" required>
+                                        <select class="form-select external-buy-currency" id="externalBuyCurrency" aria-label="Currency paid">
+                                            <option>EUR</option><option>USD</option><option>USDC</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="form-label" for="externalBuyBtc">BTC bought</label>
+                                    <input type="number" step="0.00000001" min="0" inputmode="decimal" class="form-control" id="externalBuyBtc" required>
+                                </div>
+                                <div>
+                                    <label class="form-label" for="externalBuyFee">Fee</label>
+                                    <div class="input-group">
+                                        <input type="number" step="0.00000001" min="0" inputmode="decimal" class="form-control" id="externalBuyFee" value="0">
+                                        <select class="form-select external-buy-currency" id="externalBuyFeeCurrency" aria-label="Fee currency">
+                                            <option>EUR</option><option>USD</option><option>USDC</option><option>BTC</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="form-label" for="externalBuyRef">Trade ID from the exchange (optional)</label>
+                                    <input type="text" class="form-control" id="externalBuyRef" maxlength="100" autocomplete="off">
+                                    <div class="form-text">Stops the same buy from being added twice.</div>
+                                </div>
+                            </div>
+                            <div class="external-buy-preview" aria-live="polite">
+                                <div class="external-buy-preview-title">Before you save</div>
+                                <dl>
+                                    <div><dt>Price</dt><dd id="externalBuyPrice">—</dd></div>
+                                    <div><dt>EUR→USD rate</dt><dd id="externalBuyRate">—</dd></div>
+                                    <div><dt>Counted in stats as</dt><dd id="externalBuyUsd">—</dd></div>
+                                    <div><dt>Fee in stats</dt><dd id="externalBuyFeeUsd">—</dd></div>
+                                    <div><dt>AHR999 that day</dt><dd id="externalBuyAhr">—</dd></div>
+                                </dl>
+                                <div id="externalBuyCheck" class="external-buy-check">Fill in the amount and BTC to see the preview.</div>
+                                <div class="form-check mt-3">
+                                    <input class="form-check-input" type="checkbox" id="externalBuyAdjust" checked>
+                                    <label class="form-check-label" for="externalBuyAdjust" id="externalBuyAdjustLabel">Add the BTC to the Kraken Pro balance</label>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="externalBuyError" class="alert alert-danger small mt-3 mb-0 d-none" role="alert"></div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-danger me-auto d-none" id="externalBuyDelete">Delete</button>
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary" id="externalBuySave">Save</button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
@@ -3132,6 +3245,12 @@
                 const priceDisplay = tx.price ? `$${tx.price.toFixed(2)}` : '-';
 
                 card.className = 'mobile-transaction-card';
+                if (source === 'EXTERNAL') {
+                    card.classList.add('external-buy-card');
+                    card.innerHTML = externalBuyCardHtml(tx, timestampDisplay);
+                    container.appendChild(card);
+                    return;
+                }
                 card.innerHTML = `
                     <div class="mobile-transaction-status${isSuccess ? '' : ' failed'}" aria-hidden="true">
                         <i class="bi ${isSuccess ? 'bi-check-lg' : 'bi-x-lg'}"></i>
@@ -3164,6 +3283,12 @@
             
             pageTransactions.forEach(tx => {
                 const row = document.createElement('tr');
+                if (tx.source === 'EXTERNAL') {
+                    row.className = 'external-buy-row';
+                    row.innerHTML = externalBuyRowHtml(tx);
+                    tbody.appendChild(row);
+                    return;
+                }
                 
                 // Format timestamp with tooltip
                 const timestampDisplay = formatTransactionTimestamp(tx.timestamp);
@@ -4820,6 +4945,7 @@
             
             // Pre-fill modal with current cold wallet balance
             document.getElementById('coldWalletInput').value = data.cold_wallet_balance;
+            renderVenueBalances(data.venue_balances || []);
             
             // Show warning if no Binance credentials (hot wallet will be 0)
             const errorBox = document.getElementById('walletError');
@@ -4858,7 +4984,7 @@
             reserveChart.setData(latestReservePnl, {
                 currentBtc: Number.isFinite(wallet.total_btc) && wallet.total_btc > 0 ? wallet.total_btc : undefined,
                 currentPrice: wallet.current_price,
-                currentAvg: wallet.hot_wallet_avg_price
+                currentAvg: wallet.avg_buy_price || wallet.hot_wallet_avg_price
             });
             updateTargetEta();
         }
@@ -4970,6 +5096,365 @@
             } catch (error) {
                 notyf.error('Network error');
                 console.error(error);
+            }
+        });
+
+        // Buys and balances on other exchanges (Kraken Pro, Bitvavo, ...): read-only history
+        let latestVenueBalances = [];
+        let editingExternalBuy = null;
+        let externalBuyPreviewTimer = null;
+        let externalBuyDeleteArmed = false;
+
+        function formatQuote(amount, currency, digits = 2) {
+            const value = Number(amount || 0).toLocaleString('en-US', { minimumFractionDigits: digits, maximumFractionDigits: digits });
+            return currency === 'EUR' ? `€${value}` : `$${value}`;
+        }
+
+        function formatUsd(amount, digits = 2) {
+            return formatQuote(amount, 'USD', digits);
+        }
+
+        function externalBuyRateNote(tx) {
+            if (tx.quote_currency !== 'EUR' || !tx.fx_rate_usd) return '';
+            return `ECB EUR→USD ${tx.fx_rate_usd.toFixed(4)} on ${tx.fx_date || 'the day of the buy'}`;
+        }
+
+        function externalBuyFeeText(tx) {
+            if (!tx.fee_amount) return '—';
+            const original = tx.fee_asset === 'BTC'
+                ? `${tx.fee_amount.toFixed(8)} BTC`
+                : formatQuote(tx.fee_amount, tx.fee_asset);
+            return tx.fee_asset === 'USD' || tx.fee_asset === 'USDC' ? original : `${original}<div class="external-buy-sub">≈ ${formatUsd(tx.fee_usd)}</div>`;
+        }
+
+        function externalBuyRowHtml(tx) {
+            const isEur = tx.quote_currency === 'EUR';
+            const quotePrice = tx.quote_amount / tx.btc_amount;
+            const rateNote = escapeHtml(externalBuyRateNote(tx));
+            return `
+                <td><button type="button" class="btn btn-link btn-sm p-0 external-buy-edit" data-external-id="${tx.external_id}" aria-label="Edit this ${escapeHtml(tx.venue)} buy">Edit</button></td>
+                <td>${formatTransactionTimestamp(tx.timestamp)}</td>
+                <td><span class="badge bg-success status-badge">${escapeHtml(tx.status)}</span></td>
+                <td><span class="badge venue-badge status-badge" title="Added by hand">${escapeHtml(tx.venue)}</span></td>
+                <td>${formatQuote(tx.quote_amount, tx.quote_currency)}${isEur ? `<div class="external-buy-sub" title="${rateNote}">≈ ${formatUsd(tx.fiat_amount)} · ${tx.fx_rate_usd.toFixed(4)}</div>` : ''}</td>
+                <td>${externalBuyFeeText(tx)}</td>
+                <td>${tx.btc_amount.toFixed(8)}</td>
+                <td>${formatQuote(quotePrice, tx.quote_currency)}${isEur ? `<div class="external-buy-sub">≈ ${formatUsd(tx.price)}</div>` : ''}</td>
+                <td>${tx.ahr999 ? tx.ahr999.toFixed(2) : '-'}</td>
+            `;
+        }
+
+        function externalBuyCardHtml(tx, timestampDisplay) {
+            const isEur = tx.quote_currency === 'EUR';
+            const quotePrice = tx.quote_amount / tx.btc_amount;
+            return `
+                <div class="mobile-transaction-status" aria-hidden="true"><i class="bi bi-check-lg"></i></div>
+                <div class="mobile-transaction-main">
+                    <span class="mobile-transaction-price">${escapeHtml(formatQuote(quotePrice, tx.quote_currency))}</span>
+                    <span class="mobile-transaction-time">${escapeHtml(timestampDisplay)}</span>
+                    <span class="d-flex align-items-center gap-2"><span class="mobile-transaction-source">${escapeHtml(tx.venue)}</span><button type="button" class="btn btn-link btn-sm p-0 external-buy-edit" data-external-id="${tx.external_id}" aria-label="Edit this ${escapeHtml(tx.venue)} buy">Edit</button></span>
+                </div>
+                <div class="mobile-transaction-amounts">
+                    <span class="mobile-transaction-fiat">${escapeHtml(formatQuote(tx.quote_amount, tx.quote_currency))}</span>
+                    ${isEur ? `<span class="external-buy-sub">≈ ${escapeHtml(formatUsd(tx.fiat_amount))}</span>` : ''}
+                    <span class="mobile-transaction-btc">${tx.btc_amount.toFixed(8)} BTC</span>
+                </div>
+            `;
+        }
+
+        function renderVenueBalances(balances) {
+            latestVenueBalances = balances;
+            const list = document.querySelector('.holdings-wallets');
+            const anchor = document.getElementById('quoteBalanceRow');
+            if (!list || !anchor) return;
+            list.querySelectorAll('[data-venue-row]').forEach(el => el.remove());
+            balances.forEach(balance => {
+                const row = document.createElement('div');
+                row.setAttribute('data-venue-row', '');
+                row.innerHTML = `<dt>${escapeHtml(balance.venue)}</dt><dd>₿<span>${balance.btc.toFixed(8)}</span> <button class="holdings-edit" type="button" data-venue="${escapeHtml(balance.venue)}" aria-label="Edit ${escapeHtml(balance.venue)} balance">Edit</button></dd>`;
+                list.insertBefore(row, anchor);
+            });
+
+            const hint = document.getElementById('coldWalletVenueHint');
+            if (hint) {
+                if (balances.length) {
+                    const listText = balances.map(b => `${escapeHtml(b.venue)} ₿${b.btc.toFixed(8)}`).join(', ');
+                    hint.innerHTML = `Also counted: ${listText}. If you moved BTC from there to cold storage, set that balance too, or it is counted twice.`;
+                    hint.classList.remove('d-none');
+                } else {
+                    hint.classList.add('d-none');
+                }
+            }
+        }
+
+        function openVenueBalanceModal(venue) {
+            const balance = latestVenueBalances.find(b => b.venue === venue);
+            document.getElementById('setVenueBalanceTitle').textContent = `Set ${venue} balance`;
+            document.getElementById('venueBalanceHelp').textContent =
+                `How much BTC is on ${venue} right now. After a withdrawal, enter what is left there and update cold storage with what arrived.`;
+            const form = document.getElementById('setVenueBalanceForm');
+            form.dataset.venue = venue;
+            document.getElementById('venueBalanceInput').value = balance ? balance.btc : 0;
+            bootstrap.Modal.getOrCreateInstance(document.getElementById('setVenueBalanceModal')).show();
+        }
+
+        document.querySelector('.holdings-wallets').addEventListener('click', (event) => {
+            const button = event.target.closest('[data-venue]');
+            if (button) openVenueBalanceModal(button.dataset.venue);
+        });
+
+        document.getElementById('setVenueBalanceForm').addEventListener('submit', async (event) => {
+            event.preventDefault();
+            const venue = event.currentTarget.dataset.venue;
+            const btc = parseFloat(document.getElementById('venueBalanceInput').value);
+            try {
+                const response = await fetch(`/api/wallet/venue-balances/${encodeURIComponent(venue)}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ btc })
+                });
+                if (!response.ok) {
+                    notyf.error(await readApiError(response, 'Could not update the balance'));
+                    return;
+                }
+                notyf.success(`${venue} balance updated`);
+                bootstrap.Modal.getInstance(document.getElementById('setVenueBalanceModal')).hide();
+                loadWalletSummary();
+            } catch (error) {
+                notyf.error('Network error. Check your connection and try again.');
+            }
+        });
+
+        async function readApiError(response, fallback) {
+            try {
+                const body = await response.json();
+                if (Array.isArray(body.detail)) {
+                    return body.detail.map(item => String(item.msg || '').replace(/^Value error, /, '')).filter(Boolean).join(' ') || fallback;
+                }
+                return body.detail || fallback;
+            } catch (e) {
+                return fallback;
+            }
+        }
+
+        function toLocalInputValue(date) {
+            const pad = n => String(n).padStart(2, '0');
+            return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+        }
+
+        function externalBuyVenue() {
+            const select = document.getElementById('externalBuyVenue');
+            return select.value === '__other' ? document.getElementById('externalBuyVenueOther').value.trim() : select.value;
+        }
+
+        function setExternalBuyVenue(venue) {
+            const select = document.getElementById('externalBuyVenue');
+            const other = document.getElementById('externalBuyVenueOther');
+            const preset = Array.from(select.options).some(o => o.value === venue);
+            select.value = preset ? venue : '__other';
+            other.value = preset ? '' : venue;
+            other.classList.toggle('d-none', preset);
+        }
+
+        function externalBuyPayload() {
+            const timeValue = document.getElementById('externalBuyTime').value;
+            return {
+                venue: externalBuyVenue(),
+                timestamp: timeValue ? new Date(timeValue).toISOString() : null,
+                quote_currency: document.getElementById('externalBuyCurrency').value,
+                quote_amount: parseFloat(document.getElementById('externalBuyAmount').value),
+                btc_amount: parseFloat(document.getElementById('externalBuyBtc').value),
+                fee_amount: parseFloat(document.getElementById('externalBuyFee').value) || 0,
+                fee_currency: document.getElementById('externalBuyFeeCurrency').value,
+                venue_trade_id: document.getElementById('externalBuyRef').value.trim() || null,
+                adjust_balance: document.getElementById('externalBuyAdjust').checked
+            };
+        }
+
+        function updateExternalBuyAdjustLabel() {
+            const venue = externalBuyVenue() || 'this exchange';
+            const label = document.getElementById('externalBuyAdjustLabel');
+            label.textContent = editingExternalBuy
+                ? `Update the ${venue} balance to match`
+                : `Add the BTC to the ${venue} balance`;
+        }
+
+        function resetExternalBuyPreview(message) {
+            ['externalBuyPrice', 'externalBuyRate', 'externalBuyUsd', 'externalBuyFeeUsd', 'externalBuyAhr'].forEach(id => {
+                document.getElementById(id).textContent = '—';
+            });
+            const check = document.getElementById('externalBuyCheck');
+            check.className = 'external-buy-check';
+            check.textContent = message;
+        }
+
+        async function refreshExternalBuyPreview() {
+            const payload = externalBuyPayload();
+            if (!payload.venue || !payload.timestamp || !(payload.quote_amount > 0) || !(payload.btc_amount > 0)) {
+                resetExternalBuyPreview('Fill in the amount and BTC to see the preview.');
+                return;
+            }
+            try {
+                const response = await fetch('/api/external-buys/preview', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                if (!response.ok) {
+                    resetExternalBuyPreview(await readApiError(response, 'Preview is not available right now.'));
+                    return;
+                }
+                const p = await response.json();
+                const isEur = payload.quote_currency === 'EUR';
+                document.getElementById('externalBuyPrice').textContent =
+                    formatQuote(p.price_quote, payload.quote_currency, 0) + (isEur ? ` ≈ ${formatUsd(p.price_usd, 0)}` : '');
+                document.getElementById('externalBuyRate').textContent =
+                    isEur ? `${p.fx_rate_usd.toFixed(4)} (ECB, ${p.fx_date})` : 'Not needed';
+                document.getElementById('externalBuyUsd').textContent = formatUsd(p.usd_amount);
+                document.getElementById('externalBuyFeeUsd').textContent = formatUsd(p.fee_usd);
+                document.getElementById('externalBuyAhr').textContent = p.ahr999 ? p.ahr999.toFixed(2) : 'Not available';
+                const check = document.getElementById('externalBuyCheck');
+                if (p.day_close_usd === null || p.day_close_usd === undefined) {
+                    check.className = 'external-buy-check';
+                    check.textContent = 'No BTC price for that day yet, so the price cannot be checked.';
+                } else {
+                    const pct = Math.abs(p.price_deviation * 100).toFixed(1);
+                    const direction = p.price_deviation >= 0 ? 'above' : 'below';
+                    const close = formatUsd(p.day_close_usd, 0);
+                    check.className = `external-buy-check ${p.price_warning ? 'is-warning' : 'is-ok'}`;
+                    check.textContent = p.price_warning
+                        ? `Your price is ${pct}% ${direction} that day's close of ${close}. Check the BTC and amount for a missing or extra zero. You can still save.`
+                        : `Your price is ${pct}% ${direction} that day's close of ${close}. Looks right.`;
+                }
+            } catch (error) {
+                resetExternalBuyPreview('Preview is not available right now.');
+            }
+        }
+
+        function scheduleExternalBuyPreview() {
+            updateExternalBuyAdjustLabel();
+            clearTimeout(externalBuyPreviewTimer);
+            externalBuyPreviewTimer = setTimeout(refreshExternalBuyPreview, 400);
+        }
+
+        function resetExternalBuyDelete() {
+            externalBuyDeleteArmed = false;
+            const button = document.getElementById('externalBuyDelete');
+            button.textContent = 'Delete';
+            button.classList.replace('btn-danger', 'btn-outline-danger');
+        }
+
+        async function openExternalBuyModal(externalId = null) {
+            const form = document.getElementById('externalBuyForm');
+            form.reset();
+            editingExternalBuy = null;
+            resetExternalBuyDelete();
+            document.getElementById('externalBuyError').classList.add('d-none');
+            document.getElementById('externalBuyDelete').classList.toggle('d-none', externalId === null);
+            document.getElementById('externalBuyTitle').textContent =
+                externalId === null ? 'Add a buy from another exchange' : 'Edit buy';
+            if (externalId === null) {
+                setExternalBuyVenue('Kraken Pro');
+                document.getElementById('externalBuyTime').value = toLocalInputValue(new Date());
+            } else {
+                const response = await fetch(`/api/external-buys/${externalId}`);
+                if (!response.ok) {
+                    notyf.error(await readApiError(response, 'Could not load this buy'));
+                    return;
+                }
+                const buy = await response.json();
+                editingExternalBuy = buy;
+                setExternalBuyVenue(buy.venue);
+                document.getElementById('externalBuyTime').value = toLocalInputValue(new Date(buy.timestamp));
+                document.getElementById('externalBuyAmount').value = buy.quote_amount;
+                document.getElementById('externalBuyCurrency').value = buy.quote_currency;
+                document.getElementById('externalBuyBtc').value = buy.btc_amount;
+                document.getElementById('externalBuyFee').value = buy.fee_amount;
+                document.getElementById('externalBuyFeeCurrency').value = buy.fee_currency;
+                document.getElementById('externalBuyRef').value = buy.venue_trade_id || '';
+            }
+            updateExternalBuyAdjustLabel();
+            refreshExternalBuyPreview();
+            bootstrap.Modal.getOrCreateInstance(document.getElementById('externalBuyModal')).show();
+        }
+
+        function showExternalBuyError(message) {
+            const box = document.getElementById('externalBuyError');
+            box.textContent = message;
+            box.classList.remove('d-none');
+        }
+
+        async function afterExternalBuyChange(message) {
+            notyf.success(message);
+            bootstrap.Modal.getInstance(document.getElementById('externalBuyModal')).hide();
+            loadTransactions();
+            loadWalletSummary();
+            loadReserveChart();
+        }
+
+        document.getElementById('addBuyBtn').addEventListener('click', () => openExternalBuyModal());
+        document.getElementById('buys').addEventListener('click', (event) => {
+            const button = event.target.closest('.external-buy-edit');
+            if (button) openExternalBuyModal(Number(button.dataset.externalId));
+        });
+        document.getElementById('externalBuyVenue').addEventListener('change', (event) => {
+            const other = document.getElementById('externalBuyVenueOther');
+            other.classList.toggle('d-none', event.target.value !== '__other');
+            if (event.target.value === '__other') other.focus();
+        });
+        ['externalBuyVenue', 'externalBuyVenueOther', 'externalBuyTime', 'externalBuyAmount', 'externalBuyCurrency',
+         'externalBuyBtc', 'externalBuyFee', 'externalBuyFeeCurrency'].forEach(id => {
+            document.getElementById(id).addEventListener('input', scheduleExternalBuyPreview);
+            document.getElementById(id).addEventListener('change', scheduleExternalBuyPreview);
+        });
+
+        document.getElementById('externalBuyForm').addEventListener('submit', async (event) => {
+            event.preventDefault();
+            const payload = externalBuyPayload();
+            if (!payload.venue) return showExternalBuyError('Enter the exchange name.');
+            if (!payload.timestamp) return showExternalBuyError('Enter when you bought.');
+            if (!(payload.quote_amount > 0) || !(payload.btc_amount > 0)) return showExternalBuyError('Enter the amount paid and the BTC bought.');
+            const saveButton = document.getElementById('externalBuySave');
+            saveButton.disabled = true;
+            try {
+                const url = editingExternalBuy ? `/api/external-buys/${editingExternalBuy.id}` : '/api/external-buys';
+                const response = await fetch(url, {
+                    method: editingExternalBuy ? 'PUT' : 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                if (!response.ok) {
+                    showExternalBuyError(await readApiError(response, 'Could not save this buy.'));
+                    return;
+                }
+                await afterExternalBuyChange(editingExternalBuy ? 'Buy updated' : 'Buy added');
+            } catch (error) {
+                showExternalBuyError('Network error. Check your connection and try again.');
+            } finally {
+                saveButton.disabled = false;
+            }
+        });
+
+        document.getElementById('externalBuyDelete').addEventListener('click', async (event) => {
+            const button = event.currentTarget;
+            if (!editingExternalBuy) return;
+            if (!externalBuyDeleteArmed) {
+                externalBuyDeleteArmed = true;
+                button.textContent = 'Click again to delete';
+                button.classList.replace('btn-outline-danger', 'btn-danger');
+                setTimeout(resetExternalBuyDelete, 3000);
+                return;
+            }
+            const adjust = document.getElementById('externalBuyAdjust').checked;
+            try {
+                const response = await fetch(`/api/external-buys/${editingExternalBuy.id}?adjust_balance=${adjust}`, { method: 'DELETE' });
+                if (!response.ok) {
+                    showExternalBuyError(await readApiError(response, 'Could not delete this buy.'));
+                    return;
+                }
+                await afterExternalBuyChange('Buy deleted');
+            } catch (error) {
+                showExternalBuyError('Network error. Check your connection and try again.');
             }
         });
 

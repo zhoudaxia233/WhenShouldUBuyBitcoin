@@ -482,7 +482,7 @@
                     <span class="stats-metric-label">Avg Buy Price</span>
                 </div>
                 <div class="stats-metric-value metric-primary" id="avgBuyPrice">--</div>
-                <div class="stats-metric-subtext">Cost Basis</div>
+                <div class="stats-metric-subtext" id="avgBuyPriceSubtext">Cost Basis</div>
                 <svg class="metric-sparkline metric-primary" viewBox="0 0 72 34" aria-hidden="true"><polyline points="2,28 13,25 23,29 34,18 44,21 55,11 70,6"></polyline></svg>
             </div>
             <div class="stats-metric-card dashboard-panel">
@@ -508,7 +508,7 @@
                     <span class="stats-metric-label">Transactions</span>
                 </div>
                 <div class="stats-metric-value metric-purple" id="transactionCount">--</div>
-                <div class="stats-metric-subtext">Tracked</div>
+                <div class="stats-metric-subtext" id="transactionCountSubtext">Tracked</div>
                 <svg class="metric-sparkline metric-purple" viewBox="0 0 72 34" aria-hidden="true"><polyline points="2,30 13,27 24,27 36,18 48,17 58,10 70,8"></polyline></svg>
             </div>
         </div>
@@ -874,6 +874,11 @@
             document.getElementById('totalFeesUSD').textContent = `$${data.total_fees_usd.toFixed(2)}`;
             document.getElementById('totalFeesBTC').textContent = data.total_fees_btc.toFixed(8);
             document.getElementById('transactionCount').textContent = data.transaction_count.toLocaleString();
+            const external = data.external_count || 0;
+            const subtext = document.getElementById('transactionCountSubtext');
+            subtext.innerHTML = external > 0
+                ? `Incl. <a href="/#buys">${external} from other exchanges</a>`
+                : 'Tracked';
         }
 
         // Load Total Fees (TTL: 5 mins)
@@ -1158,9 +1163,10 @@
                 document.getElementById('totalBtcBalance').textContent = walletData.total_btc.toFixed(8);
                 
                 // Calculate PnL (Profit & Loss)
-                // Use hot wallet avg price as cost basis for all BTC (simplification)
-                if (walletData.hot_wallet_avg_price && walletData.hot_wallet_avg_price > 0) {
-                    const costBasis = walletData.total_btc * walletData.hot_wallet_avg_price;
+                // Use the average buy price as cost basis for all BTC (simplification)
+                const avgBuyPrice = walletData.avg_buy_price || walletData.hot_wallet_avg_price;
+                if (avgBuyPrice && avgBuyPrice > 0) {
+                    const costBasis = walletData.total_btc * avgBuyPrice;
                     const pnl = portfolioValue - costBasis;
                     const pnlPercent = ((pnl / costBasis) * 100);
                     
@@ -1178,9 +1184,14 @@
                 }
             }
             
-            // Average Buy Price (Cost Basis)
-            if (walletData && walletData.hot_wallet_avg_price > 0) {
-                document.getElementById('avgBuyPrice').textContent = `$${walletData.hot_wallet_avg_price.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+            // Average Buy Price (Cost Basis), Binance and other exchanges together
+            const avgPrice = walletData ? (walletData.avg_buy_price || walletData.hot_wallet_avg_price) : 0;
+            if (avgPrice > 0) {
+                document.getElementById('avgBuyPrice').textContent = `$${avgPrice.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+                const external = walletData.external_buy_count || 0;
+                document.getElementById('avgBuyPriceSubtext').textContent = external > 0
+                    ? `Cost basis · incl. ${external} buy${external === 1 ? '' : 's'} from other exchanges`
+                    : 'Cost Basis';
             }
         }
 

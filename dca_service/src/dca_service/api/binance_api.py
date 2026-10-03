@@ -182,13 +182,16 @@ async def get_holdings(
         settings_record = session.get(GlobalSettings, 1)
         cold_wallet_btc = settings_record.cold_wallet_balance if settings_record else 0.0
         
-        total_btc = btc_bal + cold_wallet_btc
+        from dca_service.services import external_buys
+        venue_btc = sum(b.btc for b in external_buys.venue_balances(session))
+        
+        total_btc = btc_bal + cold_wallet_btc + venue_btc
         
         progress = min(total_btc / target_btc, 1.0) if target_btc > 0 else 0.0
         
         return HoldingsSummary(
             connected=True,
-            btc_balance=total_btc,  # Return total (Binance + Cold Wallet)
+            btc_balance=total_btc,  # Return total (Binance + Cold Wallet + other exchanges)
             quote_balance=quote_bal,
             quote_asset=quote_asset,
             target_btc_amount=target_btc,

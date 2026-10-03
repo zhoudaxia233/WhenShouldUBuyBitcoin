@@ -1,5 +1,6 @@
 from datetime import datetime, timezone
 from typing import Optional
+from sqlalchemy import UniqueConstraint
 from sqlmodel import Field, SQLModel
 
 class DCATransaction(SQLModel, table=True):
@@ -118,6 +119,46 @@ class GlobalSettings(SQLModel, table=True):
     
     id: int = Field(default=1, primary_key=True)
     cold_wallet_balance: float = Field(default=0.0)  # Current BTC in cold storage
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+
+class ExternalTrade(SQLModel, table=True):
+    """
+    A BTC buy made on another exchange (Kraken Pro, Bitvavo, ...) and entered by hand.
+
+    Kept out of dca_transactions on purpose: the Binance re-sync deletes that whole
+    table, and the DCA engine counts its rows against the monthly budget.
+    """
+    __tablename__ = "external_trades"
+    __table_args__ = (UniqueConstraint("venue", "venue_trade_id"),)
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    venue: str = Field(index=True)
+    venue_trade_id: Optional[str] = None  # Exchange reference, used to block duplicates
+    timestamp: datetime  # UTC
+
+    quote_currency: str  # EUR, USD or USDC
+    quote_amount: float  # Paid, excluding fee
+    btc_amount: float
+    fee_amount: float = Field(default=0.0)
+    fee_currency: str = Field(default="EUR")  # EUR, USD, USDC or BTC
+
+    # Fixed when the buy is saved so stats stay reproducible
+    fx_rate_usd: float = Field(default=1.0)  # USD per 1 unit of quote_currency
+    fx_date: Optional[str] = None  # ECB reference date used, YYYY-MM-DD
+    fee_usd: float = Field(default=0.0)
+    ahr999: Optional[float] = None
+
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+
+class VenueBalance(SQLModel, table=True):
+    """BTC the owner says is still held on an external exchange, set by hand like cold storage."""
+    __tablename__ = "venue_balances"
+
+    venue: str = Field(primary_key=True)
+    btc: float = Field(default=0.0)
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
