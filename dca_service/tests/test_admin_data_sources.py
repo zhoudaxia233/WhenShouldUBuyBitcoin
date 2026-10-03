@@ -106,15 +106,16 @@ def test_non_admin_dashboard_hides_data_sources_entry(non_admin_client: TestClie
     assert 'href="/admin/data-sources"' not in response.text
 
 
-def test_admin_entry_lives_in_the_settings_menu(client: TestClient):
+def test_admin_entry_lives_in_the_automation_group_of_the_sidebar(client: TestClient):
     response = client.get("/")
 
     assert response.status_code == 200
-    settings_menu = response.text[
-        response.text.index('aria-labelledby="settingsDropdown"') :
-        response.text.index("</ul>", response.text.index('aria-labelledby="settingsDropdown"'))
+    sidebar = response.text[
+        response.text.index('<nav class="sidebar-nav"') :
+        response.text.index("</nav>", response.text.index('<nav class="sidebar-nav"'))
     ]
-    assert 'href="/admin/data-sources"' in settings_menu
+    automation = sidebar[sidebar.index(">Automation<") : sidebar.index(">Elsewhere<")]
+    assert 'href="/admin/data-sources"' in automation
 
 
 def test_admin_entry_is_available_on_authenticated_nav_pages(client: TestClient):

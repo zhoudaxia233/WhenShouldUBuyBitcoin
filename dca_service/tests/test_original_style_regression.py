@@ -24,8 +24,8 @@ def test_shared_satsflow_design_system_is_loaded_by_all_templates():
 
 def test_shared_satsflow_design_system_file_exists():
     css = (STATIC_DIR / "app.css").read_text(encoding="utf-8")
-    assert "--dashboard-accent: #ff8a00;" in css
-    assert "--dashboard-accent-strong: #f97316;" in css
+    assert "--dashboard-accent: #15171b;" in css
+    assert "--dashboard-btc: #f7931a;" in css
     assert ".app-shell" in css
     assert ".brand-lockup" in css
     assert ".dashboard-panel" in css

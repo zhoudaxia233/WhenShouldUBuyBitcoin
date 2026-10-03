@@ -25,12 +25,18 @@ def test_add_buy_form_previews_before_saving():
     assert 'id="externalBuyAdjust" checked' in html
 
 
-def test_exchange_balances_sit_between_cold_storage_and_cash():
+def test_exchange_balances_are_listed_with_the_other_bitcoin_holdings():
+    """Other exchanges hold bitcoin, so their rows join the goal's holdings list
+    after cold storage. Cash to spend lives in the budget column instead."""
     html = _html("index.html")
-    hero = html[html.index('<dl class="holdings-wallets">') :]
-    hero = hero[: hero.index("</dl>")]
-    assert hero.index('id="coldBalance"') < hero.index('id="quoteBalanceRow"')
-    assert "list.insertBefore(row, anchor)" in html
+    holdings = html[html.index('<dl class="ledger-list holdings-wallets">') :]
+    holdings = holdings[: holdings.index("</dl>")]
+    assert 'id="coldBalance"' in holdings
+    assert 'id="quoteBalanceRow"' not in holdings
+    render = html[html.index("function renderVenueBalances(balances)") :]
+    render = render[: render.index("const hint = ")]
+    assert "list.appendChild(row)" in render
+    assert "insertBefore" not in render
     assert 'id="coldWalletVenueHint"' in html
 
 
@@ -62,4 +68,5 @@ def test_buys_table_has_a_trailing_edit_column():
     html = _html("index.html")
     head = html[html.index('<section id="buys"') :]
     head = head[head.index("<thead") : head.index("</thead>")]
-    assert head.rstrip().endswith('<th class="buys-edit-col"><span class="visually-hidden">Edit</span></th>\n                            </tr>')
+    cells = head[: head.index("</tr>")].rstrip().splitlines()
+    assert cells[-1].strip() == '<th class="buys-edit-col"><span class="visually-hidden">Edit</span></th>'
