@@ -39,3 +39,27 @@ def test_cost_basis_includes_other_exchanges():
     stats = _html("stats.html")
     assert "walletData.avg_buy_price || walletData.hot_wallet_avg_price" in stats
     assert 'id="transactionCountSubtext"' in stats
+
+
+def _external_row_template(html: str) -> str:
+    start = html.index("function externalBuyRowHtml(tx)")
+    return html[start : html.index("function externalBuyCardHtml", start)]
+
+
+def test_id_column_shows_the_exchange_trade_id_not_an_edit_button():
+    row = _external_row_template(_html("index.html"))
+    cells = row[row.index("return `") :].split("</td>")
+    assert "tx.venue_trade_id" in cells[0]
+    assert "externalBuyEditButton" not in cells[0]
+    assert "externalBuyEditButton(tx)" in cells[-2]
+    html = _html("index.html")
+    helper = html[html.index("function externalBuyEditButton(tx)") :]
+    helper = helper[: helper.index("\n        }")]
+    assert "bi-pencil" in helper and 'title="Edit this buy"' in helper
+
+
+def test_buys_table_has_a_trailing_edit_column():
+    html = _html("index.html")
+    head = html[html.index('<section id="buys"') :]
+    head = head[head.index("<thead") : head.index("</thead>")]
+    assert head.rstrip().endswith('<th class="buys-edit-col"><span class="visually-hidden">Edit</span></th>\n                            </tr>')

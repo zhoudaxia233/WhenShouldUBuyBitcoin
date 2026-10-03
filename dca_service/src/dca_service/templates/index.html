@@ -2324,6 +2324,7 @@
                                 <th>BTC Amount</th>
                                 <th>Price</th>
                                 <th>AHR999</th>
+                                <th class="buys-edit-col"><span class="visually-hidden">Edit</span></th>
                             </tr>
                         </thead>
                         <tbody id="transactionsTable">
@@ -3344,6 +3345,7 @@
                     <td>${tx.btc_amount ? tx.btc_amount.toFixed(8) : '-'}</td>
                     <td>${tx.price ? '$' + tx.price.toFixed(2) : '-'}</td>
                     <td>${tx.ahr999 ? tx.ahr999.toFixed(2) : '-'}</td>
+                    <td class="buys-edit-col"></td>
                 `;
                 tbody.appendChild(row);
             });
@@ -5132,7 +5134,7 @@
             const quotePrice = tx.quote_amount / tx.btc_amount;
             const rateNote = escapeHtml(externalBuyRateNote(tx));
             return `
-                <td><button type="button" class="btn btn-link btn-sm p-0 external-buy-edit" data-external-id="${tx.external_id}" aria-label="Edit this ${escapeHtml(tx.venue)} buy">Edit</button></td>
+                <td>${tx.venue_trade_id ? `<span class="external-buy-ref" title="${escapeHtml(tx.venue_trade_id)}">${escapeHtml(tx.venue_trade_id)}</span>` : '<span class="text-muted" title="No trade ID entered">—</span>'}</td>
                 <td>${formatTransactionTimestamp(tx.timestamp)}</td>
                 <td><span class="badge bg-success status-badge">${escapeHtml(tx.status)}</span></td>
                 <td><span class="badge venue-badge status-badge" title="Added by hand">${escapeHtml(tx.venue)}</span></td>
@@ -5141,7 +5143,12 @@
                 <td>${tx.btc_amount.toFixed(8)}</td>
                 <td>${formatQuote(quotePrice, tx.quote_currency)}${isEur ? `<div class="external-buy-sub">≈ ${formatUsd(tx.price)}</div>` : ''}</td>
                 <td>${tx.ahr999 ? tx.ahr999.toFixed(2) : '-'}</td>
+                <td class="buys-edit-col">${externalBuyEditButton(tx)}</td>
             `;
+        }
+
+        function externalBuyEditButton(tx) {
+            return `<button type="button" class="external-buy-edit" data-external-id="${tx.external_id}" title="Edit this buy" aria-label="Edit this ${escapeHtml(tx.venue)} buy"><i class="bi bi-pencil" aria-hidden="true"></i></button>`;
         }
 
         function externalBuyCardHtml(tx, timestampDisplay) {
@@ -5152,7 +5159,7 @@
                 <div class="mobile-transaction-main">
                     <span class="mobile-transaction-price">${escapeHtml(formatQuote(quotePrice, tx.quote_currency))}</span>
                     <span class="mobile-transaction-time">${escapeHtml(timestampDisplay)}</span>
-                    <span class="d-flex align-items-center gap-2"><span class="mobile-transaction-source">${escapeHtml(tx.venue)}</span><button type="button" class="btn btn-link btn-sm p-0 external-buy-edit" data-external-id="${tx.external_id}" aria-label="Edit this ${escapeHtml(tx.venue)} buy">Edit</button></span>
+                    <span class="d-flex align-items-center gap-2"><span class="mobile-transaction-source">${escapeHtml(tx.venue)}</span>${externalBuyEditButton(tx)}</span>
                 </div>
                 <div class="mobile-transaction-amounts">
                     <span class="mobile-transaction-fiat">${escapeHtml(formatQuote(tx.quote_amount, tx.quote_currency))}</span>

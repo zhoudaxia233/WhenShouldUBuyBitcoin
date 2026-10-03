@@ -54,6 +54,7 @@ class UnifiedTransaction(BaseModel):
     fee_asset: Optional[str] = None  # Asset used for fee (BNB, USDC, BTC, etc.)
     venue: str = "Binance"
     external_id: Optional[int] = None  # Set for external buys, used to edit or delete them
+    venue_trade_id: Optional[str] = None  # Trade ID from the other exchange, shown in the ID column
     quote_currency: Optional[str] = None  # Original currency of an external buy
     quote_amount: Optional[float] = None
     fx_rate_usd: Optional[float] = None
