@@ -3,13 +3,19 @@ Wallet management API endpoints.
 Handles cold wallet balance tracking and Binance hot wallet information.
 """
 from datetime import datetime, timezone
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import Session
 from typing import Optional
 
 from dca_service.database import get_session
 from dca_service.models import GlobalSettings, BinanceCredentials, User
-from dca_service.api.schemas import WalletSummary, ColdWalletBalanceUpdate
+from dca_service.api.schemas import (
+    ColdWalletBalanceUpdate,
+    VenueBalanceRead,
+    VenueBalanceUpdate,
+    WalletSummary,
+)
+from dca_service.services import external_buys
 from dca_service.services.binance_client import BinanceClient
 from dca_service.services.security import decrypt_text
 from dca_service.core.logging import logger
@@ -70,11 +76,15 @@ async def fetch_wallet_summary(session: Session) -> WalletSummary:
     # Initialize hot wallet values
     hot_wallet_balance = 0.0
     hot_wallet_avg_price = 0.0
+    binance_bought_btc = 0.0
+    binance_bought_cost = 0.0
+    binance_cost_known = True  # False when Binance is set up but its cost basis could not be read
     current_price = 0.0
     
     # Try to get Binance data
     client = _get_binance_client(session)
     if client:
+        binance_cost_known = False
         try:
             # Fetch balances
             balances = await client.get_spot_balances(["BTC"])
@@ -84,7 +94,11 @@ async def fetch_wallet_summary(session: Session) -> WalletSummary:
             current_price = await client.get_current_price("BTCUSDC")
             
             # Calculate average buy price (cost basis)
-            hot_wallet_avg_price = await client.calculate_avg_buy_price("BTCUSDC")
+            cost_basis = await client.calculate_buy_cost_basis("BTCUSDC")
+            hot_wallet_avg_price = cost_basis["avg_price"]
+            binance_bought_btc = cost_basis["total_btc"]
+            binance_bought_cost = cost_basis["total_cost"]
+            binance_cost_known = True
             
             await client.close()
         except Exception as e:
@@ -100,8 +114,25 @@ async def fetch_wallet_summary(session: Session) -> WalletSummary:
             logger.warning(f"Could not fetch BTC price from fallback source: {e}")
             current_price = 0.0
     
+    # BTC on other exchanges (set by hand) and buys entered by hand
+    venue_balances = [
+        VenueBalanceRead(venue=b.venue, btc=b.btc)
+        for b in external_buys.venue_balances(session)
+        if b.btc > 0
+    ]
+    venue_btc = sum(b.btc for b in venue_balances)
+    external = external_buys.all_trades(session)
+    external_btc = sum(t.btc_amount for t in external)
+    external_cost = sum(t.quote_amount * t.fx_rate_usd for t in external)
+    bought_btc = binance_bought_btc + external_btc
+    avg_buy_price = (
+        (binance_bought_cost + external_cost) / bought_btc
+        if bought_btc > 0 and binance_cost_known
+        else 0.0
+    )
+
     # Calculate totals
-    total_btc = cold_wallet_balance + hot_wallet_balance
+    total_btc = cold_wallet_balance + hot_wallet_balance + venue_btc
     cold_wallet_value = cold_wallet_balance * current_price
     hot_wallet_value = hot_wallet_balance * current_price
     total_value = total_btc * current_price
@@ -114,7 +145,10 @@ async def fetch_wallet_summary(session: Session) -> WalletSummary:
         current_price=current_price,
         cold_wallet_value_usd=cold_wallet_value,
         hot_wallet_value_usd=hot_wallet_value,
-        total_value_usd=total_value
+        total_value_usd=total_value,
+        venue_balances=venue_balances,
+        avg_buy_price=avg_buy_price,
+        external_buy_count=len(external),
     )
 
 
@@ -162,4 +196,24 @@ async def update_cold_wallet_balance(
     logger.info(f"Cold wallet balance updated to {update.balance} BTC")
     
     # Return updated summary
+    return await fetch_wallet_summary(session)
+
+
+@router.put("/venue-balances/{venue}", response_model=WalletSummary)
+async def update_venue_balance(
+    venue: str,
+    update: VenueBalanceUpdate,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Set the BTC held on another exchange (Kraken Pro, Bitvavo, ...), like cold storage.
+
+    Returns the updated wallet summary.
+    """
+    venue = venue.strip()
+    if not venue or venue.lower() == "binance":
+        raise HTTPException(status_code=422, detail="Binance balance is read from Binance directly.")
+    external_buys.set_venue_balance(session, venue, update.btc)
+    logger.info(f"{venue} balance updated to {update.btc} BTC")
     return await fetch_wallet_summary(session)

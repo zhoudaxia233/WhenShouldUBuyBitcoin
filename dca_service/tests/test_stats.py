@@ -317,6 +317,11 @@ def test_purchase_csv_export_contains_order_level_purchase_rows(client: TestClie
         "btc_bought",
         "avg_price_usd",
         "fee_usd",
+        "venue",
+        "quote_currency",
+        "quote_amount",
+        "fx_rate_usd",
+        "fx_date",
     }
     assert len(rows) == 2
     assert rows[0]["purchase_datetime"] == "2024-01-01T00:00:00+00:00"

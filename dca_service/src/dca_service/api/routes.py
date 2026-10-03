@@ -5,7 +5,8 @@ from datetime import timezone
 from pathlib import Path
 
 from dca_service.database import get_session
-from dca_service.models import DCATransaction, BinanceCredentials, User
+from dca_service.models import DCATransaction, BinanceCredentials, ExternalTrade, User
+from dca_service.services import external_buys
 from dca_service.api.schemas import TransactionRead, UnifiedTransaction
 from dca_service.services.binance_client import BinanceClient
 from dca_service.services.security import decrypt_text
@@ -333,10 +334,13 @@ async def read_transactions(
     Fetch list of all transactions from LOCAL DATABASE only.
     Includes both DCA transactions and synced manual trades.
     """
-    # Fetch all transactions from database (DCA + Manual)
-    # Sort by timestamp descending
-    statement = select(DCATransaction).order_by(col(DCATransaction.timestamp).desc()).offset(offset).limit(limit)
+    # Fetch enough rows from both sources to cover this page, then merge by time.
+    window = offset + limit
+    statement = select(DCATransaction).order_by(col(DCATransaction.timestamp).desc()).limit(window)
     transactions = session.exec(statement).all()
+    external = session.exec(
+        select(ExternalTrade).order_by(col(ExternalTrade.timestamp).desc()).limit(window)
+    ).all()
     
     unified_list = []
     
@@ -371,6 +375,33 @@ async def read_transactions(
             fee_amount=tx.fee_amount or 0.0,
             fee_asset=tx.fee_asset or "USDC"
         ))
+
+    for trade in external:
+        buy = external_buys.as_ledger_buy(trade)
+        unified_list.append(UnifiedTransaction(
+            id=trade.id,
+            timestamp=buy.timestamp,
+            type="MANUAL",
+            status=buy.status,
+            btc_amount=buy.btc_amount,
+            fiat_amount=buy.fiat_amount,
+            price=buy.price,
+            notes=trade.venue_trade_id,
+            source="EXTERNAL",
+            ahr999=buy.ahr999,
+            fee_amount=trade.fee_amount,
+            fee_asset=trade.fee_currency,
+            venue=trade.venue,
+            external_id=trade.id,
+            quote_currency=trade.quote_currency,
+            quote_amount=trade.quote_amount,
+            fx_rate_usd=trade.fx_rate_usd,
+            fx_date=trade.fx_date,
+            fee_usd=trade.fee_usd,
+        ))
+
+    unified_list.sort(key=lambda row: row.timestamp, reverse=True)
+    unified_list = unified_list[offset:offset + limit]
     
     return unified_list
 

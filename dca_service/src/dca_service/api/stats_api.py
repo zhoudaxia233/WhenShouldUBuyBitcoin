@@ -29,6 +29,8 @@ from dca_service.models import (
 from dca_service.auth.dependencies import get_current_user
 from dca_service.services.security import decrypt_text
 from dca_service.services.binance_client import BinanceClient
+from dca_service.services.market_history import resolve_metrics_csv_path
+from dca_service.services import external_buys
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -912,25 +914,7 @@ def _send_add_position_email_task(transaction_id: int) -> None:
 
 
 def _resolve_metrics_csv_path() -> Path:
-    """Resolve metrics CSV path using the same conventions as metrics provider."""
-    csv_path_str = settings.METRICS_CSV_PATH
-    csv_path = Path(csv_path_str)
-    if csv_path.is_absolute():
-        return csv_path
-
-    # dca_service/src/dca_service/api/stats_api.py -> dca_service/
-    dca_service_dir = Path(__file__).resolve().parent.parent.parent.parent
-    if csv_path_str.startswith("../"):
-        relative_part = csv_path_str[3:]
-        resolved = (dca_service_dir.parent / relative_part).resolve()
-    else:
-        resolved = (dca_service_dir / csv_path_str).resolve()
-
-    if not resolved.exists():
-        alt_path = Path(csv_path_str)
-        if alt_path.exists():
-            return alt_path.resolve()
-    return resolved
+    return resolve_metrics_csv_path()
 
 
 def _build_market_price_series(
@@ -1191,10 +1175,7 @@ def get_total_fees(
     current_user: User = Depends(get_current_user)
 ):
     """Get total fees paid across all transactions."""
-    txs = session.exec(
-        select(DCATransaction)
-        .where(DCATransaction.status == "SUCCESS")
-    ).all()
+    txs = external_buys.successful_buys(session)
     
     total_fees_usd = 0.0
     total_fees_btc = 0.0
@@ -1213,7 +1194,8 @@ def get_total_fees(
     return {
         "total_fees_usd": total_fees_usd,
         "total_fees_btc": total_fees_btc,
-        "transaction_count": len(txs)
+        "transaction_count": len(txs),
+        "external_count": sum(1 for tx in txs if isinstance(tx, external_buys.LedgerBuy)),
     }
 
 @router.get("/stats/pnl")
@@ -1234,12 +1216,8 @@ def get_pnl_data(
         purchase_usd: List of USD amount invested per transaction
         btc_balance: List of cumulative BTC balance over time
     """
-    # Fetch all successful transactions sorted by time
-    txs = session.exec(
-        select(DCATransaction)
-        .where(DCATransaction.status == "SUCCESS")
-        .order_by(DCATransaction.timestamp)
-    ).all()
+    # Fetch all successful buys (Binance and external) sorted by time
+    txs = external_buys.successful_buys(session)
     
     if not txs:
         return {
@@ -1873,11 +1851,7 @@ def _build_behavior_analysis(events: List[Dict[str, Any]], aggregate_meta: Dict[
 
 
 def _build_buy_behavior_snapshot(session: Session) -> Tuple[List[DCATransaction], Dict[str, Any], Dict[str, Any], str]:
-    txs = session.exec(
-        select(DCATransaction)
-        .where(DCATransaction.status == "SUCCESS")
-        .order_by(DCATransaction.timestamp)
-    ).all()
+    txs = external_buys.successful_buys(session)
 
     buy_txs = []
     for tx in txs:
@@ -3734,6 +3708,11 @@ PURCHASE_CSV_FIELDS = [
     "btc_bought",
     "avg_price_usd",
     "fee_usd",
+    "venue",
+    "quote_currency",
+    "quote_amount",
+    "fx_rate_usd",
+    "fx_date",
 ]
 
 
@@ -3788,10 +3767,16 @@ def _build_purchase_csv(transactions: List[DCATransaction]) -> str:
                 "sources": [],
                 "manual_flags": [],
                 "notes": [],
+                "venue": getattr(tx, "venue", "Binance"),
+                "quote_currency": getattr(tx, "quote_currency", None) or "USDC",
+                "quote_amount": 0.0,
+                "fx_rate_usd": getattr(tx, "fx_rate_usd", None) if isinstance(tx, external_buys.LedgerBuy) else None,
+                "fx_date": getattr(tx, "fx_date", None),
             }
             ordered_keys.append(key)
 
         group = grouped[key]
+        group["quote_amount"] += getattr(tx, "quote_amount", None) or amount_usd
         group["timestamp"] = min(group["timestamp"], timestamp)
         group["amount_usd"] += amount_usd
         group["amount_btc"] += amount_btc
@@ -3828,6 +3813,11 @@ def _build_purchase_csv(transactions: List[DCATransaction]) -> str:
                 "btc_bought": _csv_number(group["amount_btc"]),
                 "avg_price_usd": _csv_number(avg_price),
                 "fee_usd": _csv_number(group["fee_usd"]),
+                "venue": group["venue"],
+                "quote_currency": group["quote_currency"],
+                "quote_amount": _csv_number(group["quote_amount"]),
+                "fx_rate_usd": "" if group["fx_rate_usd"] is None else group["fx_rate_usd"],
+                "fx_date": group["fx_date"] or "",
                 "_sort_key": timestamp.isoformat(),
             }
         )
@@ -3892,11 +3882,7 @@ def download_trading_style_csv(
 
     Split fills with the same binance_order_id are merged into one purchase row.
     """
-    txs = session.exec(
-        select(DCATransaction)
-        .where(DCATransaction.status == "SUCCESS")
-        .order_by(DCATransaction.timestamp)
-    ).all()
+    txs = external_buys.successful_buys(session)
     csv_text = _build_purchase_csv(txs)
     return Response(
         content=csv_text,

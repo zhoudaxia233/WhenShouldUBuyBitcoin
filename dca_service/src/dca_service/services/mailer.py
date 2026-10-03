@@ -205,7 +205,11 @@ def _get_total_btc_balance(session: Session) -> float:
         # But it's better than blocking on async calls or adding complex sync dependencies.
         # If the user has "Incremental Trade Sync" enabled (Phase 7), the DB should be accurate!
         
-        return cold_balance + hot_balance_approx
+        # 3. BTC held on other exchanges (set by hand)
+        from dca_service.services import external_buys
+        venue_balance = sum(b.btc for b in external_buys.venue_balances(session))
+        
+        return cold_balance + hot_balance_approx + venue_balance
         
     except Exception as e:
         logger.warning(f"Error calculating total BTC balance: {e}")
