@@ -91,8 +91,6 @@ def test_extra_buy_realtime_price_shows_live_numeric_value_on_desktop_and_mobile
     assert ".extra-buy-price-strip {\n            display: flex;" in html
     assert "gap: 0.62rem;" in html
     assert ".extra-buy-price-card .form-text {\n            color: var(--dashboard-muted);" in html
-    assert "font-size: 0.96rem;" in html
-    assert "font-weight: 650;" in html
 
     mobile_css = html[html.index("@media (max-width: 768px)"):]
     assert ".extra-buy-price-strip {\n                display: flex;" in mobile_css
@@ -151,7 +149,7 @@ def test_dashboard_copy_distinguishes_scheduled_action_from_extra_buy():
     template_path = repo_root / "dca_service" / "src" / "dca_service" / "templates" / "index.html"
     html = template_path.read_text(encoding="utf-8")
 
-    assert "Next Scheduled Action" in html
+    assert 'id="nextBuyTitle">Next buy</h2>' in html
     assert "Suggested Action" not in html
     assert "function updatePreviewActionState(decision)" in html
     assert "actionText = `Will buy ${formatDashboardUsd(suggestedAmount)}`;" in html
@@ -230,7 +228,7 @@ def test_fixed_dca_stop_cap_is_visible_without_disabling_extra_buy():
     assert "Cap ≤" in html
     assert 'id="fixedDcaCapBadge"' in html
     assert 'id="fixedDcaCapBadgeText"' in html
-    assert 'class="badge d-none" id="fixedDcaCapBadge"' in html
+    assert 'class="next-buy-cap d-none" id="fixedDcaCapBadge"' in html
     assert 'id="fixedDcaStopCapMetric"' not in html
     assert 'id="fixedDcaStopCapValue"' not in html
     assert 'id="fixedDcaGuardrail"' not in html
@@ -247,18 +245,14 @@ def test_fixed_dca_stop_cap_is_visible_without_disabling_extra_buy():
     assert "fixed_dca_stop_price" not in button_state_block
 
 
-def test_fixed_dca_stop_cap_badge_lives_in_strategy_status_pills():
+def test_fixed_dca_stop_cap_badge_lives_in_the_next_buy_signal():
     repo_root = Path(__file__).resolve().parents[2]
     template_path = repo_root / "dca_service" / "src" / "dca_service" / "templates" / "index.html"
     html = template_path.read_text(encoding="utf-8")
 
-    pills_start = html.index('<div class="strategy-status-pills">')
-    pills_end = html.index("</div>", pills_start)
-    pills_markup = html[pills_start:pills_end]
-    metric_grid_start = html.index('<div class="strategy-metric-grid')
-
-    assert 'id="fixedDcaCapBadge"' in pills_markup
-    assert html.index('id="fixedDcaCapBadge"') < metric_grid_start
+    signal_start = html.index('<div class="next-buy-signal">')
+    signal_end = html.index('<div class="next-buy-actions">', signal_start)
+    assert 'id="fixedDcaCapBadge"' in html[signal_start:signal_end]
 
 
 def test_optional_fixed_dca_stop_cap_badge_has_no_default_cap_copy():
@@ -266,7 +260,7 @@ def test_optional_fixed_dca_stop_cap_badge_has_no_default_cap_copy():
     template_path = repo_root / "dca_service" / "src" / "dca_service" / "templates" / "index.html"
     html = template_path.read_text(encoding="utf-8")
 
-    cap_badge_start = html.index('<span class="badge d-none" id="fixedDcaCapBadge"')
+    cap_badge_start = html.index('<span class="next-buy-cap d-none" id="fixedDcaCapBadge"')
     cap_badge_end = html.index("</span>", html.index('id="fixedDcaCapBadgeText"', cap_badge_start)) + len("</span>")
     cap_badge_markup = html[cap_badge_start:cap_badge_end]
 
@@ -276,59 +270,39 @@ def test_optional_fixed_dca_stop_cap_badge_has_no_default_cap_copy():
     assert "Cap ≤ --" not in html
 
 
-def test_fixed_dca_stop_cap_badge_mobile_text_stays_compact():
+def test_fixed_dca_stop_cap_badge_text_stays_on_one_line():
     repo_root = Path(__file__).resolve().parents[2]
-    template_path = repo_root / "dca_service" / "src" / "dca_service" / "templates" / "index.html"
-    html = template_path.read_text(encoding="utf-8")
+    css = (repo_root / "dca_service" / "src" / "dca_service" / "static" / "app.css").read_text(encoding="utf-8")
 
-    mobile_css = html[html.index("@media (max-width: 768px)"):]
-
-    assert "#fixedDcaCapBadge" in mobile_css
-    assert "max-width: 8.6rem;" in mobile_css
-    assert "overflow: hidden;" in mobile_css
-    assert "text-overflow: ellipsis;" in mobile_css
+    rule = css[css.index("#fixedDcaCapBadgeText {") :]
+    rule = rule[: rule.index("}")]
+    assert "overflow: hidden;" in rule
+    assert "text-overflow: ellipsis;" in rule
+    assert "white-space: nowrap;" in rule
 
 
-def test_strategy_action_panel_is_inline_on_desktop_and_separate_on_mobile():
+def test_next_buy_card_sits_beside_the_holdings_and_shows_the_scheduled_action():
     repo_root = Path(__file__).resolve().parents[2]
-    template_path = repo_root / "dca_service" / "src" / "dca_service" / "templates" / "index.html"
-    html = template_path.read_text(encoding="utf-8")
+    html = (repo_root / "dca_service" / "src" / "dca_service" / "templates" / "index.html").read_text(encoding="utf-8")
+    css = (repo_root / "dca_service" / "src" / "dca_service" / "static" / "app.css").read_text(encoding="utf-8")
 
-    assert 'class="strategy-metric strategy-action-metric"' not in html
-    assert 'class="strategy-action-panel strategy-action-panel-desktop is-waiting"' in html
-    assert 'class="strategy-action-panel strategy-action-panel-mobile is-waiting"' in html
-    assert 'id="strategyActionPanelMobile"' in html
+    assert 'class="next-buy-card strategy-action-panel is-waiting" id="strategyActionPanel"' in html
+    assert 'id="strategyActionPanelMobile"' not in html
+    assert 'id="previewActionMobile"' not in html
+    assert 'id="previewAction"' in html
     assert 'id="previewActionSubtext"' in html
-    assert 'id="previewActionMobile"' in html
-    assert 'id="previewActionSubtextMobile"' in html
     assert "Price above cap" in html
     assert "Next run at" in html
 
-    grid_start = html.index('class="strategy-metric-grid')
-    desktop_action_start = html.index('id="strategyActionPanel"')
-    mobile_action_start = html.index('id="strategyActionPanelMobile"')
+    holdings_top = html.index('<div class="holdings-top" id="walletContent">')
+    readout = html.index("data-reserve-readout", holdings_top)
+    card = html.index('id="strategyActionPanel"')
+    chart = html.index('<div class="reserve-chart-head">')
+    assert holdings_top < readout < card < chart
 
-    assert grid_start < desktop_action_start < mobile_action_start
-
-    mobile_css = html[html.index("@media (max-width: 768px)"):]
-
-    assert "grid-template-columns: repeat(5, minmax(0, 1fr));" in html
-    assert ".strategy-action-panel-desktop .strategy-label {" in html
-    assert "white-space: nowrap;" in html[
-        html.index(".strategy-action-panel-desktop .strategy-label {") :
-        html.index("}", html.index(".strategy-action-panel-desktop .strategy-label {"))
-    ]
-    assert "grid-template-columns: repeat(2, minmax(0, 1fr));" in mobile_css
-    assert ".strategy-action-panel-desktop" in mobile_css
-    assert "display: none;" in mobile_css
-    assert ".strategy-action-panel-mobile" in mobile_css
-    assert "display: flex;" in mobile_css
-    assert "min-height: 94px;" in mobile_css
-    assert ".strategy-action-main" in mobile_css
-    assert ".strategy-action-panel.is-buying .strategy-action" in html
-    assert ".strategy-action-panel.is-waiting .strategy-action" in html
-    assert "#8fca57" not in html
-    assert "color: var(--dashboard-accent-strong) !important;" in html
+    assert ".next-buy-card.is-waiting .next-buy-action {" in css
+    assert ".next-buy-card {" in css
+    assert "background: var(--next-bg);" in css
 
 
 def test_dashboard_add_position_button_uses_accent_class_without_success_flash():
@@ -342,8 +316,10 @@ def test_dashboard_add_position_button_uses_accent_class_without_success_flash()
 
     assert 'class="btn btn-dashboard-accent"' in button_markup
     assert "btn-success" not in button_markup
-    assert ".btn-dashboard-accent {" in html
-    assert ".btn-dashboard-accent:hover," in html
+    css = (repo_root / "dca_service" / "src" / "dca_service" / "static" / "app.css").read_text(encoding="utf-8")
+    assert ".btn-dashboard-accent," in css
+    assert ".btn-dashboard-accent:hover," in css
+    assert ".next-buy-actions .btn-dashboard-accent {" in css
 
 
 def test_add_position_no_buy_advice_does_not_enable_confirm_buy():
@@ -514,13 +490,17 @@ def test_extra_buy_modal_surfaces_are_opaque_over_dashboard_content():
     template_path = repo_root / "dca_service" / "src" / "dca_service" / "templates" / "index.html"
     html = template_path.read_text(encoding="utf-8")
 
-    assert "background-color: #0d141b;" in html
+    modal_content_rule = html[
+        html.index(".extra-buy-modal-content {")
+        : html.index("}", html.index(".extra-buy-modal-content {"))
+    ]
+    assert "background: var(--dashboard-card-bg-solid);" in modal_content_rule
     assert "rgba(18, 27, 36, 0.74)" not in html
     assert "rgba(18, 27, 36, 0.72)" not in html
     assert "rgba(18, 27, 36, 0.76)" not in html
 
 
-def test_extra_buy_modal_uses_readable_dark_surface_tokens_in_light_theme():
+def test_extra_buy_modal_follows_the_page_theme():
     repo_root = Path(__file__).resolve().parents[2]
     template_path = repo_root / "dca_service" / "src" / "dca_service" / "templates" / "index.html"
     html = template_path.read_text(encoding="utf-8")
@@ -530,10 +510,12 @@ def test_extra_buy_modal_uses_readable_dark_surface_tokens_in_light_theme():
         : html.index("}", html.index(".extra-buy-modal-content {"))
     ]
 
-    assert "--dashboard-text: #f5f7fa;" in modal_content_rule
-    assert "--dashboard-muted: #aeb7c2;" in modal_content_rule
+    assert "--dashboard-text:" not in modal_content_rule
+    assert "#0d141b" not in html
+    assert "color: var(--dashboard-text);" in modal_content_rule
     assert ".extra-buy-modal-content .btn-close {" in html
-    assert "filter: invert(1);" in html
+    dark_close = html[html.index('html[data-bs-theme="dark"] .extra-buy-modal-content .btn-close {') :]
+    assert "filter: invert(1);" in dark_close[: dark_close.index("}")]
 
 
 def test_extra_buy_modal_uses_streamlined_decision_flow_without_recommendation_amounts():

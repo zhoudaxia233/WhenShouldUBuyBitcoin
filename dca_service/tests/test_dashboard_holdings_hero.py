@@ -11,14 +11,15 @@ def _html(name: str) -> str:
 
 
 def _hero(html: str) -> str:
+    """The top of home: holdings and chart, then goal, budget and market."""
     start = html.index('<section id="reserveChart"')
-    return html[start : html.index("</section>", start)]
+    return html[start : html.index('<section class="home-section dca-strategy-panel"', start)]
 
 
 def test_holdings_hero_comes_first_on_home():
     html = _html("index.html")
     body = html[html.index("<body") :]
-    hero = body.index('<section id="reserveChart" class="dashboard-panel reserve-panel holdings-hero"')
+    hero = body.index('<section id="reserveChart" class="reserve-panel holdings-hero"')
     assert hero < body.index("DCA Strategy") < body.index("Recent buys")
     assert 'class="wallet-card-grid"' not in html
     assert 'id="progressRing"' not in html
@@ -86,8 +87,8 @@ def test_reserve_chart_scrolls_vertically_on_touch_and_has_a_mobile_height():
     css = (Path(__file__).resolve().parents[1] / "src" / "dca_service" / "static" / "app.css").read_text(encoding="utf-8")
     canvas_rule = css[css.index(".reserve-canvas {") :]
     assert "touch-action: pan-y;" in canvas_rule[: canvas_rule.index("}")]
-    mobile = css[css.index(".reserve-canvas {", css.index("@media (max-width: 767.98px)", css.index("/* Reserve chart")) ) - 200 :]
-    assert "height: 280px;" in mobile[:400]
+    mobile = css[css.index(".reserve-canvas {", css.index("@media (max-width: 767.98px)", css.index("/* ---------- Home: holdings")) ) - 200 :]
+    assert "height: 240px;" in mobile[:400]
 
 
 def test_home_shows_recent_buys_and_expands_to_all_on_request():

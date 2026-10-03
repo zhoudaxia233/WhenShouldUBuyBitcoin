@@ -39,15 +39,17 @@
             display: block;
             margin-bottom: 8px;
             color: var(--dashboard-text);
-            font-weight: 650;
+            font-weight: 500;
             font-size: 14px;
         }
 
         .form-group input {
             width: 100%;
-            padding: 12px 16px;
-            font-size: 14px;
-            transition: border-color 0.3s;
+            padding: 11px 14px;
+            border: 1px solid var(--dashboard-border-strong);
+            font: inherit;
+            font-size: 15px;
+            transition: border-color 0.15s, box-shadow 0.15s;
         }
 
         .form-group input:focus {
@@ -56,29 +58,15 @@
 
         .btn-login {
             width: 100%;
-            padding: 14px;
+            margin-top: 4px;
+            padding: 12px;
             border: none;
             border-radius: 10px;
-            font-size: 16px;
-            font-weight: 600;
+            font: inherit;
+            font-size: 15px;
+            font-weight: 500;
             cursor: pointer;
-            transition: transform 0.2s, box-shadow 0.2s;
-        }
-        
-        .btn-login:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 8px 22px rgba(255, 138, 0, 0.28);
-        }
-
-        .btn-login:active {
-            transform: translateY(0);
-        }
-
-        @media (max-width: 576px) {
-            .login-header .brand-lockup {
-                flex-direction: column;
-                gap: 10px;
-            }
+            transition: background-color 0.15s;
         }
     </style>
 </head>
@@ -91,7 +79,8 @@
                     <span class="brand-mark" aria-hidden="true">₿</span>
                     <span class="brand-title">{{ project_name }}</span>
                 </div>
-                <p>Sign in to your account</p>
+                <h1>Sign in</h1>
+                <p>Enter your email and password.</p>
             </div>
 
             {% if error %}
@@ -127,7 +116,7 @@
                 </div>
 
                 <button type="submit" class="btn-login">
-                    Sign In
+                    Sign in
                 </button>
             </form>
 

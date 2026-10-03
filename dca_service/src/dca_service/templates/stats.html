@@ -22,11 +22,6 @@
     <link rel="stylesheet" href="{{ asset_url('app.css') }}">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        body {
-            padding-top: 20px;
-            background-color: #f8f9fa;
-            transition: background-color 0.2s ease, color 0.2s ease;
-        }
         .stats-page .card { margin-bottom: 0; }
         .stats-actions-row {
             display: flex;
@@ -40,9 +35,7 @@
             min-height: 220px;
             padding: clamp(1.55rem, 3vw, 2.35rem);
             margin-bottom: 22px;
-            background:
-                radial-gradient(circle at 92% 52%, rgba(255, 138, 0, 0.18), transparent 34%),
-                linear-gradient(90deg, var(--dashboard-card-bg-solid) 0%, var(--dashboard-card-bg-solid) 54%, rgba(255, 138, 0, 0.14) 100%);
+            background: var(--dashboard-card-bg);
         }
         .stats-rank-content {
             position: relative;
@@ -54,21 +47,21 @@
         .stats-section-kicker {
             color: var(--dashboard-muted);
             font-size: 0.72rem;
-            font-weight: 750;
+            font-weight: 600;
             letter-spacing: 0.08em;
             text-transform: uppercase;
         }
         .stats-rank-value {
             margin: 0.55rem 0 0.55rem;
-            color: var(--dashboard-accent-strong);
+            color: var(--dashboard-text);
             font-size: clamp(2.45rem, 6vw, 4rem);
-            font-weight: 780;
-            letter-spacing: 0;
+            font-weight: 300;
+            letter-spacing: -0.035em;
             line-height: 0.95;
         }
         .stats-rank-subtext {
             color: var(--dashboard-text);
-            font-weight: 650;
+            font-weight: 600;
             margin-bottom: 0.45rem;
         }
         .stats-rank-meta {
@@ -83,22 +76,10 @@
             margin-top: 1rem;
             border: 1px solid var(--dashboard-border);
             border-radius: 999px;
-            background: var(--dashboard-accent-softer);
-            color: var(--dashboard-accent-strong);
-            font-weight: 750;
-            padding: 0.48rem 0.78rem;
-        }
-        .stats-rank-watermark {
-            position: absolute;
-            right: clamp(1.2rem, 6vw, 4.5rem);
-            top: 50%;
-            transform: translateY(-50%) rotate(14deg);
-            color: rgba(255, 138, 0, 0.18);
-            font-size: clamp(7rem, 17vw, 13rem);
-            font-weight: 900;
-            line-height: 1;
-            pointer-events: none;
-            user-select: none;
+            background: var(--dashboard-subtle-bg);
+            color: var(--dashboard-text);
+            font-weight: 500;
+            padding: 0.4rem 0.78rem;
         }
         .stats-metrics-grid {
             display: grid;
@@ -129,18 +110,19 @@
             justify-content: center;
             flex: 0 0 auto;
         }
-        .metric-success-bg { background: rgba(22, 163, 74, 0.12); color: var(--dashboard-success); }
-        .metric-primary-bg { background: rgba(59, 130, 246, 0.12); color: #2563eb; }
-        .metric-danger-bg { background: rgba(220, 38, 38, 0.11); color: var(--dashboard-danger); }
-        .metric-warning-bg { background: rgba(255, 138, 0, 0.13); color: var(--dashboard-accent-strong); }
-        .metric-purple-bg { background: rgba(147, 51, 234, 0.11); color: #9333ea; }
+        .metric-success-bg,
+        .metric-primary-bg,
+        .metric-danger-bg,
+        .metric-warning-bg,
+        .metric-purple-bg { background: var(--dashboard-subtle-bg); color: var(--dashboard-muted); }
         .stats-metric-value {
             margin-top: 0.35rem;
             color: var(--dashboard-text);
-            font-size: clamp(1.38rem, 2vw, 1.75rem);
-            font-weight: 780;
+            font-family: var(--font-mono);
+            font-size: clamp(1.3rem, 1.9vw, 1.6rem);
+            font-weight: 400;
             line-height: 1.05;
-            letter-spacing: 0;
+            letter-spacing: -0.03em;
             font-variant-numeric: tabular-nums;
         }
         .stats-metric-subtext {
@@ -148,23 +130,9 @@
             font-size: 0.9rem;
         }
         .metric-success { color: var(--dashboard-success); }
-        .metric-primary { color: #2563eb; }
+        .metric-primary { color: var(--dashboard-text); }
         .metric-danger { color: var(--dashboard-danger); }
-        .metric-purple { color: #6d3fd1; }
-        .metric-sparkline {
-            align-self: end;
-            justify-self: end;
-            width: 70px;
-            height: 32px;
-            opacity: 0.82;
-        }
-        .metric-sparkline polyline {
-            fill: none;
-            stroke: currentColor;
-            stroke-width: 2.2;
-            stroke-linecap: round;
-            stroke-linejoin: round;
-        }
+        .metric-purple { color: var(--dashboard-text); }
         .stats-analytics-grid {
             display: grid;
             grid-template-columns: minmax(0, 1.18fr) minmax(360px, 0.9fr);
@@ -204,7 +172,7 @@
         }
         .stats-distribution-card .current-rank-row {
             color: var(--dashboard-accent-strong);
-            font-weight: 750;
+            font-weight: 600;
             background: var(--dashboard-accent-softer);
             box-shadow: inset 0 0 0 1px var(--dashboard-border);
         }
@@ -227,8 +195,8 @@
             background: var(--dashboard-accent-strong);
         }
         .highlight-row {
-            background-color: #e8f4ff;
-            font-weight: bold;
+            background-color: var(--dashboard-subtle-bg);
+            font-weight: 600;
         }
         /* Settings dropdown styling */
         .dropdown-menu {
@@ -314,7 +282,7 @@
         }
         .trading-style-row-label {
             color: var(--dashboard-text);
-            font-weight: 760;
+            font-weight: 600;
         }
         .trading-style-row-content {
             color: var(--dashboard-text);
@@ -371,12 +339,6 @@
                 font-size: 0.74rem;
                 padding: 0.3rem 0.5rem;
             }
-            .stats-rank-watermark {
-                right: 0.25rem;
-                top: 1rem;
-                transform: rotate(14deg);
-                font-size: 4.75rem;
-            }
             .stats-metrics-grid {
                 grid-template-columns: repeat(2, minmax(0, 1fr));
                 gap: 10px;
@@ -405,9 +367,6 @@
             }
             .stats-metric-subtext {
                 font-size: 0.72rem;
-            }
-            .metric-sparkline {
-                display: none;
             }
             .stats-transaction-card {
                 display: none;
@@ -462,7 +421,6 @@
                 <p class="stats-rank-meta mb-0" id="percentileCacheText">Fetching BitInfoCharts distribution data...</p>
                 <span class="stats-balance-badge"><span>Total Balance:</span><span id="totalBtc">--</span><span>BTC</span></span>
             </div>
-            <div class="stats-rank-watermark" aria-hidden="true">₿</div>
         </div>
 
         <!-- Summary Stats Row -->
@@ -474,7 +432,6 @@
                 </div>
                 <div class="stats-metric-value metric-success" id="portfolioValueUSD">--</div>
                 <div class="stats-metric-subtext"><span id="totalBtcBalance">--</span> BTC</div>
-                <svg class="metric-sparkline metric-success" viewBox="0 0 72 34" aria-hidden="true"><polyline points="2,31 14,26 25,27 36,17 46,20 58,8 70,4"></polyline></svg>
             </div>
             <div class="stats-metric-card dashboard-panel">
                 <div class="stats-metric-top">
@@ -483,7 +440,6 @@
                 </div>
                 <div class="stats-metric-value metric-primary" id="avgBuyPrice">--</div>
                 <div class="stats-metric-subtext" id="avgBuyPriceSubtext">Cost Basis</div>
-                <svg class="metric-sparkline metric-primary" viewBox="0 0 72 34" aria-hidden="true"><polyline points="2,28 13,25 23,29 34,18 44,21 55,11 70,6"></polyline></svg>
             </div>
             <div class="stats-metric-card dashboard-panel">
                 <div class="stats-metric-top">
@@ -492,14 +448,13 @@
                 </div>
                 <div class="stats-metric-value" id="pnlAmount">--</div>
                 <div class="stats-metric-subtext"><span id="pnlPercent">--</span></div>
-                <svg class="metric-sparkline metric-danger" viewBox="0 0 72 34" aria-hidden="true"><polyline points="2,27 12,21 20,26 30,12 40,29 50,18 61,26 70,28"></polyline></svg>
             </div>
             <div class="stats-metric-card dashboard-panel">
                 <div class="stats-metric-top">
                     <span class="stats-metric-icon metric-warning-bg"><i class="bi bi-wallet2"></i></span>
                     <span class="stats-metric-label">Total Fees</span>
                 </div>
-                <div class="stats-metric-value metric-danger" id="totalFeesUSD">--</div>
+                <div class="stats-metric-value" id="totalFeesUSD">--</div>
                 <div class="stats-metric-subtext"><span id="totalFeesBTC">--</span> BTC</div>
             </div>
             <div class="stats-metric-card dashboard-panel stats-transaction-card">
@@ -509,7 +464,6 @@
                 </div>
                 <div class="stats-metric-value metric-purple" id="transactionCount">--</div>
                 <div class="stats-metric-subtext" id="transactionCountSubtext">Tracked</div>
-                <svg class="metric-sparkline metric-purple" viewBox="0 0 72 34" aria-hidden="true"><polyline points="2,30 13,27 24,27 36,18 48,17 58,10 70,8"></polyline></svg>
             </div>
         </div>
 
@@ -1060,8 +1014,9 @@
                         {
                             label: 'Invested Capital',
                             data: performanceInvested,
-                            borderColor: '#6c757d',
-                            backgroundColor: 'rgba(108, 117, 125, 0.1)',
+                            borderColor: '#8a8f97',
+                            backgroundColor: 'rgba(138, 143, 151, 0.08)',
+                            borderDash: [4, 4],
                             fill: true,
                             tension: 0.1,
                             pointRadius: 0, // Hide points for cleaner look
@@ -1070,8 +1025,8 @@
                         {
                             label: 'Portfolio Value',
                             data: performanceValue,
-                            borderColor: '#28a745',
-                            backgroundColor: 'rgba(40, 167, 69, 0.1)',
+                            borderColor: '#f7931a',
+                            backgroundColor: 'rgba(247, 147, 26, 0.08)',
                             fill: true,
                             tension: 0.1,
                             pointRadius: 0,

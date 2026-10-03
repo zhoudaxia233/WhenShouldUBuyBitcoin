@@ -94,7 +94,8 @@ def test_login_page_renders(client):
     """Test that login page renders correctly."""
     response = client.get("/api/auth/login")
     assert response.status_code == 200
-    assert "Sign in to your account" in response.text
+    assert "<h1>Sign in</h1>" in response.text
+    assert "Enter your email and password." in response.text
 
 
 def test_login_with_valid_credentials(client):

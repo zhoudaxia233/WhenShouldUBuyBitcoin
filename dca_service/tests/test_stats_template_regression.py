@@ -146,7 +146,9 @@ def test_stats_page_uses_reference_dashboard_layout_without_visible_title_block(
     assert '<h1>Stats & Analytics</h1>' not in html
     assert 'class="stats-actions-row"' in html
     assert 'class="stats-rank-hero dashboard-panel"' in html
-    assert 'class="stats-rank-watermark"' in html
+    # No decorative watermark or made-up sparklines: every mark on Insights is data.
+    assert 'class="stats-rank-watermark"' not in html
+    assert "metric-sparkline" not in html
     assert 'class="stats-metrics-grid"' in html
     assert html.count('stats-metric-card dashboard-panel') == 5
     assert 'class="stats-analytics-grid"' in html
@@ -191,8 +193,6 @@ def test_stats_mobile_layout_keeps_metrics_dense_before_charts():
     assert ".stats-metric-card {" in mobile_css
     assert "min-height: 96px;" in mobile_css
     assert "padding: 12px;" in mobile_css
-    assert ".metric-sparkline {" in mobile_css
-    assert "display: none;" in mobile_css
 
 
 def test_stats_mobile_action_buttons_keep_readable_labels():

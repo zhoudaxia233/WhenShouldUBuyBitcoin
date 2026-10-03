@@ -21,55 +21,10 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/notyf@3.10.0/notyf.min.css">
     <link rel="stylesheet" href="{{ asset_url('app.css') }}">
     <style>
-        :root {
-            --dashboard-bg: #fffaf4;
-            --dashboard-card-bg: rgba(255, 255, 255, 0.94);
-            --dashboard-card-bg-solid: #ffffff;
-            --dashboard-text: #15171c;
-            --dashboard-muted: #686f7c;
-            --dashboard-border: #f0dfc9;
-            --dashboard-border-strong: #e7c7a2;
-            --dashboard-accent: #ff8a00;
-            --dashboard-accent-strong: #f97316;
-            --dashboard-accent-soft: rgba(255, 138, 0, 0.12);
-            --dashboard-accent-softer: rgba(255, 138, 0, 0.06);
-            --dashboard-success: #16a34a;
-            --dashboard-success-soft: rgba(22, 163, 74, 0.12);
-            --dashboard-danger: #dc2626;
-            --dashboard-shadow: 0 18px 55px rgba(130, 84, 33, 0.09);
-            --dashboard-ring-track: #ece7df;
-        }
-        html[data-bs-theme="dark"] {
-            --dashboard-bg: #12100d;
-            --dashboard-card-bg: #181512;
-            --dashboard-card-bg-solid: #181512;
-            --dashboard-text: #f4efe8;
-            --dashboard-muted: #b8aca0;
-            --dashboard-border: #352a1f;
-            --dashboard-border-strong: #5a3d22;
-            --dashboard-accent-soft: rgba(255, 138, 0, 0.16);
-            --dashboard-accent-softer: rgba(255, 138, 0, 0.08);
-            --dashboard-success-soft: rgba(22, 163, 74, 0.18);
-            --dashboard-shadow: 0 24px 70px rgba(0, 0, 0, 0.36);
-            --dashboard-ring-track: #2f2923;
-        }
-        body {
-            min-height: 100vh;
-            padding: 24px 0 32px;
-            background:
-                radial-gradient(circle at 14% 0%, var(--dashboard-accent-softer), transparent 28%),
-                var(--dashboard-bg);
-            color: var(--dashboard-text);
-            font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-            transition: background-color 0.2s ease, color 0.2s ease;
-        }
-        .dashboard-shell {
-            max-width: 1220px;
-        }
         .status-badge {
             border-radius: 7px;
             font-size: 0.78rem;
-            font-weight: 700;
+            font-weight: 600;
             letter-spacing: 0.02em;
             padding: 0.42rem 0.58rem;
         }
@@ -88,75 +43,6 @@
             width: 20px;
             margin-right: 8px;
         }
-        .dashboard-panel {
-            border: 1px solid var(--dashboard-border);
-            border-radius: 10px;
-            background: var(--dashboard-card-bg);
-            box-shadow: var(--dashboard-shadow);
-        }
-        .dashboard-panel {
-            overflow: hidden;
-        }
-        .dashboard-panel-header,
-        .card-header.dashboard-panel-header,
-        .card-footer.dashboard-panel-footer {
-            border-color: var(--dashboard-border);
-            background: color-mix(in srgb, var(--dashboard-card-bg-solid) 88%, transparent) !important;
-            padding: 1.4rem 1.75rem;
-        }
-        .dashboard-panel-title {
-            font-size: 1.22rem;
-            font-weight: 760;
-            letter-spacing: -0.01em;
-            color: var(--dashboard-text);
-        }
-        .btn {
-            font-weight: 650;
-        }
-        .btn-dashboard-accent {
-            border-color: var(--dashboard-accent);
-            background: var(--dashboard-accent);
-            color: #fff;
-        }
-        .btn-dashboard-accent:hover,
-        .btn-dashboard-accent:focus {
-            border-color: var(--dashboard-accent-strong);
-            background: var(--dashboard-accent-strong);
-            color: #fff;
-        }
-        .btn-dashboard-accent:disabled {
-            border-color: var(--dashboard-accent);
-            background: var(--dashboard-accent);
-            color: #fff;
-        }
-        .btn-primary,
-        .btn-success {
-            border-color: var(--dashboard-accent);
-            background: var(--dashboard-accent);
-            color: #fff;
-        }
-        .btn-primary:hover,
-        .btn-success:hover {
-            border-color: var(--dashboard-accent-strong);
-            background: var(--dashboard-accent-strong);
-            color: #fff;
-        }
-        .btn-outline-primary,
-        .btn-outline-info,
-        .btn-outline-success,
-        .btn-outline-danger {
-            border-color: var(--dashboard-border-strong);
-            color: var(--dashboard-accent-strong);
-            background: var(--dashboard-accent-softer);
-        }
-        .btn-outline-primary:hover,
-        .btn-outline-info:hover,
-        .btn-outline-success:hover,
-        .btn-outline-danger:hover {
-            border-color: var(--dashboard-accent);
-            background: var(--dashboard-accent);
-            color: #fff;
-        }
         .extra-buy-modal-dialog {
             max-width: min(92vw, 840px);
         }
@@ -164,23 +50,18 @@
             transform: none;
         }
         .extra-buy-modal-content {
-            --dashboard-text: #f5f7fa;
-            --dashboard-muted: #aeb7c2;
-            --dashboard-border: rgba(180, 194, 208, 0.24);
-            --dashboard-border-strong: rgba(180, 194, 208, 0.46);
-            border: 1px solid color-mix(in srgb, var(--dashboard-border-strong) 76%, #52606d 24%);
+            border: 1px solid var(--dashboard-border);
             border-radius: 18px;
-            background-color: #0d141b;
-            background-image:
-                radial-gradient(circle at 18% 0%, rgba(48, 61, 72, 0.46), transparent 34%),
-                linear-gradient(145deg, #151e27 0%, #0d141b 100%);
+            background: var(--dashboard-card-bg-solid);
             color: var(--dashboard-text);
-            box-shadow: 0 28px 80px rgba(0, 0, 0, 0.48);
+            box-shadow: var(--dashboard-shadow-lifted);
             overflow: hidden;
         }
         .extra-buy-modal-content .btn-close {
-            filter: invert(1);
             opacity: 0.72;
+        }
+        html[data-bs-theme="dark"] .extra-buy-modal-content .btn-close {
+            filter: invert(1);
         }
         .extra-buy-modal-content .btn-close:hover,
         .extra-buy-modal-content .btn-close:focus-visible {
@@ -212,7 +93,7 @@
         .extra-buy-modal-content .modal-title {
             color: var(--dashboard-text);
             font-size: 1.36rem;
-            font-weight: 800;
+            font-weight: 600;
             letter-spacing: 0;
             line-height: 1.06;
         }
@@ -252,10 +133,7 @@
             align-items: center;
             border: 1px solid color-mix(in srgb, var(--dashboard-success) 35%, var(--dashboard-border));
             border-radius: 14px;
-            background:
-                radial-gradient(circle at 5% 50%, color-mix(in srgb, var(--dashboard-success) 18%, transparent), transparent 22%),
-                linear-gradient(90deg, color-mix(in srgb, var(--dashboard-success) 10%, transparent), transparent 45%),
-                #0f2020;
+            background: var(--dashboard-success-soft);
             padding: 0.72rem 0.84rem;
         }
         .extra-buy-opportunity-icon {
@@ -263,7 +141,7 @@
             height: 48px;
             border-radius: 50%;
             background: color-mix(in srgb, var(--dashboard-success) 20%, transparent);
-            color: color-mix(in srgb, var(--dashboard-success) 86%, #d7ffe5 14%);
+            color: var(--dashboard-success);
             display: inline-flex;
             align-items: center;
             justify-content: center;
@@ -272,7 +150,7 @@
         .extra-buy-opportunity-title {
             color: var(--dashboard-text);
             font-size: 1.08rem;
-            font-weight: 820;
+            font-weight: 600;
             line-height: 1.2;
             margin: 0 0 0.24rem;
         }
@@ -282,7 +160,7 @@
             gap: 0.48rem;
             color: var(--dashboard-success);
             font-size: 0.86rem;
-            font-weight: 780;
+            font-weight: 600;
         }
         .extra-buy-confidence strong {
             color: var(--dashboard-success);
@@ -314,7 +192,7 @@
             align-items: center;
             gap: 0.28rem;
             font-size: 0.88rem;
-            font-weight: 650;
+            font-weight: 600;
         }
         .extra-buy-primary-actions {
             display: grid;
@@ -326,7 +204,7 @@
             min-height: 42px;
             border-radius: 8px;
             font-size: 0.9rem;
-            font-weight: 780;
+            font-weight: 600;
         }
         .extra-buy-manual-note,
         .extra-buy-footnote {
@@ -343,16 +221,14 @@
             gap: 0.54rem;
             border: 1px solid var(--dashboard-border);
             border-radius: 14px;
-            background:
-                radial-gradient(circle at 0% 0%, rgba(87, 103, 119, 0.14), transparent 34%),
-                #121b24;
+            background: var(--dashboard-subtle-bg);
             padding: 0.72rem 0.86rem 0.68rem;
         }
         .extra-buy-order-heading {
             color: var(--dashboard-text);
             display: block;
             font-size: 0.9rem;
-            font-weight: 820;
+            font-weight: 600;
             letter-spacing: 0;
         }
         .extra-buy-order-heading i { display: none; }
@@ -362,7 +238,7 @@
         .extra-buy-control-card .form-label {
             color: var(--dashboard-text);
             font-size: 1.18rem;
-            font-weight: 820;
+            font-weight: 600;
             margin-bottom: 0.9rem;
         }
         .extra-buy-amount-input-wrap {
@@ -377,7 +253,7 @@
             height: 24px;
             border: 1px solid color-mix(in srgb, var(--dashboard-muted) 44%, transparent);
             border-radius: 50%;
-            background: color-mix(in srgb, var(--dashboard-muted) 14%, #121b24 86%);
+            background: var(--dashboard-subtle-bg);
             color: color-mix(in srgb, var(--dashboard-muted) 88%, var(--dashboard-text));
             display: none;
             align-items: center;
@@ -392,7 +268,7 @@
         .extra-buy-amount-input-wrap.is-disabled .form-control {
             border-style: dashed;
             padding-left: 3.05rem;
-            box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.02);
+            
         }
         .extra-buy-amount-input-wrap.is-disabled .extra-buy-input-suffix {
             color: color-mix(in srgb, var(--dashboard-muted) 82%, transparent);
@@ -401,10 +277,10 @@
             min-height: 46px;
             border: 1px solid color-mix(in srgb, var(--dashboard-muted) 74%, var(--dashboard-border));
             border-radius: 9px;
-            background: rgba(7, 13, 20, 0.46);
+            background: var(--dashboard-card-bg-solid);
             color: var(--dashboard-text);
             font-size: 0.95rem;
-            font-weight: 700;
+            font-weight: 600;
             padding: 0.66rem 4rem 0.66rem 0.92rem;
         }
         .extra-buy-control-card .form-control:focus {
@@ -413,7 +289,7 @@
         }
         .extra-buy-control-card .form-control:disabled {
             border-color: color-mix(in srgb, var(--dashboard-border-strong) 52%, transparent);
-            background: rgba(70, 82, 94, 0.28);
+            background: var(--dashboard-subtle-bg);
             color: color-mix(in srgb, var(--dashboard-text) 56%, var(--dashboard-muted));
             cursor: not-allowed;
             opacity: 1;
@@ -434,7 +310,7 @@
             transform: translateY(-50%);
             color: var(--dashboard-muted);
             font-size: 0.82rem;
-            font-weight: 760;
+            font-weight: 600;
             pointer-events: none;
         }
         .extra-buy-price-strip {
@@ -443,7 +319,7 @@
             gap: 0.62rem;
             color: var(--dashboard-muted);
             font-size: 0.84rem;
-            font-weight: 650;
+            font-weight: 600;
             margin-top: 0.2rem;
             min-width: 0;
         }
@@ -451,18 +327,18 @@
             width: 24px;
             height: 24px;
             border-radius: 50%;
-            background: var(--dashboard-accent);
-            color: #fff;
+            background: var(--dashboard-btc);
+            color: #ffffff;
             display: inline-flex;
             align-items: center;
             justify-content: center;
             font-size: 0.82rem;
-            font-weight: 820;
+            font-weight: 600;
         }
         .extra-buy-price-label {
             color: var(--dashboard-text);
             font-size: 0.92rem;
-            font-weight: 760;
+            font-weight: 600;
         }
         .extra-buy-price-divider {
             color: color-mix(in srgb, var(--dashboard-muted) 56%, transparent);
@@ -481,14 +357,14 @@
             align-items: center;
             gap: 0.22rem;
             font-size: 0.84rem;
-            font-weight: 660;
+            font-weight: 600;
             line-height: 1.3;
         }
         .extra-buy-estimate-value {
             color: var(--dashboard-text);
             display: block;
             font-size: 1.08rem;
-            font-weight: 820;
+            font-weight: 600;
             line-height: 1.2;
             margin-top: 0.12rem;
         }
@@ -499,7 +375,7 @@
         .extra-buy-price-card .form-text {
             color: var(--dashboard-muted);
             font-size: 0.84rem;
-            font-weight: 650;
+            font-weight: 600;
             margin: 0;
             white-space: nowrap;
         }
@@ -517,7 +393,7 @@
             padding: 0;
             gap: 0.46rem;
             font-size: 0.84rem;
-            font-weight: 720;
+            font-weight: 600;
         }
         .extra-buy-price-card .btn::after {
             content: "Refresh";
@@ -525,7 +401,7 @@
         .extra-buy-status {
             color: var(--dashboard-muted);
             font-size: 0.84rem;
-            font-weight: 650;
+            font-weight: 600;
         }
         .extra-buy-cta-btn {
             grid-area: cta;
@@ -538,7 +414,7 @@
             justify-content: center;
             gap: 0.6rem;
             font-size: 1rem;
-            font-weight: 820;
+            font-weight: 600;
             line-height: 1.15;
             margin-top: 0;
         }
@@ -546,13 +422,12 @@
             font-size: 1.34rem;
         }
         .extra-buy-cta-btn:not(:disabled) {
-            background: linear-gradient(90deg, var(--dashboard-accent), var(--dashboard-accent-strong));
-            color: #fff;
-            box-shadow: 0 10px 28px rgba(245, 134, 34, 0.18);
+            background: var(--dashboard-accent);
+            color: var(--dashboard-on-accent);
         }
         .extra-buy-cta-btn.btn-success:not(:disabled) {
-            background: linear-gradient(90deg, var(--dashboard-success), color-mix(in srgb, var(--dashboard-success) 72%, #fff 28%));
-            color: #07130d;
+            background: var(--dashboard-success);
+            color: var(--dashboard-on-accent);
         }
         .extra-buy-cta-copy {
             display: grid;
@@ -561,11 +436,11 @@
         }
         .extra-buy-cta-copy small {
             font-size: 0.82rem;
-            font-weight: 680;
+            font-weight: 600;
             opacity: 0.86;
         }
         .extra-buy-cta-btn:disabled {
-            background: linear-gradient(90deg, rgba(92, 99, 104, 0.72), rgba(82, 88, 94, 0.78));
+            background: var(--dashboard-border-strong);
             color: color-mix(in srgb, var(--dashboard-text) 62%, var(--dashboard-muted));
             opacity: 1;
         }
@@ -583,9 +458,7 @@
             gap: 0.56rem;
             border: 1px solid var(--dashboard-border);
             border-radius: 14px;
-            background:
-                radial-gradient(circle at 0% 0%, rgba(87, 103, 119, 0.12), transparent 32%),
-                #121b24;
+            background: var(--dashboard-subtle-bg);
             padding: 0.72rem 0.86rem;
         }
         .extra-buy-section-header {
@@ -597,7 +470,7 @@
         .extra-buy-section-title {
             color: var(--dashboard-text);
             font-size: 0.9rem;
-            font-weight: 800;
+            font-weight: 600;
             line-height: 1.2;
             margin: 0;
         }
@@ -631,10 +504,10 @@
             font-size: 1.2rem;
         }
         .extra-buy-preview-icon.is-purple {
-            color: #bb86fc;
+            color: var(--dashboard-muted);
         }
         .extra-buy-preview-icon.is-green {
-            color: #79d69b;
+            color: var(--dashboard-success);
         }
         .extra-buy-preview-divider {
             width: 1px;
@@ -644,7 +517,7 @@
         .extra-buy-impact-meta {
             color: var(--dashboard-muted);
             font-size: 0.84rem;
-            font-weight: 660;
+            font-weight: 600;
             line-height: 1.35;
         }
         .extra-buy-impact-grid {
@@ -661,14 +534,14 @@
             color: var(--dashboard-muted);
             display: block;
             font-size: 0.78rem;
-            font-weight: 660;
+            font-weight: 600;
             margin-bottom: 0.24rem;
         }
         .extra-buy-impact-value {
             color: var(--dashboard-text);
             display: block;
             font-size: 0.88rem;
-            font-weight: 720;
+            font-weight: 600;
             line-height: 1.28;
         }
         .extra-buy-tone-success {
@@ -694,9 +567,7 @@
             align-items: center;
             border: 1px solid var(--dashboard-border);
             border-radius: 14px;
-            background:
-                radial-gradient(circle at 0% 0%, rgba(87, 103, 119, 0.12), transparent 32%),
-                #121b24;
+            background: var(--dashboard-subtle-bg);
             padding: 0.72rem 0.9rem;
         }
         .extra-buy-decision-panel.d-none {
@@ -704,9 +575,7 @@
         }
         .extra-buy-decision-panel.is-waiting {
             border-color: color-mix(in srgb, var(--dashboard-danger) 34%, var(--dashboard-border));
-            background:
-                radial-gradient(circle at 0% 0%, color-mix(in srgb, var(--dashboard-danger) 10%, transparent), transparent 34%),
-                #151b24;
+            background: var(--dashboard-danger-soft);
         }
         .extra-buy-decision-panel.is-ready {
             border-color: color-mix(in srgb, var(--dashboard-success) 30%, var(--dashboard-border));
@@ -733,7 +602,7 @@
         .extra-buy-decision-title {
             color: var(--dashboard-text);
             font-size: 0.9rem;
-            font-weight: 800;
+            font-weight: 600;
             line-height: 1.25;
             margin: 0 0 0.22rem;
         }
@@ -750,9 +619,7 @@
             gap: 0.55rem;
             border: 1px solid var(--dashboard-border);
             border-radius: 14px;
-            background:
-                radial-gradient(circle at 0% 0%, rgba(87, 103, 119, 0.12), transparent 32%),
-                #121b24;
+            background: var(--dashboard-subtle-bg);
             padding: 0.72rem 0.85rem;
         }
         .extra-buy-buy-signals.d-none {
@@ -761,7 +628,7 @@
         .extra-buy-signal-heading {
             color: var(--dashboard-text);
             font-size: 0.9rem;
-            font-weight: 800;
+            font-weight: 600;
             line-height: 1.2;
             margin: 0;
         }
@@ -783,7 +650,7 @@
             min-height: 60px;
             border: 1px solid var(--dashboard-border);
             border-radius: 10px;
-            background: rgba(7, 13, 20, 0.34);
+            background: var(--dashboard-card-bg-solid);
             padding: 0.54rem 0.6rem;
             min-width: 0;
         }
@@ -803,14 +670,14 @@
             grid-area: title;
             color: var(--dashboard-text);
             font-size: 0.78rem;
-            font-weight: 760;
+            font-weight: 600;
             line-height: 1.18;
         }
         .extra-buy-reason-value {
             grid-area: value;
             color: var(--dashboard-text);
             font-size: 1.04rem;
-            font-weight: 820;
+            font-weight: 600;
             line-height: 1.16;
             min-width: 0;
         }
@@ -818,7 +685,7 @@
             grid-area: status;
             color: var(--dashboard-muted);
             font-size: 0.72rem;
-            font-weight: 680;
+            font-weight: 600;
             line-height: 1.18;
             min-width: 0;
         }
@@ -832,7 +699,7 @@
         }
         .extra-buy-reason-card.is-purple .extra-buy-reason-icon,
         .extra-buy-reason-card.is-purple .extra-buy-reason-status {
-            color: #bb86fc;
+            color: var(--dashboard-muted);
         }
         .extra-buy-reason-card.is-neutral .extra-buy-reason-icon {
             color: var(--dashboard-muted);
@@ -972,215 +839,18 @@
             display: none;
         }
 
-        .metric-label,
-        .strategy-label,
-        .quick-stat-label {
-            color: var(--dashboard-muted);
-            font-size: 0.92rem;
-            font-weight: 600;
-        }
-        .metric-value {
-            color: var(--dashboard-text);
-            font-size: clamp(1.65rem, 2.4vw, 2.35rem);
-            font-weight: 760;
-            letter-spacing: -0.025em;
-            line-height: 1.05;
-            word-break: break-word;
-        }
         .metric-subtext {
             color: var(--dashboard-muted);
-            font-size: 0.94rem;
-        }
-
-        .dashboard-accent-progress {
-            height: 7px;
-            width: 100%;
-            max-width: none;
-            margin-top: 1.35rem;
-            background: var(--dashboard-ring-track);
-            border-radius: 999px;
-            overflow: hidden;
-        }
-        .dashboard-accent-progress .progress-bar {
-            border-radius: 999px;
-            background: var(--dashboard-accent) !important;
-        }
-        .strategy-metric-grid {
-            display: grid;
-            grid-template-columns: repeat(5, minmax(0, 1fr));
-            border: 1px solid var(--dashboard-border);
-            border-radius: 10px;
-            background: var(--dashboard-card-bg-solid);
-            overflow: hidden;
-        }
-        .strategy-metric {
-            min-height: 84px;
-            padding: 0.95rem 1.2rem;
-            border-right: 1px solid var(--dashboard-border);
-            display: flex;
-            align-items: center;
-        }
-        .strategy-metric:last-child {
-            border-right: 0;
-        }
-        .strategy-metric-content {
-            min-width: 0;
-            width: 100%;
-            display: flex;
-            flex-direction: column;
-            align-items: flex-start;
-            justify-content: center;
-        }
-        .strategy-action-coin,
-        .strategy-card-icon {
-            width: 30px;
-            height: 30px;
-            border-radius: 50%;
-            background: var(--dashboard-accent-softer);
-            color: var(--dashboard-accent-strong);
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            flex: none;
-        }
-        .strategy-value {
-            color: var(--dashboard-text);
-            font-size: 1.16rem;
-            font-weight: 760;
-            letter-spacing: 0;
-            line-height: 1.2;
-        }
-        .strategy-value-row {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 0.55rem;
-            width: 100%;
-        }
-        .strategy-metric .strategy-label {
-            font-size: 0.84rem;
-            margin-bottom: 0.45rem !important;
-        }
-        .strategy-action {
-            color: var(--dashboard-accent-strong) !important;
-            white-space: nowrap;
-        }
-        .strategy-action-panel {
-            min-height: 84px;
-            margin-bottom: 0;
-            padding: 0.82rem 1rem;
-            border: 0;
-            border-radius: 0;
-            background:
-                radial-gradient(circle at 18% 8%, rgba(255, 138, 0, 0.12), transparent 38%),
-                linear-gradient(135deg, color-mix(in srgb, var(--dashboard-card-bg-solid) 88%, var(--dashboard-accent) 12%), var(--dashboard-card-bg-solid));
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 1rem;
-            overflow: hidden;
-        }
-        .strategy-action-panel-content {
-            min-width: 0;
-            flex: 1 1 auto;
-        }
-        .strategy-action-main {
-            display: flex;
-            align-items: center;
-            gap: 0.48rem;
-            min-width: 0;
-        }
-        .strategy-action-copy {
-            min-width: 0;
-        }
-        .strategy-action-status-icon {
-            width: 24px;
-            height: 24px;
-            border: 1px solid currentColor;
-            border-radius: 50%;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            flex: 0 0 auto;
-            font-size: 0.84rem;
-        }
-        .strategy-action-panel .strategy-action {
-            font-size: 0.98rem;
-            line-height: 1.12;
-        }
-        .strategy-action-panel-desktop .strategy-label {
-            font-size: 0.84rem;
-            white-space: nowrap;
-        }
-        .strategy-action-subtext {
-            margin-top: 0.24rem;
-            color: var(--dashboard-muted);
-            font-size: 0.72rem;
-            font-weight: 560;
-            line-height: 1.25;
-        }
-        .strategy-action-panel-mobile {
-            display: none;
-        }
-        .strategy-action-panel.is-buying .strategy-action,
-        .strategy-action-panel.is-buying .strategy-action-status-icon {
-            color: var(--dashboard-accent-strong) !important;
-        }
-        .strategy-action-panel.is-waiting .strategy-action,
-        .strategy-action-panel.is-waiting .strategy-action-status-icon {
-            color: #f4bd21 !important;
-        }
-        .strategy-action-coin {
-            width: 26px;
-            height: 26px;
-            font-size: 0.92rem;
-            box-shadow: inset 0 0 0 1px var(--dashboard-accent);
-        }
-        .dca-strategy-panel .card-body {
-            padding: 1.25rem 1.35rem 1.35rem;
-        }
-        .strategy-status-pills {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 0.6rem;
-            justify-content: flex-end;
-        }
-        #scheduleDisplay,
-        #execModeBadge,
-        #dataSourceBadge {
-            border: 1px solid var(--dashboard-border);
-            border-radius: 7px;
-            background: var(--dashboard-card-bg-solid) !important;
-            color: var(--dashboard-text) !important;
-            font-size: 0.85rem;
-            font-weight: 650;
-            padding: 0.46rem 0.65rem;
-        }
-        #scheduleDisplay {
-            border-color: var(--dashboard-accent);
-            background: var(--dashboard-accent) !important;
-            color: #fff !important;
+            font-size: 0.86rem;
         }
         #fixedDcaCapBadge {
             display: inline-flex;
             align-items: center;
             gap: 0.34rem;
-            border: 1px solid var(--dashboard-border);
-            border-radius: 7px;
-            background: color-mix(in srgb, var(--dashboard-card-bg-solid) 86%, #ffffff 14%) !important;
-            color: var(--dashboard-muted) !important;
-            font-size: 0.85rem;
-            font-weight: 650;
-            padding: 0.46rem 0.65rem;
+            align-self: flex-start;
         }
         #fixedDcaCapBadge.d-none {
             display: none !important;
-        }
-        #fixedDcaCapBadgeText {
-            min-width: 0;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
         }
         #execModeBadge.live-mode-active {
             display: inline-flex;
@@ -1188,38 +858,32 @@
             gap: 0.38rem;
         }
         .live-mode-dot {
-            width: 0.5rem;
-            height: 0.5rem;
+            width: 0.45rem;
+            height: 0.45rem;
             flex: 0 0 auto;
             border-radius: 50%;
-            background: #ef4444;
-            box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.46);
-            animation: liveModePulse 1.2s ease-in-out infinite;
+            background: var(--dashboard-danger);
+            animation: liveModePulse 1.4s ease-in-out infinite;
         }
         @keyframes liveModePulse {
             0%,
             100% {
-                opacity: 0.58;
-                transform: scale(0.82);
-                box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.38);
+                opacity: 0.45;
             }
             50% {
                 opacity: 1;
-                transform: scale(1);
-                box-shadow: 0 0 0 5px rgba(239, 68, 68, 0);
             }
         }
         @media (prefers-reduced-motion: reduce) {
             .live-mode-dot {
                 animation: none;
                 opacity: 1;
-                transform: none;
             }
         }
         .strategy-card-grid {
             display: grid;
             grid-template-columns: repeat(3, minmax(0, 1fr));
-            gap: 1rem;
+            gap: 2.5rem;
         }
         .strategy-advanced-header {
             display: none;
@@ -1228,14 +892,15 @@
             margin-bottom: 0 !important;
         }
         .dashboard-info-panel {
-            border: 1px solid var(--dashboard-border) !important;
-            border-radius: 10px;
-            background: var(--dashboard-card-bg-solid) !important;
+            border: 0;
+            border-top: 1px solid var(--dashboard-border);
+            border-radius: 0;
+            background: transparent;
             color: var(--dashboard-text);
-            padding: 1.3rem 1.5rem;
+            padding: 0;
         }
         .strategy-detail-card {
-            min-height: 242px;
+            min-height: 0;
             padding: 0;
             overflow: hidden;
             position: relative;
@@ -1245,7 +910,7 @@
             align-items: center;
             justify-content: space-between;
             gap: 0.75rem;
-            padding: 1.05rem 1.2rem 0;
+            padding: 0.9rem 0 0;
         }
         .strategy-detail-card-header[role="button"] {
             cursor: pointer;
@@ -1259,51 +924,36 @@
             align-items: center;
             gap: 0.55rem;
             min-width: 0;
-            font-weight: 780;
+            font-weight: 600;
             color: var(--dashboard-text);
         }
         .strategy-card-header-meta {
             color: var(--dashboard-muted);
-            font-weight: 720;
+            font-weight: 600;
             white-space: nowrap;
         }
         #drawdownCompactLabel {
             display: none;
         }
         .strategy-detail-card-body {
-            padding: 0.85rem 1.2rem 1.15rem;
+            padding: 0.75rem 0 0.5rem;
+        }
+        .strategy-card-icon {
+            display: none !important;
         }
         .strategy-reason-text {
-            color: var(--dashboard-text);
+            color: var(--dashboard-muted);
             font-family: var(--bs-body-font-family);
-            font-size: 0.9rem;
-            font-weight: 650;
+            font-size: 0.86rem;
+            font-weight: 400;
             line-height: 1.55;
             white-space: pre-line;
             position: relative;
             z-index: 1;
         }
-        .strategy-status-card::after {
-            content: "\F26A";
-            font-family: "bootstrap-icons";
-            position: absolute;
-            right: 1.25rem;
-            bottom: 0.7rem;
-            width: 112px;
-            height: 112px;
-            border-radius: 50%;
-            border: 6px solid var(--dashboard-border);
-            color: var(--dashboard-border);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 3.1rem;
-            opacity: 0.55;
-            pointer-events: none;
-        }
         .desktop-drawdown-mode-controls .btn,
         .drawdown-mode-btn {
-            font-weight: 760;
+            font-weight: 600;
         }
         .mobile-drawdown-mode-controls {
             display: none;
@@ -1316,7 +966,7 @@
             align-items: center;
             gap: 0.35rem;
             padding: 0;
-            font-weight: 720;
+            font-weight: 600;
         }
         .drawdown-body-layout {
             display: grid;
@@ -1328,19 +978,20 @@
         .bottoming-metric-list dt {
             color: var(--dashboard-muted);
             font-size: 0.82rem;
-            font-weight: 650;
+            font-weight: 600;
         }
         .drawdown-large-value {
             color: var(--dashboard-text);
             display: block;
+            font-family: var(--font-mono);
             font-size: 1.18rem;
-            font-weight: 800;
+            font-weight: 400;
             line-height: 1.15;
             margin: 0.18rem 0 0.52rem;
         }
         .drawdown-comparable {
             color: var(--dashboard-text);
-            font-weight: 780;
+            font-weight: 600;
             margin-top: 0.65rem;
         }
         .drawdown-comparable-range {
@@ -1378,40 +1029,12 @@
         }
         .bottoming-metric-list dd {
             color: var(--dashboard-text);
-            font-weight: 780;
+            font-weight: 600;
             margin: 0;
             text-align: right;
         }
         .bottoming-macro-list {
             margin-top: 0.2rem;
-        }
-        .strategy-actions {
-            display: flex;
-            justify-content: flex-end;
-            margin-top: 1rem;
-        }
-        .table {
-            --bs-table-bg: transparent;
-            --bs-table-color: var(--dashboard-text);
-            --bs-table-hover-bg: var(--dashboard-accent-softer);
-            border-color: var(--dashboard-border);
-        }
-        .table > :not(caption) > * > * {
-            padding: 0.86rem 1rem;
-            border-bottom-color: var(--dashboard-border);
-        }
-        .table-light {
-            --bs-table-bg: var(--dashboard-card-bg-solid);
-            --bs-table-color: var(--dashboard-muted);
-            --bs-table-border-color: var(--dashboard-border);
-            text-transform: none;
-            font-size: 0.88rem;
-        }
-        .mobile-transaction-card-list {
-            padding: 0.75rem;
-        }
-        .text-warning {
-            color: var(--dashboard-accent) !important;
         }
         /* Mobile optimization */
         @media (max-width: 992px) {
@@ -1424,12 +1047,6 @@
             .extra-buy-impact-box {
                 grid-column: 1 / -1;
             }
-            .strategy-metric-grid {
-                grid-template-columns: repeat(2, minmax(0, 1fr));
-            }
-            .strategy-metric:nth-child(2n) {
-                border-right: 0;
-            }
         }
         @media (max-width: 768px) {
             body {
@@ -1438,144 +1055,6 @@
             }
 
             .dashboard-mobile-only,
-            .dashboard-mobile-only-card {
-                display: block;
-            }
-            .metric-label {
-                font-size: 0.72rem;
-                margin-bottom: 0.48rem !important;
-            }
-            .metric-value {
-                font-size: 1.45rem;
-                letter-spacing: 0;
-                margin-bottom: 0.42rem !important;
-            }
-
-            .metric-subtext {
-                font-size: 0.8rem;
-            }
-
-            .dashboard-accent-progress {
-                height: 5px;
-                margin-top: 0.48rem;
-            }
-            .dashboard-page .dashboard-panel-header,
-            .dashboard-page .card-header.dashboard-panel-header {
-                padding: 0.6rem 0.72rem;
-            }
-            .dca-strategy-panel .dashboard-panel-header {
-                padding: 0.48rem 0.72rem !important;
-                gap: 0.34rem !important;
-            }
-            .dashboard-panel-title {
-                font-size: 0.96rem;
-            }
-            .dca-strategy-panel .card-body {
-                padding: 0.42rem 0.58rem 0.56rem !important;
-            }
-            .strategy-status-pills {
-                justify-content: flex-start;
-                flex-wrap: nowrap;
-                gap: 0.42rem;
-                overflow-x: hidden;
-            }
-            #scheduleDisplay,
-            #execModeBadge,
-            #dataSourceBadge,
-            #fixedDcaCapBadge {
-                font-size: 0.64rem;
-                padding: 0.24rem 0.34rem;
-                white-space: nowrap;
-            }
-            #fixedDcaCapBadge {
-                max-width: 8.6rem;
-                overflow: hidden;
-                text-overflow: ellipsis;
-            }
-            #fixedDcaCapBadgeText {
-                overflow: hidden;
-                text-overflow: ellipsis;
-                white-space: nowrap;
-            }
-            #execModeBadge.live-mode-active {
-                gap: 0.26rem;
-            }
-            .live-mode-dot {
-                width: 0.42rem;
-                height: 0.42rem;
-            }
-            .strategy-metric-grid {
-                grid-template-columns: repeat(2, minmax(0, 1fr));
-                margin-bottom: 0.6rem !important;
-            }
-            .strategy-metric,
-            .strategy-metric:nth-child(2n),
-            .strategy-metric:nth-child(2n - 1) {
-                border-right: 1px solid var(--dashboard-border);
-                border-bottom: 1px solid var(--dashboard-border);
-            }
-            .strategy-metric:nth-child(2n) {
-                border-right: 0;
-            }
-            .strategy-metric:last-child {
-                border-right: 0;
-                border-bottom: 0;
-            }
-            .strategy-metric {
-                min-height: 44px;
-                padding: 0.26rem 0.34rem;
-                grid-template-columns: minmax(0, 1fr);
-                gap: 0.2rem;
-            }
-            .strategy-metric-content {
-                min-height: 32px;
-            }
-            .strategy-action-coin {
-                width: 22px;
-                height: 22px;
-                font-size: 0.78rem;
-            }
-            .strategy-label {
-                font-size: 0.55rem;
-                margin-bottom: 0.22rem !important;
-            }
-            .strategy-value {
-                font-size: 0.78rem;
-            }
-            .strategy-action-panel-desktop {
-                display: none;
-            }
-            .strategy-action-panel-mobile {
-                display: flex;
-            }
-            .strategy-action-panel {
-                min-height: 94px;
-                margin-bottom: 0.6rem;
-                padding: 0.72rem 0.72rem;
-                border: 1px solid var(--dashboard-border);
-                border-radius: 10px;
-                gap: 0.7rem;
-            }
-            .strategy-action-panel .strategy-label {
-                font-size: 0.67rem;
-                margin-bottom: 0.62rem !important;
-            }
-            .strategy-action-main {
-                gap: 0.56rem;
-            }
-            .strategy-action-status-icon {
-                width: 24px;
-                height: 24px;
-                font-size: 0.84rem;
-            }
-            .strategy-action-panel .strategy-action {
-                font-size: 1.08rem;
-                line-height: 1.1;
-            }
-            .strategy-action-subtext {
-                margin-top: 0.36rem;
-                font-size: 0.76rem;
-            }
             .strategy-card-grid {
                 grid-template-columns: 1fr;
                 gap: 0.5rem;
@@ -1607,7 +1086,7 @@
                 display: block;
                 color: var(--dashboard-text);
                 font-size: 0.96rem;
-                font-weight: 780;
+                font-weight: 600;
                 line-height: 1.2;
             }
             .strategy-advanced-summary {
@@ -1615,7 +1094,7 @@
                 margin-top: 0.16rem;
                 color: var(--dashboard-muted);
                 font-size: 0.7rem;
-                font-weight: 650;
+                font-weight: 600;
                 line-height: 1.25;
             }
             .strategy-advanced-body {
@@ -1669,7 +1148,7 @@
                 flex: 0 1 auto;
                 color: var(--dashboard-muted);
                 font-size: 0.96rem;
-                font-weight: 720;
+                font-weight: 600;
                 line-height: 1.2;
                 text-align: right;
             }
@@ -1692,7 +1171,6 @@
                 font-size: 0.7rem;
                 padding: 0.24rem 0.34rem;
             }
-            .strategy-status-card::after,
             .drawdown-sparkline {
                 display: none;
             }
@@ -1721,14 +1199,6 @@
             }
             .bottoming-macro-list {
                 margin-top: 0.3rem;
-            }
-            .strategy-actions {
-                margin-top: 0.4rem;
-            }
-            .strategy-actions .btn {
-                min-height: 32px;
-                padding: 0.3rem 0.5rem;
-                width: 100%;
             }
             .extra-buy-modal-dialog {
                 width: calc(100vw - 1.4rem);
@@ -1995,18 +1465,17 @@
             }
             .mobile-transaction-card-list {
                 display: grid;
-                gap: 0.5rem;
-                padding: 0.75rem;
+                gap: 0;
+                padding: 0;
+                border-top: 1px solid var(--dashboard-border);
             }
             .mobile-transaction-card {
                 display: grid;
                 grid-template-columns: 32px minmax(0, 1fr) auto;
-                gap: 0.7rem;
+                gap: 0.75rem;
                 align-items: center;
-                border: 1px solid var(--dashboard-border);
-                border-radius: 10px;
-                background: var(--dashboard-card-bg-solid);
-                padding: 0.78rem 0.82rem;
+                border-bottom: 1px solid var(--dashboard-border);
+                padding: 0.8rem 0;
             }
             .mobile-transaction-status {
                 width: 24px;
@@ -2015,13 +1484,13 @@
                 display: inline-flex;
                 align-items: center;
                 justify-content: center;
-                color: #0f8f46;
-                background: rgba(22, 163, 74, 0.14);
+                color: var(--dashboard-success);
+                background: var(--dashboard-success-soft);
                 font-size: 0.78rem;
             }
             .mobile-transaction-status.failed {
-                color: #b91c1c;
-                background: rgba(220, 38, 38, 0.12);
+                color: var(--dashboard-danger);
+                background: var(--dashboard-danger-soft);
             }
             .mobile-transaction-main,
             .mobile-transaction-amounts {
@@ -2032,7 +1501,7 @@
                 display: block;
                 color: var(--dashboard-text);
                 font-size: 0.9rem;
-                font-weight: 820;
+                font-weight: 600;
                 line-height: 1.1;
             }
             .mobile-transaction-time,
@@ -2050,7 +1519,7 @@
                 background: var(--dashboard-accent-softer);
                 color: var(--dashboard-text);
                 font-size: 0.62rem;
-                font-weight: 800;
+                font-weight: 600;
                 padding: 0.14rem 0.32rem;
             }
             .mobile-transaction-amounts {
@@ -2069,8 +1538,12 @@
         {% set active_page = 'dashboard' %}
         {% include "_shared_header.html" %}
 
-        <!-- Holdings: BTC held, target progress and the reserve chart -->
-        <section id="reserveChart" class="dashboard-panel reserve-panel holdings-hero" aria-labelledby="holdingsTitle">
+        <div id="metricsWarning" class="alert alert-danger d-none">
+            <strong>Warning:</strong> Metrics are stale or unavailable. DCA execution disabled.
+        </div>
+
+        <!-- Holdings, the next buy and the reserve chart -->
+        <section id="reserveChart" class="reserve-panel holdings-hero" aria-labelledby="holdingsTitle">
             <h1 id="holdingsTitle" class="visually-hidden">Your bitcoin</h1>
             <div id="walletError" class="alert alert-warning d-none mb-0">
                 Binance is not connected, so hot wallet holdings are missing. <a class="alert-link" href="/settings/binance">Connect Binance</a>
@@ -2080,26 +1553,34 @@
                     <span class="reserve-readout-label">Bitcoin held</span>
                     <span class="reserve-readout-btc"><span class="reserve-btc-symbol">₿</span>--</span>
                 </div>
-                <div class="holdings-target">
-                    <div class="holdings-target-head">
-                        <span class="holdings-target-label">Target</span>
-                        <span class="holdings-target-percent" id="progressPercent">--%</span>
+
+                <aside class="next-buy-card strategy-action-panel is-waiting" id="strategyActionPanel" aria-labelledby="nextBuyTitle">
+                    <div class="next-buy-head">
+                        <h2 class="next-buy-label" id="nextBuyTitle">Next buy</h2>
+                        <span id="execModeBadge" class="badge bg-secondary">Loading…</span>
                     </div>
-                    <div class="progress dashboard-accent-progress" aria-label="Progress to target">
-                        <div id="progressBar" class="progress-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" style="width: 0%"></div>
+                    <p class="next-buy-action strategy-action" id="previewAction">--</p>
+                    <p class="next-buy-when" id="previewActionSubtext">--</p>
+                    <div class="next-buy-signal">
+                        <p id="nextBuySignal">AHR999 <span class="num" id="previewAhr">--</span> · <span id="previewBand">--</span></p>
+                        <ol class="strategy-ladder" id="strategyLadder" aria-label="Strategy tiers" hidden></ol>
+                        <div class="strategy-ladder-scale" id="strategyLadderScale" aria-hidden="true" hidden><span>Cheap</span><span>Expensive</span></div>
+                        <span class="next-buy-cap d-none" id="fixedDcaCapBadge" title="">
+                            <i class="bi bi-shield-check" aria-hidden="true"></i>
+                            <span id="fixedDcaCapBadgeText"></span>
+                        </span>
                     </div>
-                    <div class="holdings-target-meta">₿<span id="totalBtc">--</span> of ₿<span id="targetAmount">--</span></div>
-                    <div class="holdings-target-eta" id="targetEta"></div>
-                    <dl class="holdings-wallets">
-                        <div><dt>Binance</dt><dd>₿<span id="hotBalance">--</span></dd></div>
-                        <div><dt>Cold storage</dt><dd>₿<span id="coldBalance">--</span> <button class="holdings-edit" type="button" data-bs-toggle="modal" data-bs-target="#setColdWalletModal" aria-label="Edit cold storage balance">Edit</button></dd></div>
-                        <div id="quoteBalanceRow"><dt>USDC to spend</dt><dd id="quoteBalance">--</dd></div>
-                    </dl>
-                </div>
+                    <div class="next-buy-actions">
+                        <button id="openAddPositionBtn" class="btn btn-dashboard-accent" disabled data-bs-toggle="modal" data-bs-target="#addPositionModal">
+                            Extra buy
+                        </button>
+                        <a href="/strategy">Edit strategy</a>
+                    </div>
+                </aside>
             </div>
-            <canvas class="reserve-canvas" tabindex="0" role="img" aria-label="BTC price, your average cost and weekly buys. Move the pointer or use the arrow keys to read a day."></canvas>
-            <p class="reserve-empty">Your chart appears after the first purchase.</p>
-            <div class="reserve-foot">
+
+            <div class="reserve-chart-head">
+                <h2 class="home-section-title">Price and your cost</h2>
                 <div class="reserve-legend" aria-hidden="true">
                     <span><i class="reserve-key reserve-key-price"></i>BTC price</span>
                     <span><i class="reserve-key reserve-key-avg"></i>Your avg cost</span>
@@ -2112,241 +1593,287 @@
                     <button type="button" data-range="all" aria-pressed="false">All</button>
                 </div>
             </div>
+            <canvas class="reserve-canvas" tabindex="0" role="img" aria-label="BTC price, your average cost and weekly buys. Move the pointer or use the arrow keys to read a day."></canvas>
+            <p class="reserve-empty">Your chart appears after the first purchase.</p>
         </section>
 
-        <!-- DCA Control Section -->
-        <section class="card dashboard-panel dca-strategy-panel mb-4">
-            <div class="card-header dashboard-panel-header d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-3">
-                <h5 class="dashboard-panel-title mb-0">DCA Strategy</h5>
-                <div class="strategy-status-pills">
-                    <span id="execModeBadge" class="badge bg-secondary">Mode: Loading...</span>
-                    <span id="dataSourceBadge" class="badge bg-secondary">Source: --</span>
-                    <span id="scheduleDisplay" class="badge satsflow-info-badge">Loading Schedule...</span>
-                    <span class="badge d-none" id="fixedDcaCapBadge" title="">
-                        <i class="bi bi-shield-check" aria-hidden="true"></i>
-                        <span id="fixedDcaCapBadgeText"></span>
+        <!-- Goal, budget and market -->
+        <div class="home-trio">
+            <section class="holdings-target" aria-labelledby="goalTitle">
+                <h2 class="section-label" id="goalTitle">Goal</h2>
+                <div class="goal-row">
+                    <svg class="goal-ring" viewBox="0 0 64 64" aria-hidden="true" focusable="false">
+                        <circle class="goal-ring-track" cx="32" cy="32" r="27"></circle>
+                        <circle class="goal-ring-fill" id="goalRingFill" cx="32" cy="32" r="27" stroke-dasharray="0 170" transform="rotate(-90 32 32)"></circle>
+                    </svg>
+                    <div>
+                        <p class="trio-figure"><span id="progressPercent">--%</span><small>of ₿<span id="targetAmount">--</span></small></p>
+                        <p class="trio-note holdings-target-eta" id="targetEta"></p>
+                    </div>
+                </div>
+                <div class="progress dashboard-accent-progress visually-hidden" aria-label="Progress to target">
+                    <div id="progressBar" class="progress-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" style="width: 0%"></div>
+                </div>
+                <dl class="ledger-list holdings-wallets">
+                    <div><dt>Total</dt><dd>₿<span id="totalBtc">--</span></dd></div>
+                    <div><dt>Binance</dt><dd>₿<span id="hotBalance">--</span></dd></div>
+                    <div><dt>Cold storage</dt><dd>₿<span id="coldBalance">--</span> <button class="holdings-edit" type="button" data-bs-toggle="modal" data-bs-target="#setColdWalletModal" aria-label="Edit cold storage balance">Edit</button></dd></div>
+                </dl>
+            </section>
+
+            <section aria-labelledby="budgetTitle">
+                <h2 class="section-label" id="budgetTitle">Budget</h2>
+                <p class="trio-figure"><span id="remainingBudget" data-bs-toggle="tooltip" data-bs-placement="top" title="Loading budget information...">--</span><small id="budgetCaption">left this month</small></p>
+                <div class="progress dashboard-accent-progress" aria-label="Monthly budget spent">
+                    <div id="budgetSpentBar" class="progress-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" style="width: 0%"></div>
+                </div>
+                <dl class="ledger-list">
+                    <div id="quoteBalanceRow"><dt>USDC to spend</dt><dd id="quoteBalance">--</dd></div>
+                    <div><dt>Schedule</dt><dd class="is-text"><span id="scheduleDisplay">Loading...</span></dd></div>
+                </dl>
+            </section>
+
+            <section aria-labelledby="marketTitle">
+                <h2 class="section-label" id="marketTitle">Market</h2>
+                <p class="trio-figure"><span id="previewPrice">--</span><small>BTC price</small></p>
+                <dl class="ledger-list">
+                    <div><dt>AHR999</dt><dd id="marketAhr">--</dd></div>
+                    <div><dt>Strategy tier</dt><dd class="is-text" id="marketTier">--</dd></div>
+                    <div><dt>Market data</dt><dd class="is-text"><span class="live-dot" aria-hidden="true"></span><span id="dataSourceBadge">--</span></dd></div>
+                </dl>
+            </section>
+        </div>
+
+        <!-- Why the strategy decided what it did -->
+        <section class="home-section dca-strategy-panel" aria-labelledby="strategyDetailsTitle">
+            <div class="home-section-head">
+                <h2 class="home-section-title" id="strategyDetailsTitle">DCA Strategy</h2>
+            </div>
+            <div class="strategy-advanced-panel mobile-collapsible is-collapsed mb-3">
+                <div class="strategy-advanced-header" role="button" tabindex="0" data-strategy-accordion-toggle aria-expanded="false" aria-controls="strategyAdvancedBody">
+                    <div class="strategy-advanced-title">
+                        <strong>Advanced</strong>
+                        <span class="strategy-advanced-summary">Status · Drawdown Context · Bottoming Checklist</span>
+                    </div>
+                    <span class="strategy-card-collapse-toggle" aria-hidden="true">
+                        <i class="bi bi-chevron-down"></i>
                     </span>
                 </div>
-            </div>
-            <div class="card-body">
-                <div id="metricsWarning" class="alert alert-danger d-none">
-                    <strong>Warning:</strong> Metrics are stale or unavailable. DCA execution disabled.
-                </div>
-                <div class="strategy-metric-grid mb-4">
-                    <div class="strategy-metric">
-                        <div class="strategy-metric-content">
-                            <div class="strategy-label mb-3">AHR999 Index</div>
-                            <div class="strategy-value" id="previewAhr">--</div>
-                        </div>
-                    </div>
-                    <div class="strategy-metric">
-                        <div class="strategy-metric-content">
-                            <div class="strategy-label mb-3">Current Price</div>
-                            <div class="strategy-value" id="previewPrice">--</div>
-                        </div>
-                    </div>
-                    <div class="strategy-metric">
-                        <div class="strategy-metric-content">
-                            <div class="strategy-label mb-3">Strategy Band</div>
-                            <div class="strategy-value" id="previewBand">--</div>
-                        </div>
-                    </div>
-                    <div class="strategy-metric">
-                        <div class="strategy-metric-content">
-                            <div class="strategy-label mb-3">Remaining Budget</div>
-                            <div class="strategy-value" id="remainingBudget" style="cursor: help;" data-bs-toggle="tooltip" data-bs-placement="top" title="Loading budget information...">--</div>
-                            <div class="metric-subtext">Monthly</div>
-                        </div>
-                    </div>
-                    <div class="strategy-action-panel strategy-action-panel-desktop is-waiting" id="strategyActionPanel">
-                        <div class="strategy-action-panel-content">
-                            <div class="strategy-label mb-3">Next Scheduled Action</div>
-                            <div class="strategy-action-main">
-                                <span class="strategy-action-status-icon" aria-hidden="true">
-                                    <i class="bi bi-clock"></i>
-                                </span>
-                                <div class="strategy-action-copy">
-                                    <div class="strategy-value strategy-action" id="previewAction">--</div>
-                                    <div class="strategy-action-subtext" id="previewActionSubtext">--</div>
-                                </div>
-                            </div>
-                        </div>
-                        <span class="strategy-action-coin" aria-hidden="true">₿</span>
-                    </div>
-                </div>
-
-                <div class="strategy-action-panel strategy-action-panel-mobile is-waiting" id="strategyActionPanelMobile">
-                    <div class="strategy-action-panel-content">
-                        <div class="strategy-label mb-3">Next Scheduled Action</div>
-                        <div class="strategy-action-main">
-                            <span class="strategy-action-status-icon" aria-hidden="true">
-                                <i class="bi bi-clock"></i>
-                            </span>
-                            <div class="strategy-action-copy">
-                                <div class="strategy-value strategy-action" id="previewActionMobile">--</div>
-                                <div class="strategy-action-subtext" id="previewActionSubtextMobile">--</div>
-                            </div>
-                        </div>
-                    </div>
-                    <span class="strategy-action-coin" aria-hidden="true">₿</span>
-                </div>
-                
-                <div class="strategy-advanced-panel mobile-collapsible is-collapsed mb-3">
-                    <div class="strategy-advanced-header" role="button" tabindex="0" data-strategy-accordion-toggle aria-expanded="false" aria-controls="strategyAdvancedBody">
-                        <div class="strategy-advanced-title">
-                            <strong>Advanced</strong>
-                            <span class="strategy-advanced-summary">Status · Drawdown Context · Bottoming Checklist</span>
+                <div class="strategy-advanced-body strategy-card-grid" id="strategyAdvancedBody">
+                <div class="dashboard-info-panel strategy-detail-card strategy-status-card mobile-collapsible is-collapsed" id="previewReasonBox">
+                    <div class="strategy-detail-card-header" role="button" tabindex="0" data-strategy-accordion-toggle aria-expanded="false" aria-controls="strategyStatusBody">
+                        <div class="strategy-detail-card-title">
+                            <span class="strategy-card-icon" aria-hidden="true"><i class="bi bi-currency-bitcoin"></i></span>
+                            <strong>Status</strong>
                         </div>
                         <span class="strategy-card-collapse-toggle" aria-hidden="true">
                             <i class="bi bi-chevron-down"></i>
                         </span>
                     </div>
-                    <div class="strategy-advanced-body strategy-card-grid" id="strategyAdvancedBody">
-                    <div class="dashboard-info-panel strategy-detail-card strategy-status-card mobile-collapsible is-collapsed" id="previewReasonBox">
-                        <div class="strategy-detail-card-header" role="button" tabindex="0" data-strategy-accordion-toggle aria-expanded="false" aria-controls="strategyStatusBody">
-                            <div class="strategy-detail-card-title">
-                                <span class="strategy-card-icon" aria-hidden="true"><i class="bi bi-currency-bitcoin"></i></span>
-                                <strong>Status</strong>
-                            </div>
-                            <span class="strategy-card-collapse-toggle" aria-hidden="true">
-                                <i class="bi bi-chevron-down"></i>
-                            </span>
-                        </div>
-                        <div class="strategy-detail-card-body" id="strategyStatusBody">
-                            <div class="strategy-reason-text" id="previewReason">Loading...</div>
-                        </div>
-                    </div>
-                    <div class="dashboard-info-panel strategy-detail-card strategy-drawdown-card mobile-collapsible is-collapsed">
-                        <div class="strategy-detail-card-header" role="button" tabindex="0" data-strategy-accordion-toggle aria-expanded="false" aria-controls="drawdownCardBody">
-                            <div class="strategy-detail-card-title">
-                                <span class="strategy-card-icon" aria-hidden="true"><i class="bi bi-currency-bitcoin"></i></span>
-                                <strong>Drawdown Context</strong>
-                            </div>
-                            <div class="btn-group btn-group-sm desktop-drawdown-mode-controls" role="group" aria-label="Drawdown Mode">
-                                <button type="button" class="btn btn-outline-secondary drawdown-mode-btn" data-mode="ath">ATH</button>
-                                <button type="button" class="btn btn-outline-secondary drawdown-mode-btn" data-mode="365d">365D</button>
-                                <button type="button" class="btn btn-outline-secondary drawdown-mode-btn active" data-mode="180d">180D</button>
-                            </div>
-                            <span class="strategy-card-header-meta" id="drawdownCompactLabel">180D --</span>
-                            <span class="strategy-card-collapse-toggle" aria-hidden="true">
-                                <i class="bi bi-chevron-down"></i>
-                            </span>
-                        </div>
-                        <div class="strategy-detail-card-body" id="drawdownCardBody">
-                            <div class="btn-group btn-group-sm mobile-drawdown-mode-controls" role="group" aria-label="Mobile Drawdown Mode">
-                                <button type="button" class="btn btn-outline-secondary drawdown-mode-btn" data-mode="ath">ATH</button>
-                                <button type="button" class="btn btn-outline-secondary drawdown-mode-btn" data-mode="365d">365D</button>
-                                <button type="button" class="btn btn-outline-secondary drawdown-mode-btn active" data-mode="180d">180D</button>
-                            </div>
-                            <div class="drawdown-body-layout">
-                                <div>
-                                    <div class="drawdown-kicker" id="drawdownModeLabel">180D Drawdown</div>
-                                    <strong class="drawdown-large-value" id="drawdownPercent">--</strong>
-                                    <div class="drawdown-kicker">Percentile</div>
-                                    <strong class="drawdown-large-value" id="drawdownPercentile">--</strong>
-                                    <div class="metric-subtext" id="drawdownDeeper">--</div>
-                                    <div class="metric-subtext" id="drawdownHistoryMeta">--</div>
-                                    <div class="drawdown-comparable">Recent Comparable</div>
-                                    <div><strong id="drawdownComparableDate">--</strong></div>
-                                    <div class="drawdown-comparable-range" id="drawdownComparableRange">--</div>
-                                </div>
-                                <div class="drawdown-sparkline" aria-hidden="true">
-                                    <svg viewBox="0 0 140 72" preserveAspectRatio="none" focusable="false">
-                                        <polyline points="0,45 12,42 20,51 30,31 41,37 53,26 62,55 75,47 88,58 96,38 108,44 118,23 128,36 140,31" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></polyline>
-                                    </svg>
-                                </div>
-                            </div>
-                            <div class="visually-hidden" id="drawdownDetails">Loading drawdown context...</div>
-                        </div>
-                    </div>
-                    <div class="dashboard-info-panel strategy-detail-card strategy-bottoming-card mobile-collapsible is-collapsed" id="bottomingSignalBox" style="display: none;">
-                        <div class="strategy-detail-card-header" role="button" tabindex="0" data-strategy-accordion-toggle aria-expanded="false" aria-controls="bottomingCardBody">
-                            <div class="strategy-detail-card-title">
-                                <span class="strategy-card-icon" aria-hidden="true"><i class="bi bi-currency-bitcoin"></i></span>
-                                <strong>Bottoming Checklist</strong>
-                            </div>
-                            <div class="strategy-card-header-meta" id="bottomingSignalDate">--</div>
-                            <span class="strategy-card-collapse-toggle" aria-hidden="true">
-                                <i class="bi bi-chevron-down"></i>
-                            </span>
-                        </div>
-                        <div class="strategy-detail-card-body" id="bottomingCardBody">
-                            <div class="bottoming-summary" id="bottomingSignalStatus">Unavailable</div>
-                            <dl class="bottoming-metric-list">
-                                <div><dt>Vol/30D MA</dt><dd id="bottomingVolumeRatio">--</dd></div>
-                                <div><dt>Recent panic (7D)</dt><dd id="bottomingRecentPanic">--</dd></div>
-                                <div><dt>Daily return</dt><dd id="bottomingDailyReturn">--</dd></div>
-                                <div><dt>RSI14</dt><dd id="bottomingRsi14">--</dd></div>
-                                <div><dt>RSI14W proxy</dt><dd id="bottomingRsi14w">--</dd></div>
-                            </dl>
-                            <dl class="bottoming-metric-list bottoming-macro-list" id="bottomingSignalMacro">
-                                <div><dt>Macro risk</dt><dd id="bottomingMacroRisk">--</dd></div>
-                                <div><dt>USD/JPY risk</dt><dd id="bottomingUsdjpyRisk">--</dd></div>
-                                <div><dt>MA regime</dt><dd id="bottomingMaRegime">--</dd></div>
-                            </dl>
-                            <div class="visually-hidden" id="bottomingSignalMetrics"></div>
-                        </div>
-                    </div>
+                    <div class="strategy-detail-card-body" id="strategyStatusBody">
+                        <div class="strategy-reason-text" id="previewReason">Loading...</div>
                     </div>
                 </div>
-
-                <div class="strategy-actions">
-                    <button id="openAddPositionBtn" class="btn btn-dashboard-accent" disabled data-bs-toggle="modal" data-bs-target="#addPositionModal">
-                        Extra Buy
-                    </button>
+                <div class="dashboard-info-panel strategy-detail-card strategy-drawdown-card mobile-collapsible is-collapsed">
+                    <div class="strategy-detail-card-header" role="button" tabindex="0" data-strategy-accordion-toggle aria-expanded="false" aria-controls="drawdownCardBody">
+                        <div class="strategy-detail-card-title">
+                            <span class="strategy-card-icon" aria-hidden="true"><i class="bi bi-currency-bitcoin"></i></span>
+                            <strong>Drawdown Context</strong>
+                        </div>
+                        <div class="btn-group btn-group-sm desktop-drawdown-mode-controls" role="group" aria-label="Drawdown Mode">
+                            <button type="button" class="btn btn-outline-secondary drawdown-mode-btn" data-mode="ath">ATH</button>
+                            <button type="button" class="btn btn-outline-secondary drawdown-mode-btn" data-mode="365d">365D</button>
+                            <button type="button" class="btn btn-outline-secondary drawdown-mode-btn active" data-mode="180d">180D</button>
+                        </div>
+                        <span class="strategy-card-header-meta" id="drawdownCompactLabel">180D --</span>
+                        <span class="strategy-card-collapse-toggle" aria-hidden="true">
+                            <i class="bi bi-chevron-down"></i>
+                        </span>
+                    </div>
+                    <div class="strategy-detail-card-body" id="drawdownCardBody">
+                        <div class="btn-group btn-group-sm mobile-drawdown-mode-controls" role="group" aria-label="Mobile Drawdown Mode">
+                            <button type="button" class="btn btn-outline-secondary drawdown-mode-btn" data-mode="ath">ATH</button>
+                            <button type="button" class="btn btn-outline-secondary drawdown-mode-btn" data-mode="365d">365D</button>
+                            <button type="button" class="btn btn-outline-secondary drawdown-mode-btn active" data-mode="180d">180D</button>
+                        </div>
+                        <div class="drawdown-body-layout">
+                            <div>
+                                <div class="drawdown-kicker" id="drawdownModeLabel">180D Drawdown</div>
+                                <strong class="drawdown-large-value" id="drawdownPercent">--</strong>
+                                <div class="drawdown-kicker">Percentile</div>
+                                <strong class="drawdown-large-value" id="drawdownPercentile">--</strong>
+                                <div class="metric-subtext" id="drawdownDeeper">--</div>
+                                <div class="metric-subtext" id="drawdownHistoryMeta">--</div>
+                                <div class="drawdown-comparable">Recent Comparable</div>
+                                <div><strong id="drawdownComparableDate">--</strong></div>
+                                <div class="drawdown-comparable-range" id="drawdownComparableRange">--</div>
+                            </div>
+                            <div class="drawdown-sparkline" aria-hidden="true">
+                                <svg viewBox="0 0 140 72" preserveAspectRatio="none" focusable="false">
+                                    <polyline points="0,45 12,42 20,51 30,31 41,37 53,26 62,55 75,47 88,58 96,38 108,44 118,23 128,36 140,31" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></polyline>
+                                </svg>
+                            </div>
+                        </div>
+                        <div class="visually-hidden" id="drawdownDetails">Loading drawdown context...</div>
+                    </div>
+                </div>
+                <div class="dashboard-info-panel strategy-detail-card strategy-bottoming-card mobile-collapsible is-collapsed" id="bottomingSignalBox" style="display: none;">
+                    <div class="strategy-detail-card-header" role="button" tabindex="0" data-strategy-accordion-toggle aria-expanded="false" aria-controls="bottomingCardBody">
+                        <div class="strategy-detail-card-title">
+                            <span class="strategy-card-icon" aria-hidden="true"><i class="bi bi-currency-bitcoin"></i></span>
+                            <strong>Bottoming Checklist</strong>
+                        </div>
+                        <div class="strategy-card-header-meta" id="bottomingSignalDate">--</div>
+                        <span class="strategy-card-collapse-toggle" aria-hidden="true">
+                            <i class="bi bi-chevron-down"></i>
+                        </span>
+                    </div>
+                    <div class="strategy-detail-card-body" id="bottomingCardBody">
+                        <div class="bottoming-summary" id="bottomingSignalStatus">Unavailable</div>
+                        <dl class="bottoming-metric-list">
+                            <div><dt>Vol/30D MA</dt><dd id="bottomingVolumeRatio">--</dd></div>
+                            <div><dt>Recent panic (7D)</dt><dd id="bottomingRecentPanic">--</dd></div>
+                            <div><dt>Daily return</dt><dd id="bottomingDailyReturn">--</dd></div>
+                            <div><dt>RSI14</dt><dd id="bottomingRsi14">--</dd></div>
+                            <div><dt>RSI14W proxy</dt><dd id="bottomingRsi14w">--</dd></div>
+                        </dl>
+                        <dl class="bottoming-metric-list bottoming-macro-list" id="bottomingSignalMacro">
+                            <div><dt>Macro risk</dt><dd id="bottomingMacroRisk">--</dd></div>
+                            <div><dt>USD/JPY risk</dt><dd id="bottomingUsdjpyRisk">--</dd></div>
+                            <div><dt>MA regime</dt><dd id="bottomingMaRegime">--</dd></div>
+                        </dl>
+                        <div class="visually-hidden" id="bottomingSignalMetrics"></div>
+                    </div>
+                </div>
                 </div>
             </div>
         </section>
 
-        <section id="buys" class="card dashboard-panel mb-5" aria-labelledby="buysTitle">
-            <div class="card-header dashboard-panel-header d-flex justify-content-between align-items-center">
-                <h5 class="dashboard-panel-title mb-0" id="buysTitle"><span class="text-warning me-2">₿</span>Recent buys</h5>
+        <section id="buys" class="home-section" aria-labelledby="buysTitle">
+            <div class="home-section-head">
+                <h2 class="home-section-title" id="buysTitle">Recent buys</h2>
                 <div class="d-flex flex-wrap gap-2">
-                    <button id="addBuyBtn" class="btn btn-sm btn-primary" type="button" title="Record a buy from another exchange, such as Kraken Pro or Bitvavo">
+                    <button id="addBuyBtn" class="btn btn-sm btn-outline-secondary" type="button" title="Record a buy from another exchange, such as Kraken Pro or Bitvavo">
                         <i class="bi bi-plus-lg"></i> Add buy
                     </button>
-                    <button id="clearSimulatedBtn" class="btn btn-sm btn-outline-danger" title="Downloads your Binance buys again. Buys you added from other exchanges are kept.">
+                    <button id="clearSimulatedBtn" class="btn btn-sm btn-outline-secondary" title="Downloads your Binance buys again. Buys you added from other exchanges are kept.">
                         <i class="bi bi-arrow-clockwise"></i> Re-sync
                     </button>
                 </div>
             </div>
-            <div class="card-body p-0">
-                <div class="table-responsive transactions-table-wrap">
-                    <table class="table table-hover mb-0">
-                        <thead class="table-light">
-                            <tr>
-                                <th>ID</th>
-                                <th>Timestamp</th>
-                                <th>Status</th>
-                                <th>Source</th>
-                                <th>Fiat Amount</th>
-                                <th>Fee</th>
-                                <th>BTC Amount</th>
-                                <th>Price</th>
-                                <th>AHR999</th>
-                                <th class="buys-edit-col"><span class="visually-hidden">Edit</span></th>
-                            </tr>
-                        </thead>
-                        <tbody id="transactionsTable">
-                            <!-- Data will be loaded here -->
-                        </tbody>
-                    </table>
-                </div>
-                <div id="transactionsCards" class="mobile-transaction-card-list" aria-label="Mobile transaction list"></div>
-                <div class="card-footer dashboard-panel-footer">
-                    <button id="showAllBuysBtn" class="btn btn-sm btn-outline-secondary buys-toggle mb-0" type="button" aria-controls="buys" aria-expanded="false">Show all buys</button>
-                    <div class="d-flex justify-content-between align-items-center buys-pagination d-none" id="buysPagination">
-                        <button id="prevPageBtn" class="btn btn-sm btn-outline-secondary" disabled>← Previous</button>
-                        <span id="pageInfo" class="text-muted small">Page 1 of 1</span>
-                        <button id="nextPageBtn" class="btn btn-sm btn-outline-secondary" disabled>Next →</button>
-                    </div>
+            <div class="table-responsive transactions-table-wrap">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>ID</th>
+                            <th>Timestamp</th>
+                            <th>Status</th>
+                            <th>Source</th>
+                            <th>Fiat Amount</th>
+                            <th>Fee</th>
+                            <th>BTC Amount</th>
+                            <th>Price</th>
+                            <th>AHR999</th>
+                            <th class="buys-edit-col"><span class="visually-hidden">Edit</span></th>
+                        </tr>
+                    </thead>
+                    <tbody id="transactionsTable">
+                        <!-- Data will be loaded here -->
+                    </tbody>
+                </table>
+            </div>
+            <div id="transactionsCards" class="mobile-transaction-card-list" aria-label="Mobile transaction list"></div>
+            <div class="dashboard-panel-footer">
+                <button id="showAllBuysBtn" class="btn btn-sm btn-outline-secondary buys-toggle mb-0" type="button" aria-controls="buys" aria-expanded="false">Show all buys</button>
+                <div class="d-flex justify-content-between align-items-center buys-pagination d-none" id="buysPagination">
+                    <button id="prevPageBtn" class="btn btn-sm btn-outline-secondary" disabled>← Previous</button>
+                    <span id="pageInfo" class="text-muted small">Page 1 of 1</span>
+                    <button id="nextPageBtn" class="btn btn-sm btn-outline-secondary" disabled>Next →</button>
                 </div>
             </div>
         </section>
 
     </div>
+    <script src="{{ asset_url('strategy_ladder.js') }}"></script>
     <script>
         window.LOCAL_TIMEZONE = {{ local_timezone | tojson }};
+
+        // Home page "Next buy" card, goal ring and budget bar. Defined first and
+        // self-contained so the cache hydration below can call them safely.
+        function escapeLadderText(value) {
+            return String(value).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+        }
+
+        function renderStrategyLadder(decision, strategy) {
+            if (!decision) return;
+            const ladderApi = window.StrategyLadder || null;
+            const ladder = ladderApi ? ladderApi.buildLadder(decision.ahr_band, strategy || window.__dashboardStrategy || {}) : null;
+            const ahr = Number(decision.ahr999_value);
+            const multiplier = Number(decision.multiplier);
+            const band = typeof decision.ahr_band === 'string' ? decision.ahr_band.trim() : '';
+            const tierText = ladder ? ladder.current.label : (band ? band.toUpperCase() : '--');
+            const multiplierText = ladderApi && Number.isFinite(multiplier) ? ladderApi.formatMultiplier(multiplier) : '';
+            const setText = (id, text) => {
+                const el = document.getElementById(id);
+                if (el) el.textContent = text;
+            };
+            setText('previewBand', multiplierText ? `${tierText} · buying ${multiplierText}` : tierText);
+            setText('marketTier', tierText);
+            if (Number.isFinite(ahr)) setText('marketAhr', ahr.toFixed(2));
+
+            const listEl = document.getElementById('strategyLadder');
+            const scaleEl = document.getElementById('strategyLadderScale');
+            if (!listEl || !scaleEl) return;
+            if (!ladder) {
+                listEl.hidden = true;
+                scaleEl.hidden = true;
+                listEl.textContent = '';
+                return;
+            }
+            listEl.style.setProperty('--ladder-count', ladder.tiers.length);
+            listEl.innerHTML = ladder.tiers.map((tier) => {
+                const text = ladderApi.formatMultiplier(tier.multiplier) || tier.label;
+                const title = `${tier.label} · ${tier.range}`;
+                return `<li class="${tier.current ? 'is-current' : ''}" title="${escapeLadderText(title)}"${tier.current ? ' aria-current="true"' : ''}>${escapeLadderText(text)}</li>`;
+            }).join('');
+            listEl.hidden = false;
+            scaleEl.hidden = false;
+        }
+
+        function setGoalRing(progress) {
+            const ring = document.getElementById('goalRingFill');
+            const pct = Number(progress);
+            if (!ring || !Number.isFinite(pct)) return;
+            const circumference = 2 * Math.PI * 27;
+            const filled = Math.max(0, Math.min(100, pct)) / 100 * circumference;
+            ring.setAttribute('stroke-dasharray', `${filled.toFixed(2)} ${circumference.toFixed(2)}`);
+        }
+
+        function renderBudgetSpent(decision, strategy) {
+            const bar = document.getElementById('budgetSpentBar');
+            const caption = document.getElementById('budgetCaption');
+            if (!bar || !decision) return;
+            const plan = strategy || window.__dashboardStrategy || null;
+            const total = plan ? Number(plan.total_budget_usd) : NaN;
+            const left = Number(decision.remaining_budget);
+            const resets = decision.budget_resets === true || decision.budget_resets === 'true';
+            const track = bar.parentElement;
+            if (!resets || !Number.isFinite(total) || total <= 0 || !Number.isFinite(left)) {
+                if (track) track.hidden = true;
+                if (caption) caption.textContent = resets ? 'left this month' : 'available';
+                return;
+            }
+            const spent = Math.max(0, Math.min(100, Math.round((1 - left / total) * 100)));
+            if (track) track.hidden = false;
+            bar.style.width = `${spent}%`;
+            bar.setAttribute('aria-valuenow', spent);
+            if (caption) {
+                caption.textContent = `left of $${total.toLocaleString(undefined, { maximumFractionDigits: 0 })} this month`;
+            }
+        }
+        window.renderStrategyLadder = renderStrategyLadder;
+        window.renderBudgetSpent = renderBudgetSpent;
+        window.setGoalRing = setGoalRing;
         const dashboardMobileQuery = window.matchMedia ? window.matchMedia('(max-width: 768px)') : null;
 
         function isDashboardCompactViewport() {
@@ -2413,7 +1940,7 @@
             const freq = formatStrategyFrequency(strategy.execution_frequency);
             const mode = (strategy.time_display_mode || 'UTC').toUpperCase();
             const modeLabel = mode === 'LOCAL' ? window.LOCAL_TIMEZONE : 'UTC';
-            const scheduleFullText = `Schedule: ${freq} at ${strategy.execution_time_utc} (${modeLabel})`;
+            const scheduleFullText = `${freq} at ${strategy.execution_time_utc} (${modeLabel})`;
             const scheduleCompactText = `${freq} ${strategy.execution_time_utc}`;
             setResponsiveBadgeText(scheduleDisplayEl, scheduleFullText, scheduleCompactText);
         }
@@ -2522,6 +2049,7 @@
                             progressBarEl.style.width = `${progress}%`;
                             progressBarEl.setAttribute('aria-valuenow', progress);
                         }
+                        if (typeof window.setGoalRing === 'function') window.setGoalRing(progress);
                         window.__dashboardTargetBtc = target;
                     }
                 }
@@ -2557,9 +2085,7 @@
                     setDashboardTextIfPresent('mobilePreviewAhr', ahrValue.toFixed(2));
                 }
                 if (previewBandEl && typeof preview.ahr_band === 'string' && preview.ahr_band.trim() !== '') {
-                    const bandText = preview.ahr_band.toUpperCase();
-                    previewBandEl.textContent = bandText;
-                    setDashboardTextIfPresent('mobilePreviewBand', bandText);
+                    if (typeof window.renderStrategyLadder === 'function') window.renderStrategyLadder(preview, strategy);
                 }
                 if (previewActionEl && typeof preview.can_execute === 'boolean') {
                     window.__latestDrawdownDecision = preview;
@@ -2576,11 +2102,12 @@
                     typeof preview.metrics_source.label === 'string' &&
                     preview.metrics_source.label.trim() !== ''
                 ) {
-                    setResponsiveBadgeText(dataSourceBadgeEl, `Source: ${preview.metrics_source.label}`, preview.metrics_source.label);
+                    setResponsiveBadgeText(dataSourceBadgeEl, preview.metrics_source.label, preview.metrics_source.label);
                     dataSourceBadgeEl.title = preview.metrics_source.label;
                 }
                 if (remainingBudgetEl && remainingBudget !== null) {
                     remainingBudgetEl.textContent = `$${remainingBudget.toFixed(2)}`;
+                    if (typeof window.renderBudgetSpent === 'function') window.renderBudgetSpent(preview, strategy);
                 }
                 if (globalRefreshEl && typeof preview.timestamp === 'string' && preview.timestamp.trim() !== '') {
                     const parsedDate = new Date(preview.timestamp);
@@ -3517,18 +3044,9 @@
         }
 
         function updatePreviewActionState(decision) {
-            const panels = [
-                document.getElementById('strategyActionPanel'),
-                document.getElementById('strategyActionPanelMobile')
-            ].filter(Boolean);
-            const actionEls = [
-                document.getElementById('previewAction'),
-                document.getElementById('previewActionMobile')
-            ].filter(Boolean);
-            const subtextEls = [
-                document.getElementById('previewActionSubtext'),
-                document.getElementById('previewActionSubtextMobile')
-            ].filter(Boolean);
+            const panels = [document.getElementById('strategyActionPanel')].filter(Boolean);
+            const actionEls = [document.getElementById('previewAction')].filter(Boolean);
+            const subtextEls = [document.getElementById('previewActionSubtext')].filter(Boolean);
             if (!panels.length || !actionEls.length || !subtextEls.length || !decision) return;
 
             const strategy = window.__dashboardStrategy || null;
@@ -3567,6 +3085,8 @@
             updateFixedDcaStopCapDisplay(strategy);
             if (window.__latestDrawdownDecision) {
                 updatePreviewActionState(window.__latestDrawdownDecision);
+                if (typeof window.renderStrategyLadder === 'function') window.renderStrategyLadder(window.__latestDrawdownDecision, strategy);
+                if (typeof window.renderBudgetSpent === 'function') window.renderBudgetSpent(window.__latestDrawdownDecision, strategy);
             }
             if (strategy) {
                 currentTimeDisplayMode = (strategy.time_display_mode || 'UTC').toUpperCase();
@@ -3766,9 +3286,7 @@
             // Update metrics display
             document.getElementById('previewAhr').textContent = decision.ahr999_value.toFixed(2);
             setDashboardTextIfPresent('mobilePreviewAhr', decision.ahr999_value.toFixed(2));
-            const bandText = decision.ahr_band.toUpperCase();
-            document.getElementById('previewBand').textContent = bandText;
-            setDashboardTextIfPresent('mobilePreviewBand', bandText);
+            if (typeof window.renderStrategyLadder === 'function') window.renderStrategyLadder(decision);
             window.__latestDrawdownDecision = decision;
             updatePreviewActionState(decision);
             
@@ -3776,7 +3294,7 @@
             const metricsSource = decision.metrics_source || {backend: 'unknown', label: 'Unknown'};
             const sourceBadge = document.getElementById('dataSourceBadge');
             if (sourceBadge) {
-                setResponsiveBadgeText(sourceBadge, `Source: ${metricsSource.label}`, metricsSource.label);
+                setResponsiveBadgeText(sourceBadge, metricsSource.label, metricsSource.label);
                 sourceBadge.title = metricsSource.label; // Tooltip for full label
             }
             
@@ -3801,6 +3319,7 @@
             
             if (decision.remaining_budget !== null && decision.remaining_budget !== undefined) {
                 remainingBudgetElem.textContent = '$' + decision.remaining_budget.toFixed(2);
+                if (typeof window.renderBudgetSpent === 'function') window.renderBudgetSpent(decision);
                 
                 // Set tooltip based on reset behavior
                 // Handle both boolean true and string "true" from JSON
@@ -4967,6 +4486,7 @@
                 window.__dashboardTargetBtc = target;
                 document.getElementById('progressBar').style.width = progress + '%';
                 document.getElementById('progressBar').setAttribute('aria-valuenow', progress);
+                if (typeof window.setGoalRing === 'function') window.setGoalRing(progress);
             }
 
             latestReserveWallet = data;
@@ -5172,14 +4692,13 @@
         function renderVenueBalances(balances) {
             latestVenueBalances = balances;
             const list = document.querySelector('.holdings-wallets');
-            const anchor = document.getElementById('quoteBalanceRow');
-            if (!list || !anchor) return;
+            if (!list) return;
             list.querySelectorAll('[data-venue-row]').forEach(el => el.remove());
             balances.forEach(balance => {
                 const row = document.createElement('div');
                 row.setAttribute('data-venue-row', '');
                 row.innerHTML = `<dt>${escapeHtml(balance.venue)}</dt><dd>₿<span>${balance.btc.toFixed(8)}</span> <button class="holdings-edit" type="button" data-venue="${escapeHtml(balance.venue)}" aria-label="Edit ${escapeHtml(balance.venue)} balance">Edit</button></dd>`;
-                list.insertBefore(row, anchor);
+                list.appendChild(row);
             });
 
             const hint = document.getElementById('coldWalletVenueHint');
@@ -5497,11 +5016,11 @@
                 badge.className = 'badge bg-danger me-2';
                 badge.classList.add('live-mode-active');
                 ensureLiveModeBadgeDot(badge);
-                setResponsiveBadgeText(badge, 'Mode: LIVE', 'LIVE');
+                setResponsiveBadgeText(badge, 'Live', 'Live');
             } else {
                 badge.className = 'badge bg-secondary me-2';
                 removeLiveModeBadgeDot(badge);
-                setResponsiveBadgeText(badge, 'Mode: Dry Run', 'Dry Run');
+                setResponsiveBadgeText(badge, 'Dry run', 'Dry run');
             }
         }
 

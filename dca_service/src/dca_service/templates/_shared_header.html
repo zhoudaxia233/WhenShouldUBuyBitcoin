@@ -1,83 +1,89 @@
-<header class="dashboard-header">
-    <div class="shared-header-layout">
-        <a href="/" class="brand-lockup">
-            <span class="brand-mark" aria-hidden="true">₿</span>
-            <span class="brand-title">{{ project_name }}</span>
-        </a>
-        <div class="shared-header-right">
-            <nav class="nav-actions dashboard-nav d-flex flex-wrap flex-md-nowrap justify-content-center gap-2" aria-label="Primary navigation">
-                <a href="/" class="btn dashboard-nav-btn{% if active_page == 'dashboard' %} active{% endif %}" aria-label="Home" title="Home"{% if active_page == 'dashboard' %} aria-current="page"{% endif %}><i class="bi bi-house"></i> <span class="btn-text">Home</span></a>
-                <a href="/stats" class="btn dashboard-nav-btn{% if active_page == 'stats' %} active{% endif %}" aria-label="Insights" title="Insights"{% if active_page == 'stats' %} aria-current="page"{% endif %}><i class="bi bi-graph-up"></i> <span class="btn-text">Insights</span></a>
-                <div class="dropdown">
-                    <button class="btn dashboard-nav-btn dropdown-toggle{% if active_page in ['strategy', 'settings', 'admin'] %} active{% endif %}" type="button" id="settingsDropdown" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Settings" title="Settings">
-                        <i class="bi bi-sliders"></i> <span class="btn-text">Settings</span>
-                    </button>
-                    <ul class="dropdown-menu" aria-labelledby="settingsDropdown">
-                        <li><a class="dropdown-item" href="/strategy"><i class="bi bi-sliders"></i> Strategy</a></li>
-                        <li><a class="dropdown-item" href="/settings/binance"><i class="bi bi-currency-bitcoin"></i> Binance</a></li>
-                        {% if user and user.is_admin %}
-                        <li><a class="dropdown-item" href="/admin/data-sources"><i class="bi bi-database-check"></i> Diagnostics</a></li>
-                        {% endif %}
-                    </ul>
-                </div>
-                <a href="/analysis/" class="btn dashboard-nav-btn" target="_blank" aria-label="WSUB₿ public site, opens in a new tab" title="WSUB₿ public site"><i class="bi bi-box-arrow-up-right"></i> <span class="btn-text">WSUB₿</span></a>
-            </nav>
-            <div class="header-utility">
-                <button id="themeToggleBtn" type="button" class="btn text-nowrap theme-toggle-btn" aria-label="Toggle theme" title="Toggle theme"></button>
-                {% if active_page == 'dashboard' %}
-                <button id="globalRefreshBtn" type="button" class="btn text-nowrap dashboard-refresh-btn" aria-label="Refresh dashboard" title="Refresh dashboard">
-                    <i class="bi bi-arrow-clockwise" aria-hidden="true"></i>
-                    <span class="visually-hidden">Refresh</span>
-                </button>
-                <span id="globalRefreshTime" class="visually-hidden">Loading...</span>
-                {% elif active_page == 'stats' %}
-                <button id="refreshStatsBtn" type="button" class="btn text-nowrap dashboard-refresh-btn" aria-label="Refresh analytics" title="Refresh analytics">
-                    <i class="bi bi-arrow-clockwise" aria-hidden="true"></i>
-                    <span class="visually-hidden">Refresh</span>
-                </button>
-                {% endif %}
-                {% if user %}
-                <div class="user-chip" aria-label="Signed in account">
-                    <span class="user-avatar" aria-hidden="true"><i class="bi bi-person-circle"></i></span>
-                    <span class="user-email" title="{{ user.email }}">{{ user.email }}</span>
-                    <form method="POST" action="/api/auth/logout" class="logout-form">
-                        <button type="submit" class="btn btn-sm logout-btn">Logout</button>
-                    </form>
-                </div>
-                {% endif %}
-            </div>
+{% set page_labels = {'dashboard': 'Overview', 'stats': 'Insights', 'strategy': 'Strategy', 'settings': 'Binance', 'admin': 'Diagnostics'} %}
+<header class="dashboard-header app-sidebar">
+    <a href="/" class="brand-lockup">
+        <span class="brand-mark" aria-hidden="true">₿</span>
+        <span class="brand-title">{{ project_name }}</span>
+    </a>
+    <nav class="sidebar-nav" aria-label="Primary navigation">
+        <p class="sidebar-group">Portfolio</p>
+        <a href="/" class="sidebar-link{% if active_page == 'dashboard' %} active{% endif %}"{% if active_page == 'dashboard' %} aria-current="page"{% endif %}><i class="bi bi-house" aria-hidden="true"></i><span>Overview</span></a>
+        <a href="/stats" class="sidebar-link{% if active_page == 'stats' %} active{% endif %}"{% if active_page == 'stats' %} aria-current="page"{% endif %}><i class="bi bi-bar-chart-line" aria-hidden="true"></i><span>Insights</span></a>
+        <p class="sidebar-group">Automation</p>
+        <a href="/strategy" class="sidebar-link{% if active_page == 'strategy' %} active{% endif %}"{% if active_page == 'strategy' %} aria-current="page"{% endif %}><i class="bi bi-sliders" aria-hidden="true"></i><span>Strategy</span></a>
+        <a href="/settings/binance" class="sidebar-link{% if active_page == 'settings' %} active{% endif %}"{% if active_page == 'settings' %} aria-current="page"{% endif %}><i class="bi bi-currency-bitcoin" aria-hidden="true"></i><span>Binance</span></a>
+        {% if user and user.is_admin %}
+        <a href="/admin/data-sources" class="sidebar-link{% if active_page == 'admin' %} active{% endif %}"{% if active_page == 'admin' %} aria-current="page"{% endif %}><i class="bi bi-database-check" aria-hidden="true"></i><span>Diagnostics</span></a>
+        {% endif %}
+        <p class="sidebar-group">Elsewhere</p>
+        <a href="/analysis/" class="sidebar-link" target="_blank" rel="noopener" aria-label="WSUB₿ public site, opens in a new tab"><i class="bi bi-globe2" aria-hidden="true"></i><span>WSUB₿</span><i class="bi bi-box-arrow-up-right sidebar-external" aria-hidden="true"></i></a>
+    </nav>
+    {% if user %}
+    <div class="user-chip" aria-label="Signed in account">
+        <span class="user-avatar" aria-hidden="true">{{ user.email[:1] }}</span>
+        <div class="user-meta">
+            <span class="user-email" title="{{ user.email }}">{{ user.email }}</span>
+            <form method="POST" action="/api/auth/logout" class="logout-form">
+                <button type="submit" class="logout-btn">Sign out</button>
+            </form>
         </div>
     </div>
-    <nav class="mobile-bottom-nav" aria-label="Mobile primary navigation">
-        <a href="/" class="mobile-bottom-nav-item{% if active_page == 'dashboard' %} active{% endif %}" aria-label="Home" title="Home"{% if active_page == 'dashboard' %} aria-current="page"{% endif %}>
-            <i class="bi bi-house-fill" aria-hidden="true"></i>
-            <span>Home</span>
-        </a>
-        <a href="/stats" class="mobile-bottom-nav-item{% if active_page == 'stats' %} active{% endif %}" aria-label="Insights" title="Insights"{% if active_page == 'stats' %} aria-current="page"{% endif %}>
-            <i class="bi bi-bar-chart-line-fill" aria-hidden="true"></i>
-            <span>Insights</span>
-        </a>
-        <div class="dropup mobile-bottom-more">
-            <button class="mobile-bottom-nav-item mobile-bottom-nav-button dropdown-toggle{% if active_page in ['strategy', 'settings', 'admin'] %} active{% endif %}" type="button" id="mobileMoreDropdown" data-bs-toggle="dropdown" aria-expanded="false" aria-label="More" title="More">
-                <i class="bi bi-three-dots" aria-hidden="true"></i>
-                <span>More</span>
-            </button>
-            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="mobileMoreDropdown">
-                <li><a class="dropdown-item" href="/strategy"><i class="bi bi-sliders"></i> Strategy</a></li>
-                <li><a class="dropdown-item" href="/settings/binance"><i class="bi bi-currency-bitcoin"></i> Binance</a></li>
-                {% if user and user.is_admin %}
-                <li><a class="dropdown-item" href="/admin/data-sources"><i class="bi bi-database-check"></i> Diagnostics</a></li>
-                {% endif %}
-                <li><a class="dropdown-item" href="/analysis/" target="_blank"><i class="bi bi-box-arrow-up-right"></i> WSUB₿ public site</a></li>
-                {% if user %}
-                <li><hr class="dropdown-divider"></li>
-                <li>
-                    <form method="POST" action="/api/auth/logout" class="logout-form">
-                        <button type="submit" class="dropdown-item"><i class="bi bi-box-arrow-right"></i> Logout</button>
-                    </form>
-                </li>
-                {% endif %}
-            </ul>
-        </div>
-    </nav>
+    {% endif %}
 </header>
+<div class="page-topbar">
+    <a href="/" class="brand-lockup" aria-label="{{ project_name }} home">
+        <span class="brand-mark" aria-hidden="true">₿</span>
+        <span class="brand-title">{{ project_name }}</span>
+    </a>
+    <p class="page-topbar-title">{{ page_labels.get(active_page, '') }}</p>
+    <div class="header-utility">
+        {% if active_page == 'dashboard' %}
+        <span id="globalRefreshTime" class="header-updated"></span>
+        <button id="globalRefreshBtn" type="button" class="btn text-nowrap dashboard-refresh-btn" aria-label="Refresh dashboard" title="Refresh dashboard">
+            <i class="bi bi-arrow-clockwise" aria-hidden="true"></i>
+            <span class="visually-hidden">Refresh</span>
+        </button>
+        {% elif active_page == 'stats' %}
+        <button id="refreshStatsBtn" type="button" class="btn text-nowrap dashboard-refresh-btn" aria-label="Refresh analytics" title="Refresh analytics">
+            <i class="bi bi-arrow-clockwise" aria-hidden="true"></i>
+            <span class="visually-hidden">Refresh</span>
+        </button>
+        {% endif %}
+        <button id="themeToggleBtn" type="button" class="btn text-nowrap theme-toggle-btn" aria-label="Toggle theme" title="Toggle theme"></button>
+    </div>
+</div>
+<nav class="mobile-bottom-nav" aria-label="Mobile primary navigation">
+    <a href="/" class="mobile-bottom-nav-item{% if active_page == 'dashboard' %} active{% endif %}" aria-label="Overview" title="Overview"{% if active_page == 'dashboard' %} aria-current="page"{% endif %}>
+        <i class="bi bi-house" aria-hidden="true"></i>
+        <span>Overview</span>
+    </a>
+    <a href="/stats" class="mobile-bottom-nav-item{% if active_page == 'stats' %} active{% endif %}" aria-label="Insights" title="Insights"{% if active_page == 'stats' %} aria-current="page"{% endif %}>
+        <i class="bi bi-bar-chart-line" aria-hidden="true"></i>
+        <span>Insights</span>
+    </a>
+    <a href="/strategy" class="mobile-bottom-nav-item{% if active_page == 'strategy' %} active{% endif %}" aria-label="Strategy" title="Strategy"{% if active_page == 'strategy' %} aria-current="page"{% endif %}>
+        <i class="bi bi-sliders" aria-hidden="true"></i>
+        <span>Strategy</span>
+    </a>
+    <div class="dropup mobile-bottom-more">
+        <button class="mobile-bottom-nav-item mobile-bottom-nav-button dropdown-toggle{% if active_page in ['settings', 'admin'] %} active{% endif %}" type="button" id="mobileMoreDropdown" data-bs-toggle="dropdown" aria-expanded="false" aria-label="More" title="More">
+            <i class="bi bi-three-dots" aria-hidden="true"></i>
+            <span>More</span>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="mobileMoreDropdown">
+            <li><a class="dropdown-item" href="/settings/binance"><i class="bi bi-currency-bitcoin"></i> Binance</a></li>
+            {% if user and user.is_admin %}
+            <li><a class="dropdown-item" href="/admin/data-sources"><i class="bi bi-database-check"></i> Diagnostics</a></li>
+            {% endif %}
+            <li><a class="dropdown-item" href="/analysis/" target="_blank" rel="noopener"><i class="bi bi-box-arrow-up-right"></i> WSUB₿ public site</a></li>
+            {% if user %}
+            <li><hr class="dropdown-divider"></li>
+            <li class="dropdown-item-text small text-muted text-truncate">{{ user.email }}</li>
+            <li>
+                <form method="POST" action="/api/auth/logout" class="logout-form w-100">
+                    <button type="submit" class="dropdown-item"><i class="bi bi-box-arrow-right"></i> Sign out</button>
+                </form>
+            </li>
+            {% endif %}
+        </ul>
+    </div>
+</nav>
