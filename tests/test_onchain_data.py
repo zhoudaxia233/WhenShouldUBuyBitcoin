@@ -1,5 +1,5 @@
 """Tests for on-chain dataset persistence, merging, and the freshness guard."""
-from datetime import date
+from datetime import date, timedelta
 
 import pandas as pd
 import pytest
@@ -325,7 +325,10 @@ def test_plan_is_empty_when_every_metric_is_fresh():
 
 
 def test_update_fetches_the_stale_plan(monkeypatch):
-    stale = _history({"supply_loss_pct": "2026-07-02"})
+    # update_onchain_metrics plans against the real date, so the other metrics
+    # must be fresh relative to it, not to a fixed day.
+    yesterday = (date.today() - timedelta(days=1)).isoformat()
+    stale = _history({"supply_loss_pct": "2026-07-02"}, end=yesterday)
     monkeypatch.setattr(od, "load_onchain_metrics", lambda: stale)
     monkeypatch.setattr(od, "save_onchain_metrics", lambda df: True)
     monkeypatch.setattr(od, "fetch_fear_and_greed_history", lambda: [])
