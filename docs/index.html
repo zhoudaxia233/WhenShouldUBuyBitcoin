@@ -2448,18 +2448,20 @@
             /* Sections move to a bottom tab bar on phones */
             .site-nav {
                 position: fixed;
-                left: 12px;
-                right: 12px;
-                bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+                left: 0;
+                right: 0;
+                bottom: 0;
                 z-index: 1000;
                 display: grid;
-                grid-template-columns: repeat(5, minmax(0, 1fr));
-                gap: 0;
-                padding: 6px;
+                grid-template-columns: repeat(4, minmax(0, 1fr));
+                gap: 4px;
+                padding: 6px 16px;
+                padding-bottom: calc(6px + env(safe-area-inset-bottom, 0px));
                 margin: 0;
-                border-radius: 20px;
-                background: var(--feature);
-                box-shadow: 0 8px 24px rgba(15, 27, 45, 0.25);
+                background: var(--surface);
+                border-top: 1px solid var(--line);
+                border-radius: 0;
+                box-shadow: none;
             }
 
             .main-tab {
@@ -2467,8 +2469,8 @@
                 gap: 2px;
                 min-height: 52px;
                 padding: 0;
-                border-radius: 14px;
-                color: var(--feature-muted);
+                border-radius: 12px;
+                color: var(--muted);
                 font-size: 11px;
                 font-weight: 600;
             }
@@ -2478,12 +2480,12 @@
             }
 
             .main-tab:hover {
-                color: var(--feature-ink);
+                color: var(--ink);
             }
 
             .main-tab.active {
-                background: rgba(255, 255, 255, 0.14);
-                color: var(--feature-ink);
+                background: var(--bg-soft);
+                color: var(--ink);
             }
 
             .theme-toggle {
