@@ -44,6 +44,10 @@ than speed or agreement.
 - After the user explicitly approves a merge for app, frontend-visible, or
   runtime behavior changes, update the project version first, verify that the
   frontend visibly shows the new version, then merge.
+- Before bumping the version, run `git fetch origin` and take the next version
+  after the one in `origin/main:pyproject.toml`, not the feature branch's copy.
+  Another pull request may have released that number already: two branches
+  that bump the same line to the same value merge without a conflict.
 - Do not bump the project version for process-only, documentation-only, CI-only,
   or agent-instruction-only changes such as updates to this `AGENTS.md` file.
 - After a successful merge, delete both the remote and local feature branches.
