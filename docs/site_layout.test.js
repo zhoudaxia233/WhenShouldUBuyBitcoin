@@ -33,6 +33,32 @@ describe("Site layout", () => {
             expect(html).not.toContain('id="tools-tab"');
         });
 
+        describe("phone tab bar", () => {
+            const phoneNavRule = () => {
+                const match = css.match(/\/\* Sections move to a bottom tab bar on phones \*\/\s*\.site-nav\s*\{([^}]*)\}/);
+                expect(match).not.toBeNull();
+                return match[1];
+            };
+
+            it("has one column per section button, so no slot sits empty", () => {
+                const tabCount = [...html.matchAll(/<button class="main-tab[^"]*" type="button" data-tab=/g)].length;
+                const columns = phoneNavRule().match(/grid-template-columns:\s*repeat\((\d+),/);
+                expect(columns).not.toBeNull();
+                expect(Number(columns[1])).toBe(tabCount);
+            });
+
+            it("is docked full width to the bottom edge, clear of the home indicator", () => {
+                const rule = phoneNavRule();
+                expect(rule).toMatch(/left:\s*0;/);
+                expect(rule).toMatch(/right:\s*0;/);
+                expect(rule).toMatch(/bottom:\s*0;/);
+                expect(rule).toMatch(/padding-bottom:[^;]*env\(safe-area-inset-bottom/);
+                expect(rule).toMatch(/border-top:\s*1px solid var\(--line\)/);
+                // Overrides the pill shape the desktop nav uses
+                expect(rule).toMatch(/border-radius:\s*0;/);
+            });
+        });
+
         it("opens the view named in the address", () => {
             expect(html).toContain("const linkedTab = location.hash.slice(1);");
             expect(html).toContain("history.replaceState");
