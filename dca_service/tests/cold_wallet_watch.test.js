@@ -5,6 +5,7 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
+import { webcrypto } from "node:crypto";
 
 function loadWatch() {
     const source = readFileSync(
@@ -12,7 +13,8 @@ function loadWatch() {
         "utf8",
     );
     const module = { exports: {} };
-    new Function("module", source)(module);
+    // Browsers have crypto.subtle; Node 18 has no global crypto, so pass it in.
+    new Function("module", "crypto", source)(module, webcrypto);
     return module.exports;
 }
 
