@@ -16,9 +16,9 @@
     <!-- Favicon -->
     <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
     
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/notyf@3.10.0/notyf.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-9ndCyUaIbzAi2FUVXJi0CjmCapSmO7SnpJef0486qhLnuZ2cdeRhO02iuK6FUUVM" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" integrity="sha384-QuGBSgV5Im3DzL2z+8Ko9/hqNy/N0O7zwvXAtfd1MvPKWa/UbeLV65cfm4BV5Wgq" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/notyf@3.10.0/notyf.min.css" integrity="sha384-snpJ3knpH6avB6cP1vPkNdmRzCYaCpom/3TNOyvo189BiogXYXQfXkyYpZ2/xADs" crossorigin="anonymous">
     <link rel="stylesheet" href="{{ asset_url('app.css') }}">
     <style>
         .status-badge {
@@ -2147,12 +2147,30 @@
                             Set the total amount of BTC currently in your cold storage (Ledger, Trezor, etc.).
                         </div>
                         <div class="mb-3">
-                            <label class="form-label">Total BTC Balance</label>
+                            <label class="form-label" for="coldWalletInput">Total BTC Balance</label>
                             <input type="number" step="0.00000001" min="0" class="form-control" id="coldWalletInput" required>
-                            <div class="form-text">This replaces the previous value.</div>
+                            <div class="form-text" id="coldWalletInputHelp">This replaces the previous value.</div>
                         </div>
                         <div id="coldWalletVenueHint" class="alert alert-warning small d-none" role="note"></div>
-                        <button type="submit" class="btn btn-primary w-100">Update Balance</button>
+                        <button type="submit" class="btn btn-primary w-100" id="coldWalletSubmit">Update Balance</button>
+                    </form>
+                    <hr>
+                    <form id="coldWalletKeysForm" autocomplete="off">
+                        <label class="form-label" for="coldWalletKeysInput">Or track it from your wallet's public key</label>
+                        <textarea class="form-control font-monospace small" id="coldWalletKeysInput" rows="3" spellcheck="false" autocapitalize="off" placeholder="zpub… or xpub…, one per line"></textarea>
+                        <div class="form-text">
+                            Trezor Suite: account → Details → Show public key (zpub). Ledger Live: account → Edit account → Advanced (xpub).
+                            Native segwit accounts only (addresses starting with bc1q).
+                            The key stays in this browser; the balance is read from mempool.space and only the total is saved here.
+                            Never paste your recovery phrase or a private key.
+                            Pasting keys replaces the ones tracked now.
+                        </div>
+                        <div id="coldWalletKeysCheck" class="small mt-2 d-none" role="status"></div>
+                        <div id="coldWalletKeysError" class="alert alert-warning small mt-2 d-none" role="alert"></div>
+                        <div class="d-flex gap-2 mt-3">
+                            <button type="submit" class="btn btn-primary flex-grow-1" id="coldWalletKeysSubmit">Track and sync</button>
+                            <button type="button" class="btn btn-outline-secondary d-none" id="coldWalletKeysClear">Stop tracking</button>
+                        </div>
                     </form>
                 </div>
             </div>
@@ -2397,9 +2415,10 @@
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/notyf@3.10.0/notyf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" integrity="sha384-geWF76RCwLtnZ8qwWowPQNguL3RmwHVBC9FhGdlKrxdiJJigb/j/68SIy3Te4Bkz" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/notyf@3.10.0/notyf.min.js" integrity="sha384-uuNfwJfjOG2ukYi4eAB11/t3lP4Zjf75a3UhgkLzEpiX8JpJfacpG7Ye+0tiVMxT" crossorigin="anonymous"></script>
     <script src="{{ asset_url('reserve_chart.js') }}"></script>
+    <script src="{{ asset_url('cold_wallet_watch.js') }}"></script>
     <script>
         window.notyf = new Notyf({
             duration: 3000,
@@ -4573,7 +4592,8 @@
                 const strategy = await stratResponse.json();
                 
                 updateWalletUI(data, strategy);
-                
+                syncColdWalletFromKeys();
+
                 // 4. Fetch fresh Binance holdings
                 try {
                     const binanceResponse = await fetch('/api/binance/holdings');
@@ -4620,6 +4640,198 @@
                 console.error(error);
             }
         });
+
+        // Cold storage from extended public keys. The keys live only in this
+        // browser's localStorage and are never shown again in full; only the
+        // summed balance is posted.
+        const COLD_KEYS_STORAGE = 'cold_wallet_public_keys';
+        const COLD_SYNC_STORAGE = 'cold_wallet_public_keys_sync';
+        const COLD_SYNC_INTERVAL_MS = 10 * 60 * 1000;
+        let coldSyncRunning = false;
+        let coldLastSyncAt = 0;  // in memory too, in case localStorage is blocked
+
+        function readColdKeys() {
+            try {
+                const keys = JSON.parse(localStorage.getItem(COLD_KEYS_STORAGE) || '[]');
+                return Array.isArray(keys) ? keys.filter(k => typeof k === 'string') : [];
+            } catch (e) {
+                return [];
+            }
+        }
+
+        function writeColdKeys(keys) {
+            try {
+                // Keys are only saved right after a successful sync with them,
+                // so the sync time stays valid; it goes only with the keys.
+                if (keys.length) {
+                    localStorage.setItem(COLD_KEYS_STORAGE, JSON.stringify(keys));
+                } else {
+                    localStorage.removeItem(COLD_KEYS_STORAGE);
+                    localStorage.removeItem(COLD_SYNC_STORAGE);
+                }
+                return true;
+            } catch (e) {
+                return false;
+            }
+        }
+
+        function readColdSync() {
+            try {
+                return JSON.parse(localStorage.getItem(COLD_SYNC_STORAGE) || 'null');
+            } catch (e) {
+                return null;
+            }
+        }
+
+        // Splits the pasted text into keys, dropping repeats of the same wallet.
+        function parseColdKeysText(text) {
+            const watch = window.ColdWalletWatch;
+            const seen = new Set();
+            const result = [];
+            text.split(/\s+/).filter(Boolean).forEach(t => {
+                const key = watch.parseExtendedPublicKey(t);
+                const id = watch.keyId(key);
+                if (!seen.has(id)) {
+                    seen.add(id);
+                    result.push({ text: t, key: key });
+                }
+            });
+            return result;
+        }
+
+        function renderColdKeysState() {
+            const keys = readColdKeys();
+            const tracking = keys.length > 0;
+            const sync = readColdSync();
+            document.getElementById('coldWalletInput').disabled = tracking;
+            document.getElementById('coldWalletSubmit').disabled = tracking;
+            document.getElementById('coldWalletInputHelp').textContent = tracking
+                ? `Tracked from ${keys.map(k => window.ColdWalletWatch.maskKey(k)).join(', ')}` +
+                  (sync ? `, last synced ${new Date(sync.at).toLocaleString()}.` : '.')
+                : 'This replaces the previous value.';
+            document.getElementById('coldWalletKeysClear').classList.toggle('d-none', !tracking);
+            document.getElementById('coldWalletKeysSubmit').textContent = tracking ? 'Sync now' : 'Track and sync';
+        }
+
+        async function showColdKeysCheck() {
+            const box = document.getElementById('coldWalletKeysCheck');
+            const error = document.getElementById('coldWalletKeysError');
+            error.classList.add('d-none');
+            box.classList.add('d-none');
+            const text = document.getElementById('coldWalletKeysInput').value;
+            if (!text.trim()) return [];
+            try {
+                const parsed = parseColdKeysText(text);
+                const firsts = await Promise.all(parsed.map(p => window.ColdWalletWatch.deriveAddress(p.key, 0, 0)));
+                box.innerHTML = 'First receive address: ' +
+                    firsts.map(a => `<code class="text-break">${escapeHtml(a)}</code>`).join(', ') +
+                    '. It should match the first address in your wallet app.';
+                box.classList.remove('d-none');
+                return parsed;
+            } catch (e) {
+                error.textContent = e.message;
+                error.classList.remove('d-none');
+                return null;
+            }
+        }
+
+        // Reads the balance of the given keys and posts the total. Throws on
+        // any failure, so a partial scan is never saved.
+        async function scanAndPostColdBalance(keys, onProgress) {
+            const watch = window.ColdWalletWatch;
+            const result = await watch.scanBalance(
+                keys, address => watch.mempoolAddressStats(address), { onProgress: onProgress });
+            const balance = result.balanceSats / 1e8;
+            const response = await fetch('/api/wallet/cold-balance', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ balance: balance })
+            });
+            if (!response.ok) throw new Error('Could not save the cold storage balance. Are you still logged in?');
+            coldLastSyncAt = Date.now();
+            try {
+                localStorage.setItem(COLD_SYNC_STORAGE, JSON.stringify({ at: coldLastSyncAt }));
+            } catch (e) { /* the in-memory time still stops a refresh loop */ }
+            return balance;
+        }
+
+        async function syncColdWalletFromKeys() {
+            const texts = readColdKeys();
+            if (!texts.length || coldSyncRunning || !window.ColdWalletWatch) return;
+            const last = Math.max(coldLastSyncAt, (readColdSync() || {}).at || 0);
+            if (Date.now() - last < COLD_SYNC_INTERVAL_MS) return;
+            coldSyncRunning = true;
+            try {
+                await scanAndPostColdBalance(texts.map(t => window.ColdWalletWatch.parseExtendedPublicKey(t)));
+                renderColdKeysState();
+                loadWalletSummary();
+            } catch (e) {
+                coldLastSyncAt = Date.now();  // do not retry on every refresh
+                console.warn('Cold storage sync failed:', e.message);
+            } finally {
+                coldSyncRunning = false;
+            }
+        }
+
+        document.getElementById('coldWalletKeysInput').addEventListener('input', showColdKeysCheck);
+
+        document.getElementById('coldWalletKeysForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (coldSyncRunning) return;
+            const input = document.getElementById('coldWalletKeysInput');
+            const pasted = input.value.trim();
+            let parsed;
+            if (pasted) {
+                parsed = await showColdKeysCheck();
+                if (!parsed || !parsed.length) return;
+            } else {
+                parsed = readColdKeys().map(t => ({ text: t, key: window.ColdWalletWatch.parseExtendedPublicKey(t) }));
+                if (!parsed.length) return;
+            }
+            const button = document.getElementById('coldWalletKeysSubmit');
+            const error = document.getElementById('coldWalletKeysError');
+            button.disabled = true;
+            coldSyncRunning = true;
+            try {
+                const balance = await scanAndPostColdBalance(
+                    parsed.map(p => p.key),
+                    checked => { button.textContent = `Checking address ${checked}…`; });
+                // Save the keys only after they proved to belong to a wallet with history.
+                if (pasted && !writeColdKeys(parsed.map(p => p.text))) {
+                    throw new Error('This browser does not allow saving the key, so it cannot be tracked.');
+                }
+                input.value = '';
+                document.getElementById('coldWalletKeysCheck').classList.add('d-none');
+                notyf.success(`Cold storage synced: ₿${balance.toFixed(8)}`);
+                loadWalletSummary();
+            } catch (err) {
+                error.textContent = err.message || 'Could not sync cold storage.';
+                error.classList.remove('d-none');
+            } finally {
+                coldSyncRunning = false;
+                button.disabled = false;
+                renderColdKeysState();
+            }
+        });
+
+        document.getElementById('coldWalletKeysClear').addEventListener('click', () => {
+            writeColdKeys([]);
+            document.getElementById('coldWalletKeysInput').value = '';
+            document.getElementById('coldWalletKeysCheck').classList.add('d-none');
+            document.getElementById('coldWalletKeysError').classList.add('d-none');
+            renderColdKeysState();
+            notyf.success('Stopped tracking and removed the key from this browser. The last balance stays until you change it.');
+        });
+
+        // Do not leave a pasted key sitting in the closed dialog.
+        document.getElementById('setColdWalletModal').addEventListener('hidden.bs.modal', () => {
+            if (coldSyncRunning) return;
+            document.getElementById('coldWalletKeysInput').value = '';
+            document.getElementById('coldWalletKeysCheck').classList.add('d-none');
+            document.getElementById('coldWalletKeysError').classList.add('d-none');
+        });
+
+        renderColdKeysState();
 
         // Buys and balances on other exchanges (Kraken Pro, Bitvavo, ...): read-only history
         let latestVenueBalances = [];
