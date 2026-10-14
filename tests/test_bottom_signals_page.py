@@ -68,6 +68,23 @@ def test_gauge_svg_contains_needle_and_score():
     assert "<line" in svg and "<circle" in svg
 
 
+@pytest.mark.parametrize("score", range(0, 101, 2))
+def test_gauge_needle_never_crosses_the_score(score):
+    # The score text sits above the gauge centre; a needle from the centre ran
+    # straight through it around 50. Sample the needle and keep it clear of the
+    # box around the score and "/ 100", widened by the needle's stroke.
+    svg = page.gauge_svg(float(score), "Watch", "#6e6e73")
+    x1, y1, x2, y2 = (
+        float(v)
+        for v in re.search(r'<line x1="([\d.]+)" y1="([\d.]+)" x2="([\d.]+)" y2="([\d.]+)"', svg).groups()
+    )
+    half_width = 45 if score == 100 else 33  # 46px bold digits, plus stroke
+    for i in range(21):
+        t = i / 20
+        x, y = x1 + t * (x2 - x1), y1 + t * (y2 - y1)
+        assert not (170 - half_width <= x <= 170 + half_width and 89 <= y <= 157), (score, x, y)
+
+
 def test_sparkline_points_shape():
     pts = page.sparkline_points([1.0, 2.0, 3.0, 2.0])
     pairs = [p.split(",") for p in pts.split()]

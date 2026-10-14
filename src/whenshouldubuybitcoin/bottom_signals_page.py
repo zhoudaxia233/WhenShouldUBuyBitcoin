@@ -108,11 +108,14 @@ def gauge_svg(score: float, zone_label: str, zone_color: str) -> str:
     )
     zone_color = _theme_color(zone_color)
     clamped = max(0.0, min(100.0, float(score)))
-    nx, ny = _polar(cx, cy, r - 40, angle(clamped))
+    # A short pointer just inside the arc: a needle from the centre would run
+    # through the score printed above the centre.
+    bx, by = _polar(cx, cy, r - 30, angle(clamped))
+    tx, ty = _polar(cx, cy, r - 16, angle(clamped))
     needle = (
-        f'<line x1="{cx}" y1="{cy}" x2="{nx:.2f}" y2="{ny:.2f}" '
-        f'style="stroke:{zone_color}" stroke-width="3" stroke-linecap="round"/>'
-        f'<circle cx="{cx}" cy="{cy}" r="6" style="fill:{zone_color}"/>'
+        f'<line x1="{bx:.2f}" y1="{by:.2f}" x2="{tx:.2f}" y2="{ty:.2f}" '
+        f'style="stroke:{zone_color}" stroke-width="4" stroke-linecap="round"/>'
+        f'<circle cx="{bx:.2f}" cy="{by:.2f}" r="4" style="fill:{zone_color}"/>'
     )
     label = (
         f'<text x="{cx}" y="127" style="fill:{zone_color}" font-size="46" '

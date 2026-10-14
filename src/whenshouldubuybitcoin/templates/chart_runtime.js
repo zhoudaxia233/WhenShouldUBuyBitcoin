@@ -41,9 +41,25 @@
         return isCoarsePointer ? "preview" : "interactive";
     }
 
-    function parseTheme(search) {
-        var match = /[?&]theme=([a-z]+)/.exec(search || "");
-        return match && match[1] === "dark" ? "dark" : "light";
+    // The homepage passes ?theme=; a chart opened on its own follows the
+    // homepage's saved choice, then the system setting.
+    function parseTheme(search, savedTheme, prefersDark) {
+        var match = /[?&]theme=(dark|light)\b/.exec(search || "");
+        if (match) return match[1];
+        if (savedTheme === "dark" || savedTheme === "light") return savedTheme;
+        return prefersDark ? "dark" : "light";
+    }
+
+    function savedTheme(win) {
+        try {
+            return win.localStorage.getItem("theme");
+        } catch (err) {
+            return null;
+        }
+    }
+
+    function prefersDark(win) {
+        return !!(win.matchMedia && win.matchMedia("(prefers-color-scheme: dark)").matches);
     }
 
     function parseColor(color) {
@@ -183,7 +199,7 @@
     function start(win) {
         var doc = win.document;
         var mode = parseMode(win.location.search, isTopWindow(win), isCoarsePointer(win));
-        var theme = parseTheme(win.location.search);
+        var theme = parseTheme(win.location.search, savedTheme(win), prefersDark(win));
         doc.documentElement.setAttribute("data-chart-mode", mode);
         doc.documentElement.setAttribute("data-chart-theme", theme);
         if (/[?&]mode=/.test(win.location.search)) {
