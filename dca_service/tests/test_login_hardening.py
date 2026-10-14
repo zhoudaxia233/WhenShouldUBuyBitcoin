@@ -61,6 +61,28 @@ def test_logout_revokes_copied_session_cookie(real_auth_client: TestClient):
     assert response.headers["location"] == "/api/auth/login"
 
 
+def test_login_on_another_device_keeps_existing_sessions(real_auth_client: TestClient):
+    """Only logout revokes sessions; logging in elsewhere must not sign anyone out."""
+    _login(real_auth_client)
+
+    second_device = TestClient(app, follow_redirects=False)
+    _login(second_device)
+
+    assert real_auth_client.get("/api/wallet/summary").status_code == 200
+    assert second_device.get("/api/wallet/summary").status_code == 200
+
+
+@pytest.mark.parametrize(
+    "path",
+    ["/api/auth/login", "/healthz", "/api/version", "/static/favicon.svg", "/analysis/"],
+)
+def test_public_pages_need_no_login(real_auth_client: TestClient, path: str):
+    response = real_auth_client.get(path)
+    if response.status_code == 404 and path == "/analysis/":
+        pytest.skip("docs/ is not present")
+    assert response.status_code == 200
+
+
 def test_session_without_version_is_rejected(real_auth_client: TestClient):
     """Cookies signed before session versions existed must not stay valid."""
     payload = base64.b64encode(json.dumps({"user_id": 1}).encode("utf-8"))
