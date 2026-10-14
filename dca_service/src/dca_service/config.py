@@ -1,10 +1,15 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
+import secrets
 import subprocess
 import sys
 import tomllib
 from pathlib import Path
 
+# Both values are published in this open-source repository. Anyone could sign a
+# login cookie with them, so they are refused instead of used.
 DEV_SESSION_SECRET_DEFAULT = "dev-secret-change-in-production-12345678901234567890"
+ENV_EXAMPLE_SESSION_SECRET = "CHANGE_ME_TO_RANDOM_32_BYTE_STRING"
+PUBLIC_SESSION_SECRETS = {DEV_SESSION_SECRET_DEFAULT, ENV_EXAMPLE_SESSION_SECRET}
 
 
 def _find_repo_root() -> Path:
@@ -78,7 +83,8 @@ class Settings(BaseSettings):
     # Session Settings (for authentication)
     # WARNING: In production, MUST set a strong random SESSION_SECRET
     # Generate with: python -c "import secrets; print(secrets.token_urlsafe(32))"
-    SESSION_SECRET: str = DEV_SESSION_SECRET_DEFAULT  # Insecure default for dev/test
+    # Unset: a random per-process secret is used, so logins end on every restart.
+    SESSION_SECRET: str = ""
     SESSION_COOKIE_NAME: str = "dca_session"
     SESSION_COOKIE_HTTPS_ONLY: bool = False  # Must be True in production with HTTPS. False for local HTTP development.
     SESSION_COOKIE_SAMESITE: str = "lax"  # "lax" or "strict" for CSRF protection
@@ -89,23 +95,30 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
 
-def _enforce_secure_session_secret(settings: "Settings") -> None:
-    """Refuse to boot with the insecure default SESSION_SECRET when secure mode is required.
+def _resolve_session_secret(settings: "Settings") -> None:
+    """Make sure SESSION_SECRET is something only this server knows.
 
-    Set DCA_REQUIRE_SECURE_SESSION=true (or 1/yes) in production to enforce; otherwise we
-    only print a loud warning so dev/test workflows keep working.
+    - A publicly known value always refuses to boot.
+    - Unset with DCA_REQUIRE_SECURE_SESSION=true (production) refuses to boot.
+    - Unset otherwise falls back to a random per-process secret, with a warning.
     """
-    if settings.SESSION_SECRET != DEV_SESSION_SECRET_DEFAULT:
-        return
-
-    msg = (
-        "SESSION_SECRET is the insecure dev default. Generate one with "
+    generate_hint = (
+        "Generate one with "
         "`python -c \"import secrets; print(secrets.token_urlsafe(32))\"` and set it in .env."
     )
+    if settings.SESSION_SECRET in PUBLIC_SESSION_SECRETS:
+        raise RuntimeError(f"SESSION_SECRET is publicly known. {generate_hint}")
+    if settings.SESSION_SECRET:
+        return
     if settings.DCA_REQUIRE_SECURE_SESSION:
-        raise RuntimeError(msg)
-    print(f"WARNING: {msg}", file=sys.stderr)
+        raise RuntimeError(f"SESSION_SECRET is not set. {generate_hint}")
+    settings.SESSION_SECRET = secrets.token_urlsafe(32)
+    print(
+        "WARNING: SESSION_SECRET is not set; using a random one, so logins end on restart. "
+        + generate_hint,
+        file=sys.stderr,
+    )
 
 
 settings = Settings()
-_enforce_secure_session_secret(settings)
+_resolve_session_secret(settings)

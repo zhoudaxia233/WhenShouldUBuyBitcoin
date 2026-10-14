@@ -14,7 +14,7 @@ from pathlib import Path
 
 from dca_service.models import User
 from dca_service.database import get_session
-from dca_service.auth.password import verify_password
+from dca_service.auth.password import hash_password, verify_password
 from dca_service.auth.csrf import get_csrf_token, validate_csrf
 from dca_service.core.logging import logger
 from dca_service.config import settings
@@ -26,6 +26,10 @@ templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
 templates.env.globals["asset_url"] = asset_url
 
 router = APIRouter(prefix="/auth", tags=["auth"])
+
+# Checked against when the email is unknown, so both cases take bcrypt time
+# and response timing does not reveal which emails have accounts.
+_UNKNOWN_USER_PASSWORD_HASH = hash_password("unknown-user-timing-equalizer")
 
 
 @router.get("/login", response_class=HTMLResponse)
@@ -98,8 +102,9 @@ async def login(
     statement = select(User).where(User.email == email)
     user = db.exec(statement).first()
     
-    # Verify password
-    if not user or not verify_password(password, user.password_hash):
+    # Verify password (always run bcrypt, see _UNKNOWN_USER_PASSWORD_HASH)
+    password_hash = user.password_hash if user else _UNKNOWN_USER_PASSWORD_HASH
+    if not verify_password(password, password_hash) or not user:
         logger.warning(f"Failed login attempt for email: {email}")
         csrf_token = get_csrf_token(request)
         return templates.TemplateResponse(
@@ -134,6 +139,7 @@ async def login(
     
     # Create session
     request.session["user_id"] = user.id
+    request.session["session_version"] = user.session_version
     logger.info(f"User logged in: {user.email}")
     
     # Redirect to dashboard/home
@@ -141,16 +147,21 @@ async def login(
 
 
 @router.post("/logout")
-async def logout(request: Request):
+async def logout(request: Request, db: Session = Depends(get_session)):
     """
     Log out the current user.
     
-    Clears the session and redirects to login page.
+    Bumps the user's session version, which revokes every copy of the session
+    cookie (other devices included), then clears this browser's session.
     No CSRF check required for logout (following OWASP guidelines).
     """
-    # Log the action
     user_id = request.session.get("user_id")
     if user_id:
+        user = db.get(User, user_id)
+        if user and request.session.get("session_version") == user.session_version:
+            user.session_version += 1
+            db.add(user)
+            db.commit()
         logger.info(f"User logged out: user_id={user_id}")
     
     # Clear session

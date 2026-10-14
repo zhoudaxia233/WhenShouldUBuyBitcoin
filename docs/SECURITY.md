@@ -17,10 +17,25 @@ DATABASE_URL=sqlite:///./dca.db
 BINANCE_CRED_ENC_KEY=your-encryption-key
 ```
 
+### Required in Production
+```bash
+# Send the session cookie over HTTPS only, and send HSTS (default: false)
+SESSION_COOKIE_HTTPS_ONLY=true
+```
+
+`SESSION_SECRET` handling:
+- A value published in this repository (the old dev default or the
+  `.env.example` placeholder) always refuses to start.
+- An unset secret falls back to a random one that only this process knows.
+  This is safe, but every restart signs you out.
+
 ### Optional Production Overrides
 ```bash
-# Enable HTTPS-only cookies (default: true)
-SESSION_COOKIE_HTTPS_ONLY=true
+# Refuse to start instead of falling back to a random secret (default: false).
+# Only useful when set outside .env (for example in docker-compose.yml
+# `environment:`): if .env is lost, a flag inside it is lost too.
+# Trade-off: a missing secret then takes the whole site down, /analysis included.
+DCA_REQUIRE_SECURE_SESSION=true
 
 # SameSite cookie policy (default: lax)
 SESSION_COOKIE_SAMESITE=lax
@@ -148,8 +163,9 @@ Current requirements (enforced in `create_admin.py`):
 - Implement password expiration policy
 
 ### Session Management
-- Sessions expire after 24 hours (configurable)
-- Sessions cleared on logout
+- Sessions expire after 24 hours of inactivity (configurable)
+- Logout revokes every copy of the session cookie, on all devices
+  (`users.session_version` is stored in the cookie and bumped on logout)
 - Stale sessions automatically invalidated
 
 ### CSRF Protection
