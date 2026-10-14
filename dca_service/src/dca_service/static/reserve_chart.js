@@ -193,10 +193,10 @@
             pnl = '<span class="reserve-pnl ' + (up ? "is-up" : "is-down") + '">' +
                 (up ? "+" : "−") + Math.abs(r.pnlPct).toFixed(1) + "% vs avg cost</span>";
         }
-        var week = r.week
-            ? '<span>' + (r.live ? "This week" : "That week") + ' <b>₿' + formatBtc(r.week.btc) + "</b> · " +
-                r.week.count + (r.week.count === 1 ? " buy" : " buys") + "</span>"
-            : "";
+        // Always present, so the readout keeps its height while scrubbing
+        var week = '<span class="reserve-readout-week">' + (r.live ? "This week" : "That week") + " " + (r.week
+            ? "<b>₿" + formatBtc(r.week.btc) + "</b> · " + r.week.count + (r.week.count === 1 ? " buy" : " buys")
+            : "no buys") + "</span>";
         return '<span class="reserve-readout-label">' + escapeHtml(label) + "</span>" +
             '<span class="reserve-readout-btc"><span class="reserve-btc-symbol">₿</span>' + formatBtc(r.btc) + "</span>" +
             '<span class="reserve-readout-sub">≈ ' + money(r.valueUsd) + " " + pnl + "</span>" +

@@ -91,6 +91,37 @@ def test_reserve_chart_scrolls_vertically_on_touch_and_has_a_mobile_height():
     assert "height: 240px;" in mobile[:400]
 
 
+def _media_block(css: str, query: str) -> str:
+    """The body of the home section's @media block for `query`."""
+    start = css.index("{", css.index(query, css.index("/* ---------- Home: holdings"))) + 1
+    depth = 1
+    for i in range(start, len(css)):
+        depth += {"{": 1, "}": -1}.get(css[i], 0)
+        if depth == 0:
+            return css[start:i]
+    raise AssertionError(f"unterminated {query}")
+
+
+def _rule(block: str, selector: str) -> str:
+    start = block.index(selector + " {")
+    return block[start : block.index("}", start)]
+
+
+def test_stacked_home_keeps_the_readout_on_top_of_the_chart():
+    # Scrubbing the chart updates the readout. Once the hero stacks into one
+    # column, the next-buy card goes below the chart so the readout stays in
+    # view right above the finger, as it does beside the card on desktop.
+    css = (Path(__file__).resolve().parents[1] / "src" / "dca_service" / "static" / "app.css").read_text(encoding="utf-8")
+    stacked = _media_block(css, "@media (max-width: 991.98px)")
+    assert "display: contents;" in _rule(stacked, ".holdings-top")
+    assert "order: 1;" in _rule(stacked, ".next-buy-card")
+
+    # The week line takes its own row on phones, so its text never wraps
+    # into a half-width column and changes the readout height mid-scrub.
+    phone = _media_block(css, "@media (max-width: 767.98px)")
+    assert "grid-column: 1 / -1;" in _rule(phone, ".reserve-readout-week")
+
+
 def test_home_shows_recent_buys_and_expands_to_all_on_request():
     html = _html("index.html")
     section = html[html.index('<section id="buys"') :]
