@@ -2178,7 +2178,7 @@
                                     <li>Copy only the key itself. It starts with <code>xpub</code> or <code>zpub</code>.</li>
                                     <li>Use the native segwit account: its addresses start with <code>bc1q</code> and its derivation path with <code>84'</code>.</li>
                                     <li>Each account has its own key. For several accounts, paste one key per line.</li>
-                                    <li>After pasting, compare the first receive address shown below with the first address in your wallet app.</li>
+                                    <li>After syncing, compare the total with the account's balance in your wallet app.</li>
                                 </ul>
                             </div>
                         </div>
@@ -4730,7 +4730,7 @@
             document.getElementById('coldWalletKeysSubmit').textContent = tracking ? 'Sync now' : 'Track and sync';
         }
 
-        async function showColdKeysCheck() {
+        async function checkColdKeysInput() {
             const box = document.getElementById('coldWalletKeysCheck');
             const error = document.getElementById('coldWalletKeysError');
             error.classList.add('d-none');
@@ -4738,19 +4738,24 @@
             const text = document.getElementById('coldWalletKeysInput').value;
             if (!text.trim()) return [];
             try {
-                const parsed = parseColdKeysText(text);
-                const firsts = await Promise.all(parsed.map(p => window.ColdWalletWatch.deriveAddress(p.key, 0, 0)));
-                box.innerHTML = '<strong><i class="bi bi-exclamation-circle" aria-hidden="true"></i> Check before syncing</strong>' +
-                    '<div class="mt-1">The first receive address of ' + (firsts.length > 1 ? 'each key' : 'this key') +
-                    ' must match the first address in your wallet app:</div>' +
-                    firsts.map(a => `<div class="fw-semibold font-monospace text-break mt-1">${escapeHtml(a)}</div>`).join('');
-                box.classList.remove('d-none');
-                return parsed;
+                return parseColdKeysText(text);
             } catch (e) {
                 error.textContent = e.message;
                 error.classList.remove('d-none');
                 return null;
             }
+        }
+
+        // Wallet apps do not list an account's first address, so the user
+        // confirms the key by comparing the synced total with the app.
+        function showColdSyncResult(balance, keyCount) {
+            const box = document.getElementById('coldWalletKeysCheck');
+            const accounts = keyCount > 1 ? 'these accounts together' : 'this account';
+            box.innerHTML = '<strong><i class="bi bi-exclamation-circle" aria-hidden="true"></i> Check the result</strong>' +
+                `<div class="fs-5 fw-semibold font-monospace mt-1">₿${escapeHtml(balance.toFixed(8))}</div>` +
+                `<div class="mt-1">This must equal the balance in your wallet app for ${accounts}. ` +
+                'If it does not, the key belongs to a different account: click Stop tracking.</div>';
+            box.classList.remove('d-none');
         }
 
         // Reads the balance of the given keys and posts the total. Throws on
@@ -4791,7 +4796,7 @@
             }
         }
 
-        document.getElementById('coldWalletKeysInput').addEventListener('input', showColdKeysCheck);
+        document.getElementById('coldWalletKeysInput').addEventListener('input', checkColdKeysInput);
 
         document.getElementById('coldWalletKeysForm').addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -4800,7 +4805,7 @@
             const pasted = input.value.trim();
             let parsed;
             if (pasted) {
-                parsed = await showColdKeysCheck();
+                parsed = await checkColdKeysInput();
                 if (!parsed || !parsed.length) return;
             } else {
                 parsed = readColdKeys().map(t => ({ text: t, key: window.ColdWalletWatch.parseExtendedPublicKey(t) }));
@@ -4819,7 +4824,7 @@
                     throw new Error('This browser does not allow saving the key, so it cannot be tracked.');
                 }
                 input.value = '';
-                document.getElementById('coldWalletKeysCheck').classList.add('d-none');
+                showColdSyncResult(balance, parsed.length);
                 notyf.success(`Cold storage synced: ₿${balance.toFixed(8)}`);
                 loadWalletSummary();
             } catch (err) {

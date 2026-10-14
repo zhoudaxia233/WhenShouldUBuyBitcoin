@@ -92,7 +92,7 @@ def test_key_help_links_to_vendor_guides_instead_of_copying_their_menus():
     assert "<ol" not in help_block
     for menu_label in ["Edit account", "Advanced logs", "Show public key", "wrench", "sidebar"]:
         assert menu_label not in help_block, menu_label
-    for note in ["xpub", "zpub", "84'", "one key per line", "first receive address"]:
+    for note in ["xpub", "zpub", "84'", "one key per line", "balance"]:
         assert note in help_block, note
 
 
@@ -105,9 +105,11 @@ def test_key_notes_are_listed_one_per_line():
         assert any(note in item for item in items), note
 
 
-def test_first_address_check_stands_out():
-    # Comparing the first address with the wallet app is the user's only
-    # proof that the right key was pasted, so it must not read as fine print.
+def test_sync_result_check_stands_out():
+    # Comparing the synced total with the wallet app is the user's proof that
+    # the right key was pasted. Wallet apps do not list an account's first
+    # address (Ledger's history shows the sender's address on receipts), so
+    # the check is on the balance, and it must not read as fine print.
     html = _dashboard_html()
     box = re.search(r"<div[^>]*id=\"coldWalletKeysCheck\"[^>]*>", html).group(0)
     assert "alert" in box
@@ -115,5 +117,6 @@ def test_first_address_check_stands_out():
 
     block = html[html.index("// Cold storage from extended public keys"):]
     block = block[: block.index("// Buys and balances on other exchanges")]
-    assert "Check before syncing" in block
-    assert "<strong>" in block[block.index("Check before syncing") - 200: block.index("Check before syncing")]
+    assert "<strong>" in block[block.index("Check the result") - 200: block.index("Check the result")]
+    assert "balance in your wallet app" in block
+    assert "first address in your wallet app" not in html
