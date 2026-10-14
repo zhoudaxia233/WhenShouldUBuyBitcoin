@@ -2,6 +2,7 @@ from fastapi.testclient import TestClient
 from sqlmodel import Session, select
 from unittest.mock import MagicMock, patch
 import csv
+from pathlib import Path
 import io
 
 from dca_service.api import stats_api
@@ -581,8 +582,41 @@ def test_realtime_price_endpoint_reuses_cache(client: TestClient):
     assert second_payload["cache_hit"] is True
     assert second_payload["price"] == first_payload["price"]
     assert second_payload["poll_recommendation_seconds"] == 3
-    assert first_payload["cache_ttl_seconds"] > first_payload["poll_recommendation_seconds"]
     assert mock_client.get.call_count == 1
+
+
+def test_realtime_price_each_poll_gets_a_fresh_price():
+    # With a cache longer than the poll, every other poll returned the
+    # previous price. The cache must expire before the next poll, with
+    # margin for timer jitter, and the home page must poll at that pace.
+    assert stats_api.BINANCE_PRICE_CACHE_TTL_SECONDS <= stats_api.BINANCE_SAFE_POLL_SECONDS - 1
+    template = (
+        Path(__file__).resolve().parents[1] / "src" / "dca_service" / "templates" / "index.html"
+    ).read_text(encoding="utf-8")
+    assert f"const ADD_POSITION_PRICE_POLL_INTERVAL_MS = {stats_api.BINANCE_SAFE_POLL_SECONDS * 1000};" in template
+
+    stats_api.BINANCE_PRICE_CACHE.clear()
+    responses = []
+    for price in ("50123.45", "50130.00"):
+        response = MagicMock()
+        response.status_code = 200
+        response.json.return_value = {"symbol": "BTCUSDC", "price": price}
+        responses.append(response)
+    mock_client = MagicMock()
+    mock_client.__enter__.return_value = mock_client
+    mock_client.get.side_effect = responses
+
+    with patch("dca_service.api.stats_api.httpx.Client", return_value=mock_client):
+        first = stats_api._fetch_binance_realtime_price("BTCUSDC")
+        # One poll interval later
+        entry = stats_api.BINANCE_PRICE_CACHE["BTCUSDC"]
+        entry["expires_at"] -= timedelta(seconds=stats_api.BINANCE_SAFE_POLL_SECONDS)
+        second = stats_api._fetch_binance_realtime_price("BTCUSDC")
+
+    assert first["price"] == 50123.45
+    assert second["cache_hit"] is False
+    assert second["price"] == 50130.00
+    assert mock_client.get.call_count == 2
 
 
 def test_recent_market_context_recalculates_current_ahr999_from_live_price(tmp_path):

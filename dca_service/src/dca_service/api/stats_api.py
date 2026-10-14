@@ -37,7 +37,10 @@ logger = logging.getLogger(__name__)
 TRADING_STYLE_AI_CACHE: Dict[str, Dict[str, Any]] = {}
 TRADING_STYLE_AI_PROMPT_VERSION = "v2_concise_chill"
 BINANCE_PUBLIC_TICKER_URL = "https://api.binance.com/api/v3/ticker/price"
-BINANCE_PRICE_CACHE_TTL_SECONDS = 6
+# Shorter than the poll so each poll gets a fresh price. The cache is shared,
+# so all open pages together make at most one ticker call (weight 2) per TTL:
+# 60 of Binance's 6000 weight a minute per IP.
+BINANCE_PRICE_CACHE_TTL_SECONDS = 2
 BINANCE_SAFE_POLL_SECONDS = 3
 BINANCE_TICKER_REQUEST_WEIGHT = 2
 BINANCE_PRICE_CACHE: Dict[str, Dict[str, Any]] = {}
