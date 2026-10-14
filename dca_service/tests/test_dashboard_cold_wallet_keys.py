@@ -237,3 +237,21 @@ def test_removing_the_key_says_what_it_does():
     assert remove == "Remove this key"
     stop = _cold_block()[_cold_block().index("function stopColdTracking"):]
     assert "Removed the key from this browser" in stop[: stop.index("\n        }\n")]
+
+
+def test_dashboard_shows_how_old_the_cold_balance_is():
+    html = _dashboard_html()
+    row = html[html.index("<dt>Cold storage"):]
+    row = row[: row.index("</div>")]
+    age = re.search(r"<small[^>]*id=\"coldSyncAge\"[^>]*>", row).group(0)
+    assert "d-none" in age
+
+    block = _cold_block()
+    render = block[block.index("function renderColdKeysState"):block.index("async function checkColdKeysInput")]
+    assert "renderColdSyncAge();" in render
+    age = block[block.index("function renderColdSyncAge"):]
+    assert "formatColdSyncAge(" in age[: age.index("\n        }\n")]
+    # The label is relative, so it is refreshed while the page stays open;
+    # only the label, so a running scan's progress text is left alone.
+    assert "setInterval(renderColdSyncAge, 60 * 1000)" in block
+    assert "setInterval(renderColdKeysState" not in block
