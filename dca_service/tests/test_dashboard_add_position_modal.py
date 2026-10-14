@@ -344,7 +344,7 @@ def test_extra_buy_no_buy_disables_amount_entry_and_hides_buy_signal_cards():
 
     modal_markup = html[
         html.index('<div class="modal fade" id="addPositionModal"')
-        : html.index('<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js">')
+        : html.index('<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"')
     ]
     hard_blocked_block = html[
         html.index("function setAddPositionHardBlocked(blocked)")
@@ -409,7 +409,7 @@ def test_extra_buy_no_buy_decision_reason_prefers_backend_reason_fields():
 
     modal_markup = html[
         html.index('<div class="modal fade" id="addPositionModal"')
-        : html.index('<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js">')
+        : html.index('<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"')
     ]
     reason_helper = html[
         html.index("function getAddPositionDecisionReason(guidance)")
@@ -525,7 +525,7 @@ def test_extra_buy_modal_uses_streamlined_decision_flow_without_recommendation_a
 
     modal_markup = html[
         html.index('<div class="modal fade" id="addPositionModal"')
-        : html.index('<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js">')
+        : html.index('<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"')
     ]
 
     assert 'extra-buy-modal-content' in modal_markup
@@ -704,7 +704,7 @@ def test_extra_buy_mobile_modal_dialog_centers_in_viewport():
 
     modal_markup = html[
         html.index('<div class="modal fade" id="addPositionModal"')
-        : html.index('<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js">')
+        : html.index('<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"')
     ]
     mobile_css = html[html.index("@media (max-width: 768px)"):]
     mobile_dialog_rule = mobile_css[
@@ -728,7 +728,7 @@ def test_extra_buy_allowed_path_renders_four_buy_signal_cards_from_guidance_only
 
     modal_markup = html[
         html.index('<div class="modal fade" id="addPositionModal"')
-        : html.index('<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js">')
+        : html.index('<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"')
     ]
 
     assert 'id="addPositionReasonFearTitle"' not in modal_markup
@@ -778,7 +778,7 @@ def test_extra_buy_modal_keeps_recommendation_amounts_out_of_user_input_flow():
 
     modal_markup = html[
         html.index('<div class="modal fade" id="addPositionModal"')
-        : html.index('<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js">')
+        : html.index('<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"')
     ]
 
     assert "Strong Buy Opportunity" not in modal_markup
