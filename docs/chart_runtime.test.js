@@ -158,6 +158,19 @@ describe("parseTheme", () => {
         expect(runtime.parseTheme("")).toBe("light");
         expect(runtime.parseTheme("?theme=neon")).toBe("light");
     });
+
+    // Opened on its own (no ?theme=), a chart follows the homepage's saved
+    // choice, then the system setting, instead of always showing light.
+    it("falls back to the saved homepage theme, then the system setting", () => {
+        expect(runtime.parseTheme("", "dark", false)).toBe("dark");
+        expect(runtime.parseTheme("", "light", true)).toBe("light");
+        expect(runtime.parseTheme("", null, true)).toBe("dark");
+        expect(runtime.parseTheme("?theme=neon", "bogus", false)).toBe("light");
+    });
+
+    it("lets the query string win over the saved theme", () => {
+        expect(runtime.parseTheme("?theme=light", "dark", true)).toBe("light");
+    });
 });
 
 describe("colour checks for dark mode", () => {
