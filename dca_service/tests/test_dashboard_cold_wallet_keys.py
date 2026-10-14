@@ -205,3 +205,35 @@ def test_result_takes_focus_when_the_sync_button_hides():
     block = _cold_block()
     shown = block[block.index("function showColdSyncResult"):]
     assert "result.focus()" in shown[: shown.index("\n        }\n")]
+
+
+def test_stop_tracking_is_disabled_while_a_scan_runs():
+    # Removing the key mid-scan would still post the total and show "Saved"
+    # for a key that is gone. Both the dialog's scan and the background one
+    # count as running.
+    block = _cold_block()
+    render = block[block.index("function renderColdKeysState"):block.index("async function checkColdKeysInput")]
+    assert "coldWalletKeysClear').disabled = coldSyncRunning" in render
+
+    stop = block[block.index("function stopColdTracking"):]
+    stop = stop[: stop.index("\n        }\n")]
+    assert "if (coldSyncRunning) return;" in stop
+
+    for start in ["async function syncColdWalletFromKeys", "getElementById('coldWalletKeysForm').addEventListener('submit'"]:
+        body = block[block.index(start):]
+        body = body[: body.index("try {")]
+        assert "coldSyncRunning = true;\n" in body
+        assert body.index("coldSyncRunning = true;") < body.index("renderColdKeysState();"), start
+
+
+def test_removing_the_key_says_what_it_does():
+    # "Stop tracking" read like cancelling the running scan; the action
+    # deletes the saved key from this browser and ends the daily sync.
+    html = _dashboard_html()
+    assert "Stop tracking" not in html
+    clear = re.search(r"<button[^>]*id=\"coldWalletKeysClear\"[^>]*>([^<]*)<", html).group(1)
+    remove = re.search(r"<button[^>]*id=\"coldWalletKeysRemove\"[^>]*>([^<]*)<", html).group(1)
+    assert clear == "Remove key"
+    assert remove == "Remove this key"
+    stop = _cold_block()[_cold_block().index("function stopColdTracking"):]
+    assert "Removed the key from this browser" in stop[: stop.index("\n        }\n")]

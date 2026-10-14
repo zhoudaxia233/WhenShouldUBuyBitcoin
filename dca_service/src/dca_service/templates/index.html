@@ -2158,7 +2158,7 @@
                     <form id="coldWalletKeysForm" autocomplete="off">
                         <div id="coldWalletKeysStatus" class="alert alert-satsflow small d-none" role="status">
                             <span id="coldWalletKeysStatusText"></span>
-                            <button type="button" class="btn btn-link btn-sm p-0 align-baseline" id="coldWalletKeysClear">Stop tracking</button>
+                            <button type="button" class="btn btn-link btn-sm p-0 align-baseline" id="coldWalletKeysClear">Remove key</button>
                         </div>
                         <div id="coldWalletKeysSetup">
                         <label class="form-label" for="coldWalletKeysInput" id="coldWalletKeysLabel">Or track it from your wallet's public key</label>
@@ -4763,6 +4763,8 @@
                 : "Or track it from your wallet's public key";
             const submit = document.getElementById('coldWalletKeysSubmit');
             submit.textContent = 'Sync now';
+            // Removing the key mid-scan would still save its total.
+            document.getElementById('coldWalletKeysClear').disabled = coldSyncRunning;
         }
 
         async function checkColdKeysInput() {
@@ -4820,16 +4822,17 @@
             const last = Math.max(coldLastSyncAt, readColdAttempt(), (readColdSync() || {}).at || 0);
             if (Date.now() - last < COLD_SYNC_INTERVAL_MS) return;
             coldSyncRunning = true;
+            renderColdKeysState();
             coldLastSyncAt = Date.now();
             writeColdAttempt(coldLastSyncAt);
             try {
                 await scanAndPostColdBalance(texts.map(t => window.ColdWalletWatch.parseExtendedPublicKey(t)));
-                renderColdKeysState();
                 loadWalletSummary();
             } catch (e) {
                 console.warn('Cold storage sync failed:', e.message);
             } finally {
                 coldSyncRunning = false;
+                renderColdKeysState();
             }
         }
 
@@ -4857,6 +4860,7 @@
             const error = document.getElementById('coldWalletKeysError');
             button.disabled = true;
             coldSyncRunning = true;
+            renderColdKeysState();
             try {
                 const balance = await scanAndPostColdBalance(
                     parsed.map(p => p.key),
@@ -4889,9 +4893,10 @@
         }
 
         function stopColdTracking() {
+            if (coldSyncRunning) return;
             writeColdKeys([]);
             resetColdKeysView();
-            notyf.success('Stopped tracking and removed the key from this browser. The last balance stays until you change it.');
+            notyf.success('Removed the key from this browser. Automatic sync is off; the last balance stays until you change it.');
         }
 
         document.getElementById('coldWalletKeysClear').addEventListener('click', stopColdTracking);
