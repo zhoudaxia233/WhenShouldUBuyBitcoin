@@ -109,6 +109,22 @@ describe("readoutAt", () => {
     });
 });
 
+describe("readoutHtml", () => {
+    const { readoutHtml } = loadReserveChart();
+    const series = buildSeries(PNL);
+    const rowItems = (html) => html.match(/<span class="reserve-readout-row">(.*)<\/span>$/)[1].match(/<span[ >]/g).length;
+
+    // Scrubbing must not change the readout's height, or everything below it
+    // (the next-buy card on phones) jumps while the finger moves.
+    it("keeps the same rows on days with and without buys that week", () => {
+        const withBuys = readoutHtml(readoutAt(series, series.days[1], {}));
+        const noBuys = readoutHtml(readoutAt(series, { ...series.days[1], t: Date.parse("2026-01-20T00:00:00Z") }, {}));
+        expect(withBuys).toContain("That week <b>₿0.32500000</b> · 3 buys");
+        expect(noBuys).toContain("That week no buys</span>");
+        expect(rowItems(noBuys)).toBe(rowItems(withBuys));
+    });
+});
+
 describe("formatBtc", () => {
     it("shows 8 decimals for amounts under 1 BTC and 4 above", () => {
         expect(formatBtc(0.10895)).toBe("0.10895000");

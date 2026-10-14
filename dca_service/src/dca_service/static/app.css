@@ -1910,8 +1910,14 @@ html[data-theme="dark"] {
 }
 
 @media (max-width: 991.98px) {
+    /* Stacked: the readout stays right above the chart it describes, and the
+       next-buy card follows the chart. */
     .holdings-top {
-        grid-template-columns: minmax(0, 1fr);
+        display: contents;
+    }
+
+    .next-buy-card {
+        order: 1;
     }
 
     .reserve-readout {
@@ -1941,6 +1947,10 @@ html[data-theme="dark"] {
     .reserve-readout-row > span {
         border-right: 0;
         margin-right: 0;
+    }
+
+    .reserve-readout-week {
+        grid-column: 1 / -1;
     }
 
     .reserve-legend {
