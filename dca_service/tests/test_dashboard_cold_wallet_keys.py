@@ -81,16 +81,17 @@ def test_key_help_is_a_toggle_with_steps_per_wallet():
 
 def test_key_help_uses_the_wallet_apps_current_labels():
     # Checked against the apps' source in October 2026: Ledger Live is now
-    # Ledger Wallet, the desktop account page has an "Edit account" button
-    # with a collapsed "Advanced" section, and mobile has "Advanced logs".
-    # Trezor Suite has Details > Public key (XPUB) > Show public key.
+    # Ledger Wallet. On desktop the xpub is on the account page (reached from
+    # the sidebar's Accounts, not the app Settings page), behind a round
+    # wrench button labelled "Edit account", in a collapsed "Advanced"
+    # section; the phone app has "Advanced logs". Trezor Suite has
+    # Details > Public key (XPUB) > Show public key.
     form = _key_form(_dashboard_html())
     help_block = form[form.index('id="coldWalletKeysHelp"'):]
 
-    for label in ["Ledger Wallet", "Edit account", "Advanced", "Advanced logs",
-                  "Trezor Suite", "Details", "Show public key"]:
+    for label in ["Ledger Wallet", "Accounts", "wrench", "Edit account", "Advanced",
+                  "Advanced logs", "Trezor Suite", "Details", "Show public key"]:
         assert label in help_block, label
-    assert "wrench" not in help_block.lower()
 
 
 def test_key_notes_are_listed_one_per_line():
