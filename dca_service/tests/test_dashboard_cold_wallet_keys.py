@@ -92,6 +92,10 @@ def test_key_help_uses_the_wallet_apps_current_labels():
     for label in ["Ledger Wallet", "Accounts", "wrench", "Edit account", "Advanced",
                   "Advanced logs", "Trezor Suite", "Details", "Show public key"]:
         assert label in help_block, label
+    # Ledger's Advanced box lists several fields; only the xpub is pasted,
+    # and freshAddressPath tells whether the account is native segwit.
+    assert "freshAddressPath" in help_block
+    assert "84'" in help_block
 
 
 def test_key_notes_are_listed_one_per_line():
