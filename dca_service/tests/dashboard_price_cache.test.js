@@ -112,13 +112,15 @@ describe("dashboard preview cache hydration", () => {
             "document",
             "updateMobileFiatEstimate",
             "saveToCache",
+            "latestReserveWallet",
+            "renderReserveChart",
             `${dashboardRealtimePriceFunction()}; return updateDashboardRealtimePrice({ price: 64172.35 });`,
         );
         const saveToCache = (key, data) => {
             localStorage.setItem(key, JSON.stringify({ timestamp: Date.now(), data }));
         };
 
-        runRealtimeUpdate(window, document, () => {}, saveToCache);
+        runRealtimeUpdate(window, document, () => {}, saveToCache, null, () => {});
         document.getElementById("previewPrice").textContent = "--";
 
         hydrateDashboardFromCache();

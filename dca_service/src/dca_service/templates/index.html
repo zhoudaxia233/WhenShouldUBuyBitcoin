@@ -4102,6 +4102,9 @@
             previewPriceEl.textContent = `$${price.toLocaleString()}`;
             window.__dashboardPriceUsd = price;
             saveToCache('dashboard_realtime_price', { price });
+            // The readout above the chart values holdings at this price too
+            latestReserveWallet = { ...(latestReserveWallet || {}), current_price: price };
+            renderReserveChart();
             if (window.__latestDrawdownDecision) {
                 window.__latestDrawdownDecision.price_usd = price;
                 updatePreviewActionState(window.__latestDrawdownDecision);
