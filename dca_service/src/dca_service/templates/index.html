@@ -2169,30 +2169,20 @@
                         </button>
                         <div class="collapse mt-2" id="coldWalletKeysHelp">
                             <div class="card card-body satsflow-soft-panel small">
-                                <h6 class="mb-1">Ledger Wallet (formerly Ledger Live), desktop</h6>
-                                <ol class="mb-3 ps-3">
-                                    <li>In the left sidebar, click <strong>Accounts</strong> (the wallet icon), then click your Bitcoin account. Not the app's Settings page.</li>
-                                    <li>In the row of buttons under the balance (Send, Receive, …), click the last round button with the <strong>wrench</strong> icon. It shows "Edit account" on hover. Right-clicking the account in the Accounts list and choosing <strong>Edit account</strong> also works.</li>
-                                    <li>In the Edit account window, expand <strong>Advanced</strong> at the bottom.</li>
-                                    <li>Copy only the value after <code>"xpub":</code>, without the quotes. It starts with <code>xpub</code>. The other fields are not needed.</li>
-                                    <li>Check that <code>freshAddressPath</code> starts with <code>84'</code>. That is a native segwit (bc1q) account; other paths are not supported.</li>
-                                </ol>
-                                <h6 class="mb-1">Ledger Wallet, phone</h6>
-                                <ol class="mb-3 ps-3">
-                                    <li>Open your Bitcoin account.</li>
-                                    <li>Tap the gear at the top right.</li>
-                                    <li>Tap <strong>Advanced logs</strong> and copy the <code>xpub</code> value.</li>
-                                </ol>
-                                <h6 class="mb-1">Trezor Suite</h6>
-                                <ol class="mb-3 ps-3">
-                                    <li>Open your Bitcoin account and go to the <strong>Details</strong> tab.</li>
-                                    <li>Under <strong>Public key (XPUB)</strong>, click <strong>Show public key</strong> and confirm on the device.</li>
-                                    <li>Copy the key. For a SegWit account it starts with <code>zpub</code>.</li>
-                                </ol>
-                                <p class="mb-0">Each account has its own key. If you have several Bitcoin accounts, paste one key per line.</p>
+                                <p class="mb-2">Your wallet app shows it in the Bitcoin account's settings or details. The vendors' own guides:</p>
+                                <ul class="mb-2 ps-3">
+                                    <li><a href="https://support.ledger.com/article/360011069619-zd" target="_blank" rel="noopener noreferrer">Ledger: extended public key (xpub)</a></li>
+                                    <li><a href="https://trezor.io/learn/supported-assets/bitcoin/what-is-a-public-key-xpub" target="_blank" rel="noopener noreferrer">Trezor: public key (xpub)</a></li>
+                                </ul>
+                                <ul class="mb-0 ps-3">
+                                    <li>Copy only the key itself. It starts with <code>xpub</code> or <code>zpub</code>.</li>
+                                    <li>Use the native segwit account: its addresses start with <code>bc1q</code> and its derivation path with <code>84'</code>.</li>
+                                    <li>Each account has its own key. For several accounts, paste one key per line.</li>
+                                    <li>After pasting, compare the first receive address shown below with the first address in your wallet app.</li>
+                                </ul>
                             </div>
                         </div>
-                        <div id="coldWalletKeysCheck" class="small mt-2 d-none" role="status"></div>
+                        <div id="coldWalletKeysCheck" class="alert alert-info mt-3 mb-0 d-none" role="status"></div>
                         <div id="coldWalletKeysError" class="alert alert-warning small mt-2 d-none" role="alert"></div>
                         <div class="d-flex gap-2 mt-3">
                             <button type="submit" class="btn btn-primary flex-grow-1" id="coldWalletKeysSubmit">Track and sync</button>
@@ -4750,9 +4740,10 @@
             try {
                 const parsed = parseColdKeysText(text);
                 const firsts = await Promise.all(parsed.map(p => window.ColdWalletWatch.deriveAddress(p.key, 0, 0)));
-                box.innerHTML = 'First receive address: ' +
-                    firsts.map(a => `<code class="text-break">${escapeHtml(a)}</code>`).join(', ') +
-                    '. It should match the first address in your wallet app.';
+                box.innerHTML = '<strong><i class="bi bi-exclamation-circle" aria-hidden="true"></i> Check before syncing</strong>' +
+                    '<div class="mt-1">The first receive address of ' + (firsts.length > 1 ? 'each key' : 'this key') +
+                    ' must match the first address in your wallet app:</div>' +
+                    firsts.map(a => `<div class="fw-semibold font-monospace text-break mt-1">${escapeHtml(a)}</div>`).join('');
                 box.classList.remove('d-none');
                 return parsed;
             } catch (e) {

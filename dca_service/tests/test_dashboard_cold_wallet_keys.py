@@ -65,7 +65,7 @@ def _key_form(html: str) -> str:
     return html[start: html.index("</form>", start)]
 
 
-def test_key_help_is_a_toggle_with_steps_per_wallet():
+def test_key_help_is_a_toggle():
     form = _key_form(_dashboard_html())
 
     toggle = re.search(r"<button[^>]*data-bs-target=\"#coldWalletKeysHelp\"[^>]*>", form).group(0)
@@ -73,29 +73,27 @@ def test_key_help_is_a_toggle_with_steps_per_wallet():
     assert 'aria-controls="coldWalletKeysHelp"' in toggle
     assert 'type="button"' in toggle
 
-    help_start = form.index('id="coldWalletKeysHelp"')
-    help_block = form[help_start:]
-    # Each wallet gets its own numbered steps rather than one run-on sentence.
-    assert help_block.count("<ol") >= 3
 
-
-def test_key_help_uses_the_wallet_apps_current_labels():
-    # Checked against the apps' source in October 2026: Ledger Live is now
-    # Ledger Wallet. On desktop the xpub is on the account page (reached from
-    # the sidebar's Accounts, not the app Settings page), behind a round
-    # wrench button labelled "Edit account", in a collapsed "Advanced"
-    # section; the phone app has "Advanced logs". Trezor Suite has
-    # Details > Public key (XPUB) > Show public key.
+def test_key_help_links_to_vendor_guides_instead_of_copying_their_menus():
+    # Wallet apps redesign their menus without notice, so click-by-click
+    # steps go stale. Link to each vendor's own guide and keep only notes
+    # that do not depend on their UI.
     form = _key_form(_dashboard_html())
     help_block = form[form.index('id="coldWalletKeysHelp"'):]
 
-    for label in ["Ledger Wallet", "Accounts", "wrench", "Edit account", "Advanced",
-                  "Advanced logs", "Trezor Suite", "Details", "Show public key"]:
-        assert label in help_block, label
-    # Ledger's Advanced box lists several fields; only the xpub is pasted,
-    # and freshAddressPath tells whether the account is native segwit.
-    assert "freshAddressPath" in help_block
-    assert "84'" in help_block
+    links = re.findall(r"<a\b[^>]*>", help_block)
+    hrefs = [re.search(r'href="([^"]+)"', a).group(1) for a in links]
+    assert any(h.startswith("https://support.ledger.com/") for h in hrefs)
+    assert any(h.startswith("https://trezor.io/") for h in hrefs)
+    for a in links:
+        assert 'target="_blank"' in a
+        assert 'rel="noopener noreferrer"' in a
+
+    assert "<ol" not in help_block
+    for menu_label in ["Edit account", "Advanced logs", "Show public key", "wrench", "sidebar"]:
+        assert menu_label not in help_block, menu_label
+    for note in ["xpub", "zpub", "84'", "one key per line", "first receive address"]:
+        assert note in help_block, note
 
 
 def test_key_notes_are_listed_one_per_line():
@@ -105,3 +103,17 @@ def test_key_notes_are_listed_one_per_line():
     items = re.findall(r"<li\b[^>]*>(.*?)</li>", notes, re.S)
     for note in ["bc1q", "stays in this browser", "recovery phrase", "replaces"]:
         assert any(note in item for item in items), note
+
+
+def test_first_address_check_stands_out():
+    # Comparing the first address with the wallet app is the user's only
+    # proof that the right key was pasted, so it must not read as fine print.
+    html = _dashboard_html()
+    box = re.search(r"<div[^>]*id=\"coldWalletKeysCheck\"[^>]*>", html).group(0)
+    assert "alert" in box
+    assert "small" not in box
+
+    block = html[html.index("// Cold storage from extended public keys"):]
+    block = block[: block.index("// Buys and balances on other exchanges")]
+    assert "Check before syncing" in block
+    assert "<strong>" in block[block.index("Check before syncing") - 200: block.index("Check before syncing")]
