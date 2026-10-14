@@ -19,20 +19,23 @@ BINANCE_CRED_ENC_KEY=your-encryption-key
 
 ### Required in Production
 ```bash
-# Refuse to start when SESSION_SECRET is missing (default: false).
-# Without it, a missing secret falls back to a random one that changes on restart.
-DCA_REQUIRE_SECURE_SESSION=true
-
 # Send the session cookie over HTTPS only, and send HSTS (default: false)
 SESSION_COOKIE_HTTPS_ONLY=true
 ```
 
-The app always refuses to start when `SESSION_SECRET` is one of the values
-published in this repository (the old dev default or the `.env.example`
-placeholder).
+`SESSION_SECRET` handling:
+- A value published in this repository (the old dev default or the
+  `.env.example` placeholder) always refuses to start.
+- An unset secret falls back to a random one that only this process knows.
+  This is safe, but every restart signs you out.
 
 ### Optional Production Overrides
 ```bash
+# Refuse to start instead of falling back to a random secret (default: false).
+# Only useful when set outside .env (for example in docker-compose.yml
+# `environment:`): if .env is lost, a flag inside it is lost too.
+# Trade-off: a missing secret then takes the whole site down, /analysis included.
+DCA_REQUIRE_SECURE_SESSION=true
 
 # SameSite cookie policy (default: lax)
 SESSION_COOKIE_SAMESITE=lax
