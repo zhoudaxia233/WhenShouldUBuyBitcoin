@@ -21,6 +21,11 @@ than speed or agreement.
 - Pages the homepage opens (chart frames, the on-chain page) follow its theme:
   read `?theme=dark|light`, and take colours from theme tokens, not light-only
   hex values. Pages without the shared chart runtime need this themselves.
+- Pages under `docs/charts/` and `docs/data/` are generated on the server and
+  kept across deploys (`update.sh` restores them). A fix to their template or
+  generator (for example `bottom_signals.html.j2`) shows only after the next
+  regeneration: the admin Regenerate button on the stats page, or the daily
+  00:30 UTC run. Say so when reporting the fix as done or merged.
 - Help text about another product (wallet apps, exchanges) does not copy its
   menus or click-by-click steps: they change with the product's releases. Link
   to the vendor's official guide and write only notes that stay true across
