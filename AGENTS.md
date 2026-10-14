@@ -18,6 +18,11 @@ than speed or agreement.
   user explicitly asks.
 - Prefer existing project patterns, dependencies, and auth boundaries over new
   abstractions.
+- Help text about another product (wallet apps, exchanges) does not copy its
+  menus or click-by-click steps: they change with the product's releases. Link
+  to the vendor's official guide and write only notes that stay true across
+  their versions (what value to look for, formats, checks). Lay notes out as
+  lists, not run-on paragraphs.
 
 ## Review Gates
 

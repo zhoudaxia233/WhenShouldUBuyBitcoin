@@ -2158,14 +2158,31 @@
                     <form id="coldWalletKeysForm" autocomplete="off">
                         <label class="form-label" for="coldWalletKeysInput">Or track it from your wallet's public key</label>
                         <textarea class="form-control font-monospace small" id="coldWalletKeysInput" rows="3" spellcheck="false" autocapitalize="off" placeholder="zpub… or xpub…, one per line"></textarea>
-                        <div class="form-text">
-                            Trezor Suite: account → Details → Show public key (zpub). Ledger Live: account → Edit account → Advanced (xpub).
-                            Native segwit accounts only (addresses starting with bc1q).
-                            The key stays in this browser; the balance is read from mempool.space and only the total is saved here.
-                            Never paste your recovery phrase or a private key.
-                            Pasting keys replaces the ones tracked now.
+                        <ul class="form-text ps-3 mb-2">
+                            <li>Native segwit accounts only (addresses starting with <code>bc1q</code>).</li>
+                            <li>The key stays in this browser. Balances are read from mempool.space; only the total is saved here.</li>
+                            <li><strong>Never paste your recovery phrase or a private key.</strong></li>
+                            <li>Pasting keys replaces the ones tracked now.</li>
+                        </ul>
+                        <button class="btn btn-sm btn-outline-primary" type="button" data-bs-toggle="collapse" data-bs-target="#coldWalletKeysHelp" aria-expanded="false" aria-controls="coldWalletKeysHelp">
+                            <i class="bi bi-question-circle" aria-hidden="true"></i> How to find the public key
+                        </button>
+                        <div class="collapse mt-2" id="coldWalletKeysHelp">
+                            <div class="card card-body satsflow-soft-panel small">
+                                <p class="mb-2">Your wallet app shows it in the Bitcoin account's settings or details. The vendors' own guides:</p>
+                                <ul class="mb-2 ps-3">
+                                    <li><a href="https://support.ledger.com/article/360011069619-zd" target="_blank" rel="noopener noreferrer">Ledger: extended public key (xpub)</a></li>
+                                    <li><a href="https://trezor.io/learn/supported-assets/bitcoin/what-is-a-public-key-xpub" target="_blank" rel="noopener noreferrer">Trezor: public key (xpub)</a></li>
+                                </ul>
+                                <ul class="mb-0 ps-3">
+                                    <li>Copy only the key itself. It starts with <code>xpub</code> or <code>zpub</code>.</li>
+                                    <li>Use the native segwit account: its addresses start with <code>bc1q</code> and its derivation path with <code>84'</code>.</li>
+                                    <li>Each account has its own key. For several accounts, paste one key per line.</li>
+                                    <li>After syncing, compare the total with the account's balance in your wallet app.</li>
+                                </ul>
+                            </div>
                         </div>
-                        <div id="coldWalletKeysCheck" class="small mt-2 d-none" role="status"></div>
+                        <div id="coldWalletKeysCheck" class="alert alert-info mt-3 mb-0 d-none" role="status"></div>
                         <div id="coldWalletKeysError" class="alert alert-warning small mt-2 d-none" role="alert"></div>
                         <div class="d-flex gap-2 mt-3">
                             <button type="submit" class="btn btn-primary flex-grow-1" id="coldWalletKeysSubmit">Track and sync</button>
@@ -4713,7 +4730,7 @@
             document.getElementById('coldWalletKeysSubmit').textContent = tracking ? 'Sync now' : 'Track and sync';
         }
 
-        async function showColdKeysCheck() {
+        async function checkColdKeysInput() {
             const box = document.getElementById('coldWalletKeysCheck');
             const error = document.getElementById('coldWalletKeysError');
             error.classList.add('d-none');
@@ -4721,18 +4738,24 @@
             const text = document.getElementById('coldWalletKeysInput').value;
             if (!text.trim()) return [];
             try {
-                const parsed = parseColdKeysText(text);
-                const firsts = await Promise.all(parsed.map(p => window.ColdWalletWatch.deriveAddress(p.key, 0, 0)));
-                box.innerHTML = 'First receive address: ' +
-                    firsts.map(a => `<code class="text-break">${escapeHtml(a)}</code>`).join(', ') +
-                    '. It should match the first address in your wallet app.';
-                box.classList.remove('d-none');
-                return parsed;
+                return parseColdKeysText(text);
             } catch (e) {
                 error.textContent = e.message;
                 error.classList.remove('d-none');
                 return null;
             }
+        }
+
+        // Wallet apps do not list an account's first address, so the user
+        // confirms the key by comparing the synced total with the app.
+        function showColdSyncResult(balance, keyCount) {
+            const box = document.getElementById('coldWalletKeysCheck');
+            const accounts = keyCount > 1 ? 'these accounts together' : 'this account';
+            box.innerHTML = '<strong><i class="bi bi-exclamation-circle" aria-hidden="true"></i> Check the result</strong>' +
+                `<div class="fs-5 fw-semibold font-monospace mt-1">₿${escapeHtml(balance.toFixed(8))}</div>` +
+                `<div class="mt-1">This must equal the balance in your wallet app for ${accounts}. ` +
+                'If it does not, the key belongs to a different account: click Stop tracking.</div>';
+            box.classList.remove('d-none');
         }
 
         // Reads the balance of the given keys and posts the total. Throws on
@@ -4773,7 +4796,7 @@
             }
         }
 
-        document.getElementById('coldWalletKeysInput').addEventListener('input', showColdKeysCheck);
+        document.getElementById('coldWalletKeysInput').addEventListener('input', checkColdKeysInput);
 
         document.getElementById('coldWalletKeysForm').addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -4782,7 +4805,7 @@
             const pasted = input.value.trim();
             let parsed;
             if (pasted) {
-                parsed = await showColdKeysCheck();
+                parsed = await checkColdKeysInput();
                 if (!parsed || !parsed.length) return;
             } else {
                 parsed = readColdKeys().map(t => ({ text: t, key: window.ColdWalletWatch.parseExtendedPublicKey(t) }));
@@ -4801,7 +4824,7 @@
                     throw new Error('This browser does not allow saving the key, so it cannot be tracked.');
                 }
                 input.value = '';
-                document.getElementById('coldWalletKeysCheck').classList.add('d-none');
+                showColdSyncResult(balance, parsed.length);
                 notyf.success(`Cold storage synced: ₿${balance.toFixed(8)}`);
                 loadWalletSummary();
             } catch (err) {
