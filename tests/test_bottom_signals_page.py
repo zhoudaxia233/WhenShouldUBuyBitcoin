@@ -257,3 +257,27 @@ def test_links_never_navigate_the_homepage_chart_frame(tmp_path):
     assert len(external) == 2
     for tag in external:
         assert 'target="_blank"' in tag and 'rel="noopener"' in tag
+
+
+def test_page_follows_the_site_theme(tmp_path):
+    # The homepage opens this page with ?theme=dark|light; opened on its own it
+    # follows the saved homepage choice, then the system setting. Colours come
+    # from theme tokens, so nothing in the body or the chart is pinned to the
+    # light palette.
+    scores_df, price_df, backtest = _synthetic_inputs()
+    html_path = tmp_path / "bottom_signals.html"
+    page.generate_bottom_signals_page(
+        scores_df, price_df, backtest, output_path=html_path, info_path=tmp_path / "i.json"
+    )
+    html = html_path.read_text()
+    head, body = html.split("<body>", 1)
+
+    assert "[?&]theme=(dark|light)" in head
+    assert 'localStorage.getItem("theme")' in head
+    assert "prefers-color-scheme: dark" in head
+    assert ':root[data-theme="dark"]' in head
+    assert "--bg:#0b1220" in head
+
+    # greys and links that only read on white must use tokens instead
+    for light_only in ("#6e6e73", "#71717a", "#86868b", "#d2d2d7", "#0066cc", "#1d1d1f", "#ffffff"):
+        assert light_only not in body, light_only
