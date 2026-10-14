@@ -41,6 +41,15 @@ def _json_for_script(obj) -> str:
     )
 
 
+# Greys that read on white vanish on the dark page; the template maps them to
+# a token that each theme defines. Accent colours read on both.
+_NEUTRAL_GREYS = {"#6e6e73", "#71717a"}
+
+
+def _theme_color(color: str) -> str:
+    return "var(--neutral)" if color.lower() in _NEUTRAL_GREYS else color
+
+
 def _status_for_score(score) -> tuple[str, str]:
     """Uniform per-signal status label/color from the 0-20 score."""
     if score is None or pd.isna(score):
@@ -81,33 +90,34 @@ def gauge_svg(score: float, zone_label: str, zone_color: str) -> str:
         return 180.0 - 1.8 * v
 
     zone_bands = [
-        (0, 60, "#d2d2d7"),
+        (0, 60, "var(--gauge-rest)"),
         (60, 70, "#10b981"),
         (70, 80, "#f59e0b"),
         (80, 100, "#ef4444"),
     ]
     arcs = "".join(
         f'<path d="{_arc_path(cx, cy, r, angle(lo), angle(hi))}" fill="none" '
-        f'stroke="{color}" stroke-width="28"/>'
+        f'style="stroke:{color}" stroke-width="28"/>'
         for lo, hi, color in zone_bands
     )
     ticks = "".join(
-        f'<text x="{x:.1f}" y="{y:.1f}" fill="#86868b" font-size="10" '
+        f'<text x="{x:.1f}" y="{y:.1f}" style="fill:var(--muted)" font-size="10" '
         f'text-anchor="middle" dominant-baseline="middle">{v}</text>'
         for v in (0, 60, 70, 80, 100)
         for x, y in [_polar(cx, cy, r + 24, angle(v))]
     )
+    zone_color = _theme_color(zone_color)
     clamped = max(0.0, min(100.0, float(score)))
     nx, ny = _polar(cx, cy, r - 40, angle(clamped))
     needle = (
         f'<line x1="{cx}" y1="{cy}" x2="{nx:.2f}" y2="{ny:.2f}" '
-        f'stroke="{zone_color}" stroke-width="3" stroke-linecap="round"/>'
-        f'<circle cx="{cx}" cy="{cy}" r="6" fill="{zone_color}"/>'
+        f'style="stroke:{zone_color}" stroke-width="3" stroke-linecap="round"/>'
+        f'<circle cx="{cx}" cy="{cy}" r="6" style="fill:{zone_color}"/>'
     )
     label = (
-        f'<text x="{cx}" y="127" fill="{zone_color}" font-size="46" '
+        f'<text x="{cx}" y="127" style="fill:{zone_color}" font-size="46" '
         f'font-weight="700" text-anchor="middle">{score:.0f}</text>'
-        f'<text x="{cx}" y="151" fill="#86868b" font-size="13" '
+        f'<text x="{cx}" y="151" style="fill:var(--muted)" font-size="13" '
         f'text-anchor="middle">/ 100</text>'
     )
     return (
@@ -272,7 +282,7 @@ def _build_cards(latest: pd.Series, scores_df: pd.DataFrame) -> list[dict]:
                 "title": title,
                 "subtitle": subtitle,
                 "status": status,
-                "color": color,
+                "color": _theme_color(color),
                 "score_text": "–" if score_missing else f"{float(score):.1f}",
                 "bar_pct": 0.0 if score_missing else round(5.0 * float(score), 1),
                 "marker_pct": round(marker_pct(score), 1),
@@ -356,7 +366,7 @@ def generate_bottom_signals_page(
         "from_ath_pct": (price / ath - 1.0) * 100.0,
         "gauge": gauge_svg(composite, zone_label, zone_color),
         "zone": zone_label,
-        "zone_color": zone_color,
+        "zone_color": _theme_color(zone_color),
         "advice": advice,
         "cards": _build_cards(latest, scores_df),
         "ma120": ma120,

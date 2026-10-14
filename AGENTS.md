@@ -18,6 +18,9 @@ than speed or agreement.
   user explicitly asks.
 - Prefer existing project patterns, dependencies, and auth boundaries over new
   abstractions.
+- Pages the homepage opens (chart frames, the on-chain page) follow its theme:
+  read `?theme=dark|light`, and take colours from theme tokens, not light-only
+  hex values. Pages without the shared chart runtime need this themselves.
 - Help text about another product (wallet apps, exchanges) does not copy its
   menus or click-by-click steps: they change with the product's releases. Link
   to the vendor's official guide and write only notes that stay true across
