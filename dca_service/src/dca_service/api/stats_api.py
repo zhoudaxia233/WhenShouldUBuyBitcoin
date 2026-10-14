@@ -37,10 +37,18 @@ logger = logging.getLogger(__name__)
 TRADING_STYLE_AI_CACHE: Dict[str, Dict[str, Any]] = {}
 TRADING_STYLE_AI_PROMPT_VERSION = "v2_concise_chill"
 BINANCE_PUBLIC_TICKER_URL = "https://api.binance.com/api/v3/ticker/price"
-BINANCE_PRICE_CACHE_TTL_SECONDS = 6
+# Shorter than the poll so each poll gets a fresh price. The cache is shared,
+# so all open pages together make at most one ticker call (weight 2) per TTL:
+# 60 of Binance's 6000 weight a minute per IP.
+BINANCE_PRICE_CACHE_TTL_SECONDS = 2
 BINANCE_SAFE_POLL_SECONDS = 3
 BINANCE_TICKER_REQUEST_WEIGHT = 2
 BINANCE_PRICE_CACHE: Dict[str, Dict[str, Any]] = {}
+# Binance limits request weight per IP. After a 429 (rate limited) or 418
+# (IP banned) the ticker is not called again until Retry-After has passed;
+# calling sooner escalates the ban. The last price is served meanwhile.
+BINANCE_RATE_LIMITED_UNTIL: Optional[datetime] = None
+BINANCE_DEFAULT_RETRY_AFTER_SECONDS = 60
 MARKET_CONTEXT_MAX_AGE_DAYS = 3
 MACRO_CONTEXT_MAX_AGE_DAYS = 7
 ADD_POSITION_CONFIRM_TOKEN_TTL_SECONDS = 300
@@ -193,7 +201,16 @@ def _extract_http_error_detail(resp: httpx.Response) -> str:
     return text[:280] if text else ""
 
 
+def _retry_after_seconds(response: httpx.Response) -> int:
+    try:
+        seconds = int(response.headers.get("Retry-After"))
+    except (TypeError, ValueError):
+        return BINANCE_DEFAULT_RETRY_AFTER_SECONDS
+    return seconds if seconds > 0 else BINANCE_DEFAULT_RETRY_AFTER_SECONDS
+
+
 def _fetch_binance_realtime_price(symbol: str) -> Dict[str, Any]:
+    global BINANCE_RATE_LIMITED_UNTIL
     normalized_symbol = _normalize_symbol(symbol)
     now_utc = datetime.now(timezone.utc)
 
@@ -211,9 +228,24 @@ def _fetch_binance_realtime_price(symbol: str) -> Dict[str, Any]:
             "request_weight": BINANCE_TICKER_REQUEST_WEIGHT,
         }
 
+    if BINANCE_RATE_LIMITED_UNTIL and BINANCE_RATE_LIMITED_UNTIL > now_utc:
+        retry_at = f"{BINANCE_RATE_LIMITED_UNTIL:%H:%M:%S} UTC"
+        if cache_entry and cache_entry.get("price"):
+            return _stale_price_payload(
+                normalized_symbol, cache_entry, f"Binance rate limit: showing the last price until {retry_at}"
+            )
+        raise HTTPException(status_code=503, detail=f"Realtime price paused by the Binance rate limit until {retry_at}")
+
     try:
         with httpx.Client(timeout=8.0) as client:
             response = client.get(BINANCE_PUBLIC_TICKER_URL, params={"symbol": normalized_symbol})
+
+        if response.status_code in (418, 429):
+            wait_seconds = _retry_after_seconds(response)
+            BINANCE_RATE_LIMITED_UNTIL = now_utc + timedelta(seconds=wait_seconds)
+            logger.warning(
+                "Binance ticker HTTP %s: pausing realtime price for %ss", response.status_code, wait_seconds
+            )
 
         if response.status_code >= 400:
             detail = _extract_http_error_detail(response)
@@ -247,19 +279,25 @@ def _fetch_binance_realtime_price(symbol: str) -> Dict[str, Any]:
     except Exception as e:
         # Use stale cache if available to avoid fully breaking the UI.
         if cache_entry and cache_entry.get("price"):
-            return {
-                "symbol": normalized_symbol,
-                "price": float(cache_entry["price"]),
-                "updated_at": cache_entry["updated_at"],
-                "cache_hit": False,
-                "stale_fallback": True,
-                "source": "binance_public_api",
-                "cache_ttl_seconds": BINANCE_PRICE_CACHE_TTL_SECONDS,
-                "poll_recommendation_seconds": BINANCE_SAFE_POLL_SECONDS,
-                "request_weight": BINANCE_TICKER_REQUEST_WEIGHT,
-                "warning": f"Using stale price cache due to fetch error: {e}",
-            }
+            return _stale_price_payload(
+                normalized_symbol, cache_entry, f"Using stale price cache due to fetch error: {e}"
+            )
         raise HTTPException(status_code=502, detail=f"Failed to fetch realtime price: {e}")
+
+
+def _stale_price_payload(normalized_symbol: str, cache_entry: Dict[str, Any], warning: str) -> Dict[str, Any]:
+    return {
+        "symbol": normalized_symbol,
+        "price": float(cache_entry["price"]),
+        "updated_at": cache_entry["updated_at"],
+        "cache_hit": False,
+        "stale_fallback": True,
+        "source": "binance_public_api",
+        "cache_ttl_seconds": BINANCE_PRICE_CACHE_TTL_SECONDS,
+        "poll_recommendation_seconds": BINANCE_SAFE_POLL_SECONDS,
+        "request_weight": BINANCE_TICKER_REQUEST_WEIGHT,
+        "warning": warning,
+    }
 
 
 def _calculate_harmonic_dca_cost_with_current_price(prices: List[float], current_price_usd: float) -> Optional[float]:

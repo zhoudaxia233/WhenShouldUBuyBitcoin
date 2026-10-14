@@ -1,7 +1,10 @@
+import pytest
+from fastapi import HTTPException
 from fastapi.testclient import TestClient
 from sqlmodel import Session, select
 from unittest.mock import MagicMock, patch
 import csv
+from pathlib import Path
 import io
 
 from dca_service.api import stats_api
@@ -581,8 +584,125 @@ def test_realtime_price_endpoint_reuses_cache(client: TestClient):
     assert second_payload["cache_hit"] is True
     assert second_payload["price"] == first_payload["price"]
     assert second_payload["poll_recommendation_seconds"] == 3
-    assert first_payload["cache_ttl_seconds"] > first_payload["poll_recommendation_seconds"]
     assert mock_client.get.call_count == 1
+
+
+def test_realtime_price_each_poll_gets_a_fresh_price():
+    # With a cache longer than the poll, every other poll returned the
+    # previous price. The cache must expire before the next poll, with
+    # margin for timer jitter, and the home page must poll at that pace.
+    assert stats_api.BINANCE_PRICE_CACHE_TTL_SECONDS <= stats_api.BINANCE_SAFE_POLL_SECONDS - 1
+    template = (
+        Path(__file__).resolve().parents[1] / "src" / "dca_service" / "templates" / "index.html"
+    ).read_text(encoding="utf-8")
+    assert f"const ADD_POSITION_PRICE_POLL_INTERVAL_MS = {stats_api.BINANCE_SAFE_POLL_SECONDS * 1000};" in template
+
+    stats_api.BINANCE_PRICE_CACHE.clear()
+    responses = []
+    for price in ("50123.45", "50130.00"):
+        response = MagicMock()
+        response.status_code = 200
+        response.json.return_value = {"symbol": "BTCUSDC", "price": price}
+        responses.append(response)
+    mock_client = MagicMock()
+    mock_client.__enter__.return_value = mock_client
+    mock_client.get.side_effect = responses
+
+    with patch("dca_service.api.stats_api.httpx.Client", return_value=mock_client):
+        first = stats_api._fetch_binance_realtime_price("BTCUSDC")
+        # One poll interval later
+        entry = stats_api.BINANCE_PRICE_CACHE["BTCUSDC"]
+        entry["expires_at"] -= timedelta(seconds=stats_api.BINANCE_SAFE_POLL_SECONDS)
+        second = stats_api._fetch_binance_realtime_price("BTCUSDC")
+
+    assert first["price"] == 50123.45
+    assert second["cache_hit"] is False
+    assert second["price"] == 50130.00
+    assert mock_client.get.call_count == 2
+
+
+def _ticker_client(*responses):
+    """A mock httpx.Client whose get() returns `responses` in order."""
+    built = []
+    for status, body, headers in responses:
+        response = MagicMock()
+        response.status_code = status
+        response.json.return_value = body
+        response.headers = headers
+        built.append(response)
+    client = MagicMock()
+    client.__enter__.return_value = client
+    client.get.side_effect = built
+    return client
+
+
+def _expire_price_cache():
+    entry = stats_api.BINANCE_PRICE_CACHE["BTCUSDC"]
+    entry["expires_at"] -= timedelta(seconds=stats_api.BINANCE_PRICE_CACHE_TTL_SECONDS + 1)
+
+
+# Binance limits request weight per IP. After a 429 (or a 418 ban) it says in
+# Retry-After how long to wait; calling again sooner escalates to longer bans.
+@pytest.mark.parametrize("status", [429, 418])
+def test_realtime_price_waits_out_binance_retry_after(monkeypatch, status):
+    monkeypatch.setattr(stats_api, "BINANCE_RATE_LIMITED_UNTIL", None)
+    stats_api.BINANCE_PRICE_CACHE.clear()
+    client = _ticker_client(
+        (200, {"symbol": "BTCUSDC", "price": "50123.45"}, {}),
+        (status, {"code": -1003, "msg": "Too many requests"}, {"Retry-After": "30"}),
+        (200, {"symbol": "BTCUSDC", "price": "50200.00"}, {}),
+    )
+
+    with patch("dca_service.api.stats_api.httpx.Client", return_value=client):
+        stats_api._fetch_binance_realtime_price("BTCUSDC")
+        _expire_price_cache()
+        limited = stats_api._fetch_binance_realtime_price("BTCUSDC")
+
+        # The last price is shown meanwhile, without asking Binance again
+        for _ in range(5):
+            waiting = stats_api._fetch_binance_realtime_price("BTCUSDC")
+            assert waiting["price"] == 50123.45
+            assert waiting["stale_fallback"] is True
+        assert client.get.call_count == 2
+
+        # Once Retry-After has passed, polling resumes
+        stats_api.BINANCE_RATE_LIMITED_UNTIL -= timedelta(seconds=30)
+        resumed = stats_api._fetch_binance_realtime_price("BTCUSDC")
+
+    assert limited["price"] == 50123.45
+    assert limited["stale_fallback"] is True
+    assert resumed["price"] == 50200.00
+    assert resumed["stale_fallback"] is False
+    assert client.get.call_count == 3
+
+
+def test_realtime_price_waits_a_minute_when_retry_after_is_missing(monkeypatch):
+    monkeypatch.setattr(stats_api, "BINANCE_RATE_LIMITED_UNTIL", None)
+    stats_api.BINANCE_PRICE_CACHE.clear()
+    client = _ticker_client((429, {"code": -1003, "msg": "Too many requests"}, {}))
+
+    with patch("dca_service.api.stats_api.httpx.Client", return_value=client):
+        before = datetime.now(timezone.utc)
+        with pytest.raises(HTTPException):
+            stats_api._fetch_binance_realtime_price("BTCUSDC")
+
+    wait = stats_api.BINANCE_RATE_LIMITED_UNTIL - before
+    assert timedelta(seconds=59) <= wait <= timedelta(seconds=61)
+
+
+def test_realtime_price_without_a_last_price_fails_without_calling_binance(monkeypatch):
+    monkeypatch.setattr(
+        stats_api, "BINANCE_RATE_LIMITED_UNTIL", datetime.now(timezone.utc) + timedelta(seconds=30)
+    )
+    stats_api.BINANCE_PRICE_CACHE.clear()
+    client = _ticker_client()
+
+    with patch("dca_service.api.stats_api.httpx.Client", return_value=client):
+        with pytest.raises(HTTPException) as raised:
+            stats_api._fetch_binance_realtime_price("BTCUSDC")
+
+    assert raised.value.status_code == 503
+    assert client.get.call_count == 0
 
 
 def test_recent_market_context_recalculates_current_ahr999_from_live_price(tmp_path):
