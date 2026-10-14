@@ -41,7 +41,8 @@ def get_current_user(
     Checks:
     1. User ID exists in session
     2. User exists in database
-    3. User is active
+    3. Session version matches (logout revokes all copies of the cookie)
+    4. User is active
     
     Args:
         request: FastAPI Request with session
@@ -71,6 +72,11 @@ def get_current_user(
         # User was deleted or session is stale
         request.session.clear()
         raise AuthenticationError("User not found")
+    
+    if request.session.get("session_version") != user.session_version:
+        # Revoked by logout, or signed before session versions existed
+        request.session.clear()
+        raise AuthenticationError("Session revoked")
     
     if not user.is_active:
         # User account is disabled

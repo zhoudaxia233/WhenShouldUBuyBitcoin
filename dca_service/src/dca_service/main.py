@@ -1,4 +1,5 @@
 from fastapi import FastAPI, Request, Depends, HTTPException, Response
+from fastapi.openapi.docs import get_redoc_html, get_swagger_ui_html
 from fastapi.templating import Jinja2Templates
 from pathlib import Path
 from contextlib import asynccontextmanager
@@ -53,11 +54,15 @@ async def lifespan(app: FastAPI):
     scheduler.stop()
     logger.info("DCA Scheduler shutdown complete")
 
+# API docs are served below behind a login instead of publicly
 app = FastAPI(
     title=settings.PROJECT_NAME,
-    openapi_url=f"{settings.API_V1_STR}/openapi.json",
+    openapi_url=None,
+    docs_url=None,
+    redoc_url=None,
     lifespan=lifespan
 )
+OPENAPI_URL = f"{settings.API_V1_STR}/openapi.json"
 
 
 def build_template_context(**extra):
@@ -87,6 +92,18 @@ async def log_requests(request: Request, call_next):
             logger.warning(message)
         else:
             logger.info(message)
+    return response
+
+@app.middleware("http")
+async def security_headers(request: Request, call_next):
+    response = await call_next(request)
+    # The public /analysis site may be embedded elsewhere; the private app may not.
+    if not request.url.path.startswith("/analysis"):
+        response.headers.setdefault("X-Frame-Options", "SAMEORIGIN")
+    response.headers.setdefault("X-Content-Type-Options", "nosniff")
+    # Browsers ignore HSTS over plain HTTP, so only send it where HTTPS is in use
+    if settings.SESSION_COOKIE_HTTPS_ONLY:
+        response.headers.setdefault("Strict-Transport-Security", "max-age=31536000")
     return response
 
 # Add session middleware for authentication
@@ -143,6 +160,21 @@ async def events(request: Request, db: Session = Depends(get_session)):
         raise
 
     return await sse_manager.connect(request)
+
+
+@app.get(OPENAPI_URL, include_in_schema=False)
+def get_openapi_schema(user: User = Depends(get_current_user)):
+    return app.openapi()
+
+
+@app.get("/docs", include_in_schema=False)
+def get_swagger_docs(user: User = Depends(get_current_user)):
+    return get_swagger_ui_html(openapi_url=OPENAPI_URL, title=f"{settings.PROJECT_NAME} - Swagger UI")
+
+
+@app.get("/redoc", include_in_schema=False)
+def get_redoc_docs(user: User = Depends(get_current_user)):
+    return get_redoc_html(openapi_url=OPENAPI_URL, title=f"{settings.PROJECT_NAME} - ReDoc")
 
 
 @app.get("/api/version")

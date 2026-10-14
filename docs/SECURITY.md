@@ -17,10 +17,22 @@ DATABASE_URL=sqlite:///./dca.db
 BINANCE_CRED_ENC_KEY=your-encryption-key
 ```
 
+### Required in Production
+```bash
+# Refuse to start when SESSION_SECRET is missing (default: false).
+# Without it, a missing secret falls back to a random one that changes on restart.
+DCA_REQUIRE_SECURE_SESSION=true
+
+# Send the session cookie over HTTPS only, and send HSTS (default: false)
+SESSION_COOKIE_HTTPS_ONLY=true
+```
+
+The app always refuses to start when `SESSION_SECRET` is one of the values
+published in this repository (the old dev default or the `.env.example`
+placeholder).
+
 ### Optional Production Overrides
 ```bash
-# Enable HTTPS-only cookies (default: true)
-SESSION_COOKIE_HTTPS_ONLY=true
 
 # SameSite cookie policy (default: lax)
 SESSION_COOKIE_SAMESITE=lax
@@ -148,8 +160,9 @@ Current requirements (enforced in `create_admin.py`):
 - Implement password expiration policy
 
 ### Session Management
-- Sessions expire after 24 hours (configurable)
-- Sessions cleared on logout
+- Sessions expire after 24 hours of inactivity (configurable)
+- Logout revokes every copy of the session cookie, on all devices
+  (`users.session_version` is stored in the cookie and bumped on logout)
 - Stale sessions automatically invalidated
 
 ### CSRF Protection

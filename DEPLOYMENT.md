@@ -70,6 +70,9 @@ SESSION_SECRET=<paste-generated-secret-here>
 # CRITICAL: Must be true in production with HTTPS
 SESSION_COOKIE_HTTPS_ONLY=true
 
+# CRITICAL: Refuse to start if SESSION_SECRET is ever missing
+DCA_REQUIRE_SECURE_SESSION=true
+
 # Optional: Binance credentials encryption key (auto-generated on first run)
 BINANCE_CRED_ENC_KEY=
 ```
@@ -480,6 +483,7 @@ Before going live, verify:
 
 - [ ] `SESSION_SECRET` is a strong random string (32+ bytes)
 - [ ] `SESSION_COOKIE_HTTPS_ONLY=true` in `.env`
+- [ ] `DCA_REQUIRE_SECURE_SESSION=true` in `.env`
 - [ ] `.env` file permissions are 600
 - [ ] HTTPS is working (browser shows padlock)
 - [ ] HTTP auto-redirects to HTTPS

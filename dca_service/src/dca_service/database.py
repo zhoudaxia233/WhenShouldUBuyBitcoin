@@ -191,12 +191,32 @@ def _migrate_strategy_table():
         traceback.print_exc()
         raise
 
+def _migrate_users_table():
+    """Add users.session_version to databases created before session revocation."""
+    with Session(engine) as session:
+        table_exists = session.exec(text(
+            "SELECT name FROM sqlite_master WHERE type='table' AND name='users'"
+        )).first()
+        if not table_exists:
+            return
+        existing_column_names = {
+            row[0] for row in session.exec(text("SELECT name FROM pragma_table_info('users')")).all()
+        }
+        if 'session_version' not in existing_column_names:
+            logger.info("Adding 'session_version' column to users table...")
+            session.exec(text(
+                "ALTER TABLE users ADD COLUMN session_version INTEGER NOT NULL DEFAULT 0"
+            ))
+            session.commit()
+
+
 def create_db_and_tables():
     # Create all tables first (this will create new tables with all columns)
     SQLModel.metadata.create_all(engine)
     # Then run migration to add columns to existing tables that might be missing them
     _migrate_transaction_table()
     _migrate_strategy_table()
+    _migrate_users_table()
     # Initialize global settings singleton
     _init_global_settings()
 

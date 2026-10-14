@@ -207,5 +207,7 @@ class User(SQLModel, table=True):
     password_hash: str  # Bcrypt hashed password
     is_active: bool = Field(default=True)
     is_admin: bool = Field(default=False)
+    # Stored in the session cookie at login; bumping it revokes every copy of that cookie.
+    session_version: int = Field(default=0)
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
