@@ -18,6 +18,10 @@ than speed or agreement.
   user explicitly asks.
 - Prefer existing project patterns, dependencies, and auth boundaries over new
   abstractions.
+- Help text that names menus or buttons in another product (wallet apps,
+  exchanges) must be checked against that product's current version, from its
+  source code or current official docs, not written from memory. Give desktop
+  and phone steps separately when they differ, and lay steps out as lists.
 
 ## Review Gates
 

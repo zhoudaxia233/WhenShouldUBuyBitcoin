@@ -2158,12 +2158,38 @@
                     <form id="coldWalletKeysForm" autocomplete="off">
                         <label class="form-label" for="coldWalletKeysInput">Or track it from your wallet's public key</label>
                         <textarea class="form-control font-monospace small" id="coldWalletKeysInput" rows="3" spellcheck="false" autocapitalize="off" placeholder="zpub… or xpub…, one per line"></textarea>
-                        <div class="form-text">
-                            Trezor Suite: account → Details → Show public key (zpub). Ledger Live: account → Edit account → Advanced (xpub).
-                            Native segwit accounts only (addresses starting with bc1q).
-                            The key stays in this browser; the balance is read from mempool.space and only the total is saved here.
-                            Never paste your recovery phrase or a private key.
-                            Pasting keys replaces the ones tracked now.
+                        <ul class="form-text ps-3 mb-2">
+                            <li>Native segwit accounts only (addresses starting with <code>bc1q</code>).</li>
+                            <li>The key stays in this browser. Balances are read from mempool.space; only the total is saved here.</li>
+                            <li><strong>Never paste your recovery phrase or a private key.</strong></li>
+                            <li>Pasting keys replaces the ones tracked now.</li>
+                        </ul>
+                        <button class="btn btn-sm btn-outline-primary" type="button" data-bs-toggle="collapse" data-bs-target="#coldWalletKeysHelp" aria-expanded="false" aria-controls="coldWalletKeysHelp">
+                            <i class="bi bi-question-circle" aria-hidden="true"></i> How to find the public key
+                        </button>
+                        <div class="collapse mt-2" id="coldWalletKeysHelp">
+                            <div class="card card-body satsflow-soft-panel small">
+                                <h6 class="mb-1">Ledger Wallet (formerly Ledger Live), desktop</h6>
+                                <ol class="mb-3 ps-3">
+                                    <li>Open your Bitcoin account.</li>
+                                    <li>Click the round settings button at the top right (it shows "Edit account" on hover).</li>
+                                    <li>Expand <strong>Advanced</strong> at the bottom.</li>
+                                    <li>Copy the value after <code>"xpub":</code>, without the quotes. It starts with <code>xpub</code>.</li>
+                                </ol>
+                                <h6 class="mb-1">Ledger Wallet, phone</h6>
+                                <ol class="mb-3 ps-3">
+                                    <li>Open your Bitcoin account.</li>
+                                    <li>Tap the gear at the top right.</li>
+                                    <li>Tap <strong>Advanced logs</strong> and copy the <code>xpub</code> value.</li>
+                                </ol>
+                                <h6 class="mb-1">Trezor Suite</h6>
+                                <ol class="mb-3 ps-3">
+                                    <li>Open your Bitcoin account and go to the <strong>Details</strong> tab.</li>
+                                    <li>Under <strong>Public key (XPUB)</strong>, click <strong>Show public key</strong> and confirm on the device.</li>
+                                    <li>Copy the key. For a SegWit account it starts with <code>zpub</code>.</li>
+                                </ol>
+                                <p class="mb-0">Each account has its own key. If you have several Bitcoin accounts, paste one key per line.</p>
+                            </div>
                         </div>
                         <div id="coldWalletKeysCheck" class="small mt-2 d-none" role="status"></div>
                         <div id="coldWalletKeysError" class="alert alert-warning small mt-2 d-none" role="alert"></div>

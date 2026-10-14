@@ -58,3 +58,45 @@ def test_every_cdn_asset_is_pinned_and_integrity_checked():
         assert re.search(r"@\d+\.\d+\.\d+/", url), f"{name}: unpinned {url}"
         assert 'integrity="sha384-' in tag, f"{name}: no integrity on {url}"
         assert 'crossorigin="anonymous"' in tag, f"{name}: no crossorigin on {url}"
+
+
+def _key_form(html: str) -> str:
+    start = html.index('id="coldWalletKeysForm"')
+    return html[start: html.index("</form>", start)]
+
+
+def test_key_help_is_a_toggle_with_steps_per_wallet():
+    form = _key_form(_dashboard_html())
+
+    toggle = re.search(r"<button[^>]*data-bs-target=\"#coldWalletKeysHelp\"[^>]*>", form).group(0)
+    assert 'data-bs-toggle="collapse"' in toggle
+    assert 'aria-controls="coldWalletKeysHelp"' in toggle
+    assert 'type="button"' in toggle
+
+    help_start = form.index('id="coldWalletKeysHelp"')
+    help_block = form[help_start:]
+    # Each wallet gets its own numbered steps rather than one run-on sentence.
+    assert help_block.count("<ol") >= 3
+
+
+def test_key_help_uses_the_wallet_apps_current_labels():
+    # Checked against the apps' source in October 2026: Ledger Live is now
+    # Ledger Wallet, the desktop account page has an "Edit account" button
+    # with a collapsed "Advanced" section, and mobile has "Advanced logs".
+    # Trezor Suite has Details > Public key (XPUB) > Show public key.
+    form = _key_form(_dashboard_html())
+    help_block = form[form.index('id="coldWalletKeysHelp"'):]
+
+    for label in ["Ledger Wallet", "Edit account", "Advanced", "Advanced logs",
+                  "Trezor Suite", "Details", "Show public key"]:
+        assert label in help_block, label
+    assert "wrench" not in help_block.lower()
+
+
+def test_key_notes_are_listed_one_per_line():
+    form = _key_form(_dashboard_html())
+    notes = form[: form.index('id="coldWalletKeysHelp"')]
+
+    items = re.findall(r"<li\b[^>]*>(.*?)</li>", notes, re.S)
+    for note in ["bc1q", "stays in this browser", "recovery phrase", "replaces"]:
+        assert any(note in item for item in items), note
