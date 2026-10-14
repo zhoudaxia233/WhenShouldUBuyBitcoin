@@ -425,9 +425,12 @@
         }
 
         return {
+            // `current` (the live price, holdings and average) only feeds the
+            // "now" readout. It stays out of the signature: the price arrives
+            // every few seconds and must not cancel a day the reader scrubs to.
             setData: function (data, current) {
                 var signature = JSON.stringify([data && data.dates && data.dates.length, data && data.market_dates && data.market_dates.length,
-                    data && data.btc_balance && data.btc_balance[data.btc_balance.length - 1], current]);
+                    data && data.btc_balance && data.btc_balance[data.btc_balance.length - 1]]);
                 state.current = current || {};
                 if (signature !== state.signature) {
                     state.signature = signature;

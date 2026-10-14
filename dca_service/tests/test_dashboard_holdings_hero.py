@@ -91,6 +91,16 @@ def test_reserve_chart_scrolls_vertically_on_touch_and_has_a_mobile_height():
     assert "height: 240px;" in mobile[:400]
 
 
+def test_polled_price_reaches_the_holdings_readout():
+    # The market figure and the readout above the chart showed different
+    # prices: only the market figure followed the price poll.
+    html = _html("index.html")
+    update = html[html.index("function updateDashboardRealtimePrice(payload)") :]
+    update = update[: update.index("\n        }\n")]
+    assert "latestReserveWallet = { ...(latestReserveWallet || {}), current_price: price };" in update
+    assert "renderReserveChart();" in update
+
+
 def _media_block(css: str, query: str) -> str:
     """The body of the home section's @media block for `query`."""
     start = css.index("{", css.index(query, css.index("/* ---------- Home: holdings"))) + 1
