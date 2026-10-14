@@ -1617,7 +1617,7 @@
                 <dl class="ledger-list holdings-wallets">
                     <div><dt>Total</dt><dd>₿<span id="totalBtc">--</span></dd></div>
                     <div><dt>Binance</dt><dd>₿<span id="hotBalance">--</span></dd></div>
-                    <div><dt>Cold storage</dt><dd>₿<span id="coldBalance">--</span> <button class="holdings-edit" type="button" data-bs-toggle="modal" data-bs-target="#setColdWalletModal" aria-label="Edit cold storage balance">Edit</button></dd></div>
+                    <div><dt>Cold storage<small class="holdings-sync-age d-none" id="coldSyncAge"></small></dt><dd>₿<span id="coldBalance">--</span> <button class="holdings-edit" type="button" data-bs-toggle="modal" data-bs-target="#setColdWalletModal" aria-label="Edit cold storage balance">Edit</button></dd></div>
                 </dl>
             </section>
 
@@ -4744,10 +4744,29 @@
             return result;
         }
 
+        function formatColdSyncAge(at, now) {
+            const minutes = Math.floor(Math.max(0, now - at) / 60000);
+            if (minutes < 1) return 'synced just now';
+            if (minutes < 60) return `synced ${minutes}m ago`;
+            const hours = Math.floor(minutes / 60);
+            if (hours < 48) return `synced ${hours}h ago`;
+            return `synced ${Math.floor(hours / 24)}d ago`;
+        }
+
+        // The dashboard's "synced 3h ago" under Cold storage.
+        function renderColdSyncAge() {
+            const sync = readColdKeys().length ? readColdSync() : null;
+            const age = document.getElementById('coldSyncAge');
+            age.classList.toggle('d-none', !sync);
+            age.textContent = sync ? formatColdSyncAge(sync.at, Date.now()) : '';
+            age.title = sync ? new Date(sync.at).toLocaleString() : '';
+        }
+
         function renderColdKeysState() {
             const keys = readColdKeys();
             const tracking = keys.length > 0;
             const sync = readColdSync();
+            renderColdSyncAge();
             // While tracking, the manual balance would be overwritten anyway,
             // so a status line takes its place.
             document.getElementById('setColdWalletForm').classList.toggle('d-none', tracking);
@@ -4909,6 +4928,7 @@
         });
 
         renderColdKeysState();
+        setInterval(renderColdSyncAge, 60 * 1000);
 
         // Buys and balances on other exchanges (Kraken Pro, Bitvavo, ...): read-only history
         let latestVenueBalances = [];

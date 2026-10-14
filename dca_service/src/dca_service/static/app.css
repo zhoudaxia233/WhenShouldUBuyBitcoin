@@ -1866,6 +1866,12 @@ html[data-theme="dark"] {
     font-family: var(--font-sans);
 }
 
+.holdings-sync-age {
+    display: block;
+    color: var(--dashboard-faint);
+    font-size: 0.72rem;
+}
+
 .holdings-edit {
     margin-left: 6px;
     padding: 0;
