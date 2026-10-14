@@ -739,10 +739,17 @@ function isDaylightSavingTime(date) {
  * Perform real-time buy zone check
  * This is the main function that orchestrates all calculations
  */
+// Coming back to the tab after this long checks the price again
+const REFRESH_ON_RETURN_AFTER_MS = 60 * 1000;
+let lastCheckStartedAt = 0;
+let checkInFlight = false;
+
 async function checkRealtimeStatus() {
     const resultsEl = document.getElementById("results");
     const refreshEl = document.getElementById("todayRefresh");
     const todayEl = document.getElementById("today-tab");
+    lastCheckStartedAt = Date.now();
+    checkInFlight = true;
 
     try {
         // Show loading state
@@ -866,6 +873,7 @@ async function checkRealtimeStatus() {
         `;
         resultsEl.classList.add("show");
     } finally {
+        checkInFlight = false;
         if (refreshEl) {
             refreshEl.disabled = false;
         }
@@ -1209,4 +1217,11 @@ document.addEventListener("DOMContentLoaded", () => {
         refreshEl.addEventListener("click", checkRealtimeStatus);
     }
     checkRealtimeStatus();
+});
+
+document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState !== "visible" || checkInFlight) return;
+    if (Date.now() - lastCheckStartedAt >= REFRESH_ON_RETURN_AFTER_MS) {
+        checkRealtimeStatus();
+    }
 });
