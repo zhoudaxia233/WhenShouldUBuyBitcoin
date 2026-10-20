@@ -72,6 +72,10 @@ async def fetch_wallet_summary(session: Session) -> WalletSummary:
         session.commit()
     
     cold_wallet_balance = settings.cold_wallet_balance
+    cold_wallet_updated_at = settings.updated_at
+    if cold_wallet_updated_at is not None and cold_wallet_updated_at.tzinfo is None:
+        # SQLite drops the timezone; the value was written as UTC.
+        cold_wallet_updated_at = cold_wallet_updated_at.replace(tzinfo=timezone.utc)
     
     # Initialize hot wallet values
     hot_wallet_balance = 0.0
@@ -149,6 +153,8 @@ async def fetch_wallet_summary(session: Session) -> WalletSummary:
         venue_balances=venue_balances,
         avg_buy_price=avg_buy_price,
         external_buy_count=len(external),
+        cold_wallet_source=settings.cold_wallet_source,
+        cold_wallet_updated_at=cold_wallet_updated_at,
     )
 
 
@@ -188,12 +194,13 @@ async def update_cold_wallet_balance(
     
     # Update balance
     settings.cold_wallet_balance = update.balance
+    settings.cold_wallet_source = update.source
     settings.updated_at = datetime.now(timezone.utc)
     session.add(settings)
     session.commit()
     session.refresh(settings)
     
-    logger.info(f"Cold wallet balance updated to {update.balance} BTC")
+    logger.info(f"Cold wallet balance updated to {update.balance} BTC (source: {update.source or 'unknown'})")
     
     # Return updated summary
     return await fetch_wallet_summary(session)

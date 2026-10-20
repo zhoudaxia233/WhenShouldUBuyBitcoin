@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import List, Optional
+from typing import List, Literal, Optional
 from pydantic import BaseModel, Field
 
 class MetricsSourceSchema(BaseModel):
@@ -82,11 +82,15 @@ class WalletSummary(BaseModel):
     venue_balances: List[VenueBalanceRead] = []  # BTC held on other exchanges, set by hand
     avg_buy_price: float = 0.0  # Binance buys and external buys together
     external_buy_count: int = 0
+    cold_wallet_source: Optional[Literal["public_key", "manual"]] = None
+    cold_wallet_updated_at: Optional[datetime] = None
 
 
 class ColdWalletBalanceUpdate(BaseModel):
     """Request schema for updating cold wallet balance"""
     balance: float = Field(ge=0, description="Total BTC currently in cold storage")
+    # Omitted by pages loaded before the source was recorded: stored as unknown.
+    source: Optional[Literal["public_key", "manual"]] = None
 
 
 class VenueBalanceUpdate(BaseModel):
