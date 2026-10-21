@@ -13,7 +13,6 @@ from dca_service.api import (
     dca_api,
     binance_api,
     email_settings_api,
-    summary_api_settings_api,
     wallet_api,
     stats_api,
     auth_api,
@@ -147,7 +146,6 @@ app.include_router(dca_api.router, prefix=settings.API_V1_STR)
 app.include_router(binance_api.router, prefix=settings.API_V1_STR)
 app.include_router(wallet_api.router, prefix=settings.API_V1_STR)
 app.include_router(email_settings_api.router, prefix=settings.API_V1_STR)
-app.include_router(summary_api_settings_api.router, prefix=settings.API_V1_STR)
 app.include_router(read_token_api.router, prefix=settings.API_V1_STR)
 app.include_router(stats_api.router, prefix=settings.API_V1_STR)
 app.include_router(auth_api.router, prefix=settings.API_V1_STR)

@@ -5,11 +5,6 @@ import pytest
 from whenshouldubuybitcoin.daily_report import enrich_with_human_summary
 
 
-@pytest.fixture(autouse=True)
-def disable_summary_api(monkeypatch):
-    monkeypatch.setenv("REPORT_SUMMARY_DISABLE_LLM", "1")
-
-
 def summaries(chart, metrics):
     report = enrich_with_human_summary(
         {"sections": [{"chart": chart, "metrics": metrics}]}

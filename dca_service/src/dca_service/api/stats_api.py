@@ -22,7 +22,6 @@ from dca_service.database import get_session, engine
 from dca_service.models import (
     DCATransaction,
     User,
-    SummaryApiSettings,
     DCAStrategy,
     BinanceCredentials,
 )
@@ -34,8 +33,6 @@ from dca_service.services import external_buys
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
-TRADING_STYLE_AI_CACHE: Dict[str, Dict[str, Any]] = {}
-TRADING_STYLE_AI_PROMPT_VERSION = "v2_concise_chill"
 BINANCE_PUBLIC_TICKER_URL = "https://api.binance.com/api/v3/ticker/price"
 # Shorter than the poll so each poll gets a fresh price. The cache is shared,
 # so all open pages together make at most one ticker call (weight 2) per TTL:
@@ -3200,238 +3197,6 @@ def _build_add_position_guidance(
     }
 
 
-def _run_ai_style_analysis(
-    session: Session,
-    analysis_data: Dict[str, Any],
-    include_ai: bool,
-    *,
-    language: str,
-    source_signature: str,
-) -> Dict[str, Any]:
-    normalized_language = _normalize_language(language)
-    status = {
-        "attempted": False,
-        "success": False,
-        "reason": "",
-        "provider": None,
-        "model": None,
-        "language": normalized_language,
-        "cache_hit": False,
-        "source_signature": source_signature,
-        "prompt_version": TRADING_STYLE_AI_PROMPT_VERSION,
-    }
-    if not include_ai:
-        status["reason"] = "AI analysis skipped by request."
-        return {"status": status, "analysis": None}
-
-    cache_key = f"{normalized_language}:{source_signature}:{TRADING_STYLE_AI_PROMPT_VERSION}"
-    cached = TRADING_STYLE_AI_CACHE.get(cache_key)
-    if cached and isinstance(cached.get("analysis"), str) and cached.get("analysis"):
-        status["success"] = True
-        status["cache_hit"] = True
-        status["reason"] = "Source unchanged. Reused cached AI analysis."
-        status["provider"] = cached.get("provider")
-        status["model"] = cached.get("model")
-        return {"status": status, "analysis": cached["analysis"]}
-
-    summary_settings = session.exec(select(SummaryApiSettings)).first()
-    if not summary_settings:
-        status["reason"] = "Summary API settings are not configured."
-        return {"status": status, "analysis": None}
-    if not summary_settings.is_enabled:
-        status["reason"] = "Summary API is disabled in settings."
-        return {"status": status, "analysis": None}
-
-    provider = (summary_settings.provider or "openai").strip().lower()
-    model = (summary_settings.model or "gpt-4o-mini").strip()
-    base_url = (summary_settings.base_url or "https://api.openai.com/v1").strip()
-    status["provider"] = provider
-    status["model"] = model
-
-    if provider != "openai":
-        status["reason"] = f"Unsupported provider: {provider}"
-        return {"status": status, "analysis": None}
-
-    try:
-        api_key = decrypt_text(summary_settings.api_key_encrypted)
-    except Exception as e:
-        status["reason"] = f"Failed to decrypt API key: {e}"
-        return {"status": status, "analysis": None}
-
-    if not api_key:
-        status["reason"] = "Missing API key."
-        return {"status": status, "analysis": None}
-
-    status["attempted"] = True
-    endpoint = base_url.rstrip("/") + "/chat/completions"
-
-    event_diagnostics = analysis_data.get("event_diagnostics", []) or []
-    compact_event_diagnostics = [
-        {
-            "event_time": item.get("event_time"),
-            "amount_usd": item.get("amount_usd"),
-            "avg_price_usd": item.get("avg_price_usd"),
-            "interval_since_prev_days": item.get("interval_since_prev_days"),
-            "relative_amount_label": item.get("relative_amount_label"),
-            "price_position_label": item.get("price_position_label"),
-        }
-        for item in event_diagnostics[-30:]
-    ]
-
-    payload_for_model_full = {
-        "summary": analysis_data.get("summary", {}),
-        "style_tags": analysis_data.get("style_tags", []),
-        "issues": analysis_data.get("issues", []),
-        "event_diagnostics": event_diagnostics[-80:],
-        "method_constraints": analysis_data.get("method_constraints", {}),
-    }
-    payload_for_model_compact = {
-        "summary": analysis_data.get("summary", {}),
-        "style_tags": analysis_data.get("style_tags", []),
-        "issues": analysis_data.get("issues", []),
-        "event_diagnostics": compact_event_diagnostics,
-        "method_constraints": analysis_data.get("method_constraints", {}),
-    }
-    payload_for_model_minimal = {
-        "summary": analysis_data.get("summary", {}),
-        "style_tags": analysis_data.get("style_tags", []),
-        "issues": analysis_data.get("issues", []),
-        "method_constraints": analysis_data.get("method_constraints", {}),
-    }
-
-    if normalized_language == "zh":
-        system_prompt = (
-            "你是BTC买入执行行为分析师。"
-            "语气要简明、chill、像朋友复盘，不要官话。"
-            "必须严格避免后视偏差。"
-            "每个行为只能基于当时和之前可见信息评价。"
-            "只使用提供的指标与诊断数据。"
-            "输出用中文Markdown，控制在8-12行以内。"
-            "结构固定为："
-            "1) 风格判断（2-3句）"
-            "2) 主要问题（最多3条，按严重度）"
-            "3) 下一步建议（最多4条，可直接执行）。"
-        )
-        user_prompt_template = (
-            "下面是用户交易行为统计数据（同一订单ID拆单已合并为一个行为事件）。\n"
-            "请基于这些数据分析交易风格与潜在问题，禁止使用未来信息倒推过去决策。\n\n"
-            "{payload_json}"
-        )
-    else:
-        system_prompt = (
-            "You are a BTC buy-execution behavior analyst. "
-            "Use a concise, chill, coach-like tone. No corporate fluff. "
-            "You must strictly avoid hindsight bias. "
-            "Each action can only be judged using information available at that time and earlier history. "
-            "Use only the supplied metrics and diagnostics. "
-            "Respond in Markdown in 8-12 lines max with sections: "
-            "1) Style Assessment (2-3 short sentences) "
-            "2) Key Issues (max 3, ranked by severity) "
-            "3) Actionable Improvements (max 4)."
-        )
-        user_prompt_template = (
-            "Below is the user's trading behavior dataset (split fills with same order ID are merged as one event).\n"
-            "Analyze style and potential problems using only these metrics. No hindsight bias.\n\n"
-            "{payload_json}"
-        )
-
-    def _extract_error_detail(resp: httpx.Response) -> str:
-        try:
-            data = resp.json()
-            if isinstance(data, dict):
-                err = data.get("error")
-                if isinstance(err, dict):
-                    msg = err.get("message")
-                    if isinstance(msg, str) and msg.strip():
-                        return msg.strip()
-                msg = data.get("message")
-                if isinstance(msg, str) and msg.strip():
-                    return msg.strip()
-        except Exception:
-            pass
-        text = (resp.text or "").strip().replace("\n", " ")
-        return text[:280] if text else ""
-
-    def _call_provider_with_payload(payload_obj: Dict[str, Any]) -> Dict[str, Any]:
-        user_payload_text = json.dumps(payload_obj, ensure_ascii=False)
-        user_prompt = user_prompt_template.format(payload_json=user_payload_text)
-        try:
-            with httpx.Client(timeout=45.0) as client:
-                response = client.post(
-                    endpoint,
-                    headers={
-                        "Authorization": f"Bearer {api_key}",
-                        "Content-Type": "application/json",
-                    },
-                    json={
-                        "model": model,
-                        "messages": [
-                            {"role": "system", "content": system_prompt},
-                            {"role": "user", "content": user_prompt},
-                        ],
-                    },
-                )
-
-            if response.status_code >= 400:
-                detail = _extract_error_detail(response)
-                reason = f"AI provider HTTP {response.status_code}"
-                if detail:
-                    reason = f"{reason}: {detail}"
-                return {"ok": False, "reason": reason, "status_code": response.status_code}
-
-            body = response.json()
-            choices = body.get("choices") or []
-            if not choices:
-                return {"ok": False, "reason": "AI response has no choices.", "status_code": None}
-            message = (choices[0] or {}).get("message") or {}
-            content = message.get("content")
-            if not content:
-                return {"ok": False, "reason": "AI response has empty content.", "status_code": None}
-            return {"ok": True, "content": content}
-        except Exception as e:
-            return {"ok": False, "reason": f"AI call failed: {e}", "status_code": None}
-
-    try:
-        attempts = [
-            payload_for_model_full,
-            payload_for_model_compact,
-            payload_for_model_minimal,
-        ]
-        last_reason = ""
-        last_http_status: Optional[int] = None
-        content = None
-        for payload_variant in attempts:
-            result = _call_provider_with_payload(payload_variant)
-            if result.get("ok"):
-                content = result.get("content")
-                break
-            last_reason = result.get("reason", "")
-            last_http_status = result.get("status_code")
-            # Only retry for 400-like payload/request issues; others usually won't benefit.
-            if last_http_status not in (400, 413, 422):
-                break
-
-        if not content:
-            status["reason"] = last_reason or "AI provider request failed."
-            return {"status": status, "analysis": None}
-
-        status["success"] = True
-        status["reason"] = ""
-        TRADING_STYLE_AI_CACHE[cache_key] = {
-            "analysis": content,
-            "provider": provider,
-            "model": model,
-            "language": normalized_language,
-            "source_signature": source_signature,
-            "prompt_version": TRADING_STYLE_AI_PROMPT_VERSION,
-            "updated_at": datetime.now(timezone.utc).isoformat(),
-        }
-        return {"status": status, "analysis": content}
-    except Exception as e:
-        status["reason"] = f"AI call failed: {e}"
-        return {"status": status, "analysis": None}
-
-
 @router.get("/stats/realtime-price")
 def get_realtime_price(
     symbol: str = Query(default="BTCUSDC"),
@@ -3877,7 +3642,6 @@ def _build_purchase_csv(transactions: List[DCATransaction]) -> str:
 
 @router.get("/stats/trading-style")
 def get_trading_style_analysis(
-    include_ai: bool = Query(default=True),
     language: str = Query(default="en"),
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_user),
@@ -3891,21 +3655,11 @@ def get_trading_style_analysis(
     """
     _, _, behavior_data, source_signature = _build_buy_behavior_snapshot(session)
 
-    ai_result = _run_ai_style_analysis(
-        session,
-        behavior_data,
-        include_ai=include_ai,
-        language=language,
-        source_signature=source_signature,
-    )
-
     return {
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "language": _normalize_language(language),
         "source_signature": source_signature,
         "analysis_data": behavior_data,
-        "ai_status": ai_result["status"],
-        "ai_analysis": ai_result["analysis"],
     }
 
 

@@ -908,12 +908,6 @@
             color: var(--muted);
         }
 
-        .daily-report-hint {
-            margin-top: 4px;
-            font-size: 12px;
-            color: var(--muted);
-        }
-
         .daily-report-list {
             margin: 10px 0 14px 0;
             padding-left: 20px;
@@ -2799,7 +2793,6 @@
                             </div>
                         </div>
                         <div id="dailyReportMeta" class="daily-report-meta">Loading...</div>
-                        <div id="dailyReportHint" class="daily-report-hint" style="display:none;"></div>
                     </div>
                     <ul id="dailyReportItems" class="daily-report-list"></ul>
                     <div id="dailyReportOverall" class="daily-report-overall"></div>
@@ -3734,7 +3727,6 @@
                 reportDate: "Report Date",
                 generatedAt: "Generated At",
                 unknown: "Unknown",
-                apiSkippedSameSource: "Summary API call skipped: source data unchanged, reused previous summary.",
             },
             zh: {
                 loading: "加载中...",
@@ -3744,7 +3736,6 @@
                 reportDate: "报告日期",
                 generatedAt: "生成时间",
                 unknown: "未知",
-                apiSkippedSameSource: "已跳过摘要API调用：数据源未变化，复用上次摘要。",
             },
         };
 
@@ -3769,7 +3760,6 @@
             const itemsEl = document.getElementById("dailyReportItems");
             const overallEl = document.getElementById("dailyReportOverall");
             const emptyEl = document.getElementById("dailyReportEmpty");
-            const hintEl = document.getElementById("dailyReportHint");
             const text = DAILY_REPORT_TEXT[dailyReportLanguage];
 
             if (!dailyReportData) {
@@ -3778,10 +3768,6 @@
                 emptyEl.style.display = "";
                 emptyEl.textContent = text.empty;
                 metaEl.textContent = text.unavailable;
-                if (hintEl) {
-                    hintEl.style.display = "none";
-                    hintEl.textContent = "";
-                }
                 return;
             }
 
@@ -3793,10 +3779,6 @@
                 emptyEl.style.display = "";
                 emptyEl.textContent = text.empty;
                 metaEl.textContent = text.unavailable;
-                if (hintEl) {
-                    hintEl.style.display = "none";
-                    hintEl.textContent = "";
-                }
                 return;
             }
 
@@ -3841,15 +3823,6 @@
             const reportDateText = formatReportDate(dailyReportData.report_date);
             const generatedAt = formatGeneratedAt(dailyReportData.generated_at);
             metaEl.textContent = `${text.reportDate}: ${reportDateText} | ${text.generatedAt}: ${generatedAt}`;
-
-            const summaryGeneration = dailyReportData.summary_generation || {};
-            if (hintEl && summaryGeneration.api_call_skipped && summaryGeneration.skip_reason === "source_unchanged") {
-                hintEl.style.display = "";
-                hintEl.textContent = text.apiSkippedSameSource;
-            } else if (hintEl) {
-                hintEl.style.display = "none";
-                hintEl.textContent = "";
-            }
         }
 
         async function loadDailyReport() {
