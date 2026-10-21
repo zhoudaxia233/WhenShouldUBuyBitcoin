@@ -22,11 +22,12 @@ def test_public_keys_are_never_sent_to_the_server():
     textarea = re.search(r"<textarea[^>]*id=\"coldWalletKeysInput\"[^>]*>", html).group(0)
     assert "name=" not in textarea
 
-    # The only request to this server posts the summed balance and nothing else.
+    # The only request to this server posts the summed balance and a fixed
+    # label saying it came from a key, and nothing else.
     block = html[html.index("// Cold storage from extended public keys"):]
     block = block[: block.index("// Buys and balances on other exchanges")]
     assert block.count("fetch(") == 1
-    assert "body: JSON.stringify({ balance: balance })" in block
+    assert "body: JSON.stringify({ balance: balance, source: 'public_key' })" in block
     assert "console.log" not in block
 
 
@@ -192,7 +193,10 @@ def test_tracking_state_replaces_the_manual_form_with_a_status_line():
 
     block = _cold_block()
     render = block[block.index("function renderColdKeysState"):block.index("async function checkColdKeysInput")]
-    assert "setColdWalletForm').classList.toggle('d-none', tracking)" in render
+    # The manual form shows only in the setup view and when a device without
+    # the key chose to type the balance; never while this browser tracks a key.
+    assert "const showManual = view === 'setup' || view === 'remote-manual';" in render
+    assert "setColdWalletForm').classList.toggle('d-none', !showManual)" in render
     assert "coldWalletKeysStatus').classList.toggle('d-none', !tracking" in render
 
 
@@ -255,3 +259,53 @@ def test_dashboard_shows_how_old_the_cold_balance_is():
     # only the label, so a running scan's progress text is left alone.
     assert "setInterval(renderColdSyncAge, 60 * 1000)" in block
     assert "setInterval(renderColdKeysState" not in block
+
+
+def test_manual_balance_is_posted_as_manual():
+    html = _dashboard_html()
+    manual = html[html.index("document.getElementById('setColdWalletForm').addEventListener('submit'"):]
+    manual = manual[: manual.index("// Cold storage from extended public keys")]
+    assert "body: JSON.stringify({ balance: balance, source: 'manual' })" in manual
+
+
+def test_device_without_the_key_explains_where_the_balance_came_from():
+    html = _dashboard_html()
+    modal = html[html.index('id="setColdWalletModal"'):]
+    modal = modal[: modal.index('id="coldWalletKeysForm"')]
+    remote = modal[modal.index('id="coldWalletRemote"'):]
+    for element in ['id="coldWalletRemoteBalance"', 'id="coldWalletRemoteSyncedAt"',
+                    'id="coldWalletRemoteAddKey"', 'id="coldWalletRemoteManual"']:
+        assert element in remote, element
+    assert "The key is saved in another browser, not on this device." in remote
+    assert 'id="coldWalletBack"' in modal
+    assert 'id="coldWalletSwitchNote"' in modal
+    assert "<h5 class=\"modal-title\">Cold storage</h5>" in modal
+
+
+def test_background_sync_stops_once_the_balance_is_entered_by_hand_elsewhere():
+    block = _cold_block()
+    sync = block[block.index("async function syncColdWalletFromKeys"):]
+    sync = sync[: sync.index("\n        }\n")]
+    assert "shouldAutoSyncCold(window.__coldWalletSource)" in sync
+    assert sync.index("shouldAutoSyncCold(") < sync.index("writeColdAttempt(")
+
+    render = block[block.index("function renderColdKeysState"):block.index("async function checkColdKeysInput")]
+    assert "coldModalView(" in render
+    assert "entered by hand on another device" in render
+
+
+def test_wallet_summary_tells_the_dialog_where_the_balance_came_from():
+    html = _dashboard_html()
+    update = html[html.index("function updateWalletUI(data, strategy)"):]
+    update = update[: update.index("\n        }\n")]
+    assert "window.__coldWalletSource = data.cold_wallet_source || null;" in update
+    assert "window.__coldWalletUpdatedAt = data.cold_wallet_updated_at || null;" in update
+    assert "renderColdKeysState();" in update
+
+
+def test_tracking_status_and_dashboard_agree_on_the_last_sync():
+    # Another browser holding the same key may have synced since this one did.
+    block = _cold_block()
+    render = block[block.index("function renderColdKeysState"):block.index("async function checkColdKeysInput")]
+    assert "coldSyncedAt(window.__coldWalletSource, window.__coldWalletUpdatedAt, sync)" in render
+    assert "new Date(sync.at)" not in render

@@ -119,6 +119,9 @@ class GlobalSettings(SQLModel, table=True):
     
     id: int = Field(default=1, primary_key=True)
     cold_wallet_balance: float = Field(default=0.0)  # Current BTC in cold storage
+    # Where that balance came from: "public_key" (synced in a browser that keeps
+    # the key) or "manual". None for balances saved before this was recorded.
+    cold_wallet_source: Optional[str] = Field(default=None)
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 

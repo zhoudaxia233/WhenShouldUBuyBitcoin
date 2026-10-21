@@ -2138,10 +2138,21 @@
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Set Cold Wallet Balance</h5>
+                    <h5 class="modal-title">Cold storage</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
+                    <div id="coldWalletRemote" class="d-none">
+                        <div class="cold-remote-card">
+                            <p class="section-label"><span class="live-dot" aria-hidden="true"></span>Synced from your wallet's public key</p>
+                            <p class="cold-remote-balance">₿<span id="coldWalletRemoteBalance">--</span></p>
+                            <p class="cold-remote-meta" id="coldWalletRemoteSyncedAt"></p>
+                            <p class="cold-remote-why">The key is saved in another browser, not on this device. This balance updates when that browser opens SatsFlow.</p>
+                        </div>
+                        <button type="button" class="btn btn-primary w-100 mt-3" id="coldWalletRemoteAddKey">Add the key on this device too</button>
+                        <button type="button" class="btn btn-outline-secondary w-100 mt-2" id="coldWalletRemoteManual">Enter the balance by hand instead</button>
+                    </div>
+                    <button type="button" class="btn btn-link btn-sm p-0 mb-3 d-none" id="coldWalletBack">← Back</button>
                     <form id="setColdWalletForm">
                         <div class="alert alert-satsflow small">
                             Set the total amount of BTC currently in your cold storage (Ledger, Trezor, etc.).
@@ -2152,6 +2163,7 @@
                             <div class="form-text" id="coldWalletInputHelp">This replaces the previous value.</div>
                         </div>
                         <div id="coldWalletVenueHint" class="alert alert-warning small d-none" role="note"></div>
+                        <div id="coldWalletSwitchNote" class="alert alert-warning small d-none" role="note">Saving switches cold storage to manual. The key in your other browser will stop updating it.</div>
                         <button type="submit" class="btn btn-primary w-100" id="coldWalletSubmit">Update Balance</button>
                     </form>
                     <hr id="coldWalletDivider">
@@ -4512,6 +4524,11 @@
             
             // Pre-fill modal with current cold wallet balance
             document.getElementById('coldWalletInput').value = data.cold_wallet_balance;
+            // Where that balance came from, so every device can say so.
+            window.__coldWalletSource = data.cold_wallet_source || null;
+            window.__coldWalletUpdatedAt = data.cold_wallet_updated_at || null;
+            window.__coldWalletBalance = data.cold_wallet_balance;
+            if (typeof window.renderColdKeysState === 'function') window.renderColdKeysState();
             renderVenueBalances(data.venue_balances || []);
             
             // Show warning if no Binance credentials (hot wallet will be 0)
@@ -4650,7 +4667,7 @@
                 const response = await fetch('/api/wallet/cold-balance', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ balance: balance })
+                    body: JSON.stringify({ balance: balance, source: 'manual' })
                 });
                 
                 if (response.ok) {
@@ -4679,6 +4696,36 @@
         const COLD_SYNC_INTERVAL_MS = 24 * 60 * 60 * 1000;
         let coldSyncRunning = false;
         let coldLastSyncAt = 0;  // in memory too, in case localStorage is blocked
+        // On a device without the key: null, 'add' (paste the key here too) or
+        // 'manual' (type the balance instead).
+        let coldRemoteChoice = null;
+
+        // What the dialog shows. The server knows only where the balance came
+        // from ('public_key', 'manual', or null for balances saved before that
+        // was recorded); the keys themselves live in the browser that synced.
+        function coldModalView(hasLocalKeys, source, choice) {
+            if (hasLocalKeys) return source === 'manual' ? 'paused' : 'tracking';
+            if (source !== 'public_key') return 'setup';
+            if (choice === 'add') return 'remote-add';
+            if (choice === 'manual') return 'remote-manual';
+            return 'remote';
+        }
+
+        // A balance entered by hand, on any device, ends the daily sync in
+        // browsers that still hold a key; "Sync now" there switches back.
+        function shouldAutoSyncCold(source) {
+            return source !== 'manual';
+        }
+
+        // When the cold balance was last synced from a key, or null.
+        function coldSyncedAt(source, serverUpdatedAt, localSync) {
+            if (source === 'public_key') {
+                const at = Date.parse(serverUpdatedAt);
+                return Number.isFinite(at) ? at : null;
+            }
+            if (source === 'manual') return null;
+            return localSync && Number.isFinite(localSync.at) ? localSync.at : null;
+        }
 
         function readColdKeys() {
             try {
@@ -4758,36 +4805,66 @@
 
         // The dashboard's "synced 3h ago" under Cold storage.
         function renderColdSyncAge() {
-            const sync = readColdKeys().length ? readColdSync() : null;
+            const at = coldSyncedAt(
+                window.__coldWalletSource, window.__coldWalletUpdatedAt,
+                readColdKeys().length ? readColdSync() : null);
             const age = document.getElementById('coldSyncAge');
-            age.classList.toggle('d-none', !sync);
-            age.textContent = sync ? formatColdSyncAge(sync.at, Date.now()) : '';
-            age.title = sync ? new Date(sync.at).toLocaleString() : '';
+            age.classList.toggle('d-none', at === null);
+            age.textContent = at === null ? '' : formatColdSyncAge(at, Date.now());
+            age.title = at === null ? '' : new Date(at).toLocaleString();
         }
 
         function renderColdKeysState() {
             const keys = readColdKeys();
-            const tracking = keys.length > 0;
+            const view = coldModalView(keys.length > 0, window.__coldWalletSource || null, coldRemoteChoice);
+            const tracking = view === 'tracking' || view === 'paused';
+            const showManual = view === 'setup' || view === 'remote-manual';
+            const showKeys = view !== 'remote' && view !== 'remote-manual';
             const sync = readColdSync();
             renderColdSyncAge();
             // While tracking, the manual balance would be overwritten anyway,
-            // so a status line takes its place.
-            document.getElementById('setColdWalletForm').classList.toggle('d-none', tracking);
-            document.getElementById('coldWalletDivider').classList.toggle('d-none', tracking);
+            // so a status line takes its place. On a device without the key, a
+            // synced balance is explained first and the forms open from there.
+            document.getElementById('coldWalletRemote').classList.toggle('d-none', view !== 'remote');
+            document.getElementById('coldWalletBack').classList.toggle('d-none', view !== 'remote-add' && view !== 'remote-manual');
+            document.getElementById('setColdWalletForm').classList.toggle('d-none', !showManual);
+            document.getElementById('coldWalletSwitchNote').classList.toggle('d-none', view !== 'remote-manual');
+            document.getElementById('coldWalletDivider').classList.toggle('d-none', view !== 'setup');
+            document.getElementById('coldWalletKeysForm').classList.toggle('d-none', !showKeys);
             const showingResult = !document.getElementById('coldWalletKeysCheck').classList.contains('d-none');
             document.getElementById('coldWalletKeysStatus').classList.toggle('d-none', !tracking || showingResult);
-            document.getElementById('coldWalletKeysStatusText').textContent = tracking
-                ? `Tracking ${keys.map(k => window.ColdWalletWatch.maskKey(k)).join(', ')}` +
-                  (sync ? `, last synced ${new Date(sync.at).toLocaleString()}.` : '.')
-                : '';
+            const masked = keys.map(k => window.ColdWalletWatch.maskKey(k)).join(', ');
+            const changedAt = Date.parse(window.__coldWalletUpdatedAt);
+            const changedText = Number.isFinite(changedAt) ? ` on ${new Date(changedAt).toLocaleString()}` : '';
+            let status = '';
+            if (view === 'paused') {
+                status = `Tracking ${masked}. The balance was entered by hand on another device${changedText}, ` +
+                    'so this browser stopped syncing it. Sync now to switch back to the key.';
+            } else if (tracking) {
+                // The server's time, so a sync from another browser with the key counts too.
+                const syncedAt = coldSyncedAt(window.__coldWalletSource, window.__coldWalletUpdatedAt, sync);
+                status = `Tracking ${masked}` + (syncedAt !== null ? `, last synced ${new Date(syncedAt).toLocaleString()}.` : '.');
+            }
+            document.getElementById('coldWalletKeysStatusText').textContent = status;
             document.getElementById('coldWalletKeysLabel').textContent = tracking
                 ? 'Sync now, or paste other keys to replace these'
-                : "Or track it from your wallet's public key";
+                : view === 'remote-add'
+                    ? 'Paste the same key as in your other browser'
+                    : "Or track it from your wallet's public key";
+            if (view === 'remote') {
+                const balance = Number(window.__coldWalletBalance);
+                document.getElementById('coldWalletRemoteBalance').textContent =
+                    Number.isFinite(balance) ? balance.toFixed(8) : '--';
+                const at = coldSyncedAt('public_key', window.__coldWalletUpdatedAt, null);
+                document.getElementById('coldWalletRemoteSyncedAt').textContent = at === null ? '' :
+                    `${formatColdSyncAge(at, Date.now()).replace(/^synced/, 'Last synced')}, ${new Date(at).toLocaleString()}`;
+            }
             const submit = document.getElementById('coldWalletKeysSubmit');
             submit.textContent = 'Sync now';
             // Removing the key mid-scan would still save its total.
             document.getElementById('coldWalletKeysClear').disabled = coldSyncRunning;
         }
+        window.renderColdKeysState = renderColdKeysState;
 
         async function checkColdKeysInput() {
             const box = document.getElementById('coldWalletKeysCheck');
@@ -4828,7 +4905,7 @@
             const response = await fetch('/api/wallet/cold-balance', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ balance: balance })
+                body: JSON.stringify({ balance: balance, source: 'public_key' })
             });
             if (!response.ok) throw new Error('Could not save the cold storage balance. Are you still logged in?');
             coldLastSyncAt = Date.now();
@@ -4841,6 +4918,7 @@
         async function syncColdWalletFromKeys() {
             const texts = readColdKeys();
             if (!texts.length || coldSyncRunning || !window.ColdWalletWatch) return;
+            if (!shouldAutoSyncCold(window.__coldWalletSource)) return;
             const last = Math.max(coldLastSyncAt, readColdAttempt(), (readColdSync() || {}).at || 0);
             if (Date.now() - last < COLD_SYNC_INTERVAL_MS) return;
             coldSyncRunning = true;
@@ -4907,6 +4985,7 @@
         // Back to the setup view: after a result, after removing keys, and
         // when the dialog closes.
         function resetColdKeysView() {
+            coldRemoteChoice = null;
             document.getElementById('coldWalletKeysInput').value = '';
             document.getElementById('coldWalletKeysCheck').classList.add('d-none');
             document.getElementById('coldWalletKeysError').classList.add('d-none');
@@ -4922,6 +5001,16 @@
         }
 
         document.getElementById('coldWalletKeysClear').addEventListener('click', stopColdTracking);
+
+        function chooseColdRemote(choice, focusId) {
+            coldRemoteChoice = choice;
+            renderColdKeysState();
+            const target = document.getElementById(focusId);
+            if (target) target.focus();
+        }
+        document.getElementById('coldWalletRemoteAddKey').addEventListener('click', () => chooseColdRemote('add', 'coldWalletKeysInput'));
+        document.getElementById('coldWalletRemoteManual').addEventListener('click', () => chooseColdRemote('manual', 'coldWalletInput'));
+        document.getElementById('coldWalletBack').addEventListener('click', () => chooseColdRemote(null, 'coldWalletRemoteAddKey'));
         document.getElementById('coldWalletKeysRemove').addEventListener('click', stopColdTracking);
 
         // Do not leave a pasted key sitting in the closed dialog.

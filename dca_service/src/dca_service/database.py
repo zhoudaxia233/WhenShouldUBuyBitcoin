@@ -210,6 +210,23 @@ def _migrate_users_table():
             session.commit()
 
 
+def _migrate_global_settings_table():
+    """Add global_settings.cold_wallet_source; existing balances keep an unknown (NULL) source."""
+    with Session(engine) as session:
+        table_exists = session.exec(text(
+            "SELECT name FROM sqlite_master WHERE type='table' AND name='global_settings'"
+        )).first()
+        if not table_exists:
+            return
+        existing_column_names = {
+            row[0] for row in session.exec(text("SELECT name FROM pragma_table_info('global_settings')")).all()
+        }
+        if 'cold_wallet_source' not in existing_column_names:
+            logger.info("Adding 'cold_wallet_source' column to global_settings table...")
+            session.exec(text("ALTER TABLE global_settings ADD COLUMN cold_wallet_source VARCHAR"))
+            session.commit()
+
+
 def create_db_and_tables():
     # Create all tables first (this will create new tables with all columns)
     SQLModel.metadata.create_all(engine)
@@ -217,6 +234,7 @@ def create_db_and_tables():
     _migrate_transaction_table()
     _migrate_strategy_table()
     _migrate_users_table()
+    _migrate_global_settings_table()
     # Initialize global settings singleton
     _init_global_settings()
 
