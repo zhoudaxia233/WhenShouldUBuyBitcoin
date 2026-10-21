@@ -97,11 +97,6 @@ def test_build_report_payload_includes_non_excluded_sections():
 def test_enrich_with_human_summary_produces_items_and_overall(monkeypatch):
     payload = build_report_payload(_sample_btc_df(), macro_df=_sample_macro_df())
 
-    # Force deterministic path (no API call).
-    monkeypatch.setenv("REPORT_SUMMARY_DISABLE_LLM", "1")
-    monkeypatch.delenv("REPORT_SUMMARY_API_KEY", raising=False)
-    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
-
     enriched = enrich_with_human_summary(payload)
     summary = enriched["human_summary"]
 
@@ -120,10 +115,6 @@ def test_generate_daily_report_writes_json(tmp_path: Path, monkeypatch):
     output_path = tmp_path / "daily_report.json"
     monkeypatch.chdir(tmp_path)
 
-    monkeypatch.setenv("REPORT_SUMMARY_DISABLE_LLM", "1")
-    monkeypatch.delenv("REPORT_SUMMARY_API_KEY", raising=False)
-    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
-
     report = generate_daily_report(
         _sample_btc_df(),
         macro_df=_sample_macro_df(),
@@ -137,86 +128,34 @@ def test_generate_daily_report_writes_json(tmp_path: Path, monkeypatch):
     assert report["human_summary"]["items"]
 
 
-def test_generate_daily_report_skips_llm_when_source_unchanged(tmp_path: Path, monkeypatch):
-    output_path = tmp_path / "daily_report.json"
-    monkeypatch.chdir(tmp_path)
-    monkeypatch.delenv("REPORT_SUMMARY_DISABLE_LLM", raising=False)
-    monkeypatch.delenv("REPORT_SUMMARY_API_KEY", raising=False)
-    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+def test_summary_uses_rules_only_even_with_an_api_key(tmp_path: Path, monkeypatch):
+    from whenshouldubuybitcoin import daily_report
 
-    calls = {"n": 0}
-
-    def fake_llm(_payload, language):
-        calls["n"] += 1
-        if language == "zh":
-            return {
-                "items": [{"chart": "MA Cross Analysis", "summary": "中文摘要"}],
-                "overall_summary": "中文总览",
-            }
-        return {
-            "items": [{"chart": "MA Cross Analysis", "summary": "English summary"}],
-            "overall_summary": "English overview",
-        }
-
-    with patch("whenshouldubuybitcoin.daily_report._call_llm_summary", side_effect=fake_llm):
-        first = generate_daily_report(
+    monkeypatch.setenv("OPENAI_API_KEY", "sk-should-be-ignored")
+    monkeypatch.setenv("REPORT_SUMMARY_API_KEY", "sk-should-be-ignored")
+    with patch("httpx.Client", side_effect=AssertionError("no external calls")):
+        report = generate_daily_report(
             _sample_btc_df(),
             macro_df=_sample_macro_df(),
-            output_path=output_path,
-        )
-        first_calls = calls["n"]
-        second = generate_daily_report(
-            _sample_btc_df(),
-            macro_df=_sample_macro_df(),
-            output_path=output_path,
+            output_path=tmp_path / "daily_report.json",
         )
 
-    assert first_calls == 2  # en + zh
-    assert calls["n"] == 2  # unchanged source: no extra LLM calls
-    assert first["summary_generation"]["api_call_skipped"] is False
-    assert second["summary_generation"]["api_call_skipped"] is True
-    assert second["summary_generation"]["skip_reason"] == "source_unchanged"
-    assert second["summary_generation"]["reused_from_existing"] is True
-    assert second["human_summary"] == first["human_summary"]
+    assert not hasattr(daily_report, "_call_llm_summary")
+    assert report["human_summary"]["generated_by"] == "deterministic_rules"
+    assert "summary_generation" not in report
+    assert "summary_source_signature" not in report
 
 
-def test_generate_daily_report_calls_llm_when_source_changes(tmp_path: Path, monkeypatch):
-    output_path = tmp_path / "daily_report.json"
-    monkeypatch.chdir(tmp_path)
-    monkeypatch.delenv("REPORT_SUMMARY_DISABLE_LLM", raising=False)
-    monkeypatch.delenv("REPORT_SUMMARY_API_KEY", raising=False)
-    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+def test_summary_is_recomputed_from_current_rules_on_every_run(tmp_path: Path):
+    from whenshouldubuybitcoin import daily_report
 
-    calls = {"n": 0}
+    output = tmp_path / "report.json"
+    previous = generate_daily_report(_sample_btc_df(), output_path=output)
+    previous["human_summary"]["overall_summary"] = "Old contradictory summary"
+    daily_report.save_daily_report(previous, output)
 
-    def fake_llm(_payload, language):
-        calls["n"] += 1
-        marker = f"v{calls['n']}"
-        return {
-            "items": [{"chart": "MA Cross Analysis", "summary": f"{language}-{marker}"}],
-            "overall_summary": f"{language}-overall-{marker}",
-        }
-
-    btc_df_1 = _sample_btc_df()
-    btc_df_2 = _sample_btc_df().copy()
-    btc_df_2.loc[btc_df_2.index[-1], "close_price"] += 999  # force signature change
-
-    with patch("whenshouldubuybitcoin.daily_report._call_llm_summary", side_effect=fake_llm):
-        first = generate_daily_report(
-            btc_df_1,
-            macro_df=_sample_macro_df(),
-            output_path=output_path,
-        )
-        second = generate_daily_report(
-            btc_df_2,
-            macro_df=_sample_macro_df(),
-            output_path=output_path,
-        )
-
-    assert calls["n"] == 4  # en + zh for each run
-    assert first["summary_generation"]["api_call_skipped"] is False
-    assert second["summary_generation"]["api_call_skipped"] is False
-    assert first["summary_source_signature"] != second["summary_source_signature"]
+    report = generate_daily_report(_sample_btc_df(), output_path=output)
+    assert "Old contradictory summary" not in report["human_summary"]["overall_summary"]
 
 
 def _bottom_signals_snapshot():
@@ -335,9 +274,6 @@ def test_bottom_signals_section_summary_bakes_in_advice_and_caveat():
 
 
 def test_overall_summary_mentions_bottom_signal_with_caveat(monkeypatch):
-    monkeypatch.setenv("REPORT_SUMMARY_DISABLE_LLM", "1")
-    monkeypatch.delenv("REPORT_SUMMARY_API_KEY", raising=False)
-    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
     payload = build_report_payload(
         _minimal_btc_df(), bottom_signals_snapshot=_bottom_signals_snapshot()
     )
@@ -349,66 +285,7 @@ def test_overall_summary_mentions_bottom_signal_with_caveat(monkeypatch):
     assert "链上底部" in overall_zh and "并非买入信号" in overall_zh
 
 
-def test_template_upgrade_regenerates_summary_even_when_market_data_is_unchanged(
-    tmp_path, monkeypatch
-):
-    from whenshouldubuybitcoin import daily_report
-
-    monkeypatch.setenv("REPORT_SUMMARY_DISABLE_LLM", "1")
-    output = tmp_path / "report.json"
-    current_version = daily_report.SUMMARY_TEMPLATE_VERSION
-    monkeypatch.setattr(
-        daily_report, "SUMMARY_TEMPLATE_VERSION", "bottoming-conclusion-v2"
-    )
-    previous = generate_daily_report(_sample_btc_df(), output_path=output)
-    previous["human_summary"]["overall_summary"] = "Old contradictory summary"
-    daily_report.save_daily_report(previous, output)
-
-    monkeypatch.setattr(daily_report, "SUMMARY_TEMPLATE_VERSION", current_version)
-    report = generate_daily_report(_sample_btc_df(), output_path=output)
-    assert report["summary_generation"]["reused_from_existing"] is False
-    assert "Old contradictory summary" not in report["human_summary"]["overall_summary"]
-
-
-def test_unsigned_legacy_report_is_regenerated(tmp_path, monkeypatch):
-    from whenshouldubuybitcoin import daily_report
-
-    monkeypatch.setenv("REPORT_SUMMARY_DISABLE_LLM", "1")
-    output = tmp_path / "report.json"
-    previous = generate_daily_report(_sample_btc_df(), output_path=output)
-    previous.pop("summary_source_signature")
-    previous["human_summary"]["overall_summary"] = "Old contradictory summary"
-    daily_report.save_daily_report(previous, output)
-
-    report = generate_daily_report(_sample_btc_df(), output_path=output)
-    assert report["summary_generation"]["reused_from_existing"] is False
-    assert "Old contradictory summary" not in report["human_summary"]["overall_summary"]
-
-
-def test_partial_llm_items_ignore_malformed_entries_and_keep_rule_fallback(monkeypatch):
-    payload = build_report_payload(_sample_btc_df(), macro_df=_sample_macro_df())
-    response = {
-        "items": [
-            None,
-            "invalid",
-            {"chart": "MA Cross Analysis", "summary": "Custom MA wording"},
-        ],
-    }
-    with patch(
-        "whenshouldubuybitcoin.daily_report._call_llm_summary", return_value=response
-    ):
-        report = enrich_with_human_summary(payload)
-    for lang in ("en", "zh"):
-        summaries = {
-            item["chart"]: item["summary"]
-            for item in report["human_summary"]["localized"][lang]["items"]
-        }
-        assert summaries["MA Cross Analysis"] == "Custom MA wording"
-        assert summaries["Net Liquidity"]
-
-
 def test_equal_moving_averages_have_neutral_payload_and_summary(monkeypatch):
-    monkeypatch.setenv("REPORT_SUMMARY_DISABLE_LLM", "1")
     btc_df = _sample_btc_df()
     btc_df["ma_50"] = btc_df["ma_200"]
     btc_df["ma_spread"] = btc_df["ma_50"] - btc_df["ma_200"]

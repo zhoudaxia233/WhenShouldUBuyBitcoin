@@ -227,6 +227,13 @@ def _migrate_global_settings_table():
             session.commit()
 
 
+def _drop_summary_api_settings_table():
+    """Drop the removed LLM summary settings, which held an encrypted API key."""
+    with Session(engine) as session:
+        session.exec(text("DROP TABLE IF EXISTS summary_api_settings"))
+        session.commit()
+
+
 def create_db_and_tables():
     # Create all tables first (this will create new tables with all columns)
     SQLModel.metadata.create_all(engine)
@@ -235,6 +242,7 @@ def create_db_and_tables():
     _migrate_strategy_table()
     _migrate_users_table()
     _migrate_global_settings_table()
+    _drop_summary_api_settings_table()
     # Initialize global settings singleton
     _init_global_settings()
 

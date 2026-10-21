@@ -3,15 +3,12 @@
 from __future__ import annotations
 
 import json
-import os
 import re
 import tempfile
-import hashlib
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-import httpx
 import pandas as pd
 
 from whenshouldubuybitcoin.visualization import (
@@ -21,7 +18,6 @@ from whenshouldubuybitcoin.visualization import (
 
 EXCLUDED_CHARTS = {"Valuation Ratios", "Price Comparison"}
 DEFAULT_REPORT_PATH = Path("docs/data/daily_report.json")
-SUMMARY_TEMPLATE_VERSION = "fact-grounded-conclusions-v3"
 
 
 def _safe_float(value: Any) -> float | None:
@@ -891,155 +887,7 @@ def _deterministic_zh_summary(section: dict[str, Any]) -> str:
     return "今日该图表暂无可用解读。"
 
 
-def _call_llm_summary(payload: dict[str, Any], language: str) -> dict[str, Any] | None:
-    if os.getenv("REPORT_SUMMARY_DISABLE_LLM", "").strip().lower() in {"1", "true", "yes"}:
-        return None
-
-    api_key = None
-    model = None
-    base_url = None
-
-    # 1) Prefer DB-stored settings from dca_service (configured via frontend)
-    try:
-        from sqlmodel import Session, select
-        from dca_service.database import engine
-        from dca_service.models import SummaryApiSettings
-        from dca_service.services.security import decrypt_text
-
-        with Session(engine) as session:
-            db_settings = session.exec(select(SummaryApiSettings)).first()
-            if db_settings and db_settings.is_enabled:
-                api_key = decrypt_text(db_settings.api_key_encrypted)
-                model = db_settings.model
-                base_url = db_settings.base_url
-    except Exception:
-        # If db service/config isn't available here, fallback to env vars.
-        pass
-
-    # 2) Fallback to environment-based settings
-    api_key = api_key or os.getenv("REPORT_SUMMARY_API_KEY") or os.getenv("OPENAI_API_KEY")
-    if not api_key:
-        return None
-
-    model = model or os.getenv("REPORT_SUMMARY_MODEL", "gpt-4o-mini")
-    base_url = base_url or os.getenv("REPORT_SUMMARY_BASE_URL", "https://api.openai.com/v1")
-
-    if language == "zh":
-        system_prompt = (
-            "你是资深宏观市场分析师。"
-            "请用自然、专业、简洁的中文写每日报告。"
-            "只能使用输入数据，不要编造。输出必须是JSON："
-            "{\"items\":[{\"chart\":\"...\",\"summary\":\"...\"}],\"overall_summary\":\"...\"}。"
-        )
-        user_prompt = (
-            "请按图表逐条写总结：\n"
-            "1) 每条2-3句。\n"
-            "2) 第1句给关键现状数据（至少两个数值）。\n"
-            "3) 第2句必须给出现状判断（明确结论，不要模棱两可）。\n"
-            "4) 第3句可选，只能写数据支持的趋势背景（如30天变化、分位、最近交叉日期）。\n"
-            "5) 禁止空话和模板话，如“需谨慎”“可能会影响”“表明一定稳定性”“该结论仅基于...”。\n"
-            "6) 不要给投资建议。\n"
-            "7) 若字段缺失，简短说明“数据不足”。\n"
-            "8) 保留链上指标的data_date及caveat；延迟快照不能描述为今日数据，不能为统一日期而改写。\n"
-            "9) 总评必须与各分项及实际数值同向；不为缺失数据补方向。净流动性_bil单位为十亿美元，换成亿美元需乘10。\n"
-            "最后写2-3句中文整体总结。\n"
-            + json.dumps(payload, ensure_ascii=False)
-        )
-    else:
-        system_prompt = (
-            "You are a senior macro market analyst."
-            "Write concise, professional daily chart commentary."
-            "Use only supplied metrics. Output JSON only: "
-            "{\"items\":[{\"chart\":\"...\",\"summary\":\"...\"}],\"overall_summary\":\"...\"}."
-        )
-        user_prompt = (
-            "Write one summary for each chart:\n"
-            "1) 2-3 sentences per chart.\n"
-            "2) Sentence 1: current state with at least two numbers.\n"
-            "3) Sentence 2: explicit interpretation of current state.\n"
-            "4) Optional sentence 3: trend context only if supported by provided deltas/dates.\n"
-            "5) No generic indicator definitions, no data-source disclaimers, no investment advice.\n"
-            "6) Avoid repeating BTC spot price across sections.\n"
-            "7) If a field is missing, state that briefly.\n"
-            "8) Preserve on-chain data_date and caveat; never present a delayed snapshot as today's data.\n"
-            "9) Keep the overall summary consistent with the section metrics; never infer direction from missing values.\n"
-            "Then add a 2-3 sentence overall summary.\n"
-            + json.dumps(payload, ensure_ascii=False)
-        )
-
-    url = base_url.rstrip("/") + "/chat/completions"
-    try:
-        with httpx.Client(timeout=30.0) as client:
-            resp = client.post(
-                url,
-                headers={"Authorization": f"Bearer {api_key}"},
-                json={
-                    "model": model,
-                    "temperature": 0.2,
-                    "response_format": {"type": "json_object"},
-                    "messages": [
-                        {"role": "system", "content": system_prompt},
-                        {"role": "user", "content": user_prompt},
-                    ],
-                },
-            )
-            resp.raise_for_status()
-            content = resp.json()["choices"][0]["message"]["content"]
-            parsed = json.loads(content)
-            if not isinstance(parsed, dict):
-                return None
-            return parsed
-    except Exception:
-        return None
-
-
-def _summary_source_payload(payload: dict[str, Any]) -> dict[str, Any]:
-    return {
-        "summary_template_version": SUMMARY_TEMPLATE_VERSION,
-        "report_date": payload.get("report_date"),
-        "excluded_charts": payload.get("excluded_charts", []),
-        "sections": payload.get("sections", []),
-    }
-
-
-def _summary_source_signature(payload: dict[str, Any]) -> str:
-    canonical = _summary_source_payload(payload)
-    encoded = json.dumps(canonical, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
-    return hashlib.sha256(encoded.encode("utf-8")).hexdigest()
-
-
-def _load_existing_report(path: Path) -> dict[str, Any] | None:
-    if not path.exists():
-        return None
-    try:
-        return json.loads(path.read_text(encoding="utf-8"))
-    except Exception:
-        return None
-
-
-def _has_reusable_human_summary(report: dict[str, Any] | None) -> bool:
-    if not isinstance(report, dict):
-        return False
-    summary = report.get("human_summary")
-    if not isinstance(summary, dict):
-        return False
-    if not isinstance(summary.get("items"), list) or not summary.get("items"):
-        return False
-    localized = summary.get("localized")
-    if not isinstance(localized, dict):
-        return False
-    for lang in ("en", "zh"):
-        lang_obj = localized.get(lang)
-        if not isinstance(lang_obj, dict):
-            return False
-        if not isinstance(lang_obj.get("items"), list) or not lang_obj.get("items"):
-            return False
-        if not isinstance(lang_obj.get("overall_summary"), str) or not lang_obj.get("overall_summary").strip():
-            return False
-    return True
-
-
-def enrich_with_human_summary(payload: dict[str, Any], *, source_signature: str | None = None) -> dict[str, Any]:
+def enrich_with_human_summary(payload: dict[str, Any]) -> dict[str, Any]:
     """Attach per-chart summary lines and overall summary."""
     deterministic_en_items = [
         {"chart": section["chart"], "summary": _deterministic_en_summary(section)}
@@ -1050,8 +898,6 @@ def enrich_with_human_summary(payload: dict[str, Any], *, source_signature: str 
         for section in payload.get("sections", [])
     ]
 
-    llm_en = _call_llm_summary(payload, "en")
-    llm_zh = _call_llm_summary(payload, "zh")
     conclusions = [
         conclusion for section in payload.get("sections", [])
         if (conclusion := _market_conclusion(section)) is not None
@@ -1082,38 +928,6 @@ def enrich_with_human_summary(payload: dict[str, Any], *, source_signature: str 
 
     overall_en = overall_en.strip() or "Available data is insufficient for an overall market assessment."
     overall_zh = overall_zh.strip() or "当前数据不足，暂无法形成整体市场判断。"
-
-    if llm_en and isinstance(llm_en.get("items"), list):
-        llm_items = llm_en["items"]
-        llm_map = {
-            str(item.get("chart")): str(item.get("summary"))
-            for item in llm_items
-            if isinstance(item, dict) and item.get("chart") and isinstance(item.get("summary"), str) and item["summary"].strip()
-        }
-        if llm_map:
-            en_items = [
-                {"chart": item["chart"], "summary": llm_map.get(item["chart"], item["summary"])}
-                for item in deterministic_en_items
-            ]
-        llm_overall = llm_en.get("overall_summary")
-        if isinstance(llm_overall, str) and llm_overall.strip():
-            overall_en = llm_overall.strip()
-
-    if llm_zh and isinstance(llm_zh.get("items"), list):
-        llm_zh_items = llm_zh.get("items")
-        llm_zh_map = {
-            str(item.get("chart")): str(item.get("summary"))
-            for item in llm_zh_items
-            if isinstance(item, dict) and item.get("chart") and isinstance(item.get("summary"), str) and item["summary"].strip()
-        }
-        if llm_zh_map:
-            zh_items = [
-                {"chart": item["chart"], "summary": llm_zh_map.get(item["chart"], item["summary"])}
-                for item in deterministic_zh_items
-            ]
-        llm_zh_overall = llm_zh.get("overall_summary")
-        if isinstance(llm_zh_overall, str) and llm_zh_overall.strip():
-            overall_zh = llm_zh_overall.strip()
 
     def _postprocess_summary(chart: str, summary: str) -> str:
         text = (summary or "").strip()
@@ -1171,14 +985,7 @@ def enrich_with_human_summary(payload: dict[str, Any], *, source_signature: str 
                 "overall_summary": overall_zh,
             },
         },
-        "generated_by": "llm_api" if llm_en or llm_zh else "deterministic_rules",
-    }
-    payload["summary_generation"] = {
-        "source_signature": source_signature,
-        "api_call_skipped": False,
-        "skip_reason": None,
-        "reused_from_existing": False,
-        "summary_generated_at": payload.get("generated_at"),
+        "generated_by": "deterministic_rules",
     }
     return payload
 
@@ -1223,34 +1030,7 @@ def generate_daily_report(
         free_signal_snapshot=free_signal_snapshot,
         bottom_signals_snapshot=bottom_signals_snapshot,
     )
-    source_signature = _summary_source_signature(payload)
-    payload["summary_source_signature"] = source_signature
-
-    existing_report = _load_existing_report(output_path)
-    existing_signature = None
-    if isinstance(existing_report, dict):
-        existing_signature = existing_report.get("summary_source_signature")
-
-    if existing_signature == source_signature and _has_reusable_human_summary(existing_report):
-        payload["human_summary"] = existing_report["human_summary"]
-        previous_summary_generation = (
-            existing_report.get("summary_generation")
-            if isinstance(existing_report.get("summary_generation"), dict)
-            else {}
-        )
-        previous_summary_generated_at = (
-            previous_summary_generation.get("summary_generated_at")
-            or existing_report.get("generated_at")
-        )
-        payload["summary_generation"] = {
-            "source_signature": source_signature,
-            "api_call_skipped": True,
-            "skip_reason": "source_unchanged",
-            "reused_from_existing": True,
-            "summary_generated_at": previous_summary_generated_at,
-        }
-    else:
-        payload = enrich_with_human_summary(payload, source_signature=source_signature)
+    payload = enrich_with_human_summary(payload)
 
     save_daily_report(payload, output_path=output_path)
     return payload

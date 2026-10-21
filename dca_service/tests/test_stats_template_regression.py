@@ -135,7 +135,8 @@ def test_update_charts_button_is_admin_only_and_does_not_show_raw_logs():
 
 def test_trading_style_uses_rule_data_only_without_ai_call():
     html = _load_stats_template()
-    assert "/api/stats/trading-style?include_ai=false&language=${encodeURIComponent(tradingStyleLanguage)}" in html
+    assert "/api/stats/trading-style?language=${encodeURIComponent(tradingStyleLanguage)}" in html
+    assert "include_ai" not in html
     assert "const cacheKey = `stats_trading_style_${tradingStyleLanguage}`;" in html
 
 

@@ -8,7 +8,7 @@ from pathlib import Path
 import io
 
 from dca_service.api import stats_api
-from dca_service.models import DCATransaction, SummaryApiSettings, DCAStrategy, BinanceCredentials
+from dca_service.models import DCATransaction, DCAStrategy, BinanceCredentials
 from dca_service.services.security import encrypt_text
 from datetime import datetime, timezone, timedelta
 
@@ -169,7 +169,7 @@ def test_trading_style_analysis_aggregates_split_fills(client: TestClient, sessi
     session.add(tx3)
     session.commit()
 
-    response = client.get("/api/stats/trading-style?include_ai=false")
+    response = client.get("/api/stats/trading-style")
     assert response.status_code == 200
     payload = response.json()
     summary = payload["analysis_data"]["summary"]
@@ -179,8 +179,8 @@ def test_trading_style_analysis_aggregates_split_fills(client: TestClient, sessi
     assert summary["split_event_count"] == 1
     assert summary["split_fill_extra_count"] == 1
     assert summary["avg_fills_per_event"] == 1.5
-    assert payload["ai_analysis"] is None
-    assert payload["ai_status"]["attempted"] is False
+    assert "ai_analysis" not in payload
+    assert "ai_status" not in payload
 
     diagnostics = payload["analysis_data"]["event_diagnostics"]
     assert len(diagnostics) == 2
@@ -438,126 +438,32 @@ def test_purchase_csv_export_classifies_simulated_and_unknown_triggers(client: T
     assert [row["purchase_type"] for row in rows] == ["SIMULATED", "UNKNOWN"]
 
 
-def test_trading_style_analysis_ai_disabled_without_settings(client: TestClient, session: Session):
+def test_trading_style_analysis_makes_no_external_calls(client: TestClient, session: Session):
     tx = DCATransaction(
         status="SUCCESS",
         fiat_amount=100.0,
         btc_amount=0.002,
         price=50000.0,
         ahr999=0.5,
-        notes="No AI settings",
+        notes="Rules only",
         timestamp=datetime(2024, 1, 1, tzinfo=timezone.utc),
     )
     session.add(tx)
     session.commit()
 
-    response = client.get("/api/stats/trading-style?include_ai=true")
-    assert response.status_code == 200
-    payload = response.json()
-    assert payload["ai_analysis"] is None
-    assert payload["ai_status"]["success"] is False
-    assert "not configured" in payload["ai_status"]["reason"].lower()
-
-
-def test_trading_style_analysis_ai_success(client: TestClient, session: Session):
-    stats_api.TRADING_STYLE_AI_CACHE.clear()
-    tx = DCATransaction(
-        status="SUCCESS",
-        fiat_amount=100.0,
-        btc_amount=0.002,
-        price=50000.0,
-        ahr999=0.5,
-        notes="AI settings test",
-        timestamp=datetime(2024, 1, 1, tzinfo=timezone.utc),
-    )
-    session.add(tx)
-    session.add(
-        SummaryApiSettings(
-            is_enabled=True,
-            provider="openai",
-            base_url="https://api.openai.com/v1",
-            model="gpt-4o-mini",
-            api_key_encrypted=encrypt_text("sk-test-key"),
-        )
-    )
-    session.commit()
-
-    mock_response = MagicMock()
-    mock_response.status_code = 200
-    mock_response.json.return_value = {
-        "choices": [
-            {
-                "message": {
-                    "content": "风格判断：偏固定节奏。主要问题：样本偏少。建议：保持一致执行。"
-                }
-            }
-        ]
-    }
-
-    mock_client = MagicMock()
-    mock_client.__enter__.return_value = mock_client
-    mock_client.post.return_value = mock_response
-
-    with patch("dca_service.api.stats_api.httpx.Client", return_value=mock_client):
-        response = client.get("/api/stats/trading-style?include_ai=true&language=zh")
+    with patch("httpx.Client", side_effect=AssertionError("no external calls")):
+        response = client.get("/api/stats/trading-style?language=zh")
 
     assert response.status_code == 200
     payload = response.json()
-    assert payload["ai_status"]["attempted"] is True
-    assert payload["ai_status"]["success"] is True
-    assert payload["ai_status"]["language"] == "zh"
-    assert payload["ai_status"]["cache_hit"] is False
-    assert "风格判断" in payload["ai_analysis"]
+    assert payload["analysis_data"]["summary"]
+    assert "ai_analysis" not in payload
+    assert "ai_status" not in payload
 
 
-def test_trading_style_analysis_reuses_cached_ai_when_source_unchanged(client: TestClient, session: Session):
-    stats_api.TRADING_STYLE_AI_CACHE.clear()
-    tx = DCATransaction(
-        status="SUCCESS",
-        fiat_amount=300.0,
-        btc_amount=0.006,
-        price=50000.0,
-        ahr999=0.5,
-        notes="Cache test",
-        timestamp=datetime(2024, 1, 2, tzinfo=timezone.utc),
-    )
-    session.add(tx)
-    session.add(
-        SummaryApiSettings(
-            is_enabled=True,
-            provider="openai",
-            base_url="https://api.openai.com/v1",
-            model="gpt-4o-mini",
-            api_key_encrypted=encrypt_text("sk-test-key"),
-        )
-    )
-    session.commit()
-
-    mock_response = MagicMock()
-    mock_response.status_code = 200
-    mock_response.json.return_value = {
-        "choices": [{"message": {"content": "Style Assessment: steady."}}]
-    }
-    mock_client = MagicMock()
-    mock_client.__enter__.return_value = mock_client
-    mock_client.post.return_value = mock_response
-
-    with patch("dca_service.api.stats_api.httpx.Client", return_value=mock_client):
-        first = client.get("/api/stats/trading-style?include_ai=true&language=en")
-        second = client.get("/api/stats/trading-style?include_ai=true&language=en")
-
-    assert first.status_code == 200
-    assert second.status_code == 200
-    first_payload = first.json()
-    second_payload = second.json()
-
-    assert first_payload["ai_status"]["attempted"] is True
-    assert first_payload["ai_status"]["cache_hit"] is False
-    assert second_payload["ai_status"]["attempted"] is False
-    assert second_payload["ai_status"]["cache_hit"] is True
-    assert "Source unchanged" in second_payload["ai_status"]["reason"]
-    assert second_payload["ai_analysis"] == first_payload["ai_analysis"]
-    assert mock_client.post.call_count == 1
+def test_summary_api_settings_endpoints_are_gone(client: TestClient):
+    assert client.get("/api/summary-api/settings/status").status_code == 404
+    assert client.post("/api/summary-api/settings", json={}).status_code in (404, 405)
 
 
 def test_realtime_price_endpoint_reuses_cache(client: TestClient):

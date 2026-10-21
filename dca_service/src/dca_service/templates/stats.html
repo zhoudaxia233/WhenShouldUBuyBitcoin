@@ -1353,7 +1353,7 @@
                 }
 
                 const response = await fetch(
-                    `/api/stats/trading-style?include_ai=false&language=${encodeURIComponent(tradingStyleLanguage)}`
+                    `/api/stats/trading-style?language=${encodeURIComponent(tradingStyleLanguage)}`
                 );
                 const data = await response.json();
                 saveToCache(cacheKey, data);
