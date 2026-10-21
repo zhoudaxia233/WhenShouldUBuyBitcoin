@@ -10,6 +10,7 @@ Read-only API token for GET /api/wallet/summary.
 - Only a hash is stored.
 """
 import hashlib
+from pathlib import Path
 
 import pytest
 from fastapi.testclient import TestClient
@@ -21,6 +22,7 @@ from dca_service.database import get_session
 from dca_service.main import app
 from dca_service.models import ReadToken
 
+TEMPLATES = Path(__file__).resolve().parents[1] / "src" / "dca_service" / "templates"
 
 SUMMARY = WalletSummary(
     cold_wallet_balance=0.5,
@@ -100,6 +102,7 @@ def test_only_a_hash_is_stored(real_auth_client: TestClient, session: Session):
         ("GET", "/api/email/settings/status"),
         ("GET", "/api/read-token"),
         ("GET", "/"),
+        ("GET", "/settings/api-token"),
         ("POST", "/api/wallet/cold-balance"),
         ("POST", "/api/read-token"),
         ("DELETE", "/api/read-token"),
@@ -209,16 +212,40 @@ def test_session_login_still_reads_the_summary(real_auth_client: TestClient):
     assert response.json()["total_btc"] == 0.75
 
 
-def test_settings_page_offers_the_token():
-    from pathlib import Path
+def _template(name: str) -> str:
+    return (TEMPLATES / name).read_text(encoding="utf-8")
 
-    html = (
-        Path(__file__).resolve().parents[1]
-        / "src" / "dca_service" / "templates" / "binance_settings.html"
-    ).read_text(encoding="utf-8")
 
-    assert 'id="readTokenCard"' in html
-    assert "fetch('/api/read-token'" in html
+def test_token_has_its_own_page_not_the_binance_page():
+    # It first went onto the Binance page, which has nothing to do with it
+    page = _template("api_token.html")
+    assert "{% set active_page = 'api_token' %}" in page
+    assert 'id="readTokenCard"' in page
+    assert "fetch('/api/read-token'" in page
     # The token is shown once and never logged
-    block = html[html.index("// ============= READ-ONLY TOKEN"):]
-    assert "console.log" not in block[: block.index("// ============= END READ-ONLY TOKEN")]
+    assert "console.log" not in page
+
+    binance = _template("binance_settings.html")
+    assert "readTokenCard" not in binance
+    assert "/api/read-token" not in binance
+
+
+def test_navigation_lists_the_token_page():
+    header = _template("_shared_header.html")
+    mobile = header[header.index('class="mobile-bottom-nav"'):]
+    sidebar = header[: header.index('class="mobile-bottom-nav"')]
+
+    assert '<a href="/settings/api-token" class="sidebar-link' in sidebar
+    assert 'class="dropdown-item" href="/settings/api-token"' in mobile
+    assert "'api_token': 'API token'" in header
+
+
+def test_token_page_needs_the_login(real_auth_client: TestClient):
+    response = real_auth_client.get("/settings/api-token")
+    assert response.headers["location"] == "/api/auth/login"
+
+    _login(real_auth_client)
+    response = real_auth_client.get("/settings/api-token")
+
+    assert response.status_code == 200
+    assert 'id="readTokenCard"' in response.text

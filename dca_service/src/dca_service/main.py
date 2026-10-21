@@ -238,6 +238,14 @@ def read_binance_settings_page(request: Request, user: User = Depends(get_curren
         context=build_template_context(user=user),
     )
 
+@app.get("/settings/api-token")
+def read_api_token_page(request: Request, user: User = Depends(get_current_user)):
+    return templates.TemplateResponse(
+        request=request,
+        name="api_token.html",
+        context=build_template_context(user=user),
+    )
+
 @app.get("/stats")
 def read_stats_page(request: Request, user: User = Depends(get_current_user)):
     return templates.TemplateResponse(

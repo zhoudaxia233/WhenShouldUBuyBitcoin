@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Token</title>
+    <script>
+        (function () {
+            const savedTheme = localStorage.getItem('dca_theme');
+            const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+            const initialTheme = savedTheme || (prefersDark ? 'dark' : 'light');
+            document.documentElement.setAttribute('data-bs-theme', initialTheme);
+        })();
+    </script>
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-9ndCyUaIbzAi2FUVXJi0CjmCapSmO7SnpJef0486qhLnuZ2cdeRhO02iuK6FUUVM" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" integrity="sha384-QuGBSgV5Im3DzL2z+8Ko9/hqNy/N0O7zwvXAtfd1MvPKWa/UbeLV65cfm4BV5Wgq" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/notyf@3.10.0/notyf.min.css" integrity="sha384-snpJ3knpH6avB6cP1vPkNdmRzCYaCpom/3TNOyvo189BiogXYXQfXkyYpZ2/xADs" crossorigin="anonymous">
+    <link rel="stylesheet" href="{{ asset_url('app.css') }}">
+</head>
+<body class="satsflow-page">
+    <div class="container app-shell app-shell-settings">
+        {% set active_page = 'api_token' %}
+        {% include "_shared_header.html" %}
+
+        <div class="page-title-block">
+            <h1>API Token</h1>
+            <p class="text-muted mb-0">Let another program read your wallet summary without logging in.</p>
+        </div>
+
+        <div class="card dashboard-panel" id="readTokenCard">
+            <div class="card-header dashboard-panel-header">
+                <h5 class="mb-0">🔑 Read-Only Token</h5>
+            </div>
+            <div class="card-body">
+                <ul class="small mb-3">
+                    <li>Send it as <code>Authorization: Bearer &lt;token&gt;</code> to <code>GET /api/wallet/summary</code>. It opens nothing else: no other page, no changes.</li>
+                    <li>Only a hash is stored, so the token is shown once. Creating a new one stops the old one.</li>
+                </ul>
+                <p class="mb-3 small"><strong>Status:</strong> <span id="readTokenStatus">Checking...</span></p>
+                <div id="readTokenReveal" class="alert alert-warning small d-none">
+                    <strong>Copy it now; it will not be shown again.</strong>
+                    <div class="input-group mt-2">
+                        <input type="text" class="form-control font-monospace" id="readTokenValue" readonly>
+                        <button class="btn btn-outline-secondary" type="button" id="readTokenCopyBtn">Copy</button>
+                    </div>
+                </div>
+                <div class="d-flex flex-wrap gap-2">
+                    <button type="button" class="btn btn-primary" id="readTokenCreateBtn">Create token</button>
+                    <button type="button" class="btn btn-outline-danger d-none" id="readTokenRevokeBtn">Revoke token</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" integrity="sha384-geWF76RCwLtnZ8qwWowPQNguL3RmwHVBC9FhGdlKrxdiJJigb/j/68SIy3Te4Bkz" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/notyf@3.10.0/notyf.min.js" integrity="sha384-uuNfwJfjOG2ukYi4eAB11/t3lP4Zjf75a3UhgkLzEpiX8JpJfacpG7Ye+0tiVMxT" crossorigin="anonymous"></script>
+    <script>
+        const notyf = new Notyf({
+            duration: 3000,
+            dismissible: true,
+            position: { x: 'right', y: 'top' }
+        });
+        const THEME_STORAGE_KEY = 'dca_theme';
+        const THEME_ICON_SUN = '<svg class="theme-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"></circle><line x1="12" y1="2.5" x2="12" y2="5"></line><line x1="12" y1="19" x2="12" y2="21.5"></line><line x1="2.5" y1="12" x2="5" y2="12"></line><line x1="19" y1="12" x2="21.5" y2="12"></line><line x1="5.2" y1="5.2" x2="6.9" y2="6.9"></line><line x1="17.1" y1="17.1" x2="18.8" y2="18.8"></line><line x1="17.1" y1="6.9" x2="18.8" y2="5.2"></line><line x1="5.2" y1="18.8" x2="6.9" y2="17.1"></line></svg>';
+        const THEME_ICON_MOON = '<svg class="theme-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M14.5 3.5a8.8 8.8 0 1 0 6 14.9 9.2 9.2 0 0 1-6.8-2.7 9.3 9.3 0 0 1-2.8-6.9 8.9 8.9 0 0 1 3.6-7.3Z"></path></svg>';
+
+        function updateThemeToggleButton(theme) {
+            const btn = document.getElementById('themeToggleBtn');
+            if (!btn) return;
+            const isDark = theme === 'dark';
+            btn.innerHTML = isDark ? THEME_ICON_SUN : THEME_ICON_MOON;
+            btn.setAttribute('aria-label', isDark ? 'Switch to light mode' : 'Switch to dark mode');
+            btn.setAttribute('title', isDark ? 'Switch to light mode' : 'Switch to dark mode');
+        }
+
+        function applyTheme(theme) {
+            document.documentElement.setAttribute('data-bs-theme', theme);
+            localStorage.setItem(THEME_STORAGE_KEY, theme);
+            updateThemeToggleButton(theme);
+        }
+
+        (function initThemeToggle() {
+            const currentTheme = document.documentElement.getAttribute('data-bs-theme') || 'light';
+            updateThemeToggleButton(currentTheme);
+            const themeBtn = document.getElementById('themeToggleBtn');
+            if (themeBtn) {
+                themeBtn.addEventListener('click', () => {
+                    const theme = document.documentElement.getAttribute('data-bs-theme') === 'dark' ? 'light' : 'dark';
+                    applyTheme(theme);
+                });
+            }
+        })();
+
+        async function loadReadTokenStatus() {
+            const statusEl = document.getElementById('readTokenStatus');
+            try {
+                const response = await fetch('/api/read-token');
+                const data = await response.json();
+                const created = data.created_at ? new Date(data.created_at).toLocaleString() : '';
+                statusEl.textContent = data.has_token ? `Active, created ${created}` : 'No token';
+                statusEl.className = data.has_token ? 'text-success fw-bold' : 'text-muted';
+                document.getElementById('readTokenCreateBtn').textContent = data.has_token ? 'Replace token' : 'Create token';
+                document.getElementById('readTokenRevokeBtn').classList.toggle('d-none', !data.has_token);
+            } catch (error) {
+                statusEl.textContent = 'Could not check the token';
+            }
+        }
+
+        document.getElementById('readTokenCreateBtn').addEventListener('click', async () => {
+            const replacing = !document.getElementById('readTokenRevokeBtn').classList.contains('d-none');
+            if (replacing && !confirm('Replace the token? Programs using the old one will stop working.')) return;
+            const response = await fetch('/api/read-token', { method: 'POST' });
+            if (!response.ok) {
+                notyf.error('Could not create a token');
+                return;
+            }
+            const data = await response.json();
+            document.getElementById('readTokenValue').value = data.token;
+            document.getElementById('readTokenReveal').classList.remove('d-none');
+            await loadReadTokenStatus();
+        });
+
+        document.getElementById('readTokenCopyBtn').addEventListener('click', async () => {
+            const input = document.getElementById('readTokenValue');
+            try {
+                await navigator.clipboard.writeText(input.value);
+                notyf.success('Token copied');
+            } catch (error) {
+                input.select();
+            }
+        });
+
+        document.getElementById('readTokenRevokeBtn').addEventListener('click', async () => {
+            if (!confirm('Revoke the token? Programs using it will stop working.')) return;
+            const response = await fetch('/api/read-token', { method: 'DELETE' });
+            if (!response.ok) {
+                notyf.error('Could not revoke the token');
+                return;
+            }
+            document.getElementById('readTokenValue').value = '';
+            document.getElementById('readTokenReveal').classList.add('d-none');
+            notyf.success('Token revoked');
+            await loadReadTokenStatus();
+        });
+
+        loadReadTokenStatus();
+    </script>
+    <div class="version-badge">
+        v{{ app_version }}{% if app_commit_sha %} ({{ app_commit_sha[:7] }}){% endif %}
+    </div>
+</body>
+</html>

@@ -64,8 +64,8 @@ def test_desktop_navigation_is_a_grouped_sidebar():
     groups = re.findall(r'<p class="sidebar-group">([^<]+)</p>', HEADER)
     assert groups == ["Portfolio", "Automation", "Elsewhere"]
     links = re.findall(r'<a href="([^"]+)" class="sidebar-link', HEADER)
-    assert links == ["/", "/stats", "/strategy", "/settings/binance", "/admin/data-sources", "/analysis/"]
-    for page in ("dashboard", "stats", "strategy", "settings", "admin"):
+    assert links == ["/", "/stats", "/strategy", "/settings/binance", "/settings/api-token", "/admin/data-sources", "/analysis/"]
+    for page in ("dashboard", "stats", "strategy", "binance", "api_token", "admin"):
         assert f"{{% if active_page == '{page}' %}} active{{% endif %}}" in HEADER, page
     assert "{% if user and user.is_admin %}" in HEADER
 

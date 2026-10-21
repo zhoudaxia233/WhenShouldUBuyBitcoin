@@ -36,12 +36,12 @@
 </head>
 <body class="satsflow-page">
     <div class="container app-shell app-shell-settings">
-        {% set active_page = 'settings' %}
+        {% set active_page = 'binance' %}
         {% include "_shared_header.html" %}
 
         <div class="page-title-block">
             <h1>Binance Settings</h1>
-            <p class="text-muted mb-0">Read-only exchange connection, notifications and API token.</p>
+            <p class="text-muted mb-0">Read-only exchange connection and notification settings.</p>
         </div>
 
         <div class="card dashboard-panel">
@@ -373,31 +373,6 @@
                             </div>
                         </div>
                     </div>
-                </div>
-            </div>
-        </div>
-        <!-- Read-only API Token Section -->
-        <div class="card dashboard-panel mt-4" id="readTokenCard">
-            <div class="card-header dashboard-panel-header">
-                <h5 class="mb-0">🔑 Read-Only API Token</h5>
-            </div>
-            <div class="card-body">
-                <ul class="small mb-3">
-                    <li>Lets another program read your wallet summary (<code>GET /api/wallet/summary</code>) without logging in.</li>
-                    <li>Send it as <code>Authorization: Bearer &lt;token&gt;</code>. It opens nothing else: no other page, no changes.</li>
-                    <li>Only a hash is stored, so the token is shown once. Creating a new one stops the old one.</li>
-                </ul>
-                <p class="mb-3 small"><strong>Status:</strong> <span id="readTokenStatus">Checking...</span></p>
-                <div id="readTokenReveal" class="alert alert-warning small d-none">
-                    <strong>Copy it now; it will not be shown again.</strong>
-                    <div class="input-group mt-2">
-                        <input type="text" class="form-control font-monospace" id="readTokenValue" readonly>
-                        <button class="btn btn-outline-secondary" type="button" id="readTokenCopyBtn">Copy</button>
-                    </div>
-                </div>
-                <div class="d-flex flex-wrap gap-2">
-                    <button type="button" class="btn btn-primary" id="readTokenCreateBtn">Create token</button>
-                    <button type="button" class="btn btn-outline-danger d-none" id="readTokenRevokeBtn">Revoke token</button>
                 </div>
             </div>
         </div>
@@ -949,67 +924,10 @@
             }
         }
 
-        // ============= READ-ONLY TOKEN =============
-
-        async function loadReadTokenStatus() {
-            const statusEl = document.getElementById('readTokenStatus');
-            try {
-                const response = await fetch('/api/read-token');
-                const data = await response.json();
-                const created = data.created_at ? new Date(data.created_at).toLocaleString() : '';
-                statusEl.textContent = data.has_token ? `Active, created ${created}` : 'No token';
-                statusEl.className = data.has_token ? 'text-success fw-bold' : 'text-muted';
-                document.getElementById('readTokenCreateBtn').textContent = data.has_token ? 'Replace token' : 'Create token';
-                document.getElementById('readTokenRevokeBtn').classList.toggle('d-none', !data.has_token);
-            } catch (error) {
-                statusEl.textContent = 'Could not check the token';
-            }
-        }
-
-        document.getElementById('readTokenCreateBtn').addEventListener('click', async () => {
-            const replacing = !document.getElementById('readTokenRevokeBtn').classList.contains('d-none');
-            if (replacing && !confirm('Replace the token? Programs using the old one will stop working.')) return;
-            const response = await fetch('/api/read-token', { method: 'POST' });
-            if (!response.ok) {
-                notyf.error('Could not create a token');
-                return;
-            }
-            const data = await response.json();
-            document.getElementById('readTokenValue').value = data.token;
-            document.getElementById('readTokenReveal').classList.remove('d-none');
-            await loadReadTokenStatus();
-        });
-
-        document.getElementById('readTokenCopyBtn').addEventListener('click', async () => {
-            const input = document.getElementById('readTokenValue');
-            try {
-                await navigator.clipboard.writeText(input.value);
-                notyf.success('Token copied');
-            } catch (error) {
-                input.select();
-            }
-        });
-
-        document.getElementById('readTokenRevokeBtn').addEventListener('click', async () => {
-            if (!confirm('Revoke the token? Programs using it will stop working.')) return;
-            const response = await fetch('/api/read-token', { method: 'DELETE' });
-            if (!response.ok) {
-                notyf.error('Could not revoke the token');
-                return;
-            }
-            document.getElementById('readTokenValue').value = '';
-            document.getElementById('readTokenReveal').classList.add('d-none');
-            notyf.success('Token revoked');
-            await loadReadTokenStatus();
-        });
-
-        // ============= END READ-ONLY TOKEN =============
-
         // Load all statuses on page load
         loadCredentialsStatus();
         loadTradingStatus();
         loadEmailStatus();
-        loadReadTokenStatus();
     </script>
     <div class="version-badge">
         v{{ app_version }}{% if app_commit_sha %} ({{ app_commit_sha[:7] }}){% endif %}
