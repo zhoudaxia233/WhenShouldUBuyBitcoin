@@ -19,6 +19,7 @@ from dca_service.api import (
     auth_api,
     admin_api,
     external_buys_api,
+    read_token_api,
 )
 from starlette.middleware.sessions import SessionMiddleware
 from dca_service.scheduler import scheduler
@@ -29,7 +30,7 @@ from dca_service.models import User
 from dca_service.auth.dependencies import get_current_user, get_current_admin_user
 
 from dca_service.core.logging import logger
-from fastapi.responses import RedirectResponse
+from fastapi.responses import JSONResponse, RedirectResponse
 import time
 
 QUIET_SUCCESS_REQUEST_PATHS = {"/api/stats/realtime-price"}
@@ -78,7 +79,13 @@ def build_template_context(**extra):
 # Exception handler for 401 Unauthorized - redirect to login
 @app.exception_handler(401)
 async def unauthorized_exception_handler(request: Request, exc: HTTPException):
-    """Redirect to login page when user is not authenticated"""
+    """Redirect browsers to the login page; programs that sent a token get a plain 401"""
+    if "authorization" in request.headers:
+        return JSONResponse(
+            {"detail": exc.detail},
+            status_code=401,
+            headers={"WWW-Authenticate": "Bearer"},
+        )
     return RedirectResponse(url="/api/auth/login", status_code=303)
 
 @app.middleware("http")
@@ -141,6 +148,7 @@ app.include_router(binance_api.router, prefix=settings.API_V1_STR)
 app.include_router(wallet_api.router, prefix=settings.API_V1_STR)
 app.include_router(email_settings_api.router, prefix=settings.API_V1_STR)
 app.include_router(summary_api_settings_api.router, prefix=settings.API_V1_STR)
+app.include_router(read_token_api.router, prefix=settings.API_V1_STR)
 app.include_router(stats_api.router, prefix=settings.API_V1_STR)
 app.include_router(auth_api.router, prefix=settings.API_V1_STR)
 app.include_router(admin_api.router, prefix=settings.API_V1_STR)

@@ -211,3 +211,16 @@ class User(SQLModel, table=True):
     session_version: int = Field(default=0)
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+
+class ReadToken(SQLModel, table=True):
+    """
+    Lets another program read GET /api/wallet/summary without a browser login.
+    Only the SHA-256 of the token is stored; the token is shown once on creation.
+    """
+    __tablename__ = "read_tokens"
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    user_id: int = Field(foreign_key="users.id", index=True)
+    token_hash: str
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))

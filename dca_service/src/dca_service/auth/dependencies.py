@@ -4,11 +4,15 @@ Authentication dependencies for FastAPI routes.
 Provides:
 - get_current_user: Extract user from session
 - get_current_admin_user: Require admin role
+- get_session_or_read_token_user: Session or read-only token (wallet summary only)
 - Custom exceptions for auth errors
 """
+import hashlib
+import secrets
+
 from fastapi import Request, Depends, HTTPException, status
 from sqlmodel import Session, select
-from dca_service.models import User
+from dca_service.models import ReadToken, User
 from dca_service.database import get_session
 
 
@@ -110,6 +114,49 @@ def get_current_admin_user(
         raise PermissionDeniedError("Admin access required")
     
     return current_user
+
+
+def hash_read_token(token: str) -> str:
+    """Tokens are 256-bit random values, so a plain SHA-256 is enough to store them."""
+    return hashlib.sha256(token.encode()).hexdigest()
+
+
+def bearer_token(request: Request) -> str | None:
+    """The token from `Authorization: Bearer <token>`, or None if the header is absent."""
+    header = request.headers.get("authorization")
+    if header is None:
+        return None
+    scheme, _, token = header.partition(" ")
+    return token.strip() if scheme.lower() == "bearer" else ""
+
+
+def get_session_or_read_token_user(
+    request: Request,
+    db: Session = Depends(get_session)
+) -> User:
+    """
+    Session login, or the read-only token for programs.
+
+    Use only on read endpoints that the token is meant to open
+    (GET /wallet/summary); every other route keeps get_current_user.
+    """
+    token = bearer_token(request)
+    if token is None:
+        return get_current_user(request, db)
+
+    if token:
+        digest = hash_read_token(token)
+        # Few rows; compare every one so timing says nothing about a match
+        match = None
+        for row in db.exec(select(ReadToken)).all():
+            if secrets.compare_digest(row.token_hash, digest):
+                match = row
+        if match:
+            user = db.get(User, match.user_id)
+            if user and user.is_active:
+                return user
+
+    raise AuthenticationError("Invalid token")
 
 
 # Convenience aliases

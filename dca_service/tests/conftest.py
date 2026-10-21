@@ -8,7 +8,7 @@ from sqlmodel.pool import StaticPool
 from dca_service.main import app
 from dca_service.database import get_session
 from dca_service.models import User, GlobalSettings
-from dca_service.auth.dependencies import get_current_user
+from dca_service.auth.dependencies import get_current_user, get_session_or_read_token_user
 
 @pytest.fixture(autouse=True)
 def block_real_static_generation(monkeypatch):
@@ -107,6 +107,7 @@ def client_fixture(session: Session, test_user: User):
 
     app.dependency_overrides[get_session] = get_session_override
     app.dependency_overrides[get_current_user] = get_current_user_override
+    app.dependency_overrides[get_session_or_read_token_user] = get_current_user_override
     
     client = TestClient(app)
     yield client
