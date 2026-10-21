@@ -334,7 +334,7 @@ def test_authenticated_templates_share_satsflow_header_and_nav():
     assert 'class="dropdown-item" href="/settings/binance"' in mobile
     assert '<a class="dropdown-item" href="/admin/data-sources"><i class="bi bi-database-check"></i> Diagnostics</a>' in mobile
     assert 'href="/settings/binance#email-settings"' not in header
-    assert "{% if active_page in ['settings', 'admin'] %} active{% endif %}" in mobile
+    assert "{% if active_page in ['binance', 'api_token', 'admin'] %} active{% endif %}" in mobile
     assert 'class="dropdown-item" href="/analysis/" target="_blank"' in mobile
     assert 'class="mobile-bottom-nav-item mobile-bottom-nav-button' in header
     for label in ["Overview", "Insights", "Strategy", "More"]:
@@ -345,7 +345,8 @@ def test_authenticated_templates_share_satsflow_header_and_nav():
         "index.html": "{% set active_page = 'dashboard' %}",
         "stats.html": "{% set active_page = 'stats' %}",
         "strategy.html": "{% set active_page = 'strategy' %}",
-        "binance_settings.html": "{% set active_page = 'settings' %}",
+        "binance_settings.html": "{% set active_page = 'binance' %}",
+        "api_token.html": "{% set active_page = 'api_token' %}",
         "admin_data_sources.html": "{% set active_page = 'admin' %}",
     }
 

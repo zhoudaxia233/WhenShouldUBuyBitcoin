@@ -27,7 +27,7 @@ def _inline_rules(html):
 
 def test_every_signed_in_page_uses_the_shared_header():
     names = {path.name for path in PAGES_WITH_SHARED_HEADER}
-    assert {"index.html", "stats.html", "strategy.html", "binance_settings.html", "admin_data_sources.html"} <= names
+    assert {"index.html", "stats.html", "strategy.html", "binance_settings.html", "api_token.html", "admin_data_sources.html"} <= names
 
 
 def test_pages_do_not_restyle_the_header_or_page_width():

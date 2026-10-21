@@ -26,6 +26,10 @@ than speed or agreement.
   generator (for example `bottom_signals.html.j2`) shows only after the next
   regeneration: the admin Regenerate button on the stats page, or the daily
   00:30 UTC run. Say so when reporting the fix as done or merged.
+- Put a feature on the page it belongs to, judged by what the owner sees (the
+  nav label and page title), not by internal names or by which page already
+  holds settings. A feature that fits no existing page gets its own page,
+  listed in both the sidebar and the phone's More menu.
 - Help text about another product (wallet apps, exchanges) does not copy its
   menus or click-by-click steps: they change with the product's releases. Link
   to the vendor's official guide and write only notes that stay true across

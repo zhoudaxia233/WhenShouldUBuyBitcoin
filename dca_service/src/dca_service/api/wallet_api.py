@@ -20,7 +20,7 @@ from dca_service.services.binance_client import BinanceClient
 from dca_service.services.security import decrypt_text
 from dca_service.core.logging import logger
 from sqlmodel import select
-from dca_service.auth.dependencies import get_current_user
+from dca_service.auth.dependencies import get_current_user, get_session_or_read_token_user
 
 router = APIRouter(prefix="/wallet", tags=["wallet"])
 
@@ -161,7 +161,7 @@ async def fetch_wallet_summary(session: Session) -> WalletSummary:
 @router.get("/summary", response_model=WalletSummary)
 async def get_wallet_summary(
     session: Session = Depends(get_session),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_session_or_read_token_user),
 ):
     """
     Get comprehensive wallet information including:
@@ -170,6 +170,8 @@ async def get_wallet_summary(
     - Average buy price (calculated from Binance trade history)
     - Current BTC price
     - USD values for all holdings
+
+    Also readable with the read-only API token (see read_token_api).
     """
     return await fetch_wallet_summary(session)
 
