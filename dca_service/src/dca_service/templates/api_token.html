@@ -124,13 +124,29 @@
             await loadReadTokenStatus();
         });
 
+        // The browser can refuse the Clipboard API (unfocused document, denied
+        // permission, plain HTTP); copy the selected input instead.
+        async function copyTokenText(input, clipboard, doc) {
+            try {
+                await clipboard.writeText(input.value);
+                return true;
+            } catch (error) {
+                input.focus();
+                input.select();
+                try {
+                    return doc.execCommand('copy');
+                } catch (copyError) {
+                    return false;
+                }
+            }
+        }
+
         document.getElementById('readTokenCopyBtn').addEventListener('click', async () => {
             const input = document.getElementById('readTokenValue');
-            try {
-                await navigator.clipboard.writeText(input.value);
+            if (await copyTokenText(input, navigator.clipboard, document)) {
                 notyf.success('Token copied');
-            } catch (error) {
-                input.select();
+            } else {
+                notyf.error('Could not copy. The token is selected: press Ctrl+C or ⌘C.');
             }
         });
 
