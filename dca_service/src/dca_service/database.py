@@ -211,7 +211,7 @@ def _migrate_users_table():
 
 
 def _migrate_global_settings_table():
-    """Add global_settings.cold_wallet_source; existing balances keep an unknown (NULL) source."""
+    """Add the cold wallet columns; existing balances keep an unknown (NULL) source and no keys."""
     with Session(engine) as session:
         table_exists = session.exec(text(
             "SELECT name FROM sqlite_master WHERE type='table' AND name='global_settings'"
@@ -224,6 +224,10 @@ def _migrate_global_settings_table():
         if 'cold_wallet_source' not in existing_column_names:
             logger.info("Adding 'cold_wallet_source' column to global_settings table...")
             session.exec(text("ALTER TABLE global_settings ADD COLUMN cold_wallet_source VARCHAR"))
+            session.commit()
+        if 'cold_wallet_keys_encrypted' not in existing_column_names:
+            logger.info("Adding 'cold_wallet_keys_encrypted' column to global_settings table...")
+            session.exec(text("ALTER TABLE global_settings ADD COLUMN cold_wallet_keys_encrypted VARCHAR"))
             session.commit()
 
 

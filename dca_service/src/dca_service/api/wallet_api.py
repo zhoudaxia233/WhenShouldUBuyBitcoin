@@ -2,8 +2,10 @@
 Wallet management API endpoints.
 Handles cold wallet balance tracking and Binance hot wallet information.
 """
+import json
+import re
 from datetime import datetime, timezone
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Response
 from sqlmodel import Session
 from typing import Optional
 
@@ -11,18 +13,23 @@ from dca_service.database import get_session
 from dca_service.models import GlobalSettings, BinanceCredentials, User
 from dca_service.api.schemas import (
     ColdWalletBalanceUpdate,
+    ColdWalletKeys,
     VenueBalanceRead,
     VenueBalanceUpdate,
     WalletSummary,
 )
 from dca_service.services import external_buys
 from dca_service.services.binance_client import BinanceClient
-from dca_service.services.security import decrypt_text
+from dca_service.services.security import decrypt_text, encrypt_text
 from dca_service.core.logging import logger
 from sqlmodel import select
-from dca_service.auth.dependencies import get_current_user, get_session_or_read_token_user
+from dca_service.auth.dependencies import get_current_admin_user, get_current_user, get_session_or_read_token_user
 
 router = APIRouter(prefix="/wallet", tags=["wallet"])
+
+# The browser checks a pasted key fully; here the point is that a private key
+# (xprv, zprv, ...) can never reach the database.
+_EXTENDED_PUBLIC_KEY = re.compile(r"[xz]pub[1-9A-HJ-NP-Za-km-z]{107}")
 
 
 def _get_binance_client(session: Session) -> Optional[BinanceClient]:
@@ -206,6 +213,46 @@ async def update_cold_wallet_balance(
     
     # Return updated summary
     return await fetch_wallet_summary(session)
+
+
+@router.get("/cold-keys", response_model=ColdWalletKeys)
+def get_cold_wallet_keys(
+    response: Response,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_admin_user),
+):
+    """The saved public keys, for the browser that reads their balance."""
+    response.headers["Cache-Control"] = "no-store"
+    settings = session.get(GlobalSettings, 1)
+    if not settings or not settings.cold_wallet_keys_encrypted:
+        return ColdWalletKeys(keys=[])
+    try:
+        return ColdWalletKeys(keys=json.loads(decrypt_text(settings.cold_wallet_keys_encrypted)))
+    except Exception as e:
+        logger.error(f"Failed to decrypt cold wallet keys: {type(e).__name__}")
+        return ColdWalletKeys(keys=[])
+
+
+@router.put("/cold-keys", response_model=ColdWalletKeys)
+def update_cold_wallet_keys(
+    update: ColdWalletKeys,
+    response: Response,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_admin_user),
+):
+    """Replace the saved public keys. The balance and its time stay as they are."""
+    response.headers["Cache-Control"] = "no-store"
+    if not all(_EXTENDED_PUBLIC_KEY.fullmatch(key) for key in update.keys):
+        # A fixed message: the refused text may be a private key.
+        raise HTTPException(status_code=422, detail="Only xpub and zpub keys can be saved.")
+    settings = session.get(GlobalSettings, 1)
+    if not settings:
+        settings = GlobalSettings(id=1, cold_wallet_balance=0.0)
+    settings.cold_wallet_keys_encrypted = encrypt_text(json.dumps(update.keys)) if update.keys else None
+    session.add(settings)
+    session.commit()
+    logger.info(f"Cold wallet keys updated ({len(update.keys)} saved)")
+    return update
 
 
 @router.put("/venue-balances/{venue}", response_model=WalletSummary)
