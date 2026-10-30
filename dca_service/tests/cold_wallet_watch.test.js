@@ -1,6 +1,5 @@
 // Tests for reading the cold wallet balance from an extended public key in the
-// browser. The key never leaves the browser: addresses are derived locally and
-// only the summed balance goes to the server.
+// browser: addresses are derived locally and their balances read from mempool.space.
 
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";

@@ -19,25 +19,19 @@ const shouldAutoSyncCold = load("shouldAutoSyncCold");
 const coldSyncedAt = load("coldSyncedAt");
 
 describe("coldModalView", () => {
-  it("shows the tracking status in the browser that holds the key", () => {
-    expect(coldModalView(true, "public_key", null)).toBe("tracking");
-    expect(coldModalView(true, null, null)).toBe("tracking");
+  it("tracks while the server holds a key", () => {
+    expect(coldModalView(true, "public_key")).toBe("tracking");
+    expect(coldModalView(true, null)).toBe("tracking");
   });
 
-  it("says the key is paused when the balance was since entered by hand elsewhere", () => {
-    expect(coldModalView(true, "manual", null)).toBe("paused");
+  it("is paused when the balance was then entered by hand", () => {
+    expect(coldModalView(true, "manual")).toBe("paused");
   });
 
-  it("explains a synced balance on a device without the key", () => {
-    expect(coldModalView(false, "public_key", null)).toBe("remote");
-    expect(coldModalView(false, "public_key", "add")).toBe("remote-add");
-    expect(coldModalView(false, "public_key", "manual")).toBe("remote-manual");
-  });
-
-  it("offers the manual form and the key setup otherwise", () => {
-    expect(coldModalView(false, "manual", null)).toBe("setup");
-    expect(coldModalView(false, null, null)).toBe("setup");
-    expect(coldModalView(false, "manual", "add")).toBe("setup");
+  it("offers setup when no key is saved", () => {
+    expect(coldModalView(false, "public_key")).toBe("setup");
+    expect(coldModalView(false, "manual")).toBe("setup");
+    expect(coldModalView(false, null)).toBe("setup");
   });
 });
 

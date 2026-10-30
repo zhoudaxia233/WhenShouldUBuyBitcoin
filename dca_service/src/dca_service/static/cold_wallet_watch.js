@@ -1,9 +1,8 @@
 /*
  * Cold wallet balance from an extended public key (Trezor zpub, Ledger xpub).
  *
- * Everything runs in the browser: the key is kept in this browser's
- * localStorage, the bc1q addresses are derived here and their balances are
- * read from mempool.space. Only the summed balance is sent to the server.
+ * The server keeps the key; the rest runs in the browser: the bc1q addresses
+ * are derived here and their balances are read from mempool.space.
  *
  * Public derivation only (BIP32 CKDpub, BIP84 paths 0/i and 1/i). No private
  * key is ever handled; private extended keys are refused. The crypto is

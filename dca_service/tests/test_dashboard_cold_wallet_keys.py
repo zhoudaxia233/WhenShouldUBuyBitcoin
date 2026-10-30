@@ -15,20 +15,54 @@ def test_dashboard_loads_the_public_key_tracker_from_this_site():
     assert 'id="coldWalletKeysForm"' in html
 
 
-def test_public_keys_are_never_sent_to_the_server():
+def test_public_keys_are_saved_on_the_server_and_held_only_in_memory():
     html = _dashboard_html()
 
     # The key field has no name, so no form submit can carry it.
     textarea = re.search(r"<textarea[^>]*id=\"coldWalletKeysInput\"[^>]*>", html).group(0)
     assert "name=" not in textarea
 
-    # The only request to this server posts the summed balance and a fixed
-    # label saying it came from a key, and nothing else.
+    # This server is the only place keys go: one read, one write and the
+    # balance post. Nothing is written to the console.
     block = html[html.index("// Cold storage from extended public keys"):]
     block = block[: block.index("// Buys and balances on other exchanges")]
-    assert block.count("fetch(") == 1
+    assert block.count("fetch(") == 3
+    assert "fetch('/api/wallet/cold-keys')" in block
+    assert "fetch('/api/wallet/cold-keys', {" in block
     assert "body: JSON.stringify({ balance: balance, source: 'public_key' })" in block
     assert "console.log" not in block
+    assert "localStorage.setItem(COLD_KEYS_STORAGE" not in block
+
+
+def test_keys_saved_in_a_browser_move_to_the_server_once():
+    # A browser from before keeps its key in localStorage. It goes up only when
+    # the server has none, and leaves this browser only once the server has it.
+    block = _cold_block()
+    load = block[block.index("async function fetchColdKeys"):]
+    load = load[: load.index("\n        }\n")]
+    assert "if (!coldKeys.length && legacy.length && !(await writeColdKeys(legacy))) return;" in load
+    assert load.index("writeColdKeys(legacy)") < load.index("localStorage.removeItem(COLD_KEYS_STORAGE)")
+
+
+def test_a_failed_read_of_the_keys_can_be_tried_again():
+    block = _cold_block()
+    load = block[block.index("function loadColdKeys"):]
+    load = load[: load.index("\n        }\n")]
+    assert "coldKeysLoading = null;" in load
+
+
+def test_background_sync_waits_for_the_keys_from_the_server():
+    block = _cold_block()
+    sync = block[block.index("async function syncColdWalletFromKeys"):]
+    assert sync.index("await loadColdKeys();") < sync.index("readColdKeys()")
+
+
+def test_a_sync_from_any_device_counts_toward_the_daily_limit():
+    # Every device holds the key now; without this each would scan once a day.
+    block = _cold_block()
+    sync = block[block.index("async function syncColdWalletFromKeys"):]
+    sync = sync[: sync.index("\n        }\n")]
+    assert "coldSyncedAt(window.__coldWalletSource, window.__coldWalletUpdatedAt, null) || 0" in sync
 
 
 def test_saved_keys_are_never_written_back_into_the_page():
@@ -43,9 +77,9 @@ def test_saved_keys_are_never_written_back_into_the_page():
 
 
 def test_every_cdn_asset_is_pinned_and_integrity_checked():
-    # Wallet public keys sit in this site's localStorage, which any script on
-    # any page of the site can read. A CDN file may run here only if its exact
-    # version and hash are fixed, so a changed or hijacked file is refused.
+    # Wallet public keys reach this page, and any script on it can read them.
+    # A CDN file may run here only if its exact version and hash are fixed, so
+    # a changed or hijacked file is refused.
     templates = Path(__file__).resolve().parents[1] / "src" / "dca_service" / "templates"
     tags = []
     for path in sorted(templates.glob("*.html")):
@@ -102,7 +136,7 @@ def test_key_notes_are_listed_one_per_line():
     notes = form[: form.index('id="coldWalletKeysHelp"')]
 
     items = re.findall(r"<li\b[^>]*>(.*?)</li>", notes, re.S)
-    for note in ["bc1q", "stays in this browser", "recovery phrase"]:
+    for note in ["bc1q", "saved encrypted on this server", "recovery phrase"]:
         assert any(note in item for item in items), note
 
 
@@ -144,6 +178,17 @@ def test_failed_background_sync_is_not_retried_on_every_page_load():
     sync = sync[: sync.index("\n        }\n")]
     assert "readColdAttempt()" in sync
     assert sync.index("writeColdAttempt(") < sync.index("scanAndPostColdBalance(")
+
+
+def test_background_sync_shows_its_progress_on_the_sync_button():
+    # A tap on Sync now during a background scan is ignored, which on a phone
+    # reads as a broken button unless the button says what is going on.
+    block = _cold_block()
+    sync = block[block.index("async function syncColdWalletFromKeys"):]
+    sync = sync[: sync.index("\n        }\n")]
+    assert "button.disabled = true;" in sync
+    assert "checked => { button.textContent = `Checking address ${checked}…`; }" in sync
+    assert sync.index("button.disabled = false;") > sync.index("finally {")
 
 
 def test_one_sync_button_whose_label_never_changes():
@@ -193,10 +238,8 @@ def test_tracking_state_replaces_the_manual_form_with_a_status_line():
 
     block = _cold_block()
     render = block[block.index("function renderColdKeysState"):block.index("async function checkColdKeysInput")]
-    # The manual form shows only in the setup view and when a device without
-    # the key chose to type the balance; never while this browser tracks a key.
-    assert "const showManual = view === 'setup' || view === 'remote-manual';" in render
-    assert "setColdWalletForm').classList.toggle('d-none', !showManual)" in render
+    # The manual form shows only in the setup view, never while a key is tracked.
+    assert "setColdWalletForm').classList.toggle('d-none', view !== 'setup')" in render
     assert "coldWalletKeysStatus').classList.toggle('d-none', !tracking" in render
 
 
@@ -232,7 +275,7 @@ def test_stop_tracking_is_disabled_while_a_scan_runs():
 
 def test_removing_the_key_says_what_it_does():
     # "Stop tracking" read like cancelling the running scan; the action
-    # deletes the saved key from this browser and ends the daily sync.
+    # deletes the saved key from the server and ends the daily sync.
     html = _dashboard_html()
     assert "Stop tracking" not in html
     clear = re.search(r"<button[^>]*id=\"coldWalletKeysClear\"[^>]*>([^<]*)<", html).group(1)
@@ -240,7 +283,7 @@ def test_removing_the_key_says_what_it_does():
     assert clear == "Remove key"
     assert remove == "Remove this key"
     stop = _cold_block()[_cold_block().index("function stopColdTracking"):]
-    assert "Removed the key from this browser" in stop[: stop.index("\n        }\n")]
+    assert "Removed the key from the server" in stop[: stop.index("\n        }\n")]
 
 
 def test_dashboard_shows_how_old_the_cold_balance_is():
@@ -268,18 +311,21 @@ def test_manual_balance_is_posted_as_manual():
     assert "body: JSON.stringify({ balance: balance, source: 'manual' })" in manual
 
 
-def test_device_without_the_key_explains_where_the_balance_came_from():
+def test_every_device_gets_the_same_dialog():
+    # The key is on the server, so no device needs its own copy pasted in.
     html = _dashboard_html()
-    modal = html[html.index('id="setColdWalletModal"'):]
-    modal = modal[: modal.index('id="coldWalletKeysForm"')]
-    remote = modal[modal.index('id="coldWalletRemote"'):]
-    for element in ['id="coldWalletRemoteBalance"', 'id="coldWalletRemoteSyncedAt"',
-                    'id="coldWalletRemoteAddKey"', 'id="coldWalletRemoteManual"']:
-        assert element in remote, element
-    assert "The key is saved in another browser, not on this device." in remote
-    assert 'id="coldWalletBack"' in modal
-    assert 'id="coldWalletSwitchNote"' in modal
-    assert "<h5 class=\"modal-title\">Cold storage</h5>" in modal
+    for gone in ["coldWalletRemote", "coldWalletBack", "coldWalletSwitchNote", "cold-remote"]:
+        assert gone not in html, gone
+    assert "cold-remote" not in (
+        Path(__file__).resolve().parents[1] / "src" / "dca_service" / "static" / "app.css"
+    ).read_text(encoding="utf-8")
+
+
+def test_the_daily_update_promise_says_what_it_needs():
+    # No server job scans the wallet: a device has to open the page.
+    html = _dashboard_html()
+    assert "It updates by itself once a day." not in html
+    assert "once a day when any of your devices opens this page" in html
 
 
 def test_background_sync_stops_once_the_balance_is_entered_by_hand_elsewhere():
@@ -291,7 +337,7 @@ def test_background_sync_stops_once_the_balance_is_entered_by_hand_elsewhere():
 
     render = block[block.index("function renderColdKeysState"):block.index("async function checkColdKeysInput")]
     assert "coldModalView(" in render
-    assert "entered by hand on another device" in render
+    assert "entered by hand" in render
 
 
 def test_wallet_summary_tells_the_dialog_where_the_balance_came_from():
@@ -304,7 +350,7 @@ def test_wallet_summary_tells_the_dialog_where_the_balance_came_from():
 
 
 def test_tracking_status_and_dashboard_agree_on_the_last_sync():
-    # Another browser holding the same key may have synced since this one did.
+    # Another device may have synced since this one did.
     block = _cold_block()
     render = block[block.index("function renderColdKeysState"):block.index("async function checkColdKeysInput")]
     assert "coldSyncedAt(window.__coldWalletSource, window.__coldWalletUpdatedAt, sync)" in render

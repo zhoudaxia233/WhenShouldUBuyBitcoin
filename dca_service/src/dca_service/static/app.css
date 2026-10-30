@@ -1872,40 +1872,6 @@ html[data-theme="dark"] {
     font-size: 0.72rem;
 }
 
-/* Cold storage dialog on a device without the key */
-.cold-remote-card {
-    padding: 16px;
-    border: 1px solid var(--dashboard-border);
-    border-radius: var(--radius);
-    background: var(--dashboard-subtle-bg);
-}
-
-.cold-remote-card p {
-    margin: 0;
-}
-
-.cold-remote-balance {
-    margin-top: 6px !important;
-    color: var(--dashboard-text);
-    font-family: var(--font-mono);
-    font-size: 1.5rem;
-    letter-spacing: -0.03em;
-    font-variant-numeric: tabular-nums;
-}
-
-.cold-remote-meta {
-    color: var(--dashboard-muted);
-    font-size: 0.85rem;
-}
-
-.cold-remote-why {
-    margin-top: 12px !important;
-    padding-top: 12px;
-    border-top: 1px solid var(--dashboard-border);
-    color: var(--dashboard-text);
-    font-size: 0.88rem;
-}
-
 .holdings-edit {
     margin-left: 6px;
     padding: 0;

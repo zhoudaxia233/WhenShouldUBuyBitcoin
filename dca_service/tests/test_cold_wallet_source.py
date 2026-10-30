@@ -1,10 +1,8 @@
 """The server remembers where the cold storage balance came from.
 
-Public keys stay in the browser that synced them, so another device cannot
-tell a synced balance from a typed one. The server keeps only the source
-("public_key" or "manual") and the time of the last change, so every device
-can say where the number came from, and a browser that still holds a key can
-see that the balance was since entered by hand.
+The server keeps the source ("public_key" or "manual") and the time of the
+last change, so every device can say where the number came from and stops
+syncing once the balance was entered by hand.
 """
 from fastapi.testclient import TestClient
 

@@ -93,6 +93,11 @@ class ColdWalletBalanceUpdate(BaseModel):
     source: Optional[Literal["public_key", "manual"]] = None
 
 
+class ColdWalletKeys(BaseModel):
+    """The wallet's extended public keys; an empty list removes them."""
+    keys: list[str] = Field(max_length=20)
+
+
 class VenueBalanceUpdate(BaseModel):
     btc: float = Field(ge=0, description="BTC currently held on this exchange")
 
