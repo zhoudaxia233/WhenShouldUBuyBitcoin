@@ -162,6 +162,23 @@ describe("Backtest findings", () => {
         expect(doc.getElementById("backtestFindings").textContent).toMatch(/only data known on each/);
     });
 
+    it("repeats the result over rolling windows, not one period only", () => {
+        const rows = [...doc.querySelectorAll("#backtestFindings .findings-window")].map((row) =>
+            row.textContent.replace(/\s+/g, " ").trim()
+        );
+        expect(rows).toHaveLength(2);
+        expect(rows[0]).toMatch(/10 of 11.*\+5\.7%.*−1\.3%.*\+10\.3%/);
+        expect(rows[1]).toMatch(/5 of 11.*−2\.0%.*−14\.2%.*\+5\.1%/);
+        expect(doc.getElementById("backtestFindings").textContent).toMatch(/windows overlap/i);
+    });
+
+    it("does not claim more than the rolling windows show", () => {
+        const takeaway = doc.querySelector("#backtestFindings .findings-takeaway").textContent;
+        expect(takeaway).not.toMatch(/it lost when/);
+        const note = doc.querySelector("#today-tab .measure-card--meter .measure-note").textContent;
+        expect(note).not.toMatch(/at best/);
+    });
+
     it("offers to run your own backtest", () => {
         const run = doc.querySelector("#backtestFindings .findings-run");
         expect(run.getAttribute("href")).toBe("#backtestForm");
