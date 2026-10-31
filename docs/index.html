@@ -2033,6 +2033,26 @@
         .finding-row--good .finding-delta { color: var(--good); font-weight: 600; }
         .finding-row--warn .finding-delta { color: var(--warn-ink); font-weight: 600; }
 
+        .findings-windows {
+            list-style: none;
+            margin: 14px 0 18px;
+            padding: 0;
+            display: grid;
+            gap: 12px;
+        }
+
+        .findings-window {
+            display: grid;
+            grid-template-columns: minmax(0, 15rem) minmax(0, 1fr);
+            gap: 4px 12px;
+            font-size: 14px;
+            color: var(--ink);
+        }
+
+        .findings-window-stats {
+            font-variant-numeric: tabular-nums;
+        }
+
         .findings-takeaway {
             margin: 0 0 8px;
             font-size: 15px;
@@ -2086,6 +2106,10 @@
 
             .finding-label {
                 grid-column: 1 / -1;
+            }
+
+            .findings-window {
+                grid-template-columns: minmax(0, 1fr);
             }
         }
 
@@ -2759,7 +2783,7 @@
                         <circle class="meter-hub" cx="200" cy="200" r="13"></circle>
                     </svg>
                     <div class="meter-caption"><span id="todayAhr999" class="mono measure-number">—</span> <span id="todayCheaper"></span></div>
-                    <p class="measure-note">A weak signal: buying more when ahr999 was low beat plain DCA by about 4% at best, and trailed it by 14% with a monthly budget. <button class="inline-link" type="button" onclick="switchMainTab('backtest')">See the backtest</button></p>
+                    <p class="measure-note">A weak signal: buying more when ahr999 was low beat plain DCA by about 4% from 2017 to 2026, and trailed it by 14% with a monthly budget. <button class="inline-link" type="button" onclick="switchMainTab('backtest')">See the backtest</button></p>
                     <button class="measure-link" type="button" onclick="openChartFullscreen('charts/valuation_ratios.html', 'Valuation Ratios', this)">View chart <svg class="link-chevron" viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M6 3l5 5-5 5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg></button>
                 </div>
             </section>
@@ -2998,8 +3022,19 @@
                         <span class="finding-delta">&minus;14%</span>
                     </li>
                 </ul>
-                <p class="findings-takeaway">Buying more when AHR999 is low is a small tilt, not a timing tool. It only helped when the money it skipped could be spent later, and it lost when that money expired each month.</p>
-                <p class="findings-method">Every strategy uses only data known on each simulated day. Budget left unspent counts as cash, so all strategies are compared on the same money.</p>
+                <p class="findings-lede">The same test over 11 four-year windows, started every 6 months from Sep 2017 to Sep 2022:</p>
+                <ul class="findings-windows">
+                    <li class="findings-window">
+                        <span class="finding-label">AHR999 tilt, unspent money saved for later</span>
+                        <span class="findings-window-stats"><strong>Beat plain DCA in 10 of 11</strong>, median +5.7% (from −1.3% to +10.3%)</span>
+                    </li>
+                    <li class="findings-window">
+                        <span class="finding-label">AHR999 tilt, monthly limit</span>
+                        <span class="findings-window-stats"><strong>Beat plain DCA in 5 of 11</strong>, median −2.0% (from −14.2% to +5.1%)</span>
+                    </li>
+                </ul>
+                <p class="findings-takeaway">Buying more when AHR999 is low is a small tilt, not a timing tool. It usually helped when the money it skipped could be spent later, and it was a coin flip when that money expired each month.</p>
+                <p class="findings-method">Every strategy uses only data known on each simulated day. Budget left unspent counts as cash, so all strategies are compared on the same money. The windows overlap, so they are not 11 independent results.</p>
                 <a class="findings-run" href="#backtestForm" onclick="document.getElementById('backtestForm').scrollIntoView({ behavior: 'smooth' }); return false;">Run your own backtest <svg class="link-chevron" viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M3 6l5 5 5-5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg></a>
             </section>
 
