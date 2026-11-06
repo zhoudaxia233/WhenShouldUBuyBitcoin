@@ -124,7 +124,7 @@ class DataLoader {
 
     /**
      * Ensure power-law params are available for future-date simulation.
-     * If metadata is missing/null, derive an approximate fit from trend_value history.
+     * If metadata is missing/null, refit the power law on price history.
      */
     ensurePowerLawMetadata() {
         if (!this.metadata) this.metadata = {};
@@ -134,7 +134,7 @@ class DataLoader {
             return;
         }
 
-        const derived = this.derivePowerLawParamsFromTrendSeries();
+        const derived = this.derivePowerLawParamsFromPrices();
         if (derived) {
             this.metadata.trend_a = derived.trend_a;
             this.metadata.trend_b = derived.trend_b;
@@ -142,18 +142,20 @@ class DataLoader {
     }
 
     /**
-     * Derive power-law params from historical trend_value:
+     * Refit today's power law on close prices, the fit main.py saves:
      * log(price) = log(a) + n * log(t)
+     * trend_value cannot stand in for it: each day there comes from the fit
+     * known that day, so a curve fitted through it overshoots today's trend.
      */
-    derivePowerLawParamsFromTrendSeries() {
+    derivePowerLawParamsFromPrices() {
         if (!Array.isArray(this.historicalData) || this.historicalData.length < 30) {
             return null;
         }
 
         const points = [];
         for (const row of this.historicalData) {
-            const trendValue = parseFloat(row.trend_value);
-            if (!Number.isFinite(trendValue) || trendValue <= 0 || !row.date) continue;
+            const price = parseFloat(row.close_price);
+            if (!Number.isFinite(price) || price <= 0 || !row.date) continue;
 
             const d = new Date(row.date);
             if (Number.isNaN(d.getTime())) continue;
@@ -163,7 +165,7 @@ class DataLoader {
             );
             if (!Number.isFinite(tDays) || tDays <= 0) continue;
 
-            points.push({ x: Math.log(tDays), y: Math.log(trendValue) });
+            points.push({ x: Math.log(tDays), y: Math.log(price) });
         }
 
         if (points.length < 10) return null;
