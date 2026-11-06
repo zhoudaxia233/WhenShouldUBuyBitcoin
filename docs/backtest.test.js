@@ -1837,3 +1837,34 @@ describe("Strategy: AHR999 Fixed Range", () => {
         expect(result.transactions.length).toBeGreaterThan(0);
     });
 });
+
+describe("DataLoader power-law fallback", () => {
+    it("fits close prices, not the trend_value column, when metadata lacks the fit", () => {
+        // trend_value holds each day's value from the fit known that day, so it
+        // is not one power law; main.py's saved fit is fitted on prices.
+        const genesis = Date.UTC(2009, 0, 3);
+        const day = 864e5;
+        const a0 = 1e-17;
+        const b0 = 5.8;
+        const start = Date.UTC(2022, 0, 1);
+        const rows = [];
+        for (let i = 0; i < 900; i++) {
+            const t = start + i * day;
+            const age = Math.floor((t - genesis) / day);
+            rows.push({
+                date: new Date(t).toISOString().slice(0, 10),
+                close_price: String(a0 * Math.pow(age, b0)),
+                trend_value: String(20000 * Math.pow(1.003, i)),
+            });
+        }
+        const loader = new DataLoader();
+        loader.historicalData = rows;
+        loader.metadata = {};
+        loader.ensurePowerLawMetadata();
+
+        const target = new Date("2030-01-01T00:00:00Z");
+        const age = Math.floor((target - genesis) / day);
+        const price = loader.calculatePowerLawPrice(target);
+        expect(price / (a0 * Math.pow(age, b0))).toBeCloseTo(1, 6);
+    });
+});
