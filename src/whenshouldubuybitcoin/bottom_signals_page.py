@@ -13,7 +13,7 @@ from pathlib import Path
 import pandas as pd
 from jinja2 import Environment, FileSystemLoader
 
-from .bottom_signals import CYCLE_BOTTOMS, DURATIONS, THRESHOLDS, ZONE_ADVICE, zone_for
+from .bottom_signals import CYCLE_BOTTOMS, DURATIONS, THRESHOLDS, ZONE_ADVICE, random_day_hit_rate, zone_for
 from .persistence import _atomic_write_text
 
 TEMPLATE_DIR = Path(__file__).parent / "templates"
@@ -297,6 +297,11 @@ def _build_cards(latest: pd.Series, scores_df: pd.DataFrame) -> list[dict]:
     return cards
 
 
+def _join_labels(labels: list[str]) -> str:
+    """'a', 'a and b', 'a, b and c'."""
+    return labels[0] if len(labels) == 1 else ", ".join(labels[:-1]) + " and " + labels[-1]
+
+
 def _first_score_label(scores_df: pd.DataFrame) -> str:
     scored = scores_df.loc[scores_df["composite"].notna(), "date"]
     if scored.empty:
@@ -380,7 +385,9 @@ def generate_bottom_signals_page(
         "thresholds": list(THRESHOLDS),
         "durations": list(DURATIONS),
         "matrix": backtest["matrix"],
-        "cycle_bottoms_label": " and ".join(b[0][:7] for b in CYCLE_BOTTOMS),
+        "cycle_bottoms_label": _join_labels([b[0][:7] for b in CYCLE_BOTTOMS]),
+        "cycle_bottom_count": len(CYCLE_BOTTOMS),
+        "random_day_hit_pct": round(random_day_hit_rate(scores_df)),
         # Scores need MIN_OBSERVATIONS days of known history, so they start late
         "first_score_label": _first_score_label(scores_df),
         "dates_json": _json_for_script(scores_df["date"].tolist()),

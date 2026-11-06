@@ -318,6 +318,39 @@ def test_assign_cycle_bottom_picks_nearest():
     assert bs.assign_cycle_bottom(seg2)[0] == "2024-09-06"
 
 
+def test_2026_segments_are_scored_against_the_2026_low_not_2024():
+    # Comparing 2026 triggers with the 2024 bottom counted "price under ~$70k"
+    # as catching a bottom, a year and a half after that bottom
+    seg = {"startDate": "2026-06-02", "endDate": "2026-07-13"}
+    assert bs.assign_cycle_bottom(seg) == ("2026-06-30", 58558.86)
+
+
+def test_random_day_hit_rate_uses_nearest_bottom_per_day():
+    bottoms = [("2024-01-10", 100.0), ("2024-03-01", 200.0)]
+    df = pd.DataFrame(
+        {
+            # nearest bottoms: Jan 10 (x2), Mar 1 (x2)
+            "date": ["2024-01-01", "2024-01-20", "2024-02-25", "2024-03-05"],
+            "close_price": [120.0, 140.0, 250.0, 300.0],
+        }
+    )
+    # within 1.3x: 120 <= 130 yes, 140 no, 250 <= 260 yes, 300 no
+    assert bs.random_day_hit_rate(df, bottoms) == 50.0
+
+
+def test_random_day_hit_rate_counts_only_scored_days():
+    # Triggers can only fire on scored days, so the baseline uses those too
+    bottoms = [("2024-01-10", 100.0)]
+    df = pd.DataFrame(
+        {
+            "date": ["2024-01-01", "2024-01-02", "2024-01-03"],
+            "close_price": [110.0, 200.0, 120.0],
+            "composite": [np.nan, 40.0, 55.0],
+        }
+    )
+    assert bs.random_day_hit_rate(df, bottoms) == 50.0
+
+
 def test_build_backtest_structure_and_accuracy():
     df = _backtest_frame()
     out = bs.build_backtest(df)

@@ -152,7 +152,10 @@ def test_generate_page_writes_html_and_info(tmp_path):
     assert "missed the 2024 cycle low" in html
     assert "highly correlated" in html
     # quantified honesty + jargon gloss
-    assert "39% of the time" in html  # random-baseline anchor for the matrix
+    # random-baseline anchor for the matrix, computed from the same prices
+    baseline = round(bs.random_day_hit_rate(scores_df))
+    assert f"~{baseline}% of the time" in html
+    assert f"spans only {len(bs.CYCLE_BOTTOMS)} cycle lows" in html
     assert "scored only with data known that day" in html  # no look-ahead
     assert "full-sample" not in html
     assert "how far a value sits from its historical average" in html  # sigma gloss

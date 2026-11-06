@@ -81,3 +81,17 @@ def test_metadata_round_trips_the_year_ago_fit(tmp_path, monkeypatch):
     assert saved["trend_year_ago"]["as_of"] == expected["as_of"]
     assert saved["trend_year_ago"]["a"] == pytest.approx(expected["a"])
     assert saved["trend_year_ago"]["b"] == pytest.approx(expected["b"])
+
+
+def test_metadata_last_updated_is_marked_as_utc(tmp_path, monkeypatch):
+    """Browsers read an ISO time without an offset as local time, so a naive
+    server timestamp showed 00:30 UTC as 00:30 in every visitor's zone."""
+    import json
+    from datetime import datetime, timedelta, timezone
+    from whenshouldubuybitcoin import persistence
+    monkeypatch.setattr("whenshouldubuybitcoin.persistence.get_data_dir", lambda: tmp_path)
+    assert persistence.save_metadata(metrics.add_trend_metrics(_prices()))
+    raw = json.loads((tmp_path / "btc_metadata.json").read_text())["last_updated"]
+    stamp = datetime.fromisoformat(raw)
+    assert stamp.utcoffset() == timedelta(0)
+    assert abs(datetime.now(timezone.utc) - stamp) < timedelta(minutes=5)
