@@ -41,6 +41,7 @@ ZONE_ADVICE = {
 CYCLE_BOTTOMS = [
     ("2022-11-21", 15797.53),
     ("2024-09-06", 53914.82),
+    ("2026-06-30", 58558.86),
 ]
 
 # A trigger segment "hits" when its minimum price is within this multiple
@@ -259,6 +260,28 @@ def assign_cycle_bottom(segment: dict, bottoms=None) -> tuple[str, float]:
     end = pd.Timestamp(segment["endDate"])
     mid = start + (end - start) / 2
     return min(bottoms, key=lambda b: abs((pd.Timestamp(b[0]) - mid).days))
+
+
+def random_day_hit_rate(scores_df: pd.DataFrame, bottoms=None) -> float:
+    """Percent of scored days whose close is within BOTTOM_HIT_MULTIPLE of the nearest bottom.
+
+    The matrix's hit rate means little without this: it is what buying on an
+    arbitrary day would score. Triggers fire only on scored days, so days
+    without a composite are left out.
+    """
+    bottoms = [(pd.Timestamp(d), p) for d, p in (bottoms or CYCLE_BOTTOMS)]
+    if "composite" in scores_df.columns:
+        scores_df = scores_df[pd.to_numeric(scores_df["composite"], errors="coerce").notna()]
+    dates = pd.to_datetime(scores_df["date"], errors="coerce", format="ISO8601")
+    prices = pd.to_numeric(scores_df["close_price"], errors="coerce")
+    hits = total = 0
+    for day, price in zip(dates, prices):
+        if pd.isna(day) or pd.isna(price):
+            continue
+        nearest = min(bottoms, key=lambda b: abs((b[0] - day).days))[1]
+        total += 1
+        hits += price <= nearest * BOTTOM_HIT_MULTIPLE
+    return 100.0 * hits / total if total else 0.0
 
 
 def build_backtest(scores_df: pd.DataFrame) -> dict:
