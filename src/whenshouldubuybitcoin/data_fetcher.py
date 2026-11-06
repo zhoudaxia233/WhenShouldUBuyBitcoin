@@ -107,6 +107,11 @@ def fetch_btc_history(
         if df.empty:
             raise ValueError("No price data returned from Yahoo Finance")
 
+        # The scheduled run right after midnight UTC has ended a day early;
+        # record what Yahoo returned so the log shows why
+        tail = ", ".join(f"{idx} close={row['Close']}" for idx, row in df.tail(3).iterrows())
+        print(f"  Yahoo returned {len(df)} rows up to end={end_date:%Y-%m-%d} (exclusive); last rows: {tail}")
+
         # Reset index to get date as a column
         df = df.reset_index()
 
