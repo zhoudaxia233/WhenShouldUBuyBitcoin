@@ -133,7 +133,7 @@ def save_metadata(df: pd.DataFrame, filename: str = "btc_metadata.json") -> bool
             "trend_a": df.attrs.get("trend_a"),
             "trend_b": df.attrs.get("trend_b"),
             "trend_year_ago": df.attrs.get("trend_year_ago"),
-            "last_updated": pd.Timestamp.now().isoformat()
+            "last_updated": pd.Timestamp.now(tz="UTC").isoformat()
         }
         
         _atomic_write_text(filepath, json.dumps(metadata, indent=2))
