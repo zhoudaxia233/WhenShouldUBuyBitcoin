@@ -10,7 +10,8 @@ import io
 from dca_service.api import stats_api
 from dca_service.models import DCATransaction, DCAStrategy, BinanceCredentials
 from dca_service.services.security import encrypt_text
-from datetime import datetime, timezone, timedelta
+from datetime import date, datetime, timezone, timedelta
+import json
 
 def test_stats_distribution(client: TestClient):
     response = client.get("/api/stats/distribution")
@@ -655,6 +656,59 @@ def test_recent_market_context_recalculates_current_ahr999_from_live_price(tmp_p
     assert context["ahr999_sub_1"] is False
     assert context["ahr999_sub_07"] is False
     assert context["bottoming_tech_signal_count"] == 0
+
+
+def _write_causal_trend_csv(csv_path, today):
+    """trend_value as main.py writes it: each day from the fit known that day.
+
+    The column climbs faster than any single power law, so re-fitting a power
+    law through it and carrying that forward overshoots today's fit.
+    """
+    fieldnames = ["date", "close_price", "trend_value"]
+    with csv_path.open("w", newline="", encoding="utf-8") as f:
+        writer = csv.DictWriter(f, fieldnames=fieldnames)
+        writer.writeheader()
+        for idx in range(400):
+            day = today - timedelta(days=399 - idx)
+            writer.writerow(
+                {
+                    "date": day.isoformat(),
+                    "close_price": "100.0",
+                    "trend_value": f"{100.0 * (1.003 ** idx):.6f}",
+                }
+            )
+
+
+def test_recent_market_context_values_trend_with_todays_fit_from_metadata(tmp_path):
+    csv_path = tmp_path / "btc_metrics.csv"
+    today = datetime.now(timezone.utc).date()
+    _write_causal_trend_csv(csv_path, today)
+    trend_a, trend_b = 1.0e-17, 5.8
+    (tmp_path / "btc_metadata.json").write_text(
+        json.dumps({"trend_a": trend_a, "trend_b": trend_b}), encoding="utf-8"
+    )
+    age_days = (today - date(2009, 1, 3)).days
+    expected_trend = trend_a * age_days ** trend_b
+
+    with patch("dca_service.api.stats_api._resolve_metrics_csv_path", return_value=csv_path):
+        context = stats_api._load_recent_market_context(100.0)
+
+    assert context["trend_value_source"] == "metadata_fit"
+    assert context["trend_value"] == pytest.approx(expected_trend, rel=1e-9)
+    assert context["ratio_trend_current"] == pytest.approx(100.0 / expected_trend, rel=1e-9)
+
+
+def test_recent_market_context_without_metadata_uses_last_trend_value(tmp_path):
+    csv_path = tmp_path / "btc_metrics.csv"
+    today = datetime.now(timezone.utc).date()
+    _write_causal_trend_csv(csv_path, today)
+    last_trend = float(f"{100.0 * (1.003 ** 399):.6f}")
+
+    with patch("dca_service.api.stats_api._resolve_metrics_csv_path", return_value=csv_path):
+        context = stats_api._load_recent_market_context(100.0)
+
+    assert context["trend_value_source"] == "csv_last_row"
+    assert context["trend_value"] == pytest.approx(last_trend, rel=1e-9)
 
 
 def test_recent_market_context_derives_200wma_from_price_series(tmp_path):

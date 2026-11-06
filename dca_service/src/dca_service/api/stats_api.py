@@ -309,35 +309,24 @@ def _calculate_harmonic_dca_cost_with_current_price(prices: List[float], current
     return 200.0 / denom
 
 
-def _derive_current_trend_value_from_series(
-    trend_points: List[Tuple[date, float]],
-    current_date: date,
-) -> Optional[float]:
-    if len(trend_points) < 10:
-        return None
-    genesis_date = date(2009, 1, 3)
-    xs: List[float] = []
-    ys: List[float] = []
-    for metric_date, trend_value in trend_points:
-        age_days = (metric_date - genesis_date).days
-        if age_days <= 0 or trend_value <= 0:
-            continue
-        xs.append(math.log(float(age_days)))
-        ys.append(math.log(float(trend_value)))
-    if len(xs) < 10:
-        return None
+def _current_trend_value_from_metadata(csv_path: Path, current_date: date) -> Optional[float]:
+    """Today's power-law trend from the fit main.py saves next to the metrics CSV.
 
-    mean_x = sum(xs) / len(xs)
-    mean_y = sum(ys) / len(ys)
-    denom = sum((x - mean_x) ** 2 for x in xs)
-    if denom <= 0:
+    The CSV's trend_value column holds each day's value from the fit known that
+    day, so it is not one curve: a power law fitted through it and carried
+    forward overshoots today's fit. Only the saved trend_a/trend_b give today's
+    value.
+    """
+    try:
+        metadata = json.loads((csv_path.parent / "btc_metadata.json").read_text(encoding="utf-8"))
+        trend_a = float(metadata["trend_a"])
+        trend_b = float(metadata["trend_b"])
+    except (OSError, ValueError, KeyError, TypeError):
         return None
-    slope = sum((x - mean_x) * (y - mean_y) for x, y in zip(xs, ys)) / denom
-    intercept = mean_y - slope * mean_x
-    current_age_days = (current_date - genesis_date).days
-    if current_age_days <= 0:
+    age_days = (current_date - date(2009, 1, 3)).days
+    if age_days <= 0 or not math.isfinite(trend_a) or trend_a <= 0 or not math.isfinite(trend_b):
         return None
-    trend_value = math.exp(intercept) * (float(current_age_days) ** slope)
+    trend_value = trend_a * (float(age_days) ** trend_b)
     return trend_value if math.isfinite(trend_value) and trend_value > 0 else None
 
 
@@ -504,7 +493,6 @@ def _load_recent_market_context(current_price_usd: float) -> Dict[str, Any]:
             return context
 
         price_points: List[Tuple[Optional[date], float]] = []
-        trend_points: List[Tuple[date, float]] = []
         last_row: Optional[Dict[str, Any]] = None
         last_metric_date = None
 
@@ -533,9 +521,6 @@ def _load_recent_market_context(current_price_usd: float) -> Dict[str, Any]:
                 price = _parse_finite_float(price_str)
                 if price is not None and price > 0:
                     price_points.append((parsed_date, price))
-                trend_value = _parse_finite_float(row.get("trend_value"))
-                if parsed_date is not None and trend_value is not None and trend_value > 0:
-                    trend_points.append((parsed_date, trend_value))
 
         current_price = _parse_finite_float(current_price_usd)
         if current_price is None or current_price <= 0:
@@ -646,8 +631,8 @@ def _load_recent_market_context(current_price_usd: float) -> Dict[str, Any]:
             dca_cost = csv_dca_cost
             dca_cost_source = "csv_last_row" if dca_cost is not None else None
 
-        trend_value = _derive_current_trend_value_from_series(trend_points, current_date)
-        trend_value_source = "current_date_recalculated" if trend_value is not None else None
+        trend_value = _current_trend_value_from_metadata(csv_path, current_date)
+        trend_value_source = "metadata_fit" if trend_value is not None else None
         if trend_value is None:
             trend_value = csv_trend_value
             trend_value_source = "csv_last_row" if trend_value is not None else None
