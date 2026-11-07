@@ -545,7 +545,51 @@ class TestStaticGenerationSchedule:
         scheduler.start()
 
         assert scheduler.scheduler.get_job("static_generation") is None
+        assert scheduler.scheduler.get_job("static_generation_catch_up") is None
         scheduler.stop()
+
+    def test_scheduler_start_registers_hourly_catch_up_job(self, scheduler):
+        """Yahoo has not published yesterday's candle by 00:30 UTC, so check again hourly."""
+        scheduler.start()
+
+        job = scheduler.scheduler.get_job("static_generation_catch_up")
+
+        assert job is not None
+        assert str(job.trigger) == "cron[hour='1-12', minute='30']"
+        scheduler.stop()
+
+    @staticmethod
+    def _write_metrics(root, last_date):
+        (root / "main.py").write_text("")
+        data_dir = root / "docs" / "data"
+        data_dir.mkdir(parents=True)
+        (data_dir / "btc_metrics.csv").write_text(
+            f"date,close_price\n2026-11-04,80405.29\n{last_date},75942.13\n"
+        )
+
+    @freeze_time("2026-11-07 01:30:00", tz_offset=0)
+    @patch("dca_service.services.static_generator.trigger_static_generation")
+    def test_catch_up_regenerates_when_yesterday_is_missing(
+        self, mock_trigger, scheduler, tmp_path, monkeypatch
+    ):
+        monkeypatch.setenv("DCA_PROJECT_ROOT", str(tmp_path))
+        self._write_metrics(tmp_path, "2026-11-05")
+
+        scheduler._run_static_generation_catch_up_job()
+
+        mock_trigger.assert_called_once_with(background=True)
+
+    @freeze_time("2026-11-07 02:30:00", tz_offset=0)
+    @patch("dca_service.services.static_generator.trigger_static_generation")
+    def test_catch_up_skips_when_yesterday_is_saved(
+        self, mock_trigger, scheduler, tmp_path, monkeypatch
+    ):
+        monkeypatch.setenv("DCA_PROJECT_ROOT", str(tmp_path))
+        self._write_metrics(tmp_path, "2026-11-06")
+
+        scheduler._run_static_generation_catch_up_job()
+
+        mock_trigger.assert_not_called()
 
 
 class TestFailedLiveAttemptIsNotRetried:

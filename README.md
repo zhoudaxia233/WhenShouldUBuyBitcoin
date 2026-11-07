@@ -30,6 +30,7 @@ Using two independent metrics reduces false signals and identifies stronger buyi
 ### Data Updates
 
 - The daily update is run by the DCA service scheduler, which runs `main.py` every day at **00:30 UTC** to refresh `docs/data/` and the charts
+- Yahoo Finance usually has not published the previous day's candle by 00:30 UTC. From 01:30 to 12:30 UTC the scheduler checks every hour at :30 and runs `main.py` again if the saved prices do not reach yesterday yet
 - The same regeneration also runs after a successful DCA transaction and from the admin-only regenerate button on the stats page; only one run is active at a time, and a run exceeding 30 minutes is terminated
 - Output of each run is appended to `data/static_generation.log`
 - Scheduler settings (environment or `.env`): `STATIC_GENERATION_SCHEDULE_ENABLED` (default `true`), `STATIC_GENERATION_SCHEDULE_HOUR_UTC` (default `0`), `STATIC_GENERATION_SCHEDULE_MINUTE_UTC` (default `30`); set `STATIC_GENERATION_STRICT_UPDATE=true` to fail the run if any chart or report update step fails

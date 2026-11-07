@@ -77,7 +77,19 @@ class DCAScheduler:
                 max_instances=1,
                 coalesce=True,
             )
-        
+            # At 00:30 UTC Yahoo has not yet published yesterday's daily
+            # candle, so the run saves prices through the day before. Check
+            # hourly through the morning and regenerate once it is there.
+            self.scheduler.add_job(
+                func=self._run_static_generation_catch_up_job,
+                trigger=CronTrigger(hour='1-12', minute=30),
+                id='static_generation_catch_up',
+                name='Static Generation Catch-up',
+                replace_existing=True,
+                max_instances=1,
+                coalesce=True,
+            )
+
         self.scheduler.start()
         self.is_running = True
         logger.info("DCA Scheduler started - checking every minute, syncing every 10m")
@@ -500,6 +512,28 @@ class DCAScheduler:
             logger.info("Triggered scheduled static file generation")
         except Exception as e:
             logger.error(f"Failed to trigger scheduled static generation: {e}")
+
+    def _run_static_generation_catch_up_job(self):
+        """Regenerate if the saved prices do not reach yesterday (UTC) yet."""
+        try:
+            from dca_service.services.static_generator import (
+                inspect_static_output_freshness,
+                resolve_project_root,
+                trigger_static_generation,
+            )
+
+            yesterday = datetime.now(timezone.utc).date() - timedelta(days=1)
+            freshness = inspect_static_output_freshness(resolve_project_root())
+            latest = freshness["metrics"]["latest_date"]
+            if latest is not None and latest >= yesterday.isoformat():
+                return
+
+            logger.info(
+                f"Saved BTC prices end at {latest}, before {yesterday}; regenerating"
+            )
+            trigger_static_generation(background=True)
+        except Exception as e:
+            logger.error(f"Failed to run static generation catch-up: {e}")
 
     def _sync_trades_job(self):
         """
