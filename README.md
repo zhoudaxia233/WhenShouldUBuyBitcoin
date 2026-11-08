@@ -33,6 +33,7 @@ Using two independent metrics reduces false signals and identifies stronger buyi
 - Yahoo Finance usually has not published the previous day's candle by 00:30 UTC. From 01:30 to 12:30 UTC the scheduler checks every hour at :30 and runs `main.py` again if the saved prices do not reach yesterday yet
 - The same regeneration also runs after a successful DCA transaction and from the admin-only regenerate button on the stats page; only one run is active at a time, and a run exceeding 30 minutes is terminated
 - Output of each run is appended to `data/static_generation.log`
+- The admin Diagnostics page (`/admin/data-sources`) shows whether the saved prices reach yesterday (UTC): up to date, one day behind before 13:00 UTC while the hourly check is still running, or behind
 - Scheduler settings (environment or `.env`): `STATIC_GENERATION_SCHEDULE_ENABLED` (default `true`), `STATIC_GENERATION_SCHEDULE_HOUR_UTC` (default `0`), `STATIC_GENERATION_SCHEDULE_MINUTE_UTC` (default `30`); set `STATIC_GENERATION_STRICT_UPDATE=true` to fail the run if any chart or report update step fails
 - The GitHub Actions workflow `update-data.yml` is **manual trigger only** (`workflow_dispatch`); its cron schedule is intentionally commented out
 - Real-time check fetches **live BTC price** from Binance first, then falls back to Coinbase

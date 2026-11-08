@@ -276,3 +276,79 @@ def test_admin_refresh_success_reports_tier_count(client: TestClient):
     assert data["success"] is True
     assert data["tier_count"] == 1
     assert data["diagnostics"]["last_status"] == "live"
+
+
+def _write_price_data(root: Path, last_date: str, last_updated: str = "2026-11-08T07:30:03+00:00") -> None:
+    (root / "main.py").write_text("", encoding="utf-8")
+    data_dir = root / "docs" / "data"
+    data_dir.mkdir(parents=True)
+    (data_dir / "btc_metrics.csv").write_text(
+        f"date,close_price\n2026-11-01,70000\n{last_date},75000\n", encoding="utf-8"
+    )
+    (data_dir / "btc_metadata.json").write_text(
+        f'{{"trend_a": 1.0, "trend_b": 5.0, "last_updated": "{last_updated}"}}', encoding="utf-8"
+    )
+
+
+@pytest.mark.parametrize(
+    "now, last_date, status, days_behind",
+    [
+        ("2026-11-08 16:00:00", "2026-11-07", "current", 0),
+        ("2026-11-08 02:00:00", "2026-11-06", "pending", 1),
+        ("2026-11-08 16:00:00", "2026-11-06", "behind", 1),
+        ("2026-11-08 16:00:00", "2026-11-05", "behind", 2),
+    ],
+)
+def test_admin_diagnostics_reports_how_far_price_data_is_behind(
+    client: TestClient,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    now: str,
+    last_date: str,
+    status: str,
+    days_behind: int,
+):
+    from freezegun import freeze_time
+
+    _write_price_data(tmp_path, last_date)
+    monkeypatch.setenv("DCA_PROJECT_ROOT", str(tmp_path))
+
+    with freeze_time(now, tz_offset=0):
+        response = client.get("/api/admin/data-sources/bitinfocharts")
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["price_data"] == {
+        "status": status,
+        "latest_date": last_date,
+        "expected_date": "2026-11-07",
+        "days_behind": days_behind,
+        "last_generated_at": "2026-11-08T07:30:03+00:00",
+    }
+    assert any(line.startswith("Price data: ") and last_date in line for line in data["debug_summary"])
+
+
+def test_admin_diagnostics_reports_missing_price_data(
+    client: TestClient,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    (tmp_path / "main.py").write_text("", encoding="utf-8")
+    monkeypatch.setenv("DCA_PROJECT_ROOT", str(tmp_path))
+
+    response = client.get("/api/admin/data-sources/bitinfocharts")
+
+    assert response.status_code == 200
+    price_data = response.json()["price_data"]
+    assert price_data["status"] == "missing"
+    assert price_data["latest_date"] is None
+    assert price_data["days_behind"] is None
+    assert price_data["last_generated_at"] is None
+
+
+def test_admin_data_sources_page_has_price_data_section(client: TestClient):
+    response = client.get("/admin/data-sources")
+
+    assert response.status_code == 200
+    assert 'id="priceDataDiagnostics"' in response.text
+    assert 'id="priceDataStatus"' in response.text
