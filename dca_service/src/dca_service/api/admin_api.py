@@ -1,5 +1,6 @@
+import json
 import re
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 from fastapi import APIRouter, Depends
@@ -7,7 +8,11 @@ from fastapi import APIRouter, Depends
 from dca_service.auth.dependencies import get_current_admin_user
 from dca_service.config import settings
 from dca_service.models import User
-from dca_service.services.static_generator import get_static_generation_log_path
+from dca_service.services.static_generator import (
+    get_static_generation_log_path,
+    inspect_static_output_freshness,
+    resolve_project_root,
+)
 from dca_service.services.distribution_scraper import (
     fetch_distribution_with_status,
     get_distribution_diagnostics,
@@ -98,8 +103,49 @@ def _build_runtime_diagnostics() -> dict:
     }
 
 
-def _build_debug_summary(diagnostics: dict, runtime: dict) -> list[str]:
+# The scheduler's hourly catch-up keeps trying until 12:30 UTC, so being one
+# day behind before 13:00 UTC is expected, not a fault.
+_CATCH_UP_END_HOUR_UTC = 13
+
+
+def _build_price_data_diagnostics() -> dict:
+    """Report whether docs/data/btc_metrics.csv reaches yesterday (UTC)."""
+    now = datetime.now(timezone.utc)
+    expected = now.date() - timedelta(days=1)
+    root = resolve_project_root()
+    latest = inspect_static_output_freshness(root)["metrics"]["latest_date"]
+
+    last_generated_at = None
+    try:
+        metadata = json.loads((root / "docs" / "data" / "btc_metadata.json").read_text(encoding="utf-8"))
+        last_generated_at = metadata.get("last_updated")
+    except Exception:
+        pass
+
+    if latest is None:
+        status, days_behind = "missing", None
+    else:
+        days_behind = max((expected - datetime.fromisoformat(latest).date()).days, 0)
+        if days_behind == 0:
+            status = "current"
+        elif days_behind == 1 and now.hour < _CATCH_UP_END_HOUR_UTC:
+            status = "pending"
+        else:
+            status = "behind"
+
+    return {
+        "status": status,
+        "latest_date": latest,
+        "expected_date": expected.isoformat(),
+        "days_behind": days_behind,
+        "last_generated_at": last_generated_at,
+    }
+
+
+def _build_debug_summary(diagnostics: dict, runtime: dict, price_data: dict) -> list[str]:
     summary = [
+        f"Price data: ends {price_data.get('latest_date') or 'missing'}, "
+        f"expected {price_data.get('expected_date')} ({price_data.get('status')})",
         f"BitInfoCharts status: {diagnostics.get('last_status') or 'unknown'}",
         f"Last attempt: {diagnostics.get('last_attempt_at') or 'never'}",
         f"Last success: {diagnostics.get('last_success_at') or 'never'}",
@@ -131,11 +177,13 @@ def get_bitinfocharts_diagnostics(
 ):
     diagnostics = get_distribution_diagnostics()
     runtime = _build_runtime_diagnostics()
+    price_data = _build_price_data_diagnostics()
     return {
         "name": "BitInfoCharts Bitcoin wealth distribution",
         "diagnostics": diagnostics,
         "runtime": runtime,
-        "debug_summary": _build_debug_summary(diagnostics, runtime),
+        "price_data": price_data,
+        "debug_summary": _build_debug_summary(diagnostics, runtime, price_data),
     }
 
 

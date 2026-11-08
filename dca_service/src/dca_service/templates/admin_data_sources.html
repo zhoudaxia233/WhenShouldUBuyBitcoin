@@ -118,6 +118,16 @@
 
         <section class="card dashboard-panel mb-4">
             <div class="card-header dashboard-panel-header">
+                <h2 class="h5 mb-1">Price data</h2>
+                <p class="small mb-0" id="priceDataStatus">Loading...</p>
+            </div>
+            <div class="card-body">
+                <dl class="diagnostics-grid mb-0" id="priceDataDiagnostics"></dl>
+            </div>
+        </section>
+
+        <section class="card dashboard-panel mb-4">
+            <div class="card-header dashboard-panel-header">
                 <h2 class="h5 mb-1">BitInfoCharts scrape state</h2>
                 <p class="text-muted small mb-0">These fields explain whether data is live, cached, stale, static, or unavailable.</p>
             </div>
@@ -180,6 +190,18 @@
             'target_url',
             'cache_age_seconds'
         ];
+        const priceDataFields = [
+            'latest_date',
+            'expected_date',
+            'days_behind',
+            'last_generated_at'
+        ];
+        const PRICE_DATA_STATUS = {
+            current: { text: 'Up to date: the saved prices reach yesterday (UTC).', className: 'text-success' },
+            pending: { text: 'One day behind. Yahoo usually publishes yesterday\'s candle in the morning UTC; the scheduler checks hourly until 12:30 UTC.', className: 'text-warning-emphasis' },
+            behind: { text: 'Behind: the saved prices do not reach yesterday (UTC). Check the static generation log below.', className: 'text-danger' },
+            missing: { text: 'No saved price data found.', className: 'text-danger' }
+        };
         const runtimeFields = [
             'server_time_utc',
             'app_version',
@@ -243,6 +265,14 @@
             });
         }
 
+        function renderPriceData(priceData) {
+            const status = document.getElementById('priceDataStatus');
+            const info = PRICE_DATA_STATUS[priceData?.status] || { text: 'Price data status is unavailable.', className: 'text-muted' };
+            status.textContent = info.text;
+            status.className = `small mb-0 ${info.className}`;
+            renderKeyValues('priceDataDiagnostics', priceData || {}, priceDataFields);
+        }
+
         function renderSummary(summary) {
             const list = document.getElementById('debugSummary');
             list.innerHTML = '';
@@ -282,6 +312,10 @@
             lines.push('## Quick read');
             (data.debug_summary || []).forEach((item) => lines.push(`- ${item}`));
             lines.push('');
+            lines.push('## Price data');
+            lines.push(`status: ${formatValue(data.price_data?.status)}`);
+            priceDataFields.forEach((field) => lines.push(`${field}: ${formatValue(data.price_data?.[field])}`));
+            lines.push('');
             lines.push('## BitInfoCharts');
             diagnosticsFields.forEach((field) => lines.push(`${field}: ${formatValue(data.diagnostics?.[field])}`));
             lines.push('');
@@ -306,6 +340,7 @@
             const data = await response.json();
             latestDiagnosticsReport = buildCopyableReport(data);
             renderSummary(data.debug_summary || []);
+            renderPriceData(data.price_data);
             renderKeyValues('bitinfochartsDiagnostics', data.diagnostics || {}, diagnosticsFields);
             renderKeyValues('runtimeDiagnostics', data.runtime || {}, runtimeFields);
             renderLogSnapshot('serviceLogMeta', 'serviceLogTail', data.runtime?.service_log || {});
