@@ -167,6 +167,28 @@ class VenueBalance(SQLModel, table=True):
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
+class EtpHolding(SQLModel, table=True):
+    """
+    Shares of a bitcoin ETP (IB1T) held with a broker, entered by hand.
+
+    The bitcoin behind them is worked out when read (services/etp_holdings.py),
+    because each day's fee takes a little off every share.
+    """
+    __tablename__ = "etp_holdings"
+
+    product: str = Field(primary_key=True)  # IB1T
+    shares: float
+    avg_price_eur: float  # Per share, as the broker shows it
+    fee_percent: float  # Yearly fee (TER), e.g. 0.15
+
+    # Fixed when saved so stats stay reproducible
+    fx_rate_usd: float = Field(default=1.0)  # USD per 1 EUR
+    fx_date: Optional[str] = None  # ECB reference date used, YYYY-MM-DD
+
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+
 class EmailSettings(SQLModel, table=True):
     """
     Email SMTP configuration with encrypted password storage.

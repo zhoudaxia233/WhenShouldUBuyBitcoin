@@ -69,6 +69,15 @@ class VenueBalanceRead(BaseModel):
     btc: float
 
 
+class EtpHoldingRead(BaseModel):
+    """Bitcoin ETP shares (IB1T) held with a broker, as the bitcoin behind them."""
+    product: str
+    name: str
+    isin: str
+    shares: float
+    btc: float
+
+
 class WalletSummary(BaseModel):
     """Comprehensive wallet information including both hot and cold storage"""
     cold_wallet_balance: float
@@ -80,7 +89,10 @@ class WalletSummary(BaseModel):
     hot_wallet_value_usd: float
     total_value_usd: float
     venue_balances: List[VenueBalanceRead] = []  # BTC held on other exchanges, set by hand
-    avg_buy_price: float = 0.0  # Binance buys and external buys together
+    # Included in total_btc, and listed so another program can leave out shares
+    # it already counts (for example with the broker's account)
+    etp_holdings: List[EtpHoldingRead] = []
+    avg_buy_price: float = 0.0  # Binance buys, external buys and ETP holdings together
     external_buy_count: int = 0
     cold_wallet_source: Optional[Literal["public_key", "manual"]] = None
     cold_wallet_updated_at: Optional[datetime] = None
