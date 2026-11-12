@@ -231,6 +231,23 @@ def _migrate_global_settings_table():
             session.commit()
 
 
+def _migrate_etp_holdings_table():
+    """Add the fee schedule; a holding saved before it follows the issuer's (NULL)."""
+    with Session(engine) as session:
+        table_exists = session.exec(text(
+            "SELECT name FROM sqlite_master WHERE type='table' AND name='etp_holdings'"
+        )).first()
+        if not table_exists:
+            return
+        existing_column_names = {
+            row[0] for row in session.exec(text("SELECT name FROM pragma_table_info('etp_holdings')")).all()
+        }
+        if 'fee_changes' not in existing_column_names:
+            logger.info("Adding 'fee_changes' column to etp_holdings table...")
+            session.exec(text("ALTER TABLE etp_holdings ADD COLUMN fee_changes VARCHAR"))
+            session.commit()
+
+
 def _drop_summary_api_settings_table():
     """Drop the removed LLM summary settings, which held an encrypted API key."""
     with Session(engine) as session:
@@ -246,6 +263,7 @@ def create_db_and_tables():
     _migrate_strategy_table()
     _migrate_users_table()
     _migrate_global_settings_table()
+    _migrate_etp_holdings_table()
     _drop_summary_api_settings_table()
     # Initialize global settings singleton
     _init_global_settings()

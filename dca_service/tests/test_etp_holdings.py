@@ -228,13 +228,108 @@ def test_cost_basis_blends_binance_and_the_holding(client, session):
 
 
 def test_the_holding_shrinks_with_the_fee_over_time(client):
-    _save(client)
+    _save(client, fee_changes=[])  # one fee throughout
 
     with freeze_time("2027-11-10 12:00:00", tz_offset=0):
         data = client.get("/api/wallet/summary").json()
 
     # 369 days after the iShares figure of 6 Nov 2026
     assert data["total_btc"] == pytest.approx(500.123456 * 0.000099758 * (1 - 0.0015 / 365) ** 369)
+
+
+# --- fee changes by date ---------------------------------------------------
+
+# iShares: 0.15% a year up to and including 31 Dec 2026, 0.25% from 1 Jan 2027.
+# 7 Nov to 31 Dec 2026 is 55 days; 1 Jan to 10 Nov 2027 is 314.
+SCHEDULE_BTC_PER_SHARE_2027_11_10 = 0.000099758 * (1 - 0.0015 / 365) ** 55 * (1 - 0.0025 / 365) ** 314
+
+
+def test_each_fee_counts_from_its_own_day():
+    ib1t = etp_holdings.PRODUCTS["IB1T"]
+    changes = [{"date": date(2027, 1, 1), "fee_percent": 0.25}]
+
+    assert etp_holdings.btc_per_share(ib1t, 0.15, date(2026, 12, 31), changes) == pytest.approx(
+        0.000099758 * (1 - 0.0015 / 365) ** 55, rel=1e-12
+    )
+    # 1 Jan itself already takes the new fee
+    assert etp_holdings.btc_per_share(ib1t, 0.15, date(2027, 1, 1), changes) == pytest.approx(
+        0.000099758 * (1 - 0.0015 / 365) ** 55 * (1 - 0.0025 / 365), rel=1e-12
+    )
+    assert etp_holdings.btc_per_share(ib1t, 0.15, date(2027, 11, 10), changes) == pytest.approx(
+        SCHEDULE_BTC_PER_SHARE_2027_11_10, rel=1e-12
+    )
+    # A change dated before the published figure only sets the fee from there on.
+    early = [{"date": date(2026, 1, 1), "fee_percent": 0.25}]
+    assert etp_holdings.btc_per_share(ib1t, 0.15, TODAY, early) == pytest.approx(
+        0.000099758 * (1 - 0.0025 / 365) ** 4, rel=1e-12
+    )
+
+
+def test_a_holding_saved_without_changes_follows_the_issuers_schedule(client):
+    body = _save(client).json()  # as saved before fee changes existed
+
+    assert body["fee_changes"] == [{"date": "2027-01-01", "fee_percent": 0.25}]
+    assert body["fee_percent_today"] == 0.15
+    with freeze_time("2027-11-10 12:00:00", tz_offset=0):
+        later = client.get("/api/etp-holdings/IB1T").json()
+    assert later["fee_percent_today"] == 0.25
+    assert later["btc_per_share"] == pytest.approx(SCHEDULE_BTC_PER_SHARE_2027_11_10, rel=1e-12)
+
+
+def test_the_owner_can_change_or_drop_the_schedule(client):
+    body = _save(client, fee_changes=[{"date": "2027-06-01", "fee_percent": 0.2}, {"date": "2027-01-01", "fee_percent": 0.25}]).json()
+    assert body["fee_changes"] == [
+        {"date": "2027-01-01", "fee_percent": 0.25},
+        {"date": "2027-06-01", "fee_percent": 0.2},
+    ]
+    assert _save(client, fee_changes=[]).json()["fee_changes"] == []
+
+
+@pytest.mark.parametrize(
+    "changes",
+    [
+        [{"date": "2027-01-01", "fee_percent": 6}],
+        [{"date": "2027-01-01", "fee_percent": 0.25}, {"date": "2027-01-01", "fee_percent": 0.3}],
+        [{"date": "not a day", "fee_percent": 0.25}],
+    ],
+)
+def test_invalid_fee_changes_are_rejected(client, changes):
+    assert _save(client, fee_changes=changes).status_code == 422
+
+
+def test_the_form_starts_from_the_issuers_fees(client):
+    assert client.get("/api/etp-holdings/IB1T/defaults").json() == {
+        "fee_percent": 0.15,
+        "fee_changes": [{"date": "2027-01-01", "fee_percent": 0.25}],
+    }
+
+
+def test_a_new_schedule_alone_keeps_the_cost_basis(client, monkeypatch):
+    _save(client)
+    monkeypatch.setattr(fx_rates, "eur_usd_rate", lambda day: FxRate(rate=1.20, date="2027-01-04"))
+
+    assert _save(client, fee_changes=[]).json()["fx_rate_usd"] == 1.16
+
+
+def test_migration_adds_the_fee_changes_column(tmp_path, monkeypatch):
+    from sqlmodel import create_engine, text
+
+    import dca_service.database as database
+
+    old_engine = create_engine(f"sqlite:///{tmp_path / 'old.db'}")
+    with old_engine.begin() as conn:
+        conn.execute(text(
+            "CREATE TABLE etp_holdings (product VARCHAR PRIMARY KEY, shares FLOAT, avg_price_eur FLOAT,"
+            " fee_percent FLOAT, fx_rate_usd FLOAT, fx_date VARCHAR, created_at TIMESTAMP, updated_at TIMESTAMP)"
+        ))
+        conn.execute(text("INSERT INTO etp_holdings (product, shares, avg_price_eur, fee_percent, fx_rate_usd) VALUES ('IB1T', 10, 7, 0.15, 1.1)"))
+    monkeypatch.setattr(database, "engine", old_engine)
+
+    database._migrate_etp_holdings_table()
+    database._migrate_etp_holdings_table()  # idempotent
+
+    with old_engine.connect() as conn:
+        assert conn.execute(text("SELECT shares, fee_changes FROM etp_holdings")).one() == (10, None)
 
 
 def test_dca_email_total_includes_the_holding(client, session):

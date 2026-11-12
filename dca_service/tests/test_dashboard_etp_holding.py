@@ -58,3 +58,15 @@ def test_ib1t_holding_saves_and_previews_through_its_own_endpoint():
 def test_insights_cost_basis_says_it_includes_the_holding():
     stats = _html("stats.html")
     assert "walletData.etp_holdings" in stats
+
+
+def test_ib1t_fees_start_from_the_issuers_schedule_and_can_change_by_date():
+    html = _html("index.html")
+    modal = _modal(html)
+    assert 'id="etpFeeChanges"' in modal and 'id="etpAddFeeChange"' in modal
+    # A new holding's form is filled with the issuer's fees, a saved one with its own
+    load = html[html.index("async function loadEtpHolding(product)") :]
+    load = load[: load.index("function addEtpFeeChange")]
+    assert "/api/etp-holdings/${product}/defaults" in load
+    assert "setEtpFeeChanges(data.fee_changes || [])" in load
+    assert "fee_changes: etpFeeChanges()" in html

@@ -30,6 +30,18 @@ def preview_etp_holding(
         _raise(e)
 
 
+@router.get("/{product}/defaults")
+def etp_holding_defaults(
+    product: str,
+    current_user: User = Depends(get_current_user),
+):
+    """The issuer's fees, to start a new holding's form from."""
+    try:
+        return etp_holdings.defaults(product)
+    except EtpHoldingError as e:
+        _raise(e)
+
+
 @router.get("/{product}")
 def read_etp_holding(
     product: str,

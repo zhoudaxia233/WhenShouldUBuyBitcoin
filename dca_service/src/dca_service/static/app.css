@@ -2060,6 +2060,21 @@ html[data-theme="dark"] {
     white-space: nowrap;
 }
 
+/* The IB1T fee from a later day on */
+.etp-fee-changes {
+    display: grid;
+    gap: 6px;
+    margin-top: 6px;
+}
+
+.etp-fee-changes:empty {
+    display: none;
+}
+
+.etp-fee-change input[type="date"] {
+    flex: 1.4 1 0;
+}
+
 /* Where the figure above comes from (the issuer's published value) */
 .external-buy-preview dl > .external-buy-subrow {
     margin-top: -4px;

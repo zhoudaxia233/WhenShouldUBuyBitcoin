@@ -179,7 +179,10 @@ class EtpHolding(SQLModel, table=True):
     product: str = Field(primary_key=True)  # IB1T
     shares: float
     avg_price_eur: float  # Per share, as the broker shows it
-    fee_percent: float  # Yearly fee (TER), e.g. 0.15
+    fee_percent: float  # Yearly fee (TER) until the first change, e.g. 0.15
+    # JSON [{"date": "YYYY-MM-DD", "fee_percent": 0.25}]: the fee from each day on.
+    # NULL follows the issuer's schedule in services/etp_holdings.py.
+    fee_changes: Optional[str] = None
 
     # Fixed when saved so stats stay reproducible
     fx_rate_usd: float = Field(default=1.0)  # USD per 1 EUR
