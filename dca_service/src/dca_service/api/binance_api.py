@@ -182,10 +182,11 @@ async def get_holdings(
         settings_record = session.get(GlobalSettings, 1)
         cold_wallet_btc = settings_record.cold_wallet_balance if settings_record else 0.0
         
-        from dca_service.services import external_buys
+        from dca_service.services import etp_holdings, external_buys
         venue_btc = sum(b.btc for b in external_buys.venue_balances(session))
-        
-        total_btc = btc_bal + cold_wallet_btc + venue_btc
+        etp_btc = etp_holdings.total_btc(session)
+
+        total_btc = btc_bal + cold_wallet_btc + venue_btc + etp_btc
         
         progress = min(total_btc / target_btc, 1.0) if target_btc > 0 else 0.0
         

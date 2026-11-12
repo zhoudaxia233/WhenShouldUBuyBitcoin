@@ -1144,8 +1144,10 @@
             if (avgPrice > 0) {
                 document.getElementById('avgBuyPrice').textContent = `$${avgPrice.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
                 const external = walletData.external_buy_count || 0;
-                document.getElementById('avgBuyPriceSubtext').textContent = external > 0
-                    ? `Cost basis · incl. ${external} buy${external === 1 ? '' : 's'} from other exchanges`
+                const included = (walletData.etp_holdings || []).map(holding => holding.product);
+                if (external > 0) included.unshift(`${external} buy${external === 1 ? '' : 's'} from other exchanges`);
+                document.getElementById('avgBuyPriceSubtext').textContent = included.length
+                    ? `Cost basis · incl. ${included.join(' and ')}`
                     : 'Cost Basis';
             }
         }

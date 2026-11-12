@@ -18,6 +18,7 @@ from dca_service.api import (
     auth_api,
     admin_api,
     external_buys_api,
+    etp_holdings_api,
     read_token_api,
 )
 from starlette.middleware.sessions import SessionMiddleware
@@ -151,6 +152,7 @@ app.include_router(stats_api.router, prefix=settings.API_V1_STR)
 app.include_router(auth_api.router, prefix=settings.API_V1_STR)
 app.include_router(admin_api.router, prefix=settings.API_V1_STR)
 app.include_router(external_buys_api.router, prefix=settings.API_V1_STR)
+app.include_router(etp_holdings_api.router, prefix=settings.API_V1_STR)
 
 # SSE endpoint for real-time updates
 from dca_service.sse import sse_manager

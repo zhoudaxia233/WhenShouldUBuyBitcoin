@@ -14,11 +14,12 @@ from dca_service.models import GlobalSettings, BinanceCredentials, User
 from dca_service.api.schemas import (
     ColdWalletBalanceUpdate,
     ColdWalletKeys,
+    EtpHoldingRead,
     VenueBalanceRead,
     VenueBalanceUpdate,
     WalletSummary,
 )
-from dca_service.services import external_buys
+from dca_service.services import etp_holdings, external_buys
 from dca_service.services.binance_client import BinanceClient
 from dca_service.services.security import decrypt_text, encrypt_text
 from dca_service.core.logging import logger
@@ -135,15 +136,19 @@ async def fetch_wallet_summary(session: Session) -> WalletSummary:
     external = external_buys.all_trades(session)
     external_btc = sum(t.btc_amount for t in external)
     external_cost = sum(t.quote_amount * t.fx_rate_usd for t in external)
-    bought_btc = binance_bought_btc + external_btc
+    # Bitcoin ETP shares held with a broker, as the bitcoin behind them today
+    etp = etp_holdings.positions(session)
+    etp_btc = sum(p.btc for p in etp)
+    etp_cost = sum(p.cost_usd for p in etp)
+    bought_btc = binance_bought_btc + external_btc + etp_btc
     avg_buy_price = (
-        (binance_bought_cost + external_cost) / bought_btc
+        (binance_bought_cost + external_cost + etp_cost) / bought_btc
         if bought_btc > 0 and binance_cost_known
         else 0.0
     )
 
     # Calculate totals
-    total_btc = cold_wallet_balance + hot_wallet_balance + venue_btc
+    total_btc = cold_wallet_balance + hot_wallet_balance + venue_btc + etp_btc
     cold_wallet_value = cold_wallet_balance * current_price
     hot_wallet_value = hot_wallet_balance * current_price
     total_value = total_btc * current_price
@@ -158,6 +163,12 @@ async def fetch_wallet_summary(session: Session) -> WalletSummary:
         hot_wallet_value_usd=hot_wallet_value,
         total_value_usd=total_value,
         venue_balances=venue_balances,
+        etp_holdings=[
+            EtpHoldingRead(
+                product=p.etp.key, name=p.etp.name, isin=p.etp.isin, shares=p.shares, btc=p.btc
+            )
+            for p in etp
+        ],
         avg_buy_price=avg_buy_price,
         external_buy_count=len(external),
         cold_wallet_source=settings.cold_wallet_source,

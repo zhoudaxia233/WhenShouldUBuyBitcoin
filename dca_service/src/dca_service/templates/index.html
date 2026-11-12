@@ -2224,7 +2224,7 @@
         </div>
     </div>
 
-    <!-- Add or edit a buy from another exchange -->
+    <!-- Add or edit a buy from another exchange, or the IB1T holding -->
     <div class="modal fade" id="externalBuyModal" tabindex="-1" aria-labelledby="externalBuyTitle">
         <div class="modal-dialog modal-lg modal-dialog-scrollable">
             <div class="modal-content">
@@ -2232,7 +2232,7 @@
                     <div class="modal-header">
                         <div>
                             <h5 class="modal-title" id="externalBuyTitle">Add a buy from another exchange</h5>
-                            <div class="small text-muted">Recorded for your history and stats only. No order is placed.</div>
+                            <div class="small text-muted" id="externalBuySubtitle">Recorded for your history and stats only. No order is placed.</div>
                         </div>
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
@@ -2240,19 +2240,46 @@
                         <div class="external-buy-grid">
                             <div class="external-buy-fields">
                                 <div>
-                                    <label class="form-label" for="externalBuyVenue">Exchange</label>
+                                    <label class="form-label" for="externalBuyVenue">Exchange or ETP</label>
                                     <select class="form-select" id="externalBuyVenue">
-                                        <option value="Kraken Pro">Kraken Pro</option>
-                                        <option value="Bitvavo">Bitvavo</option>
-                                        <option value="__other">Other…</option>
+                                        <optgroup label="Exchange">
+                                            <option value="Kraken Pro">Kraken Pro</option>
+                                            <option value="Bitvavo">Bitvavo</option>
+                                            <option value="__other">Other…</option>
+                                        </optgroup>
+                                        <optgroup label="Bitcoin ETP" id="externalBuyEtpGroup">
+                                            <option value="__etp:IB1T">iShares Bitcoin ETP (IB1T)</option>
+                                        </optgroup>
                                     </select>
                                     <input type="text" class="form-control mt-2 d-none" id="externalBuyVenueOther" maxlength="40" placeholder="Exchange name" aria-label="Exchange name">
                                 </div>
-                                <div>
+                                <div data-etp-only hidden>
+                                    <label class="form-label" for="etpShares">Shares</label>
+                                    <input type="number" step="any" min="0" inputmode="decimal" class="form-control" id="etpShares">
+                                </div>
+                                <div data-etp-only hidden>
+                                    <label class="form-label" for="etpAvgPrice">Average price per share</label>
+                                    <div class="input-group">
+                                        <input type="number" step="any" min="0" inputmode="decimal" class="form-control" id="etpAvgPrice">
+                                        <span class="input-group-text">EUR</span>
+                                    </div>
+                                </div>
+                                <div data-etp-only hidden>
+                                    <label class="form-label" for="etpFee">Management fee</label>
+                                    <div class="input-group">
+                                        <input type="number" step="any" min="0" max="5" inputmode="decimal" class="form-control" id="etpFee">
+                                        <span class="input-group-text">% a year</span>
+                                    </div>
+                                    <ul class="form-text ps-3 mb-0">
+                                        <li>The TER on the <a href="https://www.ishares.com/de/privatanleger/de/produkte/337088/ishares-bitcoin-etp" target="_blank" rel="noopener noreferrer">iShares product page</a>.</li>
+                                        <li>It comes off the BTC per share every day. When a fee waiver ends, change it here.</li>
+                                    </ul>
+                                </div>
+                                <div data-buy-only>
                                     <label class="form-label" for="externalBuyTime">Time of the buy (your local time)</label>
                                     <input type="datetime-local" class="form-control" id="externalBuyTime" required>
                                 </div>
-                                <div>
+                                <div data-buy-only>
                                     <label class="form-label" for="externalBuyAmount">Amount paid, without fee</label>
                                     <div class="input-group">
                                         <input type="number" step="0.01" min="0" inputmode="decimal" class="form-control" id="externalBuyAmount" required>
@@ -2261,11 +2288,11 @@
                                         </select>
                                     </div>
                                 </div>
-                                <div>
+                                <div data-buy-only>
                                     <label class="form-label" for="externalBuyBtc">BTC bought</label>
                                     <input type="number" step="0.00000001" min="0" inputmode="decimal" class="form-control" id="externalBuyBtc" required>
                                 </div>
-                                <div>
+                                <div data-buy-only>
                                     <label class="form-label" for="externalBuyFee">Fee</label>
                                     <div class="input-group">
                                         <input type="number" step="0.00000001" min="0" inputmode="decimal" class="form-control" id="externalBuyFee" value="0">
@@ -2274,7 +2301,7 @@
                                         </select>
                                     </div>
                                 </div>
-                                <div>
+                                <div data-buy-only>
                                     <label class="form-label" for="externalBuyRef">Trade ID from the exchange (optional)</label>
                                     <input type="text" class="form-control" id="externalBuyRef" maxlength="100" autocomplete="off">
                                     <div class="form-text">Stops the same buy from being added twice.</div>
@@ -2282,15 +2309,24 @@
                             </div>
                             <div class="external-buy-preview" aria-live="polite">
                                 <div class="external-buy-preview-title">Before you save</div>
-                                <dl>
+                                <dl data-buy-only>
                                     <div><dt>Price</dt><dd id="externalBuyPrice">—</dd></div>
                                     <div><dt>EUR→USD rate</dt><dd id="externalBuyRate">—</dd></div>
                                     <div><dt>Counted in stats as</dt><dd id="externalBuyUsd">—</dd></div>
                                     <div><dt>Fee in stats</dt><dd id="externalBuyFeeUsd">—</dd></div>
                                     <div><dt>AHR999 that day</dt><dd id="externalBuyAhr">—</dd></div>
                                 </dl>
+                                <dl data-etp-only hidden>
+                                    <div><dt>BTC per share today</dt><dd id="etpBtcPerShare">—</dd></div>
+                                    <div class="external-buy-subrow"><dt><a href="https://www.ishares.com/de/privatanleger/de/produkte/337088/ishares-bitcoin-etp" target="_blank" rel="noopener noreferrer" id="etpPublishedLabel">iShares</a></dt><dd id="etpPublished">—</dd></div>
+                                    <div><dt>BTC in your shares</dt><dd id="etpBtc">—</dd></div>
+                                    <div><dt>Cost</dt><dd id="etpCost">—</dd></div>
+                                    <div><dt>EUR→USD rate</dt><dd id="etpRate">—</dd></div>
+                                    <div><dt>Cost per BTC</dt><dd id="etpCostPerBtc">—</dd></div>
+                                    <div><dt>Fee per year</dt><dd id="etpFeePerYear">—</dd></div>
+                                </dl>
                                 <div id="externalBuyCheck" class="external-buy-check">Fill in the amount and BTC to see the preview.</div>
-                                <div class="form-check mt-3">
+                                <div class="form-check mt-3" data-buy-only>
                                     <input class="form-check-input" type="checkbox" id="externalBuyAdjust" checked>
                                     <label class="form-check-label" for="externalBuyAdjust" id="externalBuyAdjustLabel">Add the BTC to the Kraken Pro balance</label>
                                 </div>
@@ -4517,6 +4553,7 @@
             window.__coldWalletUpdatedAt = data.cold_wallet_updated_at || null;
             if (typeof window.renderColdKeysState === 'function') window.renderColdKeysState();
             renderVenueBalances(data.venue_balances || []);
+            renderEtpHoldings(data.etp_holdings || []);
             
             // Show warning if no Binance credentials (hot wallet will be 0)
             const errorBox = document.getElementById('walletError');
@@ -5020,6 +5057,9 @@
         // Buys and balances on other exchanges (Kraken Pro, Bitvavo, ...): read-only history
         let latestVenueBalances = [];
         let editingExternalBuy = null;
+        // The same dialog adds the IB1T holding: its option value is ETP_PREFIX + product
+        const ETP_PREFIX = '__etp:';
+        let editingEtpHolding = null;
         let externalBuyPreviewTimer = null;
         let externalBuyDeleteArmed = false;
 
@@ -5109,6 +5149,23 @@
             }
         }
 
+        // Bitcoin ETP shares (IB1T) held with a broker, as the bitcoin behind them
+        let latestEtpHoldings = [];
+
+        function renderEtpHoldings(holdings) {
+            latestEtpHoldings = holdings;
+            const list = document.querySelector('.holdings-wallets');
+            if (!list) return;
+            list.querySelectorAll('[data-etp-row]').forEach(el => el.remove());
+            holdings.forEach(holding => {
+                const shares = Number(holding.shares).toLocaleString('en-US', { maximumFractionDigits: 6 });
+                const row = document.createElement('div');
+                row.setAttribute('data-etp-row', '');
+                row.innerHTML = `<dt>${escapeHtml(holding.product)}<small class="holdings-sync-age">${escapeHtml(shares)} shares</small></dt><dd>₿<span>${holding.btc.toFixed(8)}</span> <button class="holdings-edit" type="button" data-etp="${escapeHtml(holding.product)}" aria-label="Edit ${escapeHtml(holding.product)} holding">Edit</button></dd>`;
+                list.appendChild(row);
+            });
+        }
+
         function openVenueBalanceModal(venue) {
             const balance = latestVenueBalances.find(b => b.venue === venue);
             document.getElementById('setVenueBalanceTitle').textContent = `Set ${venue} balance`;
@@ -5123,6 +5180,8 @@
         document.querySelector('.holdings-wallets').addEventListener('click', (event) => {
             const button = event.target.closest('[data-venue]');
             if (button) openVenueBalanceModal(button.dataset.venue);
+            const etpButton = event.target.closest('[data-etp]');
+            if (etpButton) openExternalBuyModal(null, etpButton.dataset.etp);
         });
 
         document.getElementById('setVenueBalanceForm').addEventListener('submit', async (event) => {
@@ -5194,6 +5253,7 @@
         }
 
         function updateExternalBuyAdjustLabel() {
+            if (selectedEtpProduct() !== null) return;
             const venue = externalBuyVenue() || 'this exchange';
             const label = document.getElementById('externalBuyAdjustLabel');
             label.textContent = editingExternalBuy
@@ -5211,6 +5271,7 @@
         }
 
         async function refreshExternalBuyPreview() {
+            if (selectedEtpProduct() !== null) return refreshEtpPreview();
             const payload = externalBuyPayload();
             if (!payload.venue || !payload.timestamp || !(payload.quote_amount > 0) || !(payload.btc_amount > 0)) {
                 resetExternalBuyPreview('Fill in the amount and BTC to see the preview.');
@@ -5222,6 +5283,7 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
                 });
+                if (selectedEtpProduct() !== null) return;  // switched to the ETP meanwhile
                 if (!response.ok) {
                     resetExternalBuyPreview(await readApiError(response, 'Preview is not available right now.'));
                     return;
@@ -5259,6 +5321,146 @@
             externalBuyPreviewTimer = setTimeout(refreshExternalBuyPreview, 400);
         }
 
+        // --- the IB1T holding: shares, average price and yearly fee ---
+
+        function selectedEtpProduct() {
+            const value = document.getElementById('externalBuyVenue').value;
+            return value.startsWith(ETP_PREFIX) ? value.slice(ETP_PREFIX.length) : null;
+        }
+
+        // Shows the fields, title and Delete button of a buy or of the ETP holding
+        function setExternalBuyMode() {
+            const product = selectedEtpProduct();
+            const etp = product !== null;
+            document.querySelectorAll('#externalBuyModal [data-buy-only]').forEach(el => { el.hidden = etp; });
+            document.querySelectorAll('#externalBuyModal [data-etp-only]').forEach(el => { el.hidden = !etp; });
+            document.getElementById('externalBuyVenueOther').classList.toggle(
+                'd-none', document.getElementById('externalBuyVenue').value !== '__other');
+            document.getElementById('externalBuyTitle').textContent = etp
+                ? (editingEtpHolding ? `${product} holding` : `Add your ${product} holding`)
+                : (editingExternalBuy ? 'Edit buy' : 'Add a buy from another exchange');
+            document.getElementById('externalBuySubtitle').textContent = etp
+                ? 'Counted in your holdings and cost basis. No order is placed.'
+                : 'Recorded for your history and stats only. No order is placed.';
+            document.getElementById('externalBuyDelete').classList.toggle(
+                'd-none', etp ? !editingEtpHolding : !editingExternalBuy);
+            resetExternalBuyDelete();
+        }
+
+        // Fills the fields with the saved holding, if there is one
+        async function loadEtpHolding(product) {
+            editingEtpHolding = null;
+            ['etpShares', 'etpAvgPrice', 'etpFee'].forEach(id => { document.getElementById(id).value = ''; });
+            if (!latestEtpHoldings.some(h => h.product === product)) return true;
+            try {
+                const response = await fetch(`/api/etp-holdings/${product}`);
+                if (response.status === 404) return true;
+                if (!response.ok) {
+                    notyf.error(await readApiError(response, `Could not load the ${product} holding`));
+                    return false;
+                }
+                const holding = await response.json();
+                editingEtpHolding = holding;
+                document.getElementById('etpShares').value = holding.shares;
+                document.getElementById('etpAvgPrice').value = holding.avg_price_eur;
+                document.getElementById('etpFee').value = holding.fee_percent;
+                return true;
+            } catch (error) {
+                notyf.error('Network error. Check your connection and try again.');
+                return false;
+            }
+        }
+
+        function etpPayload() {
+            const number = id => parseFloat(document.getElementById(id).value);
+            return { shares: number('etpShares'), avg_price_eur: number('etpAvgPrice'), fee_percent: number('etpFee') };
+        }
+
+        function resetEtpPreview(message) {
+            ['etpBtcPerShare', 'etpPublished', 'etpBtc', 'etpCost', 'etpRate', 'etpCostPerBtc', 'etpFeePerYear'].forEach(id => {
+                document.getElementById(id).textContent = '—';
+            });
+            document.getElementById('etpPublishedLabel').textContent = 'iShares';
+            const check = document.getElementById('externalBuyCheck');
+            check.className = 'external-buy-check';
+            check.textContent = message;
+        }
+
+        async function refreshEtpPreview() {
+            const product = selectedEtpProduct();
+            const payload = etpPayload();
+            if (!(payload.shares > 0) || !(payload.avg_price_eur > 0) || !(payload.fee_percent >= 0)) {
+                resetEtpPreview('Fill in the shares, price and fee to see the preview.');
+                return;
+            }
+            try {
+                const response = await fetch(`/api/etp-holdings/${product}/preview`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                if (selectedEtpProduct() !== product) return;  // switched away meanwhile
+                if (!response.ok) {
+                    resetEtpPreview(await readApiError(response, 'Preview is not available right now.'));
+                    return;
+                }
+                const p = await response.json();
+                document.getElementById('etpBtcPerShare').textContent = p.btc_per_share.toFixed(9);
+                document.getElementById('etpPublishedLabel').textContent = `iShares, ${p.published_date}`;
+                document.getElementById('etpPublished').textContent = p.published_btc_per_share.toFixed(9);
+                document.getElementById('etpBtc').textContent = `₿${p.btc.toFixed(8)}`;
+                document.getElementById('etpCost').textContent = `${formatQuote(p.cost_eur, 'EUR')} ≈ ${formatUsd(p.cost_usd)}`;
+                document.getElementById('etpRate').textContent = `${p.fx_rate_usd.toFixed(4)} (ECB, ${p.fx_date})`;
+                document.getElementById('etpCostPerBtc').textContent =
+                    `${formatQuote(p.cost_per_btc_eur, 'EUR', 0)} ≈ ${formatUsd(p.cost_per_btc_usd, 0)}`;
+                document.getElementById('etpFeePerYear').textContent = `₿${p.fee_btc_per_year.toFixed(8)}`;
+                const check = document.getElementById('externalBuyCheck');
+                if (p.price_low_usd === null || p.price_low_usd === undefined) {
+                    check.className = 'external-buy-check';
+                    check.textContent = 'No BTC price history yet, so the price cannot be checked.';
+                } else {
+                    const range = `${formatUsd(p.price_low_usd, 0)} and ${formatUsd(p.price_high_usd, 0)}`;
+                    check.className = `external-buy-check ${p.price_warning ? 'is-warning' : 'is-ok'}`;
+                    check.textContent = p.price_warning
+                        ? `BTC traded between ${range} since ${product} started, far from your cost per BTC. Check the price per share for a missing or extra zero. You can still save.`
+                        : `BTC traded between ${range} since ${product} started, so your cost per BTC looks right.`;
+                }
+            } catch (error) {
+                resetEtpPreview('Preview is not available right now.');
+            }
+        }
+
+        function afterEtpHoldingChange(message) {
+            notyf.success(message);
+            bootstrap.Modal.getInstance(document.getElementById('externalBuyModal')).hide();
+            loadWalletSummary();
+        }
+
+        async function saveEtpHolding(product) {
+            const payload = etpPayload();
+            if (!(payload.shares > 0)) return showExternalBuyError('Enter how many shares you hold.');
+            if (!(payload.avg_price_eur > 0)) return showExternalBuyError('Enter the average price per share.');
+            if (!(payload.fee_percent >= 0)) return showExternalBuyError('Enter the yearly fee in percent, for example 0.25.');
+            const saveButton = document.getElementById('externalBuySave');
+            saveButton.disabled = true;
+            try {
+                const response = await fetch(`/api/etp-holdings/${product}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                if (!response.ok) {
+                    showExternalBuyError(await readApiError(response, `Could not save the ${product} holding.`));
+                    return;
+                }
+                afterEtpHoldingChange(`${product} holding saved`);
+            } catch (error) {
+                showExternalBuyError('Network error. Check your connection and try again.');
+            } finally {
+                saveButton.disabled = false;
+            }
+        }
+
         function resetExternalBuyDelete() {
             externalBuyDeleteArmed = false;
             const button = document.getElementById('externalBuyDelete');
@@ -5266,16 +5468,20 @@
             button.classList.replace('btn-danger', 'btn-outline-danger');
         }
 
-        async function openExternalBuyModal(externalId = null) {
+        // A buy to edit by id, the holding of an ETP product, or neither for a new buy
+        async function openExternalBuyModal(externalId = null, etpProduct = null) {
             const form = document.getElementById('externalBuyForm');
             form.reset();
             editingExternalBuy = null;
-            resetExternalBuyDelete();
+            editingEtpHolding = null;
             document.getElementById('externalBuyError').classList.add('d-none');
-            document.getElementById('externalBuyDelete').classList.toggle('d-none', externalId === null);
-            document.getElementById('externalBuyTitle').textContent =
-                externalId === null ? 'Add a buy from another exchange' : 'Edit buy';
-            if (externalId === null) {
+            // A saved buy stays a buy; the ETP is offered for new entries only
+            document.getElementById('externalBuyEtpGroup').disabled = externalId !== null;
+            if (etpProduct !== null) {
+                document.getElementById('externalBuyVenue').value = ETP_PREFIX + etpProduct;
+                document.getElementById('externalBuyTime').value = toLocalInputValue(new Date());
+                if (!(await loadEtpHolding(etpProduct))) return;
+            } else if (externalId === null) {
                 setExternalBuyVenue('Kraken Pro');
                 document.getElementById('externalBuyTime').value = toLocalInputValue(new Date());
             } else {
@@ -5295,6 +5501,7 @@
                 document.getElementById('externalBuyFeeCurrency').value = buy.fee_currency;
                 document.getElementById('externalBuyRef').value = buy.venue_trade_id || '';
             }
+            setExternalBuyMode();
             updateExternalBuyAdjustLabel();
             refreshExternalBuyPreview();
             bootstrap.Modal.getOrCreateInstance(document.getElementById('externalBuyModal')).show();
@@ -5319,19 +5526,24 @@
             const button = event.target.closest('.external-buy-edit');
             if (button) openExternalBuyModal(Number(button.dataset.externalId));
         });
-        document.getElementById('externalBuyVenue').addEventListener('change', (event) => {
-            const other = document.getElementById('externalBuyVenueOther');
-            other.classList.toggle('d-none', event.target.value !== '__other');
-            if (event.target.value === '__other') other.focus();
+        document.getElementById('externalBuyVenue').addEventListener('change', async (event) => {
+            const product = selectedEtpProduct();
+            if (product !== null) await loadEtpHolding(product);
+            if (selectedEtpProduct() !== product) return;  // changed again while loading
+            setExternalBuyMode();
+            if (event.target.value === '__other') document.getElementById('externalBuyVenueOther').focus();
+            scheduleExternalBuyPreview();
         });
         ['externalBuyVenue', 'externalBuyVenueOther', 'externalBuyTime', 'externalBuyAmount', 'externalBuyCurrency',
-         'externalBuyBtc', 'externalBuyFee', 'externalBuyFeeCurrency'].forEach(id => {
+         'externalBuyBtc', 'externalBuyFee', 'externalBuyFeeCurrency', 'etpShares', 'etpAvgPrice', 'etpFee'].forEach(id => {
             document.getElementById(id).addEventListener('input', scheduleExternalBuyPreview);
             document.getElementById(id).addEventListener('change', scheduleExternalBuyPreview);
         });
 
         document.getElementById('externalBuyForm').addEventListener('submit', async (event) => {
             event.preventDefault();
+            const etpProduct = selectedEtpProduct();
+            if (etpProduct !== null) return saveEtpHolding(etpProduct);
             const payload = externalBuyPayload();
             if (!payload.venue) return showExternalBuyError('Enter the exchange name.');
             if (!payload.timestamp) return showExternalBuyError('Enter when you bought.');
@@ -5359,12 +5571,26 @@
 
         document.getElementById('externalBuyDelete').addEventListener('click', async (event) => {
             const button = event.currentTarget;
-            if (!editingExternalBuy) return;
+            const etpProduct = selectedEtpProduct();
+            if (etpProduct !== null ? !editingEtpHolding : !editingExternalBuy) return;
             if (!externalBuyDeleteArmed) {
                 externalBuyDeleteArmed = true;
                 button.textContent = 'Click again to delete';
                 button.classList.replace('btn-outline-danger', 'btn-danger');
                 setTimeout(resetExternalBuyDelete, 3000);
+                return;
+            }
+            if (etpProduct !== null) {
+                try {
+                    const response = await fetch(`/api/etp-holdings/${etpProduct}`, { method: 'DELETE' });
+                    if (!response.ok) {
+                        showExternalBuyError(await readApiError(response, `Could not delete the ${etpProduct} holding.`));
+                        return;
+                    }
+                    afterEtpHoldingChange(`${etpProduct} holding deleted`);
+                } catch (error) {
+                    showExternalBuyError('Network error. Check your connection and try again.');
+                }
                 return;
             }
             const adjust = document.getElementById('externalBuyAdjust').checked;

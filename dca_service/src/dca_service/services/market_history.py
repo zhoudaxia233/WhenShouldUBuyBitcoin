@@ -77,3 +77,10 @@ def _load() -> Dict[str, MarketDay]:
 
 def market_day(day: date) -> Optional[MarketDay]:
     return _load().get(day.isoformat())
+
+
+def close_range(since: date) -> Optional[Tuple[float, float]]:
+    """Lowest and highest daily close from `since` on, or None without data."""
+    start = since.isoformat()
+    closes = [d.close_price for key, d in _load().items() if key >= start and d.close_price]
+    return (min(closes), max(closes)) if closes else None
