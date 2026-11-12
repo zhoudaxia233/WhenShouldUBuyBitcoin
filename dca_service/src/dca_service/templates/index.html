@@ -2270,9 +2270,11 @@
                                         <input type="number" step="any" min="0" max="5" inputmode="decimal" class="form-control" id="etpFee">
                                         <span class="input-group-text">% a year</span>
                                     </div>
+                                    <div class="etp-fee-changes" id="etpFeeChanges"></div>
+                                    <button type="button" class="btn btn-link btn-sm px-0" id="etpAddFeeChange"><i class="bi bi-plus-lg" aria-hidden="true"></i> Add a fee change</button>
                                     <ul class="form-text ps-3 mb-0">
-                                        <li>The TER on the <a href="https://www.ishares.com/de/privatanleger/de/produkte/337088/ishares-bitcoin-etp" target="_blank" rel="noopener noreferrer">iShares product page</a>.</li>
-                                        <li>It comes off the BTC per share every day. When a fee waiver ends, change it here.</li>
+                                        <li>The TER on the <a href="https://www.ishares.com/de/privatanleger/de/produkte/337088/ishares-bitcoin-etp" target="_blank" rel="noopener noreferrer">iShares product page</a>, including when a fee waiver ends.</li>
+                                        <li>Each fee comes off the BTC per share every day from its date on.</li>
                                     </ul>
                                 </div>
                                 <div data-buy-only>
@@ -5348,22 +5350,26 @@
         }
 
         // Fills the fields with the saved holding, if there is one
+        // Fills the fields with the saved holding, or a new one with the issuer's fees
         async function loadEtpHolding(product) {
             editingEtpHolding = null;
             ['etpShares', 'etpAvgPrice', 'etpFee'].forEach(id => { document.getElementById(id).value = ''; });
-            if (!latestEtpHoldings.some(h => h.product === product)) return true;
+            setEtpFeeChanges([]);
+            const saved = latestEtpHoldings.some(h => h.product === product);
             try {
-                const response = await fetch(`/api/etp-holdings/${product}`);
-                if (response.status === 404) return true;
+                const response = await fetch(saved ? `/api/etp-holdings/${product}` : `/api/etp-holdings/${product}/defaults`);
                 if (!response.ok) {
                     notyf.error(await readApiError(response, `Could not load the ${product} holding`));
                     return false;
                 }
-                const holding = await response.json();
-                editingEtpHolding = holding;
-                document.getElementById('etpShares').value = holding.shares;
-                document.getElementById('etpAvgPrice').value = holding.avg_price_eur;
-                document.getElementById('etpFee').value = holding.fee_percent;
+                const data = await response.json();
+                if (saved) {
+                    editingEtpHolding = data;
+                    document.getElementById('etpShares').value = data.shares;
+                    document.getElementById('etpAvgPrice').value = data.avg_price_eur;
+                }
+                document.getElementById('etpFee').value = data.fee_percent;
+                setEtpFeeChanges(data.fee_changes || []);
                 return true;
             } catch (error) {
                 notyf.error('Network error. Check your connection and try again.');
@@ -5371,9 +5377,47 @@
             }
         }
 
+        // From a day on, another yearly fee (a waiver ending, a new price)
+        function addEtpFeeChange(change = { date: '', fee_percent: '' }) {
+            const row = document.createElement('div');
+            row.className = 'input-group input-group-sm etp-fee-change';
+            row.innerHTML = `<span class="input-group-text">From</span>
+                <input type="date" class="form-control" aria-label="Fee changes on" value="${escapeHtml(change.date)}">
+                <input type="number" step="any" min="0" max="5" inputmode="decimal" class="form-control" aria-label="New yearly fee in percent" value="${escapeHtml(String(change.fee_percent))}">
+                <span class="input-group-text">%</span>
+                <button type="button" class="btn btn-outline-secondary" aria-label="Remove this fee change" title="Remove this fee change"><i class="bi bi-x-lg" aria-hidden="true"></i></button>`;
+            row.querySelectorAll('input').forEach(input => {
+                input.addEventListener('input', scheduleExternalBuyPreview);
+                input.addEventListener('change', scheduleExternalBuyPreview);
+            });
+            row.querySelector('button').addEventListener('click', () => {
+                row.remove();
+                scheduleExternalBuyPreview();
+            });
+            document.getElementById('etpFeeChanges').appendChild(row);
+            return row;
+        }
+
+        function setEtpFeeChanges(changes) {
+            document.getElementById('etpFeeChanges').replaceChildren();
+            changes.forEach(change => addEtpFeeChange(change));
+        }
+
+        function etpFeeChanges() {
+            return Array.from(document.querySelectorAll('#etpFeeChanges .etp-fee-change')).map(row => {
+                const [day, fee] = row.querySelectorAll('input');
+                return { date: day.value, fee_percent: parseFloat(fee.value) };
+            }).filter(change => change.date || Number.isFinite(change.fee_percent));
+        }
+
         function etpPayload() {
             const number = id => parseFloat(document.getElementById(id).value);
-            return { shares: number('etpShares'), avg_price_eur: number('etpAvgPrice'), fee_percent: number('etpFee') };
+            return {
+                shares: number('etpShares'),
+                avg_price_eur: number('etpAvgPrice'),
+                fee_percent: number('etpFee'),
+                fee_changes: etpFeeChanges()
+            };
         }
 
         function resetEtpPreview(message) {
@@ -5441,6 +5485,7 @@
             if (!(payload.shares > 0)) return showExternalBuyError('Enter how many shares you hold.');
             if (!(payload.avg_price_eur > 0)) return showExternalBuyError('Enter the average price per share.');
             if (!(payload.fee_percent >= 0)) return showExternalBuyError('Enter the yearly fee in percent, for example 0.25.');
+            if (payload.fee_changes.some(c => !c.date || !(c.fee_percent >= 0))) return showExternalBuyError('Give each fee change a date and a fee, or remove it.');
             const saveButton = document.getElementById('externalBuySave');
             saveButton.disabled = true;
             try {
@@ -5538,6 +5583,9 @@
          'externalBuyBtc', 'externalBuyFee', 'externalBuyFeeCurrency', 'etpShares', 'etpAvgPrice', 'etpFee'].forEach(id => {
             document.getElementById(id).addEventListener('input', scheduleExternalBuyPreview);
             document.getElementById(id).addEventListener('change', scheduleExternalBuyPreview);
+        });
+        document.getElementById('etpAddFeeChange').addEventListener('click', () => {
+            addEtpFeeChange().querySelector('input').focus();
         });
 
         document.getElementById('externalBuyForm').addEventListener('submit', async (event) => {
