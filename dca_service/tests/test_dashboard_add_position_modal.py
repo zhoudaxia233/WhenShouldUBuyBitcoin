@@ -764,10 +764,11 @@ def test_extra_buy_advice_does_not_overwrite_user_entered_amount():
     assert "setExtraBuyText('addPositionRecommendedAmount', formatExtraBuyUsd(recommendedAmount));" not in html
     assert "setExtraBuyText('addPositionBestAmount', formatExtraBuyUsdCompact(recommendedAmount));" not in html
     assert "addPositionBestAmount" not in html
-    assert "const enteredAmount = toExtraBuyFiniteNumber(document.getElementById('addPositionUsdcInput')?.value);" in html
+    # The amount is typed text, read with a comma or a point (test_decimal_inputs.py)
+    assert "const enteredAmount = toExtraBuyFiniteNumber(DecimalInput.parse(document.getElementById('addPositionUsdcInput')?.value));" in html
     assert "enteredAmount !== null &&\n                currentPrice !== null" in html
     assert "? enteredAmount / currentPrice" in html
-    assert "const amount = Number(document.getElementById('addPositionUsdcInput')?.value);" in html
+    assert "const amount = DecimalInput.parse(document.getElementById('addPositionUsdcInput')?.value);" in html
     assert "Confirm ${formatExtraBuyUsdcCompact(amount)} USDC buy" in html
 
 
