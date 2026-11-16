@@ -173,6 +173,22 @@ def test_preview_checks_price_against_that_day(client):
     assert typo["price_warning"] is True
 
 
+@pytest.mark.parametrize(
+    "deviation, warned",
+    [(0.053, False), (-0.08, False), (0.12, True), (-0.12, True)],
+)
+def test_preview_warns_only_beyond_ten_percent(client, deviation, warned):
+    # A buy at the day's high or low, plus the exchange's spread, is often 5% off the close.
+    btc_amount = 580.60 / (103200.0 * (1 + deviation))
+
+    body = client.post(
+        "/api/external-buys/preview", json={**KRAKEN_BUY, "btc_amount": btc_amount}
+    ).json()
+
+    assert body["price_deviation"] == pytest.approx(deviation)
+    assert body["price_warning"] is warned
+
+
 # --- editing and deleting --------------------------------------------------
 
 def test_edit_applies_btc_difference_to_balance(client, session):

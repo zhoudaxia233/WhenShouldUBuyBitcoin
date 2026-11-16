@@ -5312,10 +5312,12 @@
                     const pct = Math.abs(p.price_deviation * 100).toFixed(1);
                     const direction = p.price_deviation >= 0 ? 'above' : 'below';
                     const close = formatUsd(p.day_close_usd, 0);
-                    check.className = `external-buy-check ${p.price_warning ? 'is-warning' : 'is-ok'}`;
+                    // Below the warning threshold this is a plain fact: the close is another
+                    // moment of the day, so neither "wrong" nor "right" can be said.
+                    check.className = `external-buy-check${p.price_warning ? ' is-warning' : ''}`;
                     check.textContent = p.price_warning
-                        ? `Your price is ${pct}% ${direction} that day's close of ${close}. Check the BTC and amount for a missing or extra zero. You can still save.`
-                        : `Your price is ${pct}% ${direction} that day's close of ${close}. Looks right.`;
+                        ? `Your price is ${pct}% ${direction} that day's close of ${close}. Check the date, BTC and amount for a typo. You can still save.`
+                        : `Your price is ${pct}% ${direction} that day's close of ${close}.`;
                 }
             } catch (error) {
                 resetExternalBuyPreview('Preview is not available right now.');

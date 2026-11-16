@@ -18,7 +18,9 @@ from dca_service.services import fx_rates, market_history
 
 QUOTE_CURRENCIES = ("EUR", "USD", "USDC")
 FEE_CURRENCIES = ("EUR", "USD", "USDC", "BTC")
-PRICE_WARNING_THRESHOLD = 0.05  # Flag prices more than 5% away from that day's close
+# Flag prices more than 10% away from that day's close. A buy at the day's high or
+# low, plus the exchange's spread and the ECB rate, is often 5% off without any typo.
+PRICE_WARNING_THRESHOLD = 0.10
 
 
 class ExternalBuyInput(BaseModel):
