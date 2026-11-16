@@ -171,12 +171,12 @@
                     <div class="row mb-3">
                         <div class="col-md-6">
                             <label for="total_budget_usd" class="form-label">Monthly Budget (USD)</label>
-                            <input type="number" class="form-control" id="total_budget_usd" step="0.01" required>
+                            <input type="text" inputmode="decimal" autocomplete="off" class="form-control" id="total_budget_usd" required>
                             <div class="form-text text-muted" id="dailyBudgetCalc"></div>
                         </div>
                         <div class="col-md-6">
                             <label for="target_btc_amount" class="form-label">Target BTC Amount</label>
-                            <input type="number" class="form-control" id="target_btc_amount" step="0.00000001" value="1.0">
+                            <input type="text" inputmode="decimal" autocomplete="off" class="form-control" id="target_btc_amount" value="1.0">
                         </div>
                     </div>
 
@@ -285,7 +285,7 @@
                         <div class="row mt-3">
                             <div class="col-md-6 mb-3">
                                 <label for="fixed_dca_stop_price_usd" class="form-label">Stop Buying At or Above BTC Price (USD)</label>
-                                <input type="number" class="form-control" id="fixed_dca_stop_price_usd" min="0" step="0.01" placeholder="Optional">
+                                <input type="text" inputmode="decimal" autocomplete="off" class="form-control" id="fixed_dca_stop_price_usd" min="0" placeholder="Optional">
                                 <div class="form-text text-muted">Leave blank to keep Fixed DCA running at every scheduled execution.</div>
                             </div>
                         </div>
@@ -306,7 +306,7 @@
                                     <span class="ahr999-range" id="ahr999-range-p10">(AHR999 &lt; p10)</span>
                                 </div>
                                 <div class="tier-multiplier">
-                                    <input type="number" class="tier-input" id="ahr999_multiplier_p10" value="5" min="0" max="10" step="0.5" placeholder="5.0" oninput="updatePercentileTiers()" />
+                                    <input type="text" inputmode="decimal" autocomplete="off" class="tier-input" id="ahr999_multiplier_p10" value="5" min="0" max="10" placeholder="5.0" oninput="updatePercentileTiers()" />
                                 </div>
                                 <div class="tier-daily" id="tier-p10-amount">-</div>
                             </div>
@@ -317,7 +317,7 @@
                                     <span class="ahr999-range" id="ahr999-range-p25">(p10 - p25)</span>
                                 </div>
                                 <div class="tier-multiplier">
-                                    <input type="number" class="tier-input" id="ahr999_multiplier_p25" value="2" min="0" max="10" step="0.5" placeholder="2.0" oninput="updatePercentileTiers()" />
+                                    <input type="text" inputmode="decimal" autocomplete="off" class="tier-input" id="ahr999_multiplier_p25" value="2" min="0" max="10" placeholder="2.0" oninput="updatePercentileTiers()" />
                                 </div>
                                 <div class="tier-daily" id="tier-p25-amount">-</div>
                             </div>
@@ -328,7 +328,7 @@
                                     <span class="ahr999-range" id="ahr999-range-p50">(p25 - p50)</span>
                                 </div>
                                 <div class="tier-multiplier">
-                                    <input type="number" class="tier-input" id="ahr999_multiplier_p50" value="1" min="0" max="10" step="0.5" placeholder="1.0" oninput="updatePercentileTiers()" />
+                                    <input type="text" inputmode="decimal" autocomplete="off" class="tier-input" id="ahr999_multiplier_p50" value="1" min="0" max="10" placeholder="1.0" oninput="updatePercentileTiers()" />
                                 </div>
                                 <div class="tier-daily" id="tier-p50-amount">-</div>
                             </div>
@@ -339,7 +339,7 @@
                                     <span class="ahr999-range" id="ahr999-range-p75">(p50 - p75)</span>
                                 </div>
                                 <div class="tier-multiplier">
-                                    <input type="number" class="tier-input" id="ahr999_multiplier_p75" value="0" min="0" max="10" step="0.5" placeholder="0" oninput="updatePercentileTiers()" />
+                                    <input type="text" inputmode="decimal" autocomplete="off" class="tier-input" id="ahr999_multiplier_p75" value="0" min="0" max="10" placeholder="0" oninput="updatePercentileTiers()" />
                                 </div>
                                 <div class="tier-daily" id="tier-p75-amount">-</div>
                             </div>
@@ -350,7 +350,7 @@
                                     <span class="ahr999-range" id="ahr999-range-p90">(p75 - p90)</span>
                                 </div>
                                 <div class="tier-multiplier">
-                                    <input type="number" class="tier-input" id="ahr999_multiplier_p90" value="0" min="0" max="10" step="0.5" placeholder="0" oninput="updatePercentileTiers()" />
+                                    <input type="text" inputmode="decimal" autocomplete="off" class="tier-input" id="ahr999_multiplier_p90" value="0" min="0" max="10" placeholder="0" oninput="updatePercentileTiers()" />
                                 </div>
                                 <div class="tier-daily" id="tier-p90-amount">-</div>
                             </div>
@@ -361,7 +361,7 @@
                                     <span class="ahr999-range" id="ahr999-range-p100">(AHR999 ≥ p90)</span>
                                 </div>
                                 <div class="tier-multiplier">
-                                    <input type="number" class="tier-input" id="ahr999_multiplier_p100" value="0" min="0" max="10" step="0.5" placeholder="0" oninput="updatePercentileTiers()" />
+                                    <input type="text" inputmode="decimal" autocomplete="off" class="tier-input" id="ahr999_multiplier_p100" value="0" min="0" max="10" placeholder="0" oninput="updatePercentileTiers()" />
                                 </div>
                                 <div class="tier-daily" id="tier-p100-amount">-</div>
                             </div>
@@ -385,7 +385,7 @@
                                     0 - 0.45 (EXTREMELY CHEAP)
                                 </div>
                                 <div class="tier-multiplier">
-                                    <input type="number" class="tier-input" id="ahr999_multiplier_r045" value="5" min="0" max="10" step="0.5" placeholder="5.0" oninput="updateFixedRangeTiers()" />
+                                    <input type="text" inputmode="decimal" autocomplete="off" class="tier-input" id="ahr999_multiplier_r045" value="5" min="0" max="10" placeholder="5.0" oninput="updateFixedRangeTiers()" />
                                 </div>
                                 <div class="tier-daily" id="tier-r045-amount">-</div>
                             </div>
@@ -395,7 +395,7 @@
                                     0.45 - 0.5 (Very Cheap)
                                 </div>
                                 <div class="tier-multiplier">
-                                    <input type="number" class="tier-input" id="ahr999_multiplier_r050" value="3" min="0" max="10" step="0.5" placeholder="3.0" oninput="updateFixedRangeTiers()" />
+                                    <input type="text" inputmode="decimal" autocomplete="off" class="tier-input" id="ahr999_multiplier_r050" value="3" min="0" max="10" placeholder="3.0" oninput="updateFixedRangeTiers()" />
                                 </div>
                                 <div class="tier-daily" id="tier-r050-amount">-</div>
                             </div>
@@ -405,7 +405,7 @@
                                     0.5 - 0.6 (Cheap)
                                 </div>
                                 <div class="tier-multiplier">
-                                    <input type="number" class="tier-input" id="ahr999_multiplier_r060" value="2" min="0" max="10" step="0.5" placeholder="2.0" oninput="updateFixedRangeTiers()" />
+                                    <input type="text" inputmode="decimal" autocomplete="off" class="tier-input" id="ahr999_multiplier_r060" value="2" min="0" max="10" placeholder="2.0" oninput="updateFixedRangeTiers()" />
                                 </div>
                                 <div class="tier-daily" id="tier-r060-amount">-</div>
                             </div>
@@ -415,7 +415,7 @@
                                     0.6 - 0.7 (Fair)
                                 </div>
                                 <div class="tier-multiplier">
-                                    <input type="number" class="tier-input" id="ahr999_multiplier_r070" value="1" min="0" max="10" step="0.5" placeholder="1.0" oninput="updateFixedRangeTiers()" />
+                                    <input type="text" inputmode="decimal" autocomplete="off" class="tier-input" id="ahr999_multiplier_r070" value="1" min="0" max="10" placeholder="1.0" oninput="updateFixedRangeTiers()" />
                                 </div>
                                 <div class="tier-daily" id="tier-r070-amount">-</div>
                             </div>
@@ -425,7 +425,7 @@
                                     0.7 - 0.8 (Getting Expensive)
                                 </div>
                                 <div class="tier-multiplier">
-                                    <input type="number" class="tier-input" id="ahr999_multiplier_r080" value="0.5" min="0" max="10" step="0.5" placeholder="0.5" oninput="updateFixedRangeTiers()" />
+                                    <input type="text" inputmode="decimal" autocomplete="off" class="tier-input" id="ahr999_multiplier_r080" value="0.5" min="0" max="10" placeholder="0.5" oninput="updateFixedRangeTiers()" />
                                 </div>
                                 <div class="tier-daily" id="tier-r080-amount">-</div>
                             </div>
@@ -435,7 +435,7 @@
                                     0.8 - 0.9 (Expensive)
                                 </div>
                                 <div class="tier-multiplier">
-                                    <input type="number" class="tier-input" id="ahr999_multiplier_r090" value="0" min="0" max="10" step="0.5" placeholder="0" oninput="updateFixedRangeTiers()" />
+                                    <input type="text" inputmode="decimal" autocomplete="off" class="tier-input" id="ahr999_multiplier_r090" value="0" min="0" max="10" placeholder="0" oninput="updateFixedRangeTiers()" />
                                 </div>
                                 <div class="tier-daily" id="tier-r090-amount">-</div>
                             </div>
@@ -445,7 +445,7 @@
                                     0.9 - 1.0 (Very Expensive)
                                 </div>
                                 <div class="tier-multiplier">
-                                    <input type="number" class="tier-input" id="ahr999_multiplier_r100" value="0" min="0" max="10" step="0.5" placeholder="0" oninput="updateFixedRangeTiers()" />
+                                    <input type="text" inputmode="decimal" autocomplete="off" class="tier-input" id="ahr999_multiplier_r100" value="0" min="0" max="10" placeholder="0" oninput="updateFixedRangeTiers()" />
                                 </div>
                                 <div class="tier-daily" id="tier-r100-amount">-</div>
                             </div>
@@ -455,7 +455,7 @@
                                     &gt; 1.0 (EXTREMELY EXPENSIVE)
                                 </div>
                                 <div class="tier-multiplier">
-                                    <input type="number" class="tier-input" id="ahr999_multiplier_r999" value="0" min="0" max="10" step="0.5" placeholder="0" oninput="updateFixedRangeTiers()" />
+                                    <input type="text" inputmode="decimal" autocomplete="off" class="tier-input" id="ahr999_multiplier_r999" value="0" min="0" max="10" placeholder="0" oninput="updateFixedRangeTiers()" />
                                 </div>
                                 <div class="tier-daily" id="tier-r999-amount">-</div>
                             </div>
@@ -470,12 +470,12 @@
                         <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label for="dynamic_min_multiplier" class="form-label">Min Multiplier</label>
-                                <input type="number" class="form-control" id="dynamic_min_multiplier" step="0.1" value="0.0">
+                                <input type="text" inputmode="decimal" autocomplete="off" class="form-control" id="dynamic_min_multiplier" value="0.0">
                                 <div class="form-text text-muted">Floor multiplier when Bitcoin is expensive.</div>
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label for="dynamic_max_multiplier" class="form-label">Max Multiplier</label>
-                                <input type="number" class="form-control" id="dynamic_max_multiplier" step="0.1" value="10.0">
+                                <input type="text" inputmode="decimal" autocomplete="off" class="form-control" id="dynamic_max_multiplier" value="10.0">
                                 <div class="form-text text-muted">Ceiling multiplier when Bitcoin is cheap.</div>
                             </div>
                         </div>
@@ -483,12 +483,12 @@
                         <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label for="dynamic_a_low" class="form-label">Low AHR (Max Buy)</label>
-                                <input type="number" class="form-control" id="dynamic_a_low" step="0.01" value="0.45">
+                                <input type="text" inputmode="decimal" autocomplete="off" class="form-control" id="dynamic_a_low" value="0.45">
                                 <div class="form-text text-muted">AHR999 value where buying is maximized.</div>
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label for="dynamic_a_high" class="form-label">High AHR (Min Buy)</label>
-                                <input type="number" class="form-control" id="dynamic_a_high" step="0.01" value="1.0">
+                                <input type="text" inputmode="decimal" autocomplete="off" class="form-control" id="dynamic_a_high" value="1.0">
                                 <div class="form-text text-muted">AHR999 value where buying stops (or hits min).</div>
                             </div>
                         </div>
@@ -496,7 +496,7 @@
                         <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label for="dynamic_gamma" class="form-label">Gamma (Curve Shape)</label>
-                                <input type="number" class="form-control" id="dynamic_gamma" step="0.1" value="2.0" min="0.5" max="10.0">
+                                <input type="text" inputmode="decimal" autocomplete="off" class="form-control" id="dynamic_gamma" value="2.0" min="0.5" max="10.0">
                                 <div class="form-text text-muted">
                                     Controls how aggressively to invest when Bitcoin is cheap. 
                                     <strong>Recommended: 1.0-3.0</strong> (2.0 is balanced). 
@@ -554,6 +554,7 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" integrity="sha384-geWF76RCwLtnZ8qwWowPQNguL3RmwHVBC9FhGdlKrxdiJJigb/j/68SIy3Te4Bkz" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/notyf@3.10.0/notyf.min.js" integrity="sha384-uuNfwJfjOG2ukYi4eAB11/t3lP4Zjf75a3UhgkLzEpiX8JpJfacpG7Ye+0tiVMxT" crossorigin="anonymous"></script>
+    <script src="{{ asset_url('decimal_input.js') }}"></script>
     <script>
         window.notyf = new Notyf({
             duration: 3000,
@@ -691,7 +692,7 @@
 
         // UX Enhancements
         function updateDailyCalc() {
-            const total = parseFloat(document.getElementById('total_budget_usd').value) || 0;
+            const total = DecimalInput.parse(document.getElementById('total_budget_usd').value) || 0;
             const DAYS_PER_MONTH = 30.44; // Average days per month (same as backtest)
             const daily = total / DAYS_PER_MONTH;
             const helpText = document.getElementById('dailyBudgetCalc');
@@ -705,7 +706,7 @@
         }
 
         function updatePercentileTiers() {
-            const monthlyBudget = parseFloat(document.getElementById('total_budget_usd').value) || 0;
+            const monthlyBudget = DecimalInput.parse(document.getElementById('total_budget_usd').value) || 0;
             const dailyBudget = monthlyBudget / 30.44; // Days per month
             
             const tiers = [
@@ -718,7 +719,7 @@
             ];
             
             tiers.forEach(tier => {
-                const multiplier = parseFloat(document.getElementById(tier.multiplierId).value) || 0;
+                const multiplier = DecimalInput.parse(document.getElementById(tier.multiplierId).value) || 0;
                 const amount = dailyBudget * multiplier;
                 const amountElement = document.getElementById(tier.amountId);
                 if (amountElement) {
@@ -728,7 +729,7 @@
         }
 
         function updateFixedRangeTiers() {
-            const monthlyBudget = parseFloat(document.getElementById('total_budget_usd').value) || 0;
+            const monthlyBudget = DecimalInput.parse(document.getElementById('total_budget_usd').value) || 0;
             const dailyBudget = monthlyBudget / 30.44; // Days per month
             
             const tiers = [
@@ -743,7 +744,7 @@
             ];
             
             tiers.forEach(tier => {
-                const multiplier = parseFloat(document.getElementById(tier.multiplierId).value) || 0;
+                const multiplier = DecimalInput.parse(document.getElementById(tier.multiplierId).value) || 0;
                 const amount = dailyBudget * multiplier;
                 const amountElement = document.getElementById(tier.amountId);
                 if (amountElement) {
@@ -839,7 +840,8 @@
         // Execution Mode Confirmation Logic - Only on form submit
         document.getElementById('strategyForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-            
+            if (DecimalInput.reportProblem(e.currentTarget)) return;
+
             const executionMode = document.querySelector('input[name="execution_mode"]:checked').value;
             
             // Only show confirmation modal when switching FROM DRY_RUN/SIMULATED TO LIVE
@@ -869,12 +871,12 @@
         });
         
         async function saveStrategy() {
-            const fixedDcaStopPrice = parseFloat(document.getElementById('fixed_dca_stop_price_usd').value);
+            const fixedDcaStopPrice = DecimalInput.parse(document.getElementById('fixed_dca_stop_price_usd').value);
             const data = {
                 is_active: document.getElementById('is_active').checked,
-                total_budget_usd: parseFloat(document.getElementById('total_budget_usd').value),
+                total_budget_usd: DecimalInput.parse(document.getElementById('total_budget_usd').value),
                 enforce_monthly_cap: document.getElementById('enforce_monthly_cap').checked,
-                target_btc_amount: parseFloat(document.getElementById('target_btc_amount').value),
+                target_btc_amount: DecimalInput.parse(document.getElementById('target_btc_amount').value),
                 execution_frequency: document.getElementById('execution_frequency').value,
                 execution_day_of_week: document.getElementById('execution_frequency').value === 'weekly' ? document.getElementById('execution_day_of_week').value : null,
                 execution_time_utc: document.getElementById('execution_time_utc').value,
@@ -891,33 +893,33 @@
                 // Save percentile multipliers (6 tiers)
                 // For backward compatibility, also save to old fields
                 // Use nullish coalescing (??) instead of || to preserve 0 values
-                ahr999_multiplier_p10: parseFloat(document.getElementById('ahr999_multiplier_p10').value) ?? 5.0,
-                ahr999_multiplier_p25: parseFloat(document.getElementById('ahr999_multiplier_p25').value) ?? 2.0,
-                ahr999_multiplier_p50: parseFloat(document.getElementById('ahr999_multiplier_p50').value) ?? 1.0,
-                ahr999_multiplier_p75: parseFloat(document.getElementById('ahr999_multiplier_p75').value) ?? 0.0,
-                ahr999_multiplier_p90: parseFloat(document.getElementById('ahr999_multiplier_p90').value) ?? 0.0,
-                ahr999_multiplier_p100: parseFloat(document.getElementById('ahr999_multiplier_p100').value) ?? 0.0,
+                ahr999_multiplier_p10: DecimalInput.parse(document.getElementById('ahr999_multiplier_p10').value) ?? 5.0,
+                ahr999_multiplier_p25: DecimalInput.parse(document.getElementById('ahr999_multiplier_p25').value) ?? 2.0,
+                ahr999_multiplier_p50: DecimalInput.parse(document.getElementById('ahr999_multiplier_p50').value) ?? 1.0,
+                ahr999_multiplier_p75: DecimalInput.parse(document.getElementById('ahr999_multiplier_p75').value) ?? 0.0,
+                ahr999_multiplier_p90: DecimalInput.parse(document.getElementById('ahr999_multiplier_p90').value) ?? 0.0,
+                ahr999_multiplier_p100: DecimalInput.parse(document.getElementById('ahr999_multiplier_p100').value) ?? 0.0,
                 // Backward compatibility: map to old fields
-                ahr999_multiplier_low: parseFloat(document.getElementById('ahr999_multiplier_p10').value) ?? 5.0,
-                ahr999_multiplier_mid: parseFloat(document.getElementById('ahr999_multiplier_p25').value) ?? 2.0,
-                ahr999_multiplier_high: parseFloat(document.getElementById('ahr999_multiplier_p100').value) ?? 0.0,
+                ahr999_multiplier_low: DecimalInput.parse(document.getElementById('ahr999_multiplier_p10').value) ?? 5.0,
+                ahr999_multiplier_mid: DecimalInput.parse(document.getElementById('ahr999_multiplier_p25').value) ?? 2.0,
+                ahr999_multiplier_high: DecimalInput.parse(document.getElementById('ahr999_multiplier_p100').value) ?? 0.0,
                 
                 // AHR999 Fixed Range Fields (8 ranges)
-                ahr999_multiplier_r045: parseFloat(document.getElementById('ahr999_multiplier_r045').value) ?? 5.0,
-                ahr999_multiplier_r050: parseFloat(document.getElementById('ahr999_multiplier_r050').value) ?? 3.0,
-                ahr999_multiplier_r060: parseFloat(document.getElementById('ahr999_multiplier_r060').value) ?? 2.0,
-                ahr999_multiplier_r070: parseFloat(document.getElementById('ahr999_multiplier_r070').value) ?? 1.0,
-                ahr999_multiplier_r080: parseFloat(document.getElementById('ahr999_multiplier_r080').value) ?? 0.5,
-                ahr999_multiplier_r090: parseFloat(document.getElementById('ahr999_multiplier_r090').value) ?? 0.0,
-                ahr999_multiplier_r100: parseFloat(document.getElementById('ahr999_multiplier_r100').value) ?? 0.0,
-                ahr999_multiplier_r999: parseFloat(document.getElementById('ahr999_multiplier_r999').value) ?? 0.0,
+                ahr999_multiplier_r045: DecimalInput.parse(document.getElementById('ahr999_multiplier_r045').value) ?? 5.0,
+                ahr999_multiplier_r050: DecimalInput.parse(document.getElementById('ahr999_multiplier_r050').value) ?? 3.0,
+                ahr999_multiplier_r060: DecimalInput.parse(document.getElementById('ahr999_multiplier_r060').value) ?? 2.0,
+                ahr999_multiplier_r070: DecimalInput.parse(document.getElementById('ahr999_multiplier_r070').value) ?? 1.0,
+                ahr999_multiplier_r080: DecimalInput.parse(document.getElementById('ahr999_multiplier_r080').value) ?? 0.5,
+                ahr999_multiplier_r090: DecimalInput.parse(document.getElementById('ahr999_multiplier_r090').value) ?? 0.0,
+                ahr999_multiplier_r100: DecimalInput.parse(document.getElementById('ahr999_multiplier_r100').value) ?? 0.0,
+                ahr999_multiplier_r999: DecimalInput.parse(document.getElementById('ahr999_multiplier_r999').value) ?? 0.0,
                 
                 // Dynamic Fields
-                dynamic_min_multiplier: parseFloat(document.getElementById('dynamic_min_multiplier').value),
-                dynamic_max_multiplier: parseFloat(document.getElementById('dynamic_max_multiplier').value),
-                dynamic_gamma: parseFloat(document.getElementById('dynamic_gamma').value),
-                dynamic_a_low: parseFloat(document.getElementById('dynamic_a_low').value),
-                dynamic_a_high: parseFloat(document.getElementById('dynamic_a_high').value),
+                dynamic_min_multiplier: DecimalInput.parse(document.getElementById('dynamic_min_multiplier').value),
+                dynamic_max_multiplier: DecimalInput.parse(document.getElementById('dynamic_max_multiplier').value),
+                dynamic_gamma: DecimalInput.parse(document.getElementById('dynamic_gamma').value),
+                dynamic_a_low: DecimalInput.parse(document.getElementById('dynamic_a_low').value),
+                dynamic_a_high: DecimalInput.parse(document.getElementById('dynamic_a_high').value),
                 dynamic_enable_drawdown_boost: document.getElementById('dynamic_enable_drawdown_boost').checked
             };
 

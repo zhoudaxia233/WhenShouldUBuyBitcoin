@@ -2148,7 +2148,7 @@
                         </div>
                         <div class="mb-3">
                             <label class="form-label" for="coldWalletInput">Total BTC Balance</label>
-                            <input type="number" step="0.00000001" min="0" class="form-control" id="coldWalletInput" required>
+                            <input type="text" inputmode="decimal" autocomplete="off" min="0" class="form-control" id="coldWalletInput" required>
                             <div class="form-text" id="coldWalletInputHelp">This replaces the previous value.</div>
                         </div>
                         <div id="coldWalletVenueHint" class="alert alert-warning small d-none" role="note"></div>
@@ -2214,7 +2214,7 @@
                         <div class="alert alert-satsflow small" id="venueBalanceHelp"></div>
                         <div class="mb-3">
                             <label class="form-label" for="venueBalanceInput">BTC on this exchange</label>
-                            <input type="number" step="0.00000001" min="0" class="form-control" id="venueBalanceInput" required>
+                            <input type="text" inputmode="decimal" autocomplete="off" min="0" class="form-control" id="venueBalanceInput" required>
                             <div class="form-text">This replaces the previous value. Your buy history is not changed.</div>
                         </div>
                         <button type="submit" class="btn btn-primary w-100">Update Balance</button>
@@ -2224,11 +2224,11 @@
         </div>
     </div>
 
-    <!-- Add or edit a buy from another exchange, or the IB1T holding -->
+    <!-- Add or edit a buy from another exchange, or the IB1T holding. The form is
+         the modal-content, so on a phone the body scrolls and Save stays in view. -->
     <div class="modal fade" id="externalBuyModal" tabindex="-1" aria-labelledby="externalBuyTitle">
         <div class="modal-dialog modal-lg modal-dialog-scrollable">
-            <div class="modal-content">
-                <form id="externalBuyForm" novalidate>
+            <form class="modal-content" id="externalBuyForm" novalidate>
                     <div class="modal-header">
                         <div>
                             <h5 class="modal-title" id="externalBuyTitle">Add a buy from another exchange</h5>
@@ -2255,19 +2255,19 @@
                                 </div>
                                 <div data-etp-only hidden>
                                     <label class="form-label" for="etpShares">Shares</label>
-                                    <input type="number" step="any" min="0" inputmode="decimal" class="form-control" id="etpShares">
+                                    <input type="text" inputmode="decimal" autocomplete="off" class="form-control" id="etpShares">
                                 </div>
                                 <div data-etp-only hidden>
                                     <label class="form-label" for="etpAvgPrice">Average price per share</label>
                                     <div class="input-group">
-                                        <input type="number" step="any" min="0" inputmode="decimal" class="form-control" id="etpAvgPrice">
+                                        <input type="text" inputmode="decimal" autocomplete="off" class="form-control" id="etpAvgPrice">
                                         <span class="input-group-text">EUR</span>
                                     </div>
                                 </div>
                                 <div data-etp-only hidden>
                                     <label class="form-label" for="etpFee">Management fee</label>
                                     <div class="input-group">
-                                        <input type="number" step="any" min="0" max="5" inputmode="decimal" class="form-control" id="etpFee">
+                                        <input type="text" inputmode="decimal" autocomplete="off" class="form-control" id="etpFee">
                                         <span class="input-group-text">% a year</span>
                                     </div>
                                     <div class="etp-fee-changes" id="etpFeeChanges"></div>
@@ -2284,7 +2284,7 @@
                                 <div data-buy-only>
                                     <label class="form-label" for="externalBuyAmount">Amount paid, without fee</label>
                                     <div class="input-group">
-                                        <input type="number" step="0.01" min="0" inputmode="decimal" class="form-control" id="externalBuyAmount" required>
+                                        <input type="text" inputmode="decimal" autocomplete="off" class="form-control" id="externalBuyAmount" required>
                                         <select class="form-select external-buy-currency" id="externalBuyCurrency" aria-label="Currency paid">
                                             <option>EUR</option><option>USD</option><option>USDC</option>
                                         </select>
@@ -2292,12 +2292,12 @@
                                 </div>
                                 <div data-buy-only>
                                     <label class="form-label" for="externalBuyBtc">BTC bought</label>
-                                    <input type="number" step="0.00000001" min="0" inputmode="decimal" class="form-control" id="externalBuyBtc" required>
+                                    <input type="text" inputmode="decimal" autocomplete="off" class="form-control" id="externalBuyBtc" required>
                                 </div>
                                 <div data-buy-only>
                                     <label class="form-label" for="externalBuyFee">Fee</label>
                                     <div class="input-group">
-                                        <input type="number" step="0.00000001" min="0" inputmode="decimal" class="form-control" id="externalBuyFee" value="0">
+                                        <input type="text" inputmode="decimal" autocomplete="off" class="form-control" id="externalBuyFee" value="0">
                                         <select class="form-select external-buy-currency" id="externalBuyFeeCurrency" aria-label="Fee currency">
                                             <option>EUR</option><option>USD</option><option>USDC</option><option>BTC</option>
                                         </select>
@@ -2341,8 +2341,7 @@
                         <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
                         <button type="submit" class="btn btn-primary" id="externalBuySave">Save</button>
                     </div>
-                </form>
-            </div>
+            </form>
         </div>
     </div>
 
@@ -2391,7 +2390,7 @@
                                     <label for="addPositionUsdcInput" class="visually-hidden">Amount to Buy</label>
                                     <div class="extra-buy-amount-input-wrap">
                                         <span class="extra-buy-input-lock" id="addPositionAmountLock" aria-hidden="true"><i class="bi bi-lock-fill"></i></span>
-                                        <input id="addPositionUsdcInput" type="number" min="1" step="0.01" class="form-control" required placeholder="Enter USDC amount">
+                                        <input id="addPositionUsdcInput" type="text" inputmode="decimal" autocomplete="off" min="1" class="form-control" required placeholder="Enter USDC amount">
                                         <span class="extra-buy-input-suffix">USDC</span>
                                     </div>
                                     <div class="extra-buy-price-strip">
@@ -2481,6 +2480,7 @@
     <script src="https://cdn.jsdelivr.net/npm/notyf@3.10.0/notyf.min.js" integrity="sha384-uuNfwJfjOG2ukYi4eAB11/t3lP4Zjf75a3UhgkLzEpiX8JpJfacpG7Ye+0tiVMxT" crossorigin="anonymous"></script>
     <script src="{{ asset_url('reserve_chart.js') }}"></script>
     <script src="{{ asset_url('cold_wallet_watch.js') }}"></script>
+    <script src="{{ asset_url('decimal_input.js') }}"></script>
     <script>
         window.notyf = new Notyf({
             duration: 3000,
@@ -3565,7 +3565,7 @@
         });
 
         function updateAddPositionEstimate() {
-            const amount = Number(document.getElementById('addPositionUsdcInput')?.value);
+            const amount = DecimalInput.parse(document.getElementById('addPositionUsdcInput')?.value);
             const price = Number(document.getElementById('addPositionPriceInput')?.value);
             const estimateEl = document.getElementById('addPositionBtcEstimate');
             if (!estimateEl) return;
@@ -3651,7 +3651,7 @@
         }
 
         function updateAddPositionInputState() {
-            const amount = Number(document.getElementById('addPositionUsdcInput')?.value);
+            const amount = DecimalInput.parse(document.getElementById('addPositionUsdcInput')?.value);
             const price = Number(document.getElementById('addPositionPriceInput')?.value);
             const btn = document.getElementById('addPositionAnalyzeBtn');
             const confirmText = document.getElementById('addPositionConfirmText');
@@ -3954,7 +3954,7 @@
         }
 
         function updateAddPositionImpactFromInputs() {
-            const amount = toExtraBuyFiniteNumber(document.getElementById('addPositionUsdcInput')?.value);
+            const amount = toExtraBuyFiniteNumber(DecimalInput.parse(document.getElementById('addPositionUsdcInput')?.value));
             const price = toExtraBuyFiniteNumber(document.getElementById('addPositionPriceInput')?.value);
             const basis = addPositionLastImpactBasis;
 
@@ -4054,7 +4054,7 @@
                 toExtraBuyFiniteNumber(payload?.price_snapshot?.price) ??
                 toExtraBuyFiniteNumber(cost.current_price_usd)
             );
-            const enteredAmount = toExtraBuyFiniteNumber(document.getElementById('addPositionUsdcInput')?.value);
+            const enteredAmount = toExtraBuyFiniteNumber(DecimalInput.parse(document.getElementById('addPositionUsdcInput')?.value));
             const estimatedBtc = (
                 enteredAmount !== null &&
                 currentPrice !== null &&
@@ -4295,7 +4295,7 @@
         }
 
         async function runAddPositionAdvice() {
-            const amount = Number(document.getElementById('addPositionUsdcInput')?.value);
+            const amount = DecimalInput.parse(document.getElementById('addPositionUsdcInput')?.value);
             const price = Number(document.getElementById('addPositionPriceInput')?.value);
             const statusEl = document.getElementById('addPositionAdviceStatus');
             const submitBtn = document.getElementById('addPositionAnalyzeBtn');
@@ -4364,7 +4364,7 @@
         }
 
         async function confirmAddPositionBuy() {
-            const amount = Number(document.getElementById('addPositionUsdcInput')?.value);
+            const amount = DecimalInput.parse(document.getElementById('addPositionUsdcInput')?.value);
             const price = Number(document.getElementById('addPositionPriceInput')?.value);
             const statusEl = document.getElementById('addPositionAdviceStatus');
             const submitBtn = document.getElementById('addPositionAnalyzeBtn');
@@ -4475,6 +4475,7 @@
             if (addPositionForm) {
                 addPositionForm.addEventListener('submit', async (event) => {
                     event.preventDefault();
+                    if (DecimalInput.reportProblem(addPositionForm)) return;
                     if (addPositionActionMode === 'confirm') {
                         await confirmAddPositionBuy();
                     } else {
@@ -4686,8 +4687,9 @@
         // Set Cold Wallet Balance Form
         document.getElementById('setColdWalletForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-            
-            const balance = parseFloat(document.getElementById('coldWalletInput').value);
+            if (DecimalInput.reportProblem(e.currentTarget)) return;
+
+            const balance = DecimalInput.parse(document.getElementById('coldWalletInput').value);
             
             try {
                 const response = await fetch('/api/wallet/cold-balance', {
@@ -5188,8 +5190,9 @@
 
         document.getElementById('setVenueBalanceForm').addEventListener('submit', async (event) => {
             event.preventDefault();
+            if (DecimalInput.reportProblem(event.currentTarget)) return;
             const venue = event.currentTarget.dataset.venue;
-            const btc = parseFloat(document.getElementById('venueBalanceInput').value);
+            const btc = DecimalInput.parse(document.getElementById('venueBalanceInput').value);
             try {
                 const response = await fetch(`/api/wallet/venue-balances/${encodeURIComponent(venue)}`, {
                     method: 'PUT',
@@ -5241,13 +5244,15 @@
 
         function externalBuyPayload() {
             const timeValue = document.getElementById('externalBuyTime').value;
+            const fee = document.getElementById('externalBuyFee').value;
             return {
                 venue: externalBuyVenue(),
                 timestamp: timeValue ? new Date(timeValue).toISOString() : null,
                 quote_currency: document.getElementById('externalBuyCurrency').value,
-                quote_amount: parseFloat(document.getElementById('externalBuyAmount').value),
-                btc_amount: parseFloat(document.getElementById('externalBuyBtc').value),
-                fee_amount: parseFloat(document.getElementById('externalBuyFee').value) || 0,
+                quote_amount: DecimalInput.parse(document.getElementById('externalBuyAmount').value),
+                btc_amount: DecimalInput.parse(document.getElementById('externalBuyBtc').value),
+                // An empty fee is none; one that cannot be read is not taken for none
+                fee_amount: fee.trim() === '' ? 0 : DecimalInput.parse(fee),
                 fee_currency: document.getElementById('externalBuyFeeCurrency').value,
                 venue_trade_id: document.getElementById('externalBuyRef').value.trim() || null,
                 adjust_balance: document.getElementById('externalBuyAdjust').checked
@@ -5383,7 +5388,7 @@
             row.className = 'input-group input-group-sm etp-fee-change';
             row.innerHTML = `<span class="input-group-text">From</span>
                 <input type="date" class="form-control" aria-label="Fee changes on" value="${escapeHtml(change.date)}">
-                <input type="number" step="any" min="0" max="5" inputmode="decimal" class="form-control" aria-label="New yearly fee in percent" value="${escapeHtml(String(change.fee_percent))}">
+                <input type="text" inputmode="decimal" autocomplete="off" class="form-control" aria-label="New yearly fee in percent" value="${escapeHtml(String(change.fee_percent))}">
                 <span class="input-group-text">%</span>
                 <button type="button" class="btn btn-outline-secondary" aria-label="Remove this fee change" title="Remove this fee change"><i class="bi bi-x-lg" aria-hidden="true"></i></button>`;
             row.querySelectorAll('input').forEach(input => {
@@ -5406,12 +5411,12 @@
         function etpFeeChanges() {
             return Array.from(document.querySelectorAll('#etpFeeChanges .etp-fee-change')).map(row => {
                 const [day, fee] = row.querySelectorAll('input');
-                return { date: day.value, fee_percent: parseFloat(fee.value) };
+                return { date: day.value, fee_percent: DecimalInput.parse(fee.value) };
             }).filter(change => change.date || Number.isFinite(change.fee_percent));
         }
 
         function etpPayload() {
-            const number = id => parseFloat(document.getElementById(id).value);
+            const number = id => DecimalInput.parse(document.getElementById(id).value);
             return {
                 shares: number('etpShares'),
                 avg_price_eur: number('etpAvgPrice'),
@@ -5596,6 +5601,7 @@
             if (!payload.venue) return showExternalBuyError('Enter the exchange name.');
             if (!payload.timestamp) return showExternalBuyError('Enter when you bought.');
             if (!(payload.quote_amount > 0) || !(payload.btc_amount > 0)) return showExternalBuyError('Enter the amount paid and the BTC bought.');
+            if (!(payload.fee_amount >= 0)) return showExternalBuyError('Enter the fee as a number, or 0.');
             const saveButton = document.getElementById('externalBuySave');
             saveButton.disabled = true;
             try {

@@ -35,6 +35,20 @@ than speed or agreement.
   to the vendor's official guide and write only notes that stay true across
   their versions (what value to look for, formats, checks). Lay notes out as
   lists, not run-on paragraphs.
+- A field that takes decimals is `<input type="text" inputmode="decimal"
+  autocomplete="off">` read with `DecimalInput.parse`
+  (`static/decimal_input.js`), never `type="number"`. An iPhone set to a German
+  region has only a comma on its decimal keypad, and WebKit's number inputs
+  drop that comma unless the phone's language is German: on 2026-11-16 the
+  owner could not type the IB1T shares, and "0,5" became 5. A form without
+  `novalidate` keeps `min` and `max` on its fields and calls
+  `DecimalInput.reportProblem(form)` first in its submit handler.
+  `test_decimal_inputs.py` checks every template for this.
+- In a scrollable dialog, a form around the header, body and footer is the
+  `.modal-content` itself (`<form class="modal-content">`). A form between them
+  takes away the height limit, so on a phone the body stops scrolling and the
+  footer's Save stays below the screen (the Add buy dialog, 2026-11-16). Check
+  a dialog at a phone's height with the fields filled in.
 
 ## Review Gates
 

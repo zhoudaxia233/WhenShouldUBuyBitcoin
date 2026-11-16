@@ -31,10 +31,11 @@ def test_add_buy_dialog_offers_the_ib1t_holding_next_to_the_exchanges():
 
 def test_ib1t_form_asks_only_shares_average_price_and_fee():
     modal = _modal(_html("index.html"))
-    # Fractional shares from savings plans, so any number of decimals
-    assert 'step="any"' in _tag(modal, "etpShares")
-    assert 'step="any"' in _tag(modal, "etpAvgPrice")
-    assert 'step="any"' in _tag(modal, "etpFee")
+    # Fractional shares from savings plans: any number of decimals, after a
+    # comma too, since a German iPhone's decimal keypad has only the comma
+    for field in ("etpShares", "etpAvgPrice", "etpFee"):
+        assert 'type="text"' in _tag(modal, field) and 'inputmode="decimal"' in _tag(modal, field)
+        assert "step=" not in _tag(modal, field)
     assert "data-etp-only" in modal and "data-buy-only" in modal
     # Where to look up the fee: the issuer's own page, not a copy of it
     assert ISHARES_PAGE in modal
