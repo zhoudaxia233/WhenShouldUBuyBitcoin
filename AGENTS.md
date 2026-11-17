@@ -50,6 +50,12 @@ than speed or agreement.
   footer's Save stays below the screen (the Add buy dialog, 2026-11-16). Check
   a dialog at a phone's height with the fields filled in.
 
+- A dialog that changes more than one number says, before Save, what each
+  number becomes and which one it leaves alone. An amount the owner has to read
+  somewhere else (what a wallet received after a withdrawal fee) starts empty:
+  a guess filled in for them is saved unread (the Move to cold storage dialog,
+  2026-11-17).
+
 ## Review Gates
 
 - When a task explicitly requires multi-agent review and the tool is available,

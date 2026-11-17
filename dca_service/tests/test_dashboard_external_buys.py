@@ -91,6 +91,23 @@ def test_exchange_dialog_offers_the_move_before_the_correction():
     assert 'id="venueMoveLeftInput"' in dialog and 'value="0"' in dialog
 
 
+def test_move_dialog_says_what_changes_and_never_prefills_the_received_amount():
+    """A withdrawal loses a fee on the way, so the amount that left the exchange
+    is never offered as what cold storage gets (the owner, 2026-11-17)."""
+    html = _html("index.html")
+    dialog = _venue_dialog(html)
+    assert 'id="venueMoveEffectVenue"' in dialog and 'id="venueMoveEffectCold"' in dialog
+    assert "Received in your wallet" in dialog
+    assert "venueMoveArrivedDefault" not in html
+    assert "arrivedEdited" not in html
+    opened = html[html.index("function openVenueMove()") :]
+    opened = opened[: opened.index("async function openVenueBalanceModal")]
+    assert "getElementById('venueMoveArrivedInput').value = ''" in opened
+    handler = html[html.index("getElementById('venueMoveForm').addEventListener('submit'") :]
+    handler = handler[: handler.index("async function readApiError")]
+    assert "venueMoveReceivedText(" in handler
+
+
 def test_move_is_one_server_call_and_then_reads_the_key_right_away():
     html = _html("index.html")
     handler = html[html.index("getElementById('venueMoveForm').addEventListener('submit'") :]

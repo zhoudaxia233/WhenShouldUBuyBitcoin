@@ -17,7 +17,8 @@ function load(name) {
 
 const venueMoveColdMode = load("venueMoveColdMode");
 const venueMoveProblems = load("venueMoveProblems");
-const venueMoveArrivedDefault = load("venueMoveArrivedDefault");
+const venueMoveEffect = load("venueMoveEffect");
+const venueMoveReceivedText = load("venueMoveReceivedText");
 const venueEmptySince = load("venueEmptySince");
 const coldVenueHintText = load("coldVenueHintText");
 const coldSyncDue = load("coldSyncDue");
@@ -68,15 +69,42 @@ describe("venueMoveProblems", () => {
   });
 });
 
-describe("venueMoveArrivedDefault", () => {
-  it("is what left the exchange, to the satoshi", () => {
-    expect(venueMoveArrivedDefault(0.0049665, 0)).toBe("0.00496650");
-    expect(venueMoveArrivedDefault(0.00192492, 0.001)).toBe("0.00092492");
+describe("venueMoveEffect", () => {
+  it("says the exchange drops and cold storage is left to the key", () => {
+    const effect = venueMoveEffect("Kraken Pro", 0.00192492, 0, NaN, "key", 0.5);
+    expect(effect.venue).toBe("Kraken Pro ₿0.00192492 → ₿0.00000000");
+    expect(effect.cold).toMatch(/^Cold storage is not changed here/);
+    expect(effect.cold).toMatch(/what your wallet received/);
   });
 
-  it("is empty when nothing sensible would leave", () => {
-    expect(venueMoveArrivedDefault(0.002, NaN)).toBe("");
-    expect(venueMoveArrivedDefault(0.002, 0.003)).toBe("");
+  it("says nothing is added until the received amount is typed", () => {
+    const effect = venueMoveEffect("Bitvavo", 0.0049665, 0.001, NaN, "manual", 0.01);
+    expect(effect.venue).toBe("Bitvavo ₿0.00496650 → ₿0.00100000");
+    expect(effect.cold).toBe("Cold storage gets only what you enter as received, not the ₿0.00396650 that left Bitvavo.");
+  });
+
+  it("shows the typed amount and the fee it implies", () => {
+    const effect = venueMoveEffect("Bitvavo", 0.0049665, 0, 0.0049, "manual", 0.01);
+    expect(effect.cold).toBe("Cold storage ₿0.01000000 → ₿0.01490000 · withdrawal fee ₿0.00006650");
+  });
+
+  it("has no exchange line while Left is unreadable", () => {
+    expect(venueMoveEffect("Bitvavo", 0.002, NaN, NaN, "key", 0).venue).toBe("");
+  });
+});
+
+describe("venueMoveReceivedText", () => {
+  it("names what the wallet received and the fee", () => {
+    expect(venueMoveReceivedText(0.00192492, 0.5, 0.5019)).toBe(
+      "Cold storage received ₿0.00190000 (withdrawal fee ₿0.00002492)");
+  });
+
+  it("leaves the fee out when more arrived than this move", () => {
+    expect(venueMoveReceivedText(0.001, 0.5, 0.503)).toBe("Cold storage received ₿0.00300000");
+  });
+
+  it("says so when nothing has arrived yet", () => {
+    expect(venueMoveReceivedText(0.001, 0.5, 0.5)).toMatch(/nothing new yet.*Sync now/);
   });
 });
 
@@ -132,8 +160,13 @@ describe("coldSyncDue", () => {
 });
 
 describe("venueMoveToast", () => {
-  it("names how much left which exchange", () => {
-    expect(venueMoveToast("Kraken Pro", 0.00192492, 0)).toBe("Moved ₿0.00192492 from Kraken Pro to cold storage");
-    expect(venueMoveToast("Bitvavo", 0.0049665, 0.001)).toBe("Moved ₿0.00396650 from Bitvavo to cold storage");
+  it("does not claim cold storage changed when the key decides it", () => {
+    expect(venueMoveToast("Kraken Pro", 0.00192492, 0, null, "key")).toBe(
+      "Kraken Pro is now ₿0.00000000. Reading cold storage from your key…");
+  });
+
+  it("names what was added by hand and the fee", () => {
+    expect(venueMoveToast("Bitvavo", 0.0049665, 0.001, 0.0039, "manual")).toBe(
+      "Bitvavo is now ₿0.00100000. Cold storage +₿0.00390000 (withdrawal fee ₿0.00006650)");
   });
 });

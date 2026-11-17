@@ -2222,15 +2222,16 @@
                             <div class="form-text">0 when you withdrew everything.</div>
                         </div>
                         <div class="mb-3" id="venueMoveArrivedGroup">
-                            <label class="form-label" for="venueMoveArrivedInput">Arrived in cold storage</label>
+                            <label class="form-label" for="venueMoveArrivedInput">Received in your wallet</label>
                             <input type="text" inputmode="decimal" autocomplete="off" min="0" class="form-control" id="venueMoveArrivedInput" aria-describedby="venueMoveArrivedHelp" required>
-                            <div class="form-text" id="venueMoveArrivedHelp">The exchange's withdrawal fee makes this less than what left the exchange. Enter what your wallet received.</div>
+                            <div class="form-text" id="venueMoveArrivedHelp">The amount your wallet shows for this transfer. The withdrawal fee makes it less than what left the exchange.</div>
                         </div>
-                        <p class="venue-move-preview font-monospace" id="venueMovePreview" aria-live="polite"></p>
-                        <div class="alert alert-satsflow small d-none" id="venueMoveKeyNote" role="note">
-                            Cold storage is read from your wallet's public key and checked again right after you save.
-                            Unconfirmed transactions count, so the bitcoin shows there once the exchange has sent the withdrawal.
-                            If it has not been sent yet, use Sync now in the Cold storage dialog later.
+                        <div class="alert alert-satsflow small" role="note" aria-live="polite">
+                            <div class="fw-semibold mb-1">What saving changes</div>
+                            <ul class="venue-move-effect mb-0">
+                                <li id="venueMoveEffectVenue"></li>
+                                <li id="venueMoveEffectCold"></li>
+                            </ul>
                         </div>
                         <button type="submit" class="btn btn-primary w-100">Record move</button>
                     </form>
@@ -4749,6 +4750,7 @@
         const COLD_SYNC_INTERVAL_MS = 24 * 60 * 60 * 1000;
         let coldSyncRunning = false;
         let coldLastSyncAt = 0;  // in memory too, in case localStorage is blocked
+        let coldLastSyncedBalance = 0;  // what the last key read found
         let coldKeys = [];
         let coldKeysLoading = null;
 
@@ -4970,6 +4972,7 @@
             });
             if (!response.ok) throw new Error('Could not save the cold storage balance. Are you still logged in?');
             coldLastSyncAt = Date.now();
+            coldLastSyncedBalance = balance;
             try {
                 localStorage.setItem(COLD_SYNC_STORAGE, JSON.stringify({ at: coldLastSyncAt }));
             } catch (e) { /* the in-memory time still stops a refresh loop */ }
@@ -5255,20 +5258,49 @@
             return problems;
         }
 
-        // "Arrived" starts at what left the exchange, before the fee.
-        function venueMoveArrivedDefault(current, left) {
-            const moved = Math.round(current * 1e8) - Math.round(left * 1e8);
-            if (Number.isNaN(moved) || moved <= 0) return '';
-            return (moved / 1e8).toFixed(8);
+        // The two lines under "What saving changes". Cold storage never gets
+        // the amount that left the exchange: a withdrawal loses a fee on the way.
+        function venueMoveEffect(venue, current, left, arrived, mode, cold) {
+            const sats = btc => Math.round(btc * 1e8);
+            const btc = value => `₿${(value / 1e8).toFixed(8)}`;
+            const moved = sats(current) - sats(left);
+            const valid = !Number.isNaN(left) && left >= 0 && moved > 0;
+            const effect = { venue: valid ? `${venue} ${btc(sats(current))} → ${btc(sats(left))}` : '', cold: '' };
+            if (mode !== 'manual') {
+                effect.cold = 'Cold storage is not changed here. It shows what your wallet received, read from its public key right after you save.';
+            } else if (valid && arrived > 0 && sats(arrived) <= moved) {
+                effect.cold = `Cold storage ${btc(sats(cold))} → ${btc(sats(cold) + sats(arrived))} · withdrawal fee ${btc(moved - sats(arrived))}`;
+            } else {
+                effect.cold = valid
+                    ? `Cold storage gets only what you enter as received, not the ${btc(moved)} that left ${venue}.`
+                    : 'Cold storage gets only what you enter as received.';
+            }
+            return effect;
         }
 
-        function venueMoveToast(venue, current, left) {
-            const moved = (Math.round(current * 1e8) - Math.round(left * 1e8)) / 1e8;
-            return `Moved ₿${moved.toFixed(8)} from ${venue} to cold storage`;
+        function venueMoveToast(venue, current, left, arrived, mode) {
+            const sats = btc => Math.round(btc * 1e8);
+            const btc = value => `₿${(value / 1e8).toFixed(8)}`;
+            const now = `${venue} is now ${btc(sats(left))}.`;
+            if (mode !== 'manual') return `${now} Reading cold storage from your key…`;
+            const fee = sats(current) - sats(left) - sats(arrived);
+            return `${now} Cold storage +${btc(sats(arrived))} (withdrawal fee ${btc(fee)})`;
+        }
+
+        // After the key was read again: what the wallet got, against what left.
+        function venueMoveReceivedText(moved, before, after) {
+            const sats = btc => Math.round(btc * 1e8);
+            const btc = value => `₿${(value / 1e8).toFixed(8)}`;
+            const received = sats(after) - sats(before);
+            if (received <= 0) {
+                return 'Cold storage shows nothing new yet. Once the exchange has sent the withdrawal, use Sync now in the Cold storage dialog.';
+            }
+            const fee = sats(moved) - received;
+            return `Cold storage received ${btc(received)}` + (fee >= 0 ? ` (withdrawal fee ${btc(fee)})` : '');
         }
 
         // The dialog's state while it is open.
-        let venueDialog = { venue: '', current: 0, mode: 'manual', arrivedEdited: false };
+        let venueDialog = { venue: '', current: 0, mode: 'manual' };
 
         function showVenueDialogView(view) {
             document.getElementById('venueBalanceChoice').classList.toggle('d-none', view !== 'choice');
@@ -5276,30 +5308,25 @@
             document.getElementById('setVenueBalanceForm').classList.toggle('d-none', view !== 'correct');
         }
 
-        // Keeps Arrived in step with Left, the line under them, and each
-        // field's problem, so the browser points at Left first when Left is
-        // what is wrong (an empty Arrived would otherwise take the blame).
+        // Keeps the "What saving changes" lines and each field's problem in
+        // step with what is typed, so the browser points at Left first when
+        // Left is what is wrong.
         function renderVenueMovePreview() {
             const leftInput = document.getElementById('venueMoveLeftInput');
             const left = DecimalInput.parse(leftInput.value);
             const arrivedInput = document.getElementById('venueMoveArrivedInput');
-            if (!venueDialog.arrivedEdited) {
-                arrivedInput.value = venueMoveArrivedDefault(venueDialog.current, left);
-            }
             const arrived = DecimalInput.parse(arrivedInput.value);
             const problems = venueMoveProblems(venueDialog.current, left, arrived, venueDialog.mode);
             leftInput.setCustomValidity(DecimalInput.problem(leftInput.value, '0', null) || problems.left);
             arrivedInput.setCustomValidity(venueDialog.mode === 'manual'
                 ? DecimalInput.problem(arrivedInput.value, '0', null) || problems.arrived
                 : '');
-            const preview = document.getElementById('venueMovePreview');
-            if (venueDialog.mode !== 'manual') {
-                preview.textContent = '';
-                return;
-            }
-            const cold = Number(window.__coldWalletBalance) || 0;
-            const after = Number.isFinite(arrived) && arrived > 0 ? `₿${(cold + arrived).toFixed(8)}` : '₿…';
-            preview.textContent = `Cold storage ₿${cold.toFixed(8)} → ${after}`;
+            const effect = venueMoveEffect(venueDialog.venue, venueDialog.current, left, arrived,
+                venueDialog.mode, Number(window.__coldWalletBalance) || 0);
+            const venueLine = document.getElementById('venueMoveEffectVenue');
+            venueLine.textContent = effect.venue;
+            venueLine.classList.toggle('d-none', !effect.venue);
+            document.getElementById('venueMoveEffectCold').textContent = effect.cold;
         }
 
         function openVenueMove() {
@@ -5308,9 +5335,9 @@
             document.getElementById('venueMoveArrivedGroup').classList.toggle('d-none', mode !== 'manual');
             // A hidden field is neither required nor checked
             arrived.disabled = mode !== 'manual';
-            document.getElementById('venueMoveKeyNote').classList.toggle('d-none', mode === 'manual');
             document.getElementById('venueMoveLeftInput').value = '0';
-            venueDialog.arrivedEdited = false;
+            // Never offered: what left the exchange is not what the wallet got
+            document.getElementById('venueMoveArrivedInput').value = '';
             renderVenueMovePreview();
             showVenueDialogView('move');
             document.getElementById('venueMoveLeftInput').focus();
@@ -5325,7 +5352,6 @@
                 venue: venue,
                 current: current,
                 mode: venueMoveColdMode(readColdKeys().length > 0, window.__coldWalletSource || null),
-                arrivedEdited: false,
             };
             document.getElementById('setVenueBalanceTitle').textContent = venue;
             document.getElementById('venueCurrentBalance').textContent = current.toFixed(8);
@@ -5347,10 +5373,7 @@
             document.getElementById('venueBalanceInput').focus();
         });
         document.getElementById('venueMoveLeftInput').addEventListener('input', renderVenueMovePreview);
-        document.getElementById('venueMoveArrivedInput').addEventListener('input', () => {
-            venueDialog.arrivedEdited = true;
-            renderVenueMovePreview();
-        });
+        document.getElementById('venueMoveArrivedInput').addEventListener('input', renderVenueMovePreview);
 
         document.getElementById('venueMoveForm').addEventListener('submit', async (event) => {
             event.preventDefault();
@@ -5373,13 +5396,15 @@
                     notyf.error(await readApiError(response, 'Could not record the move'));
                     return;
                 }
-                notyf.success(venueMoveToast(venue, current, left));
+                notyf.success(venueMoveToast(venue, current, left, arrived, mode));
                 bootstrap.Modal.getInstance(document.getElementById('setVenueBalanceModal')).hide();
                 loadWalletSummary();
                 if (mode === 'key') {
                     // Read the wallet now instead of waiting for the daily sync.
+                    const before = Number(window.__coldWalletBalance) || 0;
                     syncColdWalletFromKeys({ force: true }).then(result => {
                         if (result === 'failed') notyf.error('Could not read cold storage from the key just now. Use Sync now in the Cold storage dialog later.');
+                        if (result === 'synced') notyf.success(venueMoveReceivedText(current - left, before, coldLastSyncedBalance));
                     });
                 }
             } catch (error) {
