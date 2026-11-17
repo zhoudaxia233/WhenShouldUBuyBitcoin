@@ -88,17 +88,27 @@ def test_exchange_dialog_offers_the_move_before_the_correction():
     assert 'id="setVenueBalanceForm"' in dialog
     assert 'id="venueMoveForm"' in dialog
     assert "Record move" in dialog
-    assert 'id="venueMoveLeftInput"' in dialog and 'value="0"' in dialog
+    assert 'id="venueMoveAmountInput"' in dialog
 
 
-def test_move_is_one_server_call_and_then_reads_the_key_right_away():
+def test_move_defaults_to_everything_and_only_lowers_the_exchange():
+    """Withdrawing everything is the usual case, and a withdrawal loses a fee on
+    the way, so cold storage is never raised by what left (the owner, 2026-11-17)."""
     html = _html("index.html")
+    dialog = _venue_dialog(html)
+    assert 'id="venueMoveNote"' in dialog
+    for gone in ("venueMoveLeftInput", "venueMoveArrivedInput", "venueMoveEffect", "move-to-cold"):
+        assert gone not in html, gone
+    opened = html[html.index("function openVenueMove()") :]
+    opened = opened[: opened.index("async function openVenueBalanceModal")]
+    assert "getElementById('venueMoveAmountInput').value = venueDialog.current.toFixed(8)" in opened
     handler = html[html.index("getElementById('venueMoveForm').addEventListener('submit'") :]
     handler = handler[: handler.index("async function readApiError")]
-    assert "/move-to-cold`" in handler
-    assert "method: 'POST'" in handler
+    assert "`/api/wallet/venue-balances/${encodeURIComponent(venue)}`" in handler
+    assert "method: 'PUT'" in handler
     assert "'/api/wallet/cold-balance'" not in handler
     assert "venueMoveToast(" in handler
+    assert "venueMoveReceivedText(" in handler
     assert "syncColdWalletFromKeys({ force: true })" in handler
     sync = html[html.index("async function syncColdWalletFromKeys(") :]
     sync = sync[: sync.index("document.getElementById('coldWalletKeysInput')")]

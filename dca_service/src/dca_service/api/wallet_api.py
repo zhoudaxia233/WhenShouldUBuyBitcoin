@@ -17,7 +17,6 @@ from dca_service.api.schemas import (
     EtpHoldingRead,
     VenueBalanceRead,
     VenueBalanceUpdate,
-    VenueMoveToCold,
     WalletSummary,
 )
 from dca_service.services import etp_holdings, external_buys
@@ -293,30 +292,3 @@ async def update_venue_balance(
     logger.info(f"{venue} balance updated to {update.btc} BTC")
     return await fetch_wallet_summary(session)
 
-
-@router.post("/venue-balances/{venue}/move-to-cold", response_model=WalletSummary)
-async def move_venue_btc_to_cold(
-    venue: str,
-    move: VenueMoveToCold,
-    session: Session = Depends(get_session),
-    current_user: User = Depends(get_current_user),
-):
-    """
-    Record a withdrawal from another exchange to cold storage in one step.
-
-    The exchange balance becomes left_btc and, when cold storage is typed by
-    hand, arrived_btc is added to it. The buy history is not changed.
-    Returns the updated wallet summary.
-    """
-    venue = venue.strip()
-    if not venue or venue.lower() == "binance":
-        raise HTTPException(status_code=422, detail="Binance balance is read from Binance directly.")
-    try:
-        external_buys.move_to_cold(session, venue, move.left_btc, move.arrived_btc)
-    except external_buys.MoveRefused as e:
-        raise HTTPException(status_code=e.status_code, detail=str(e))
-    logger.info(
-        f"Moved BTC from {venue} to cold storage: {move.left_btc} BTC left, "
-        f"{'synced from key' if move.arrived_btc is None else f'{move.arrived_btc} BTC arrived'}"
-    )
-    return await fetch_wallet_summary(session)

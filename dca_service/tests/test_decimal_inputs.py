@@ -24,8 +24,7 @@ DECIMAL_FIELDS = {
     "index.html": [
         "coldWalletInput",
         "venueBalanceInput",
-        "venueMoveLeftInput",
-        "venueMoveArrivedInput",
+        "venueMoveAmountInput",
         "etpShares",
         "etpAvgPrice",
         "etpFee",

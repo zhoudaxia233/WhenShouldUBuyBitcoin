@@ -1885,15 +1885,6 @@ html[data-theme="dark"] {
     color: var(--dashboard-text);
 }
 
-.venue-move-preview {
-    color: var(--dashboard-muted);
-    font-size: 0.84rem;
-}
-
-.venue-move-preview:empty {
-    display: none;
-}
-
 .holdings-edit {
     margin-left: 6px;
     padding: 0;
