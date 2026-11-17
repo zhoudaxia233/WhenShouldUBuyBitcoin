@@ -13,7 +13,7 @@ from typing import List, Optional
 from pydantic import BaseModel, Field, field_validator
 from sqlmodel import Session, col, select
 
-from dca_service.models import DCATransaction, ExternalTrade, GlobalSettings, VenueBalance
+from dca_service.models import DCATransaction, ExternalTrade, VenueBalance
 from dca_service.services import fx_rates, market_history
 
 QUOTE_CURRENCIES = ("EUR", "USD", "USDC")
@@ -88,10 +88,6 @@ class BuyNotFound(ExternalBuyError):
 
 class RateUnavailable(ExternalBuyError):
     status_code = 503
-
-
-class MoveRefused(ExternalBuyError):
-    status_code = 422
 
 
 @dataclass(frozen=True)
@@ -249,63 +245,6 @@ def set_venue_balance(session: Session, venue: str, btc: float) -> VenueBalance:
     session.commit()
     session.refresh(balance)
     return balance
-
-
-def _sats(btc: float) -> int:
-    return round(btc * 1e8)
-
-
-def cold_tracked_by_key(settings: GlobalSettings) -> bool:
-    """Whether the browser keeps cold storage in line with the saved public keys.
-
-    The dashboard's rule (coldModalView): keys are saved and the balance was not
-    typed by hand after them.
-    """
-    return bool(settings.cold_wallet_keys_encrypted) and settings.cold_wallet_source != "manual"
-
-
-def move_to_cold(
-    session: Session, venue: str, left_btc: float, arrived_btc: Optional[float]
-) -> None:
-    """
-    Record a withdrawal from an exchange to cold storage, in one transaction.
-
-    The exchange keeps left_btc. Cold storage typed by hand gets arrived_btc
-    added; cold storage tracked by key gets nothing added, because the browser
-    reads the wallet again and would otherwise count the bitcoin twice. Buys are
-    not touched.
-    """
-    balance = session.get(VenueBalance, venue)
-    current = balance.btc if balance else 0.0
-    if _sats(current) <= 0:
-        raise MoveRefused(f"{venue} has no BTC to move.")
-    if _sats(left_btc) >= _sats(current):
-        raise MoveRefused(f"What is left on {venue} must be less than its balance of ₿{current:.8f}.")
-    settings = session.get(GlobalSettings, 1) or GlobalSettings(id=1, cold_wallet_balance=0.0)
-    tracked = cold_tracked_by_key(settings)
-    if tracked and arrived_btc is not None:
-        raise MoveRefused(
-            "Cold storage is read from your wallet's public key, so what arrived is not entered by hand."
-        )
-    if not tracked:
-        if arrived_btc is None:
-            raise MoveRefused("Enter what arrived in cold storage. It is entered by hand.")
-        if _sats(arrived_btc) <= 0:
-            raise MoveRefused("What arrived in cold storage must be more than 0.")
-        moved = current - left_btc
-        if _sats(arrived_btc) > _sats(current) - _sats(left_btc):
-            raise MoveRefused(f"What arrived can't be more than left {venue} (₿{moved:.8f}).")
-
-    now = datetime.now(timezone.utc)
-    balance.btc = left_btc
-    balance.updated_at = now
-    session.add(balance)
-    if not tracked:
-        settings.cold_wallet_balance += arrived_btc
-        settings.cold_wallet_source = "manual"
-        settings.updated_at = now
-        session.add(settings)
-    session.commit()
 
 
 # --- read-only view for the stats -------------------------------------------

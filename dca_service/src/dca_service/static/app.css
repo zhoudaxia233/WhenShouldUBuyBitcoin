@@ -1885,10 +1885,6 @@ html[data-theme="dark"] {
     color: var(--dashboard-text);
 }
 
-.venue-move-effect {
-    padding-left: 1.1rem;
-}
-
 .holdings-edit {
     margin-left: 6px;
     padding: 0;

@@ -1,6 +1,6 @@
 from datetime import datetime
 from typing import List, Literal, Optional
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, Field
 
 class MetricsSourceSchema(BaseModel):
     """Schema for metrics source information"""
@@ -114,16 +114,6 @@ class ColdWalletKeys(BaseModel):
 
 class VenueBalanceUpdate(BaseModel):
     btc: float = Field(ge=0, description="BTC currently held on this exchange")
-
-
-class VenueMoveToCold(BaseModel):
-    """BTC withdrawn from an exchange to cold storage."""
-    model_config = ConfigDict(allow_inf_nan=False)
-
-    left_btc: float = Field(ge=0, description="BTC still on the exchange afterwards")
-    # What the wallet received, after the withdrawal fee. None when cold storage
-    # is read from the wallet's public key.
-    arrived_btc: Optional[float] = None
 
 
 # Strategy Schemas (Merged from schemas_strategy.py)

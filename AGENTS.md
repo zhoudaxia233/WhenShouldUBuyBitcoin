@@ -50,11 +50,11 @@ than speed or agreement.
   footer's Save stays below the screen (the Add buy dialog, 2026-11-16). Check
   a dialog at a phone's height with the fields filled in.
 
-- A dialog that changes more than one number says, before Save, what each
-  number becomes and which one it leaves alone. An amount the owner has to read
-  somewhere else (what a wallet received after a withdrawal fee) starts empty:
-  a guess filled in for them is saved unread (the Move to cold storage dialog,
-  2026-11-17).
+- An action whose name could promise more than it does says, before Save,
+  what it changes and what it leaves alone. Move to cold storage only lowers
+  the exchange balance: a withdrawal loses a fee on the way, so cold storage is
+  never raised by the amount that left (2026-11-17). Its amount defaults to
+  everything, the usual case.
 
 ## Review Gates
 

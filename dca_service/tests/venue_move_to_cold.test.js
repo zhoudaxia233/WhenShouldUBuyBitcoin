@@ -16,8 +16,9 @@ function load(name) {
 }
 
 const venueMoveColdMode = load("venueMoveColdMode");
-const venueMoveProblems = load("venueMoveProblems");
-const venueMoveEffect = load("venueMoveEffect");
+const venueMoveAmountProblem = load("venueMoveAmountProblem");
+const venueMoveLeft = load("venueMoveLeft");
+const venueMoveNote = load("venueMoveNote");
 const venueMoveReceivedText = load("venueMoveReceivedText");
 const venueEmptySince = load("venueEmptySince");
 const coldVenueHintText = load("coldVenueHintText");
@@ -30,66 +31,45 @@ describe("venueMoveColdMode", () => {
     expect(venueMoveColdMode(true, null)).toBe("key");
   });
 
-  it("asks what arrived when cold storage is typed by hand or has no key", () => {
+  it("leaves cold storage to the owner when it is typed by hand or has no key", () => {
     expect(venueMoveColdMode(true, "manual")).toBe("manual");
     expect(venueMoveColdMode(false, "public_key")).toBe("manual");
     expect(venueMoveColdMode(false, null)).toBe("manual");
   });
 });
 
-describe("venueMoveProblems", () => {
-  const ok = { left: "", arrived: "" };
-
-  it("accepts moving everything with a fee taken off", () => {
-    expect(venueMoveProblems(0.0049665, 0, 0.0049, "manual")).toEqual(ok);
+describe("venueMoveAmountProblem", () => {
+  it("accepts everything or a part", () => {
+    expect(venueMoveAmountProblem(0.00192492, 0.00192492)).toBe("");
+    expect(venueMoveAmountProblem(0.00192492, 0.001)).toBe("");
   });
 
-  it("accepts arrived equal to what left, compared in satoshis", () => {
-    expect(venueMoveProblems(0.00192492, 0.001, 0.00092492, "manual")).toEqual(ok);
-  });
-
-  it("needs something to leave the exchange", () => {
-    expect(venueMoveProblems(0.00192492, 0.00192492, 0.0001, "manual").left).toMatch(/less than/);
-    expect(venueMoveProblems(0.00192492, 0.01, 0.0001, "manual").left).toMatch(/less than/);
-    expect(venueMoveProblems(0.00192492, -1, 0.0001, "manual").left).not.toBe("");
-  });
-
-  it("needs a positive arrival no larger than what left", () => {
-    expect(venueMoveProblems(0.002, 0, 0, "manual").arrived).toMatch(/more than 0/);
-    expect(venueMoveProblems(0.002, 0.001, 0.0011, "manual").arrived).toMatch(/more than left/);
+  it("needs more than nothing and no more than is there", () => {
+    expect(venueMoveAmountProblem(0.002, 0)).toMatch(/more than 0/);
+    expect(venueMoveAmountProblem(0.002, 0.00200001)).toBe("No more than the ₿0.00200000 on the exchange.");
   });
 
   it("leaves unreadable text to the decimal field check", () => {
-    expect(venueMoveProblems(0.002, NaN, NaN, "manual")).toEqual(ok);
-  });
-
-  it("does not ask for an arrival when cold storage is read from the key", () => {
-    expect(venueMoveProblems(0.002, 0, NaN, "key")).toEqual(ok);
-    expect(venueMoveProblems(0.002, 0.002, NaN, "key").left).toMatch(/less than/);
+    expect(venueMoveAmountProblem(0.002, NaN)).toBe("");
   });
 });
 
-describe("venueMoveEffect", () => {
-  it("says the exchange drops and cold storage is left to the key", () => {
-    const effect = venueMoveEffect("Kraken Pro", 0.00192492, 0, NaN, "key", 0.5);
-    expect(effect.venue).toBe("Kraken Pro ₿0.00192492 → ₿0.00000000");
-    expect(effect.cold).toMatch(/^Cold storage is not changed here/);
-    expect(effect.cold).toMatch(/what your wallet received/);
+describe("venueMoveLeft", () => {
+  it("is what stays on the exchange, to the satoshi", () => {
+    expect(venueMoveLeft(0.00192492, 0.00192492)).toBe(0);
+    expect(venueMoveLeft(0.0049665, 0.001)).toBe(0.0039665);
+  });
+});
+
+describe("venueMoveNote", () => {
+  it("says cold storage is left to the key", () => {
+    expect(venueMoveNote("Kraken Pro", "key")).toBe(
+      "Only the Kraken Pro balance goes down. Cold storage is not changed here: it is read from your wallet's key after you save.");
   });
 
-  it("says nothing is added until the received amount is typed", () => {
-    const effect = venueMoveEffect("Bitvavo", 0.0049665, 0.001, NaN, "manual", 0.01);
-    expect(effect.venue).toBe("Bitvavo ₿0.00496650 → ₿0.00100000");
-    expect(effect.cold).toBe("Cold storage gets only what you enter as received, not the ₿0.00396650 that left Bitvavo.");
-  });
-
-  it("shows the typed amount and the fee it implies", () => {
-    const effect = venueMoveEffect("Bitvavo", 0.0049665, 0, 0.0049, "manual", 0.01);
-    expect(effect.cold).toBe("Cold storage ₿0.01000000 → ₿0.01490000 · withdrawal fee ₿0.00006650");
-  });
-
-  it("has no exchange line while Left is unreadable", () => {
-    expect(venueMoveEffect("Bitvavo", 0.002, NaN, NaN, "key", 0).venue).toBe("");
+  it("says cold storage is the owner's to set when typed by hand", () => {
+    expect(venueMoveNote("Bitvavo", "manual")).toBe(
+      "Only the Bitvavo balance goes down. Cold storage is not changed here: set it yourself to what your wallet received.");
   });
 });
 
@@ -160,13 +140,10 @@ describe("coldSyncDue", () => {
 });
 
 describe("venueMoveToast", () => {
-  it("does not claim cold storage changed when the key decides it", () => {
-    expect(venueMoveToast("Kraken Pro", 0.00192492, 0, null, "key")).toBe(
+  it("does not claim cold storage changed", () => {
+    expect(venueMoveToast("Kraken Pro", 0, "key")).toBe(
       "Kraken Pro is now ₿0.00000000. Reading cold storage from your key…");
-  });
-
-  it("names what was added by hand and the fee", () => {
-    expect(venueMoveToast("Bitvavo", 0.0049665, 0.001, 0.0039, "manual")).toBe(
-      "Bitvavo is now ₿0.00100000. Cold storage +₿0.00390000 (withdrawal fee ₿0.00006650)");
+    expect(venueMoveToast("Bitvavo", 0.001, "manual")).toBe(
+      "Bitvavo is now ₿0.00100000. Cold storage is not changed.");
   });
 });
