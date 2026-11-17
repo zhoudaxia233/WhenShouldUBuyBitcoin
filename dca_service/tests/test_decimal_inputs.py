@@ -24,6 +24,8 @@ DECIMAL_FIELDS = {
     "index.html": [
         "coldWalletInput",
         "venueBalanceInput",
+        "venueMoveLeftInput",
+        "venueMoveArrivedInput",
         "etpShares",
         "etpAvgPrice",
         "etpFee",
@@ -123,6 +125,7 @@ def test_forms_the_browser_used_to_check_check_their_decimal_fields():
     for opening in (
         "getElementById('setColdWalletForm').addEventListener('submit'",
         "getElementById('setVenueBalanceForm').addEventListener('submit'",
+        "getElementById('venueMoveForm').addEventListener('submit'",
         "addPositionForm.addEventListener('submit'",
     ):
         assert "DecimalInput.reportProblem(" in _submit_handler(index, opening), opening

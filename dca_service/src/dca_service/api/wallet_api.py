@@ -17,6 +17,7 @@ from dca_service.api.schemas import (
     EtpHoldingRead,
     VenueBalanceRead,
     VenueBalanceUpdate,
+    VenueMoveToCold,
     WalletSummary,
 )
 from dca_service.services import etp_holdings, external_buys
@@ -65,6 +66,13 @@ def _get_binance_client(session: Session) -> Optional[BinanceClient]:
         return None
 
 
+def _as_utc(value: Optional[datetime]) -> Optional[datetime]:
+    # SQLite drops the timezone; the value was written as UTC.
+    if value is not None and value.tzinfo is None:
+        return value.replace(tzinfo=timezone.utc)
+    return value
+
+
 async def fetch_wallet_summary(session: Session) -> WalletSummary:
     """
     Fetch comprehensive wallet information.
@@ -80,10 +88,7 @@ async def fetch_wallet_summary(session: Session) -> WalletSummary:
         session.commit()
     
     cold_wallet_balance = settings.cold_wallet_balance
-    cold_wallet_updated_at = settings.updated_at
-    if cold_wallet_updated_at is not None and cold_wallet_updated_at.tzinfo is None:
-        # SQLite drops the timezone; the value was written as UTC.
-        cold_wallet_updated_at = cold_wallet_updated_at.replace(tzinfo=timezone.utc)
+    cold_wallet_updated_at = _as_utc(settings.updated_at)
     
     # Initialize hot wallet values
     hot_wallet_balance = 0.0
@@ -126,14 +131,17 @@ async def fetch_wallet_summary(session: Session) -> WalletSummary:
             logger.warning(f"Could not fetch BTC price from fallback source: {e}")
             current_price = 0.0
     
-    # BTC on other exchanges (set by hand) and buys entered by hand
+    # BTC on other exchanges (set by hand) and buys entered by hand. An exchange
+    # emptied by a withdrawal stays listed while it has buys, so its row says
+    # it is empty instead of vanishing.
+    external = external_buys.all_trades(session)
+    venues_with_buys = {t.venue for t in external}
     venue_balances = [
-        VenueBalanceRead(venue=b.venue, btc=b.btc)
+        VenueBalanceRead(venue=b.venue, btc=b.btc, updated_at=_as_utc(b.updated_at))
         for b in external_buys.venue_balances(session)
-        if b.btc > 0
+        if b.btc > 0 or b.venue in venues_with_buys
     ]
     venue_btc = sum(b.btc for b in venue_balances)
-    external = external_buys.all_trades(session)
     external_btc = sum(t.btc_amount for t in external)
     external_cost = sum(t.quote_amount * t.fx_rate_usd for t in external)
     # Bitcoin ETP shares held with a broker, as the bitcoin behind them today
@@ -283,4 +291,32 @@ async def update_venue_balance(
         raise HTTPException(status_code=422, detail="Binance balance is read from Binance directly.")
     external_buys.set_venue_balance(session, venue, update.btc)
     logger.info(f"{venue} balance updated to {update.btc} BTC")
+    return await fetch_wallet_summary(session)
+
+
+@router.post("/venue-balances/{venue}/move-to-cold", response_model=WalletSummary)
+async def move_venue_btc_to_cold(
+    venue: str,
+    move: VenueMoveToCold,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Record a withdrawal from another exchange to cold storage in one step.
+
+    The exchange balance becomes left_btc and, when cold storage is typed by
+    hand, arrived_btc is added to it. The buy history is not changed.
+    Returns the updated wallet summary.
+    """
+    venue = venue.strip()
+    if not venue or venue.lower() == "binance":
+        raise HTTPException(status_code=422, detail="Binance balance is read from Binance directly.")
+    try:
+        external_buys.move_to_cold(session, venue, move.left_btc, move.arrived_btc)
+    except external_buys.MoveRefused as e:
+        raise HTTPException(status_code=e.status_code, detail=str(e))
+    logger.info(
+        f"Moved BTC from {venue} to cold storage: {move.left_btc} BTC left, "
+        f"{'synced from key' if move.arrived_btc is None else f'{move.arrived_btc} BTC arrived'}"
+    )
     return await fetch_wallet_summary(session)
