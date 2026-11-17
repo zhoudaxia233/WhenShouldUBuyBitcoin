@@ -299,7 +299,7 @@ def test_wallet_counts_venue_balances_and_blends_cost_basis(client, session):
     data = client.get("/api/wallet/summary").json()
 
     assert data["total_btc"] == pytest.approx(0.105618)
-    assert data["venue_balances"] == [{"venue": "Kraken Pro", "btc": pytest.approx(0.005618)}]
+    assert [(b["venue"], b["btc"]) for b in data["venue_balances"]] == [("Kraken Pro", pytest.approx(0.005618))]
     # No Binance connection, so the blended cost basis is the external buy alone.
     assert data["avg_buy_price"] == pytest.approx(580.60 / 0.005618)
     assert data["external_buy_count"] == 1
@@ -404,3 +404,231 @@ def test_cost_basis_is_left_blank_when_binance_fails(client, session):
     # Blending only the external buy would show a misleading cost basis.
     assert data["avg_buy_price"] == 0.0
     assert data["total_btc"] == pytest.approx(0.005618)
+
+
+# --- moving bitcoin from an exchange to cold storage -----------------------
+#
+# The owner buys on an exchange and later withdraws to a hardware wallet. One
+# call moves the BTC: the exchange balance and cold storage change together, so
+# it is never counted twice or not at all, and the buy history stays as it was.
+
+def _move(client: TestClient, venue: str = "Kraken Pro", **body):
+    return client.post(f"/api/wallet/venue-balances/{venue}/move-to-cold", json=body)
+
+
+def _cold(session: Session, balance: float, source=None, keys: bool = False):
+    from dca_service.services.security import encrypt_text
+
+    settings = session.get(GlobalSettings, 1)
+    settings.cold_wallet_balance = balance
+    settings.cold_wallet_source = source
+    settings.cold_wallet_keys_encrypted = encrypt_text('["zpub-test"]') if keys else None
+    session.add(settings)
+    session.commit()
+
+
+def _detail(response) -> str:
+    detail = response.json()["detail"]
+    return detail if isinstance(detail, str) else " ".join(d["msg"] for d in detail)
+
+
+def test_move_everything_to_cold_storage_typed_by_hand(client, session):
+    _add(client)  # Kraken Pro holds 0.005618
+    _cold(session, 0.1, source="manual")
+
+    response = _move(client, left_btc=0, arrived_btc=0.0056)
+
+    assert response.status_code == 200
+    session.expire_all()
+    assert session.get(VenueBalance, "Kraken Pro").btc == 0
+    settings = session.get(GlobalSettings, 1)
+    assert settings.cold_wallet_balance == pytest.approx(0.1056)
+    assert settings.cold_wallet_source == "manual"
+    data = response.json()
+    assert data["cold_wallet_balance"] == pytest.approx(0.1056)
+    # Only the withdrawal fee left the total.
+    assert data["total_btc"] == pytest.approx(0.1056)
+
+
+def test_partial_move_leaves_the_rest_on_the_exchange(client, session):
+    _add(client)
+    _cold(session, 0.1, source=None)  # saved before the source was recorded, no key
+
+    response = _move(client, left_btc=0.002, arrived_btc=0.0036)
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["venue_balances"][0]["btc"] == pytest.approx(0.002)
+    assert data["cold_wallet_balance"] == pytest.approx(0.1036)
+    assert data["cold_wallet_source"] == "manual"
+    assert data["total_btc"] == pytest.approx(0.1056)
+
+
+def test_move_leaves_the_buy_history_untouched(client, session):
+    _add(client)
+    before = client.get("/api/transactions").json()
+    pnl_before = client.get("/api/stats/pnl").json()
+
+    assert _move(client, left_btc=0, arrived_btc=0.0056).status_code == 200
+
+    trades = session.exec(select(ExternalTrade)).all()
+    assert len(trades) == 1
+    assert trades[0].btc_amount == pytest.approx(0.005618)
+    assert client.get("/api/transactions").json() == before
+    data = client.get("/api/wallet/summary").json()
+    assert data["external_buy_count"] == 1
+    assert data["avg_buy_price"] == pytest.approx(580.60 / 0.005618)
+    assert client.get("/api/stats/pnl").json() == pnl_before
+
+
+def test_key_tracked_cold_storage_changes_only_the_exchange(client, session):
+    _add(client)
+    _cold(session, 0.1, source="public_key", keys=True)
+
+    response = _move(client, left_btc=0, arrived_btc=None)
+
+    assert response.status_code == 200
+    session.expire_all()
+    assert session.get(VenueBalance, "Kraken Pro").btc == 0
+    settings = session.get(GlobalSettings, 1)
+    # The browser reads the key again right after; nothing is added by hand.
+    assert settings.cold_wallet_balance == pytest.approx(0.1)
+    assert settings.cold_wallet_source == "public_key"
+
+
+def test_key_with_unknown_source_counts_as_tracked(client, session):
+    _add(client)
+    _cold(session, 0.1, source=None, keys=True)
+
+    assert _move(client, left_btc=0, arrived_btc=None).status_code == 200
+    assert _move(client, venue="Kraken Pro", left_btc=0, arrived_btc=0.001).status_code == 422
+
+
+def test_key_tracked_cold_storage_refuses_an_amount_typed_by_hand(client, session):
+    _add(client)
+    _cold(session, 0.1, source="public_key", keys=True)
+
+    response = _move(client, left_btc=0, arrived_btc=0.0056)
+
+    assert response.status_code == 422
+    assert "public key" in _detail(response)
+    session.expire_all()
+    assert session.get(VenueBalance, "Kraken Pro").btc == pytest.approx(0.005618)
+    assert session.get(GlobalSettings, 1).cold_wallet_balance == pytest.approx(0.1)
+
+
+@pytest.mark.parametrize(
+    "source, keys",
+    [("manual", False), (None, False), ("manual", True), ("public_key", False)],
+)
+def test_cold_storage_without_a_key_sync_needs_the_arrived_amount(client, session, source, keys):
+    # A key saved but a balance typed after it (paused), or a synced balance
+    # whose key was removed: nothing will read the wallet, so the amount is needed.
+    _add(client)
+    _cold(session, 0.1, source=source, keys=keys)
+
+    response = _move(client, left_btc=0, arrived_btc=None)
+
+    assert response.status_code == 422
+    assert "Enter what arrived" in _detail(response)
+    session.expire_all()
+    assert session.get(VenueBalance, "Kraken Pro").btc == pytest.approx(0.005618)
+
+
+@pytest.mark.parametrize(
+    "body, message",
+    [
+        ({"left_btc": 0.005618, "arrived_btc": 0.001}, "less than"),
+        ({"left_btc": 0.01, "arrived_btc": 0.001}, "less than"),
+        ({"left_btc": -0.001, "arrived_btc": 0.001}, ""),
+        ({"left_btc": 0, "arrived_btc": 0}, "more than 0"),
+        ({"left_btc": 0, "arrived_btc": -0.001}, "more than 0"),
+        ({"left_btc": 0.002, "arrived_btc": 0.004}, "more than left"),
+    ],
+)
+def test_invalid_moves_are_refused_with_a_plain_message(client, session, body, message):
+    _add(client)
+    _cold(session, 0.1, source="manual")
+
+    response = _move(client, **body)
+
+    assert response.status_code == 422
+    assert message in _detail(response)
+    assert "Traceback" not in response.text
+    session.expire_all()
+    assert session.get(VenueBalance, "Kraken Pro").btc == pytest.approx(0.005618)
+    assert session.get(GlobalSettings, 1).cold_wallet_balance == pytest.approx(0.1)
+
+
+def test_arrived_may_equal_what_left_the_exchange(client, session):
+    # Some exchanges take the fee from the balance instead of the withdrawal.
+    _add(client)
+    _cold(session, 0, source="manual")
+
+    response = _move(client, left_btc=0.000618, arrived_btc=0.005)
+
+    assert response.status_code == 200
+    assert response.json()["cold_wallet_balance"] == pytest.approx(0.005)
+
+
+@pytest.mark.parametrize("venue", ["Bitvavo", "Binance"])
+def test_move_needs_bitcoin_on_that_exchange(client, session, venue):
+    _add(client)
+    _cold(session, 0.1, source="manual")
+
+    response = _move(client, venue=venue, left_btc=0, arrived_btc=0.001)
+
+    assert response.status_code == 422
+    assert session.get(GlobalSettings, 1).cold_wallet_balance == pytest.approx(0.1)
+
+
+def test_move_requires_login(session):
+    from dca_service.main import app
+    from dca_service.database import get_session
+
+    app.dependency_overrides[get_session] = lambda: session
+    try:
+        response = TestClient(app).post(
+            "/api/wallet/venue-balances/Kraken Pro/move-to-cold",
+            json={"left_btc": 0, "arrived_btc": 0.001},
+            follow_redirects=False,
+        )
+    finally:
+        app.dependency_overrides.clear()
+    assert response.status_code in (303, 401)
+
+
+# --- an emptied exchange stays listed -------------------------------------
+
+def test_emptied_exchange_with_buys_stays_listed_with_the_time(client, session):
+    _add(client)
+    _cold(session, 0.1, source="manual")
+    _move(client, left_btc=0, arrived_btc=0.0056)
+    client.put("/api/wallet/venue-balances/Bitvavo", json={"btc": 0})  # no buys there
+
+    data = client.get("/api/wallet/summary").json()
+
+    assert [b["venue"] for b in data["venue_balances"]] == ["Kraken Pro"]
+    row = data["venue_balances"][0]
+    assert row["btc"] == 0
+    assert datetime.fromisoformat(row["updated_at"]).tzinfo is not None
+    assert data["total_btc"] == pytest.approx(0.1056)
+
+
+def test_exchange_with_bitcoin_but_no_buys_is_listed(client, session):
+    client.put("/api/wallet/venue-balances/Bitvavo", json={"btc": 0.01})
+
+    data = client.get("/api/wallet/summary").json()
+
+    assert [(b["venue"], b["btc"]) for b in data["venue_balances"]] == [("Bitvavo", 0.01)]
+    assert data["total_btc"] == pytest.approx(0.01)
+
+
+def test_totals_elsewhere_ignore_emptied_exchanges(client, session):
+    from dca_service.services.mailer import _get_total_btc_balance
+
+    _add(client)
+    _cold(session, 0.1, source="manual")
+    _move(client, left_btc=0, arrived_btc=0.0056)
+
+    assert _get_total_btc_balance(session) == pytest.approx(0.1056)
