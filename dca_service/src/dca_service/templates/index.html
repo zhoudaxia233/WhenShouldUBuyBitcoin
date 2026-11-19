@@ -5404,6 +5404,12 @@
             return select.value === '__other' ? document.getElementById('externalBuyVenueOther').value.trim() : select.value;
         }
 
+        // A new buy starts on the exchange of the newest one (the list is newest first)
+        function defaultExternalBuyVenue(transactions) {
+            const latest = (transactions || []).find(tx => tx.source === 'EXTERNAL' && tx.venue);
+            return latest ? latest.venue : 'Kraken Pro';
+        }
+
         function setExternalBuyVenue(venue) {
             const select = document.getElementById('externalBuyVenue');
             const other = document.getElementById('externalBuyVenueOther');
@@ -5705,7 +5711,7 @@
                 document.getElementById('externalBuyTime').value = toLocalInputValue(new Date());
                 if (!(await loadEtpHolding(etpProduct))) return;
             } else if (externalId === null) {
-                setExternalBuyVenue('Kraken Pro');
+                setExternalBuyVenue(defaultExternalBuyVenue(allTransactions));
                 document.getElementById('externalBuyTime').value = toLocalInputValue(new Date());
             } else {
                 const response = await fetch(`/api/external-buys/${externalId}`);
